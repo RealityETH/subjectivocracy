@@ -35,12 +35,18 @@ class TestBorgesCoin(TestCase):
         u = self.s.block.gas_used
 
         self.bc.sendCoin(k1_addr, 1000000, genesis_hash, sender=t.k0)
+
+        # self.s.block.timestamp = self.s.block.timestamp + 100
+        # self.s = t.state()
+
         # print self.s.block.gas_used - u
         u = self.s.block.gas_used
         # print self.s.block.get_balance(k0_addr)
 
         self.assertEqual(self.bc.getBalance(keys.privtoaddr(t.k0), genesis_hash), 2100000000000000-1000000)
         self.assertEqual(self.bc.getBalance(k1_addr, genesis_hash), 1000000)
+
+        madeup_block_hash = decode_hex(sha3_256('pants').hexdigest())
 
         dummy_merkle_root_aa = decode_hex(sha3_256('aa').hexdigest())
         dummy_merkle_root_ab = decode_hex(sha3_256('ab').hexdigest())
