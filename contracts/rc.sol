@@ -1,4 +1,4 @@
-contract BorgesCoin {
+contract RashomonCoin {
 
     struct Branch {
         bytes32 parent_hash;
@@ -14,7 +14,7 @@ contract BorgesCoin {
     mapping(bytes32 => Branch) branches;
 
     // Test framework not handling the constructor well, work around it for now
-    function BorgesCoin() {
+    function RashomonCoin() {
         _constructor();
     }
 
@@ -28,6 +28,9 @@ contract BorgesCoin {
 
     function sendCoin(address addr, int256 amount, bytes32 to_branch) returns (bool) {
         if (amount < 0) {
+            return false;
+        }
+        if (amount > 2100000000000000) {
             return false;
         }
         if (!isBalanceAtLeast(msg.sender, amount, to_branch)) {
@@ -62,7 +65,6 @@ contract BorgesCoin {
     function getBalance(address addr, bytes32 branch_hash) constant returns (int256) {
 
         int256 bal = 0;
-
         bytes32 null_hash;
         while(branch_hash != null_hash) {
             bal = bal + branches[branch_hash].balance_change[addr];
