@@ -4,8 +4,7 @@ contract BorgesCoin {
         bytes32 parent_hash;
         bytes32 merkle_root;
         uint timestamp;
-        mapping(address => int256) credits;
-        mapping(address => int256) debits;
+        mapping(address => int256) balance_change;
     }
 
     event LogAddr(address a);
@@ -24,7 +23,7 @@ contract BorgesCoin {
         bytes32 null_hash;
         bytes32 genesis_branch_hash = sha3(null_hash, genesis_merkel_root);
         branches[genesis_branch_hash] = Branch(null_hash, genesis_merkel_root, now);
-        branches[genesis_branch_hash].credits[msg.sender] = 2100000000000000;
+        branches[genesis_branch_hash].balance_change[msg.sender] = 2100000000000000;
     }
 
     function sendCoin(address addr, int256 amount, bytes32 to_branch) returns (bool) {
@@ -34,8 +33,8 @@ contract BorgesCoin {
         if (!isBalanceAtLeast(msg.sender, amount, to_branch)) {
             return false;
         }
-        branches[to_branch].debits[msg.sender] += amount;
-        branches[to_branch].credits[addr] += amount;
+        branches[to_branch].balance_change[msg.sender] -= amount;
+        branches[to_branch].balance_change[addr] += amount;
         return true;
     }
 
@@ -50,7 +49,7 @@ contract BorgesCoin {
 
         bytes32 null_hash;
         while(branch_hash != null_hash) {
-            bal += branches[branch_hash].credits[addr] - branches[branch_hash].debits[addr];
+            bal += branches[branch_hash].balance_change[addr];
             branch_hash = branches[branch_hash].parent_hash;
             if (bal >= min_balance) {
                 return true;
@@ -66,7 +65,7 @@ contract BorgesCoin {
 
         bytes32 null_hash;
         while(branch_hash != null_hash) {
-            bal = bal + branches[branch_hash].credits[addr] - branches[branch_hash].debits[addr];
+            bal = bal + branches[branch_hash].balance_change[addr];
             branch_hash = branches[branch_hash].parent_hash;
         }
         return bal;
