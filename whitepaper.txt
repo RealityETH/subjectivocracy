@@ -1,0 +1,69 @@
+The Rashomon Whitepaper
+Edmund Edgar, 2016-04-20
+
+Introduction
+
+Smart Contracts often need to reference information about the world outside the blockchain on which they reside. If you want to make and settle a contract based on whether it will rain in Tokyo, you ultimately need to know whether it rained in Tokyo. But the problem of establishing the truth about such events without reliance on reputation, often known as the "Oracle Problem", has produced some unique challenges for crypto-economic systems. 
+
+To date no decentralized systems for establishing facts have been proven in theory or in practice. Existing designs such as Truthcoin and Augur have employed coordination games, which distribute reporting over large numbers of stakeholders and attempt to punish stakeholders whose reports diverge from the consensus. This is a promising line of experimentation, but to date the requirement for practical distribution of judgements has proven difficult to sustain in practice. Even systems like Bitcoin and Ethereum that are designed to be very cheap and simple for nodes to verify have tended towards de-facto centralization. Reporting of facts is more subjective and harder to automate, so there is a strong risk that these systems will follow the same pattern, with small number of data or wallet providers voting on behalf of the majority. Even if the ability of these systems to report correctly holds, the process is slow and expensive, and geared towards their integrated prediction market systems.
+
+We propose a system that allows arbitrary participants to report facts, and leverages economic hard forks to allow the market to adjudicate between them without reliance on reputation or voting mechanisms.
+
+
+Background: Consensus systems and economic hard forks
+
+Blockchains are designed with the aim that the network should be able to reach agreement on a common ledger, and under normal operation require particular action by participating nodes except for running their software. However, upgrades to blockchain-based consensus systems sometimes involve backwards-incompatible changes, producing "hard forks". If not all participants implement the change, this produces two parallel chains. The chains share a common history, rendering coins spent prior to the fork spendable on both post-fork chains. The two post-fork chains do not recognize each other's transactions, making it possible to spend the same original coins in different ways on each chain.
+
+There is no technical barrier to the creation of incompatible forks. Anyone can attempt to change the rules of a blockchain-based systems. For example, it would be technically straightforward to revise the rules of Bitcoin to increase the issuance of new bitcoins. However, such a change would be ignored by the economic majority: Few people would be interested in transacting on this alternative chain, and nobody would be prepared to trade valuable goods or services in exchange for these coins. The opposite holds for people running forks that reject clearly beneficial changes. For example, when an integer overflow bug was discovered in the Bitcoin that allowed users to award themselves coins, developers forked the system to remove this bug, and coins on the fork that lacked this fix became worthless.
+
+The decision over which fork is more valuable is potentially subjective and may not always have a clear right answer. However, external information such as the market cap can provide objective facts which, although not necessarily always correct, can be used by outside observers to adjudicate between the branches. Participants may also refer to external sources of information - most frequently the opinions of developers - to guide them in choosing which branch to choose.
+
+
+Rashomon Tokens: A branch for every possible world anybody cares about
+
+The core of our proposal is the Rashomon Token Contract, which is a contract residing on the Ethereum network.
+
+The Rashomon Token contract acts like a crypto-currency which potentially undergoes an economic hard fork every day, and tracks all the forked versions in a single data structure. Each fork represents a set of facts about the world. The same coins can be sent to different people on different forks. Forks can be created by anyone at minimal cost, so a fork can exist for any set of facts that anyone wants to claim represents reality. Credits and debits are attached to particular forks, and inherited by all their dependents lower down the chain.
+
+The Rashomon Token contract has no opinion about which branch really reflects reality. It is therefore never wrong and cannot be manipulated. 
+
+Traditionally, a prediction market or contract dependent on some outcome is expected to have a source for the ultimate result, However, a Rashomon-native prediction market can settle an outcome simply by sending coins to multiple forks. If Alice bets with Bob that Donald Trump will win the presidential election, competing forks may arise, one claiming that he won and another claiming that he didn't. Rather than attempting to adjudicate this issue, the prediction market can simply pay Alice on the branch that represents Trump winning and pay Bob on the branch that represents Trump losing. The Rashomon Token contract makes no attempt to choose between between the different branches; It simply allows people to manage how much of the token they would have in each possible world. 
+
+Since coins held on a bogus branch are likely to be worthless and the market will value coins held on the true branch, it is possible to make a functional prediction market without the system ever needing objective confirmation of which branch represents the truth. It is even possible that subsets of users will operate long-lived parallel chains, each with their own self-contained market. For example, religious participants may want to make contracts about acts of divine intervention, which are settled by consensus within their own community, on a branch that they consider valuable but nobody else does.
+
+The process of deciding what constitutes a valuable branch is considered outside the scope of the core Rashomon Token contracts. We provide suggested guidelines for how the market should make these decisions, and sample software that will help follow those guidelines, including a DAO. However, participants are free to use different guidelines, and a branch that ignores them may end up being valued more highly by the market than a branch that follows them. This allows governance to evolve as the community gains more experience in DAOs and the emerging field of crypto-economics.
+
+Unlike other proposals for decentralized fact settlement, the Rashomon Token system does not try to extract information from a prediction market, or require that a particular prediction market is used. It can sustain competing systems, or function with no prediction markets directly based on it at all. For it to be useful it does however require that *somebody* value at least one branch at any given time.
+
+
+An objective view via a decentralized market
+
+It would also be useful if these branches could be adjudicated objectively such that information they held could be referenced by other contracts that did not deal exclusively in Rashomon Tokens. This can be accomplished with a decentralized market allowing holders of coins on different forks to trade, enabling decentralized price discovery. 
+
+Like similar systems rooted in economic incentives, such a market can be manipulated by spending large sums of money buying coins on a bogus branch. To the extent that one of the correct branches is valuable and the market liquid, such manipulation is likely to be expensive and and ultimately profitable to holders of the legitimate branch, who can sell coins to the manipulator while continuing to hold the coins they sold on other branches. Meanwhile, participants in Rashomon-native markets are free to continue operating on what they consider the legitimate branch until such time as the manipulator gives up or runs out of money.
+
+
+Reaching social agreement about the best branch
+
+As described above, Rashomon Tokens function effectively even without agreement on which is the best branch, and which branch reflects reality. Users can reserve judgement by transacting with the same coins on multiple chains, and external observers can obtain an objective judgement through market price discovery. However, it may be convenient for any given community to quickly reach agreement based on a set of objective criteria. We propose a Decentralized Autonomous Organization with a set of objective procedures for reaching an agreement. The economic majority may choose to reject this Decentralized Autonomous Organization and instead follow some other organizational pattern, or operate with no particular organization at all. Future governance is free to adopt successful elements proven by other systems such as Augur and Hivemind, or other of the various proposed DAO governance schemes.
+
+If the market chooses to follow a largely predictable method of establishing facts - for example pulling data from known URLs - participants can run trading bots that automatically buy coins on legitimate blocks and sell coins on bogus ones, providing fast public information about the correct facts. We provide a sample implementation of such a DAO, and a bot that verifies judgements and attempts to profit from bogus branches. [TODO]
+
+
+Implementation details (provisional)
+
+The Rashomon Token contract is implemented as a contract on the Ethereum network. To provide time for social mechanisms to alert to incorrect branches, and also to limit the length of each chain and make it possible to traverse a chain without excessive gas use, a new branch can only be added to any given chain once in every 24-hour period. There is no limit to how many competing branches can be created within that 24-hour period, and the system is designed such that adding a branch does not result in any additional gas use to a participant unless the participant spends coins on it. Thus the height of the chain is limited to a maximum of one new set of facts per day, but it may have an arbitrary large number of parallel forks.
+
+A new branch point consists of a reference to the previous branch on top of which it builds, and a merkel root representing a merkel tree containing all the facts about which it makes claims. It is assumed the actual data will be stored elsewhere, and the market will not value a branch whose data is not available. The actual storage location of the data is not managed by the Rashomon Token contract, although we would suggest either another Ethereum contract, if a high proportion of the data is expected to be needed to be read on-chain, or IPFS, if the need to read the data from the blockchain is unusual.
+
+The set of facts represented by a given merkel root can be arbitrarily large. If it is too large for market participants to verify, we would expect them to ignore it.
+
+A branch can deduct coins from balances held on previous blocks and appropriate them as fees. It is assumed that the in the same way the economic majority will not be interested in using a branch which claims that the moon is made of green cheese, it will not be interested in using a branch that arbitrarily appropriates money from its users.
+
+Although branches can only be added daily, transfers of tokens down a chain can be made at any time and confirm in the normal Ethereum block interval. 
+
+Transactions are modelled as a credit or debit at a particular fork point. A transaction is only permitted if the account sending it has sufficient credit working back up the chain from the fork point to the root.
+
+Unlike conventional blockchains which only allow transactions to be added at the tip, Rashomon Tokens allow you to spend on an earlier branch, without needing to send transactions to multiple similar branches or form an opinion on which of the very latest branches is appropriate. This subject to the following qualifications: 
+ 1) Coins can only be spent down the chain, either on the forks on which they were received or on some descendent fork. It is not possible to send coins back up to a parent fork, as this would affect parallel forks.
+ 2) Once a user has spent any coins at a particular height (measured in days since the system was created) they cannot spend coins at a lower (ie older) height. This requirement is stricter than is logically necessary: What is actually required is that the spend would not result in a negative balance in any chain descending from the affected branch point. The stricter requirement provides for a simpler implementation and avoids incurring unpredictable or unfeasible gas costs. It may be possible to relax it in a less naive implementation.
