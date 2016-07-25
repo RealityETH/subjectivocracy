@@ -86,17 +86,24 @@ class TestRashomonCoin(TestCase):
         self.assertEqual(self.rc.getBalance(k2_addr, branch_ab_hash), 0)
 
         branch_hash = branch_aba_hash
-        for i in range(0,10):
+        for i in range(0,100):
             dummy_merkel_root = decode_hex(sha3_256('dummy' + str(i)).hexdigest())
             branch_hash = self.rc.createBranch(branch_hash, dummy_merkel_root)
             # print encode_hex(branch_hash)
 
         u = self.s.block.gas_used
         self.rc.sendCoin(k2_addr, 500000, branch_hash, sender=t.k1)
+
         print "Gas used after %d blocks: %d" % (i+1, self.s.block.gas_used - u)
         return
 
-         
+        failed = False
+        try:
+            self.rc.sendCoin(k2_addr, 1, branch_aba_hash, sender=t.k1)
+        except:
+            failed = True
+        self.assertTrue(failed, "Sending back up to an earlier branch than you have already sent fails")
+        return
 
 
 if __name__ == '__main__':

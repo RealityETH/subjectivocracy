@@ -4,10 +4,12 @@ contract RashomonCoin {
         bytes32 parent_hash;
         bytes32 merkle_root;
         uint timestamp;
+        uint256 height;
         mapping(address => int256) balance_change;
     }
 
     mapping(bytes32 => Branch) branches;
+    mapping(address => uint256) user_heights;
 
     // Test framework not handling the constructor well, work around it for now
     function RashomonCoin() {
@@ -18,7 +20,7 @@ contract RashomonCoin {
         bytes32 genesis_merkel_root = sha3("I leave to several futures (not to all) my garden of forking paths");
         bytes32 null_hash;
         bytes32 genesis_branch_hash = sha3(null_hash, genesis_merkel_root);
-        branches[genesis_branch_hash] = Branch(null_hash, genesis_merkel_root, now);
+        branches[genesis_branch_hash] = Branch(null_hash, genesis_merkel_root, now, 0);
         branches[genesis_branch_hash].balance_change[msg.sender] = 2100000000000000;
     }
 
@@ -29,9 +31,16 @@ contract RashomonCoin {
         if (amount > 2100000000000000) {
             return false;
         }
+        // You can only go forwards.
+        // TODO: A restriction that you can only spend at the tip would be easier to understand
+        uint256 branch_height = branches[to_branch].height;
+        if (branch_height < user_heights[msg.sender]) {
+            throw;
+        }
         if (!isBalanceAtLeast(msg.sender, amount, to_branch)) {
             return false;
         }
+        user_heights[msg.sender] = branches[to_branch].height; 
         branches[to_branch].balance_change[msg.sender] -= amount;
         branches[to_branch].balance_change[addr] += amount;
         return true;
@@ -91,7 +100,7 @@ contract RashomonCoin {
         if (now - parent_ts < 86400) {
         //    throw;
         }
-        branches[branch_hash] = Branch(parent_b_hash, merkle_root, now);
+        branches[branch_hash] = Branch(parent_b_hash, merkle_root, now, branches[parent_b_hash].height + 1);
         return branch_hash;
     }
 
