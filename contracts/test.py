@@ -80,7 +80,7 @@ class TestRashomonCoin(TestCase):
 
         u = self.s.block.gas_used
         self.rc.sendCoin(k2_addr, 500000, branch_aa_hash, sender=t.k1)
-        print "Gas used after %d blocks: %d" % (2, self.s.block.gas_used - u)
+        print "Gas used to send coins after %d blocks: %d" % (2, self.s.block.gas_used - u)
 
         self.assertEqual(self.rc.getBalance(k2_addr, branch_aa_hash), 500000)
         self.assertEqual(self.rc.getBalance(k2_addr, branch_ab_hash), 0)
@@ -94,16 +94,15 @@ class TestRashomonCoin(TestCase):
         u = self.s.block.gas_used
         self.rc.sendCoin(k2_addr, 500000, branch_hash, sender=t.k1)
 
-        print "Gas used after %d blocks: %d" % (i+1, self.s.block.gas_used - u)
-        return
+        print "Gas used to send coins after %d blocks: %d" % (i+1, self.s.block.gas_used - u)
 
         failed = False
         try:
             self.rc.sendCoin(k2_addr, 1, branch_aba_hash, sender=t.k1)
         except:
             failed = True
-        self.assertTrue(failed, "Sending back up to an earlier branch than you have already sent fails")
         return
+        self.assertTrue(failed, "Sending back up to an earlier branch than you have already sent fails")
 
 
 if __name__ == '__main__':
