@@ -7,10 +7,6 @@ contract RashomonCoin {
         mapping(address => int256) balance_change;
     }
 
-    event LogAddr(address a);
-    event LogBranch(bytes32 b);
-    event LogBalance(int256 b, string str);
-
     mapping(bytes32 => Branch) branches;
 
     // Test framework not handling the constructor well, work around it for now
@@ -79,6 +75,10 @@ contract RashomonCoin {
         bytes32 branch_hash = sha3(parent_b_hash, merkle_root);
         // Only the constructor can create the root branch with no parent
         if (branch_hash == null_hash) {
+            throw;
+        }
+        // You can only create a branch once
+        if (branches[branch_hash].timestamp > 0) {
             throw;
         }
         uint parent_ts = branches[parent_b_hash].timestamp;

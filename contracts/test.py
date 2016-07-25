@@ -1,6 +1,7 @@
 from unittest import TestCase, main
 from rlp.utils import encode_hex, decode_hex
 from ethereum import tester as t
+from ethereum.tester import TransactionFailed
 from ethereum import keys
 import time
 from sha3 import sha3_256
@@ -69,6 +70,13 @@ class TestRashomonCoin(TestCase):
         self.assertTrue(self.rc.isBalanceAtLeast(k1_addr, 1000000, branch_aa_hash))
         self.assertTrue(self.rc.isBalanceAtLeast(k1_addr, 1, branch_ab_hash))
         self.assertFalse(self.rc.isBalanceAtLeast(k1_addr, 1000001, branch_ab_hash))
+
+        failed = False
+        try:
+            self.rc.createBranch(branch_ab_hash, dummy_merkle_root_aba)
+        except TransactionFailed:
+            failed = True
+        self.assertTrue(failed, "You can only create a branch with a given hash once")
 
         u = self.s.block.gas_used
         self.rc.sendCoin(k2_addr, 500000, branch_aa_hash, sender=t.k1)
