@@ -45,14 +45,14 @@ An objective view via a decentralized market
 
 We have seen that a an application managing assets denominated in Rashomon Tokens does not need adjudication about which branch is best. However, users of systems denominated external assets may wish to harvest information from the Rashomon system, and reference it in their own contracts. Although there may be no ultimate truth about which branch is correct, it is possible to establish an objective fact about which is considered most valuable. This can be accomplished with a decentralized blockchain-native market allowing holders of coins on different forks to trade them. 
 
-Like similar systems rooted in economic incentives, such a market can be manipulated by spending large sums of money buying coins on a bogus branch. To the extent that one of the correct branches is valuable and the market liquid, such manipulation is likely to be expensive and and ultimately profitable to holders of the legitimate branch, who can sell coins to the manipulator while continuing to hold the coins they sold on other branches. Meanwhile, participants in Rashomon-native markets are free to continue operating on what they consider the legitimate branch until such time as the manipulator gives up or runs out of money.
+Such a market can be manipulated by spending large sums of money buying coins on a bogus branch. To the extent that one of the correct branches is valuable and the market liquid, such manipulation is likely to be expensive and and ultimately profitable to holders of the legitimate branch, who can sell coins to the manipulator while continuing to hold the coins they sold on other branches. Meanwhile, participants in Rashomon-native markets are free to ignore the manipulation and continue operating on the branch they consider correct.
 
 
 Reaching social agreement about the best branch
 
 As described above, Rashomon Tokens function effectively even without agreement on which is the best branch, and which branch reflects reality. Users can reserve judgement by transacting with the same coins on multiple chains, and external observers can obtain an objective judgement through market price discovery. However, it may be convenient for any given community to quickly reach agreement based on a set of objective criteria. We propose a Decentralized Autonomous Organization with a set of objective procedures for reaching an agreement. The economic majority may choose to reject this Decentralized Autonomous Organization and instead follow some other organizational pattern, or operate with no particular organization at all. Future governance is free to adopt successful elements proven by other systems such as Augur and Hivemind, or other of the various proposed DAO governance schemes.
 
-If the market chooses to follow a largely predictable method of establishing facts - for example pulling data from known URLs - participants can run trading bots that automatically buy coins on legitimate blocks and sell coins on bogus ones, providing fast public information about the correct facts. We provide a sample implementation of such a DAO, and a bot that verifies judgements and attempts to profit from bogus branches. [TODO]
+If some or all branches choose to follow a largely predictable method of establishing facts - for example pulling data from known URLs - participants can run trading bots that automatically buy coins on legitimate blocks and sell coins on bogus ones, providing fast public information about the correct facts.
 
 
 The social contract
@@ -60,6 +60,7 @@ The social contract
 Many aspects of what would constitute approprate reporting behaviour will be subjective, and potentially controversial. Like existing crypto-currencies, this will depend on a social contract which is partially established at the outset, and partially evolves over time.
 
 We propose an initial discussion period, followed by a token sale, followed by a further discussion period, and finally begin system operation.
+
 
 
 Implementation details
