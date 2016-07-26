@@ -1,6 +1,7 @@
 from unittest import TestCase, main
 from rlp.utils import encode_hex, decode_hex
 from ethereum import tester as t
+from ethereum.tester import TransactionFailed
 from ethereum import keys
 import time
 from sha3 import sha3_256
@@ -70,25 +71,38 @@ class TestRashomonCoin(TestCase):
         self.assertTrue(self.rc.isBalanceAtLeast(k1_addr, 1, branch_ab_hash))
         self.assertFalse(self.rc.isBalanceAtLeast(k1_addr, 1000001, branch_ab_hash))
 
+        failed = False
+        try:
+            self.rc.createBranch(branch_ab_hash, dummy_merkle_root_aba)
+        except TransactionFailed:
+            failed = True
+        self.assertTrue(failed, "You can only create a branch with a given hash once")
+
         u = self.s.block.gas_used
         self.rc.sendCoin(k2_addr, 500000, branch_aa_hash, sender=t.k1)
-        print "Gas used after %d blocks: %d" % (2, self.s.block.gas_used - u)
+        print "Gas used to send coins after %d blocks: %d" % (2, self.s.block.gas_used - u)
 
         self.assertEqual(self.rc.getBalance(k2_addr, branch_aa_hash), 500000)
         self.assertEqual(self.rc.getBalance(k2_addr, branch_ab_hash), 0)
 
         branch_hash = branch_aba_hash
-        for i in range(0,10):
+        for i in range(0,100):
             dummy_merkel_root = decode_hex(sha3_256('dummy' + str(i)).hexdigest())
             branch_hash = self.rc.createBranch(branch_hash, dummy_merkel_root)
             # print encode_hex(branch_hash)
 
         u = self.s.block.gas_used
         self.rc.sendCoin(k2_addr, 500000, branch_hash, sender=t.k1)
-        print "Gas used after %d blocks: %d" % (i+1, self.s.block.gas_used - u)
-        return
 
-         
+        print "Gas used to send coins after %d blocks: %d" % (i+1, self.s.block.gas_used - u)
+
+        failed = False
+        try:
+            self.rc.sendCoin(k2_addr, 1, branch_aba_hash, sender=t.k1)
+        except:
+            failed = True
+        return
+        self.assertTrue(failed, "Sending back up to an earlier branch than you have already sent fails")
 
 
 if __name__ == '__main__':
