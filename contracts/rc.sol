@@ -5,7 +5,7 @@ contract RashomonCoin {
         bytes32 merkle_root;
         uint timestamp;
         uint256 height;
-        mapping(address => int256) balance_change;
+        mapping(address => uint256) balance_change;
     }
     mapping(bytes32 => Branch) branches;
     mapping(address => uint256) user_heights;
@@ -23,7 +23,7 @@ contract RashomonCoin {
         branches[genesis_branch_hash].balance_change[msg.sender] = 2100000000000000;
     }
 
-    function sendCoin(address addr, int256 amount, bytes32 to_branch) returns (bool) {
+    function sendCoin(address addr, uint256 amount, bytes32 to_branch) returns (bool) {
         if (amount < 0) {
             return false;
         }
@@ -47,10 +47,8 @@ contract RashomonCoin {
     // Crawl up towards the root of the tree until we get enough, or return false if we never do.
     // You never have negative balance above you, so if you have enough credit at any point then return.
     // This uses less gas than getBalance, which always has to go all the way to the root.
-    function isBalanceAtLeast(address addr, int256 min_balance, bytes32 branch_hash) constant returns (bool) {
-        // This needs to be signed because we may count debits before we run into credits higher up the tree
-        // ...resulting in a temporarily negative balance
-        int256 bal = 0;
+    function isBalanceAtLeast(address addr, uint256 min_balance, bytes32 branch_hash) constant returns (bool) {
+        uint256 bal = 0;
         bytes32 null_hash;
         while(branch_hash != null_hash) {
             bal += branches[branch_hash].balance_change[addr];
@@ -62,8 +60,8 @@ contract RashomonCoin {
         return false;
     }
 
-    function getBalance(address addr, bytes32 branch_hash) constant returns (int256) {
-        int256 bal = 0;
+    function getBalance(address addr, bytes32 branch_hash) constant returns (uint256) {
+        uint256 bal = 0;
         bytes32 null_hash;
         while(branch_hash != null_hash) {
             bal += branches[branch_hash].balance_change[addr];
