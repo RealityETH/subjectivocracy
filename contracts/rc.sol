@@ -16,8 +16,8 @@ contract RashomonCoin {
     }
 
     function _constructor() {
-        bytes32 genesis_merkel_root = sha3("I leave to several futures (not to all) my garden of forking paths");
         bytes32 null_hash;
+        bytes32 genesis_merkel_root = sha3("I leave to several futures (not to all) my garden of forking paths");
         bytes32 genesis_branch_hash = sha3(null_hash, genesis_merkel_root);
         branches[genesis_branch_hash] = Branch(null_hash, genesis_merkel_root, now, 0);
         branches[genesis_branch_hash].balance_change[msg.sender] = 2100000000000000;
@@ -27,7 +27,8 @@ contract RashomonCoin {
         if (amount > 2100000000000000) {
             return false;
         }
-        // You can only go forwards.
+        // You can only go forwards. 
+        // That way when we check if you have enough to spend we only have to go backwards.
         uint256 branch_height = branches[to_branch].height;
         if (branch_height < user_heights[msg.sender]) {
             throw;
