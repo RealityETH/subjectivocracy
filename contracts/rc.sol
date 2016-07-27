@@ -24,9 +24,6 @@ contract RashomonCoin {
     }
 
     function sendCoin(address addr, uint256 amount, bytes32 to_branch) returns (bool) {
-        if (amount < 0) {
-            return false;
-        }
         if (amount > 2100000000000000) {
             return false;
         }
