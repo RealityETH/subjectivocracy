@@ -1,7 +1,7 @@
 # The Reality Token Whitepaper
-### Edmund Edgar, 2016-04-20
-### ed@realitykeys.com
-### Last updated 2016-07-29
+Edmund Edgar, 2016-04-20
+ed@realitykeys.com
+Last updated 2016-07-29
 
 # THIS IS A WORK IN PROGRESS. IT IS NOT YET COMPLETE.
 
