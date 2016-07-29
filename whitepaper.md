@@ -1,15 +1,15 @@
-The Reality Token Whitepaper
-Edmund Edgar, 2016-04-20
-ed@realitykeys.com
-Last updated 2016-07-29
+# The Reality Token Whitepaper
+### Edmund Edgar, 2016-04-20
+### ed@realitykeys.com
+### Last updated 2016-07-29
 
-THIS IS A WORK IN PROGRESS. IT IS NOT YET COMPLETE.
-
-
-*** Conceptual Overview ***
+# THIS IS A WORK IN PROGRESS. IT IS NOT YET COMPLETE.
 
 
-Introduction
+## Conceptual Overview 
+
+
+### Introduction
 
 Blockchain systems provide an effective and well-tested solution for confirming the execution of operations which can be described in computer code. However, the point at which they mesh with the world beyond the blockchain has produced some unique challenges for crypto-economic systems. 
 
@@ -20,7 +20,7 @@ Vitalik Buterin coined the term "Subjectivocracy" to describe the process by whi
 We propose to create a common subjectivocratic layer on top of the Ethereum blockchain using a shared token which we provisionally call a Reality Token. Using the token allows contracts to access information about the world beyond the blockchain, including human judgements beyond the domain of code-as-law. At the cost of a greater risk of manipulation, this information can be used by contracts outside the subjective layer by observing the relative value the market assigns to the different forks.
 
 
-Background: Consensus systems and economic hard forks
+# Background: Consensus systems and economic hard forks
 
 Blockchains are designed with the aim that the network should be able to reach agreement on a common ledger, and under normal operation require particular action by participating nodes except for running their software. However, upgrades to blockchain-based consensus systems sometimes involve backwards-incompatible changes, producing "hard forks". If not all participants implement the change, this produces two parallel chains. The chains share a common history, rendering coins spent prior to the fork spendable on both post-fork chains. The two post-fork chains do not recognize each other's transactions, making it possible to spend the same original coins in different ways on each chain.
 
@@ -29,7 +29,7 @@ There is no technical barrier to the creation of incompatible forks. Anyone can 
 The decision over which fork is more valuable is potentially subjective and may not always have a clear right answer. Opinion may divide semi-permanently, as we saw with the Ethereum DOA fork. However, external information such as the market cap can provide objective facts which, although not necessarily always correct, can be used by outside observers (including contracts residing on the same blockchain) to adjudicate between the branches.
 
 
-Reality Tokens: A branch for every possible world anybody cares about
+# Reality Tokens: A branch for every possible world anybody cares about
 
 The core of our proposal is the Reality Token Contract, which is a contract residing on the Ethereum network.
 
@@ -42,7 +42,7 @@ Traditionally, a contract dependent on some outcome such as a betting contract i
 Since coins held on a bogus branch are likely to be worthless and the market will value coins held on the true branch, it is possible to make a functional betting contract without the system ever needing objective confirmation of which branch represents the truth. It is even possible that subsets of users will operate long-lived parallel chains, each with their own self-contained market. For example, religious participants may want to make contracts about acts of divine intervention, which are settled by consensus within their own community, on a branch that they consider valuable but nobody else does.
 
 
-The social consensus process
+# The social consensus process
 
 Previous proposals to leverage subjectivocracy on top of existing blockchains have tended to see it as a fall-through layer underneath a process of on-chain voting or coordination games, taking place in a Smart Contract. Advocating this approach, Buterin correctly observes that "in most practical cases, there are simply far too many decisions to make in order for it to be practical for users to decide which fork they want to be on for every single one".
  https://blog.ethereum.org/2015/02/14/subjectivity-exploitability-tradeoff/
@@ -57,28 +57,28 @@ Successful systems may also employ coordination games like those proposed by Pau
 By leaving the choice of this process to the social sphere rather than baking it into contracts that need to be immutable, we allow insights from this evolving field to be easily incorporated into the overall process, while keeping the Reality Token contract simple and easy to review. 
 
 
-An objective view via a decentralized market
+# An objective view via a decentralized market
 
 We have seen that an application managing assets denominated in Reality Tokens does not need adjudication about which branch is best. However, users of systems denominated external assets may wish to harvest information from the Reality Token system, and reference it in their own contracts. Although there may be no ultimate truth about which branch is correct, it is possible to establish an objective fact about which is considered most valuable. This can be accomplished with a decentralized blockchain-native market allowing holders of coins on different forks to trade them. 
 
 Such a market can be manipulated by spending large sums of money buying coins on a bogus branch. To the extent that one of the correct branches is valuable and the market liquid, such manipulation is likely to be expensive and and ultimately profitable to holders of the legitimate branch, who can sell coins to the manipulator while continuing to hold the coins they sold on other branches. Meanwhile, participants in markets denominated in Reality Tokens are free to ignore the manipulation and continue operating on the branch they consider correct.
 
 
-Interacting with the Reality Layer
+# Interacting with the Reality Layer
 
 Information in the merkel root can be extracted by storing it in an intermediate contract, which can then queried, or by querying the data from an off-chain source such as IPFS and sending the result to an individual contract. 
 
 Each block provides the address of a contract at which the publisher make make information contained in the tree available for contracts to query without the need to provide a Merkel proof. The Reality Token contract does not attempt to verify what information has been published in the suggested contract or whether it matches the contents of the merkel root; This is left to the validation process chosen in the social sphere.
 
 
-The social contract
+# The social contract
 
 Many aspects of what would constitute approprate reporting behaviour will be subjective, and potentially controversial. Like existing crypto-currencies, this will depend on a social contract which is partially established at the outset, and partially evolves over time.
 
 We propose an initial discussion prior to beginning operation to define the general parameters of the social contract. However, in case of subsequent intractable disagreements the system would sustain multiple competing persistent branches supporting alternative social contracts.
 
 
-Our prototype
+# Our prototype
 
 The Reality Token Contract is implemented as a contract on the Ethereum network. To provide time for social mechanisms to alert to incorrect branches, and also to limit the length of each chain and make it possible to traverse a chain without excessive gas use, a new branch can only be added to any given chain once in every 24-hour period. There is no limit to how many competing branches can be created within that 24-hour period, and the system is designed such that adding a competing branch does not result in any additional gas use to a participant unless the participant spends coins on it. Thus the height of the chain is limited to a maximum of one new set of facts per day, but it may have an arbitrary large number of parallel forks.
 
