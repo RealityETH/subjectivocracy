@@ -1,4 +1,4 @@
-contract RashomonCoin {
+contract RealityToken {
 
     struct Branch {
         bytes32 parent_hash;
@@ -11,7 +11,7 @@ contract RashomonCoin {
     mapping(address => uint256) user_heights;
 
     // Test framework not handling the constructor well, work around it for now
-    function RashomonCoin() {
+    function RealityToken() {
         _constructor();
     }
 

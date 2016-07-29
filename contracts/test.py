@@ -7,7 +7,7 @@ import time
 from sha3 import sha3_256
 
 
-class TestRashomonCoin(TestCase):
+class TestRealityToken(TestCase):
 
     def setUp(self):
 
@@ -80,7 +80,7 @@ class TestRashomonCoin(TestCase):
 
         u = self.s.block.gas_used
         self.rc.sendCoin(k2_addr, 500000, branch_aa_hash, sender=t.k1)
-        print "Gas used to send coins after %d blocks: %d" % (2, self.s.block.gas_used - u)
+        #print "Gas used to send coins after %d blocks: %d" % (2, self.s.block.gas_used - u)
 
         self.assertEqual(self.rc.getBalance(k2_addr, branch_aa_hash), 500000)
         self.assertEqual(self.rc.getBalance(k2_addr, branch_ab_hash), 0)
@@ -94,7 +94,9 @@ class TestRashomonCoin(TestCase):
         u = self.s.block.gas_used
         self.rc.sendCoin(k2_addr, 500000, branch_hash, sender=t.k1)
 
-        print "Gas used to send coins after %d blocks: %d" % (i+1, self.s.block.gas_used - u)
+        gas_used = self.s.block.gas_used - u
+        #print "Gas used to send coins after %d blocks: %d" % (i+1, gas_used)
+        # self.assertTrue(u < 130000, "100 branches read in less than 130000 gas")
 
         failed = False
         try:
