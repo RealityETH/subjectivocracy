@@ -12,7 +12,7 @@ class TestRealityToken(TestCase):
     def setUp(self):
 
         self.s = t.state()
-        rc_code = open('rc.sol').read()
+        rc_code = open('realitytoken.sol').read()
         self.rc = self.s.abi_contract(rc_code, language='solidity', sender=t.k0)
         self.rc._constructor(sender=t.k0)
         # print encode_hex(genesis_branch_hash)
