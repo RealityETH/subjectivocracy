@@ -106,7 +106,7 @@ The core requirement of the Reality Token contract is that direct interaction, w
 
 In its crudest form, a betting contract might present a screen to the end user containing a pull-down with a list of available branches. The user would have to consult alternative sources to find out which branch they wanted to transact on. Having done so, they would make bets by sending money to the contract. Then when it came time to claim, they would select a more recent branch, which contained a report on the result of their bet, and claim their payment. In the event that multiple branches appeared valuable and they had won the bet on both branches, they might then also select that other branch and collect their payment on that branch as well.
 
-For some contexts, the user will benefit from assistance from a party he trusts in chosing the appropriate branch. This party may be a decision-making DAO, a trusted individual, or the judgement of an inter-branch market, or a combination of the above. In some circumstances the software they are using may make this decision for them, and in others it may provide or promote one or more of them as a default.
+For some contexts, the user will benefit from assistance from a party or process he trusts in chosing the appropriate branch. This party may be a decision-making DAO, a trusted individual, or the judgement of an inter-branch market, or a combination of the above. In some circumstances the software they are using may make this decision for them, and in others it may provide or promote one or more of them as a default.
 
 
 ### The social contract
