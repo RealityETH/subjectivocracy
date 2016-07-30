@@ -102,4 +102,4 @@ Transactions are modelled as a credit or debit at a particular fork point. A tra
 
 # Conclusion
 
-By leveraging subjectivocracy we can create a decentralized arbitration layer that can be used in combination with a system executing code-as-law. This allows contracts to opt into a system of human judgementthat shares some of the security properties of the base system, without the need to trust voting process or identified third-parties, or, as we have seen in extreme cases, apply human arbitration to the base layer after the fact.
+By leveraging subjectivocracy we can create a decentralized arbitration layer that can be used in combination with a system executing code-as-law. This allows contracts to opt into a system of human judgement that shares some of the security properties of the base system, without the need to trust voting process or identified third-parties, or, as we have seen in extreme cases, apply human arbitration to the base layer after the fact.
