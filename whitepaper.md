@@ -33,9 +33,9 @@ The decision over which fork is more valuable is potentially subjective and may 
 
 ### Reality Tokens: A branch for every possible world anybody cares about
 
-The core of our proposal is the Reality Token Contract, which is a contract residing on the Ethereum network.
+The core of our proposal is the Reality Token contract, which is a contract residing on the Ethereum network.
 
-The Reality Token Contract acts like a crypto-currency which potentially undergoes an economic hard fork every day, and tracks all the forked versions in a single data structure. Each fork represents a set of facts about the world. The same coins can be sent to different people on different forks. Forks can be created by anyone at minimal cost, so a fork can exist for any set of facts that anyone wants to claim represents reality. Credits and debits are attached to particular forks, and inherited by all their dependents lower down the chain.
+The Reality Token contract acts like a crypto-currency which potentially undergoes an economic hard fork every day, and tracks all the forked versions in a single data structure. Each fork represents a set of facts about the world. The same coins can be sent to different people on different forks. Forks can be created by anyone at minimal cost, so a fork can exist for any set of facts that anyone wants to claim represents reality. Credits and debits are attached to particular forks, and inherited by all their dependents lower down the chain.
 
 The Reality Token Contract has no opinion about which branch really reflects reality. It is therefore never wrong and cannot be manipulated. 
 
