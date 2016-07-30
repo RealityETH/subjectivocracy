@@ -97,7 +97,7 @@ The set of facts represented by a given merkel root can be arbitrarily large. If
 
 Although branches can only be added daily, transfers of tokens down a chain can be made at any time and confirm in the normal Ethereum block interval. 
 
-Transactions are modelled as a credit or debit at a particular fork point. A transaction is only permitted if the account sending it has sufficient credit working back up the chain from the fork point towards the root. Credits and debits can only be added either at the tip of the tree (like a conventional blockchain system) or at a lower level than the last transaction added by the payer. This restriction allows us to verify that a user has a sufficient balance to make any given payment without considering any credit or debit except the ones from which is directly descended, making gas costs bounded and predictable.
+Transactions are modelled as a credit or debit at a particular fork point. A transaction is only permitted if the account sending it has sufficient credit working back up the chain from the fork point towards the root. Credits and debits can only be added either at the tip of the tree (like a conventional blockchain system) or at a lower level than the last transaction added by the payer. This restriction allows us to verify that a user has a sufficient balance to make any given payment without considering any credit or debit except the ones from which is directly descended. Since there is only ever one parent block at each height working up the chain from any given point, rather than the infinity of branches that may exist working down the chain, this makes gas costs bounded and predictable.
 
 
 # Conclusion
