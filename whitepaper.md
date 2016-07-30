@@ -17,7 +17,7 @@ One manifestation of this problem is known as the [Oracle Problem](https://en.bi
 
 Vitalik Buterin coined the term ["Subjectivocracy"](https://blog.ethereum.org/2015/02/14/subjectivity-exploitability-tradeoff/) to describe the process by which systems can be allowed to copy themselves to create multiple forks, and users opt into the fork they prefer.
 
-We propose to create a common subjectivocratic layer on top of the Ethereum blockchain using a shared token which we provisionally call a Reality Token. Using the token allows contracts to access information about the world beyond the blockchain, including human judgements beyond the domain of code-as-law. At the cost of a greater risk of manipulation, this information can be used by contracts outside the subjective layer by observing the relative value the market assigns to the different forks.
+We propose to create a common subjectivocratic layer on top of the Ethereum blockchain using a shared token which we provisionally call a Reality Token. Using the token allows contracts to access information about the world beyond the blockchain, including human judgements beyond the domain of code-as-law. This information can be used by contracts outside the subjective layer by observing the relative value the market assigns to the different forks.
 
 
 # Background: Consensus systems and economic hard forks
