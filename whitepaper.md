@@ -64,7 +64,7 @@ We have seen that an application managing assets denominated in Reality Tokens d
 Such a market can be manipulated by spending large sums of money buying coins on a bogus branch. To the extent that one of the correct branches is valuable and the market liquid, such manipulation is likely to be expensive and and ultimately profitable to holders of the legitimate branch, who can sell coins to the manipulator while continuing to hold the coins they sold on other branches. Meanwhile, participants in markets denominated in Reality Tokens are free to ignore the manipulation and continue operating on the branch they consider correct.
 
 
-### Interacting with the Reality Layer
+### Interacting with the reality layer
 
 Information in the merkel root can be extracted by storing it in an intermediate contract, which can then queried, or by querying the data from an off-chain source such as IPFS and sending the result to an individual contract. 
 
