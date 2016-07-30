@@ -57,6 +57,29 @@ Successful systems may also employ coordination games like those proposed by Pau
 By leaving the choice of this process to the social sphere rather than baking it into contracts that need to be immutable, we allow insights from this evolving field to be easily incorporated into the overall process, while keeping the core token contract simple and easy to review. 
 
 
+### Examples of fact arbitration processes
+
+
+#### Getting the weather in Tokyo
+
+When initially requesting a fact to be sent to a contract, users would specify a URL at which they expected the data would be found, and whether they were prepared to accept an alternative judgement if the URL was no longer functioning correctly.
+
+A data service would access the URL and provide a TLS notary proof of what they found. If the data was missing, on payment of a fee, they would provide their own judgement, which they would publish in a publicly accessible location.
+
+Objections could be lodged in a contract along with payment of a fee, resulting in either a corrected result or a statement that the data published was correct. This could be done either by an individual data provider or by a voting DAO.
+
+The data for the day could be verified by running a script against the notary proofs, and the small number of facts with outstanding objection fees paid could be verified manually.
+
+
+#### Updating a contract
+
+When deploying a contract, the creator would include in it the hash of a document stored on IPFS specifying under what terms it could be updated. For example, a contract might specify that it could only be updated in the event of a critical bug. 
+
+The document would specify where the new source code for the contract should be published for inspection, and a fee payable to lodge an objection by any party who considered the new contract to be incorrect.
+
+If a sufficient fee was paid, an arbitrator someone acting on their behalf would review the proposed contract. If no fee was paid, the contract would be assumed correct and its new address accepted.
+
+
 ### An objective view via a decentralized market
 
 We have seen that an application managing assets denominated in Reality Tokens does not need adjudication about which branch is best. However, users of systems denominated external assets may wish to harvest information from the Reality Token system, and reference it in their own contracts. Although there may be no ultimate truth about which branch is correct, it is possible to establish an objective fact about which is considered most valuable. This can be accomplished with a decentralized blockchain-native market allowing holders of coins on different forks to trade them. 
