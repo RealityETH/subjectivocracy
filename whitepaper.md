@@ -91,7 +91,9 @@ Such a market can be manipulated by spending large sums of money buying coins on
 
 Information in the merkel root can be extracted by storing it in an intermediate contract, which can then queried, or by querying the data from an off-chain source such as IPFS and sending the result to an individual contract. 
 
-Each block provides the address of a contract at which the publisher make make information contained in the tree available for contracts to query without the need to provide a Merkel proof. The Reality Token contract does not attempt to verify what information has been published in the suggested contract or whether it matches the contents of the merkel root; This is left to the validation process chosen in the social sphere.
+Each block provides the address of a contract at which the publisher can make information contained in the tree available for contracts to query without the need to provide a Merkel proof. The Reality Token contract does not attempt to verify what information has been published in the suggested contract or whether it matches the contents of the merkel root; This is left to the validation process chosen in the social sphere.
+
+A contract using the token natively would request the appropriate data for the branch specified when it was called. A contract relying on a decentralized market to provide objective guidance to the appropriate branch would first query the market to find the most valuable branch, then request the appropriate data for that branch.
 
 
 ### User interaction
