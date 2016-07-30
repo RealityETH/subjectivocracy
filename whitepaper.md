@@ -1,7 +1,8 @@
 # The Reality Token Whitepaper
-Edmund Edgar, 2016-04-20
-ed@realitykeys.com
-Last updated 2016-07-29
+
+Edmund Edgar
+<ed@realitykeys.com>
+2016-04-20, last updated 2016-07-30
 
 # THIS IS A WORK IN PROGRESS. IT IS NOT YET COMPLETE.
 
@@ -46,13 +47,13 @@ Since coins held on a bogus branch are likely to be worthless and the market wil
 
 Previous proposals to leverage subjectivocracy on top of existing blockchains have tended to see it as a fall-through layer underneath a process of on-chain voting or coordination games, taking place in a Smart Contract. Advocating this approach, Buterin [correctly observes](https://blog.ethereum.org/2015/02/14/subjectivity-exploitability-tradeoff/) that "in most practical cases, there are simply far too many decisions to make in order for it to be practical for users to decide which fork they want to be on for every single one".
  
-A process is indeed required, and a Smart Contract may be a good place for it; However, this process does not *necessarily* need to occur in a Smart Contract, even less inside a single Smart Contract, or a Smart Contract necessarily residing on the same blockchain where the information in the contract is used.
+A process is indeed required, and a smart contract may be a good place for it; However, this process does not *necessarily* need to occur in a smart contract, even less inside a single smart contract, or a smart contract necessarily residing on the same blockchain where the information in the contract is used. A set of disparate facts and propositions can be reduced to a *process* by which these facts and propositions were established, and evidence about whether that process was followed or not.
 
-Any solution will require a process by which many different facts and judgements, many of which are only of interest to a small proportion of participants, can be efficiently settled, and errors and fraud detected and repaired. These social processes are not unique to crypto-currency; Existing judicial systems typically employ multiple tiers, with low-cost social peer-pressure handling the most common cases and increasingly expensive and coercive court systems handling only the cases where each subsequent tier has failed. The trust-based oracle service we have been operating since 2013, [Reality Keys](https://www.realitykeys.com), uses a two-step process where data is first published for inspection, then verified in the event that a fee is paid. Martin Koeppelmann's proposed [Ultimate Oracle](http://forum.groupgnosis.com/t/the-ultimate-oracle/61) operates this way in a decentralized context, with members of a DAO voting only in cases where they think a mistake has been made, and someone believes that the mistake is likely enough to be rectified by a larger voting panel to justify paying a fee. 
+Social process by which disparate facts and judgements, many of which are only of interest to a small proportion of participants, can be efficiently arbitrated are not unique to crypto-currency; Existing judicial systems typically employ multiple tiers, with low-cost social peer-pressure handling the most common cases and increasingly expensive and coercive court systems handling only the cases where each subsequent tier has failed. The trust-based oracle service we have been operating since 2013, [Reality Keys](https://www.realitykeys.com), uses a two-step process where data is first published for inspection, then verified in the event that a fee is paid. Martin Koeppelmann's proposed [Ultimate Oracle](http://forum.groupgnosis.com/t/the-ultimate-oracle/61) operates this way in a decentralized context, with members of a DAO voting only in cases where they think a mistake has been made, and someone believes that the mistake is likely enough to be rectified by a larger voting panel to justify paying a fee. 
 
-Successful systems may also employ coordination games like those proposed by Paul Sztorc in [the TruthCoin whitepaper](http://bitcoinhivemind.com/papers/truthcoin-whitepaper.pdf) and implemented by [Augur](https://www.augur.net/) and [HiveMind](http://bitcoinhivemind.com/). Alternatively, the market may prefer simple, quasi-centralized systems with known publishers of data monitored by their competitors and by users with money at stake.
+Successful systems may also employ coordination games like those proposed by Paul Sztorc in [the TruthCoin whitepaper](http://bitcoinhivemind.com/papers/truthcoin-whitepaper.pdf) and implemented by [Augur](https://www.augur.net/) and [HiveMind](http://bitcoinhivemind.com/). Alternatively, the market may prefer simple, quasi-centralized systems with known publishers of data monitored by their competitors and by users with money at stake. If a single smart contract proves capable of producing efficient and accurate judgements, users may converge on that, and never take any notice of any other branch. The core requirement, however, is the ability to change it if it proves unsatisfactory.
 
-By leaving the choice of this process to the social sphere rather than baking it into contracts that need to be immutable, we allow insights from this evolving field to be easily incorporated into the overall process, while keeping the Reality Token contract simple and easy to review. 
+By leaving the choice of this process to the social sphere rather than baking it into contracts that need to be immutable, we allow insights from this evolving field to be easily incorporated into the overall process, while keeping the core token contract simple and easy to review. 
 
 
 ### An objective view via a decentralized market
