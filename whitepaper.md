@@ -79,7 +79,7 @@ When deploying a contract, the creator would include in it the hash of a documen
 
 The document would specify where the new source code for the contract should be published for inspection, and a fee payable to lodge an objection by any party who considered the new contract to be incorrect.
 
-If a sufficient fee was paid, an arbitrator someone acting on their behalf would review the proposed contract. If no fee was paid, the contract would be assumed correct and its new address accepted.
+If a sufficient fee was paid, an arbitrator or someone acting on their behalf would review the proposed contract. If no fee was paid, the contract would be assumed correct and its new address accepted.
 
 
 ### An objective view via a decentralized market
