@@ -15,7 +15,7 @@ Blockchain systems provide an effective and well-tested solution for confirming 
 
 One manifestation of this problem is known as the Oracle Problem. [TODO: find an old citation talking about this.] Smart Contracts often need to reference factual data about the world outside the blockchain on which they reside. If you want to make and settle a contract based on whether it will rain in Tokyo, you ultimately need to know whether it rained in Tokyo. Another is more commonly represented as a governance issue. Smart contracts are intended to run trustlessly, but in practice they sometimes contain bugs. Dealing with these bugs can range from the need to replace bad contracts with better ones, to the need to reassign assets held by the contract to undo the damage caused by the operation of the bug. In many cases this will prove impossible, or require a change to be applied to the entire underlying system.
 
-Vitalik Buterin coined the term "Subjectivocracy" to describe the process by which systems can be allowed to copy themselves to create multiple forks, and users opt into the fork they prefer. [ https://blog.ethereum.org/2015/02/14/subjectivity-exploitability-tradeoff/ ]
+Vitalik Buterin coined the term ("Subjectivocracy")[https://blog.ethereum.org/2015/02/14/subjectivity-exploitability-tradeoff/] to describe the process by which systems can be allowed to copy themselves to create multiple forks, and users opt into the fork they prefer.
 
 We propose to create a common subjectivocratic layer on top of the Ethereum blockchain using a shared token which we provisionally call a Reality Token. Using the token allows contracts to access information about the world beyond the blockchain, including human judgements beyond the domain of code-as-law. At the cost of a greater risk of manipulation, this information can be used by contracts outside the subjective layer by observing the relative value the market assigns to the different forks.
 
@@ -44,13 +44,11 @@ Since coins held on a bogus branch are likely to be worthless and the market wil
 
 # The social consensus process
 
-Previous proposals to leverage subjectivocracy on top of existing blockchains have tended to see it as a fall-through layer underneath a process of on-chain voting or coordination games, taking place in a Smart Contract. Advocating this approach, Buterin correctly observes that "in most practical cases, there are simply far too many decisions to make in order for it to be practical for users to decide which fork they want to be on for every single one".
- https://blog.ethereum.org/2015/02/14/subjectivity-exploitability-tradeoff/
+Previous proposals to leverage subjectivocracy on top of existing blockchains have tended to see it as a fall-through layer underneath a process of on-chain voting or coordination games, taking place in a Smart Contract. Advocating this approach, Buterin [correctly observes](https://blog.ethereum.org/2015/02/14/subjectivity-exploitability-tradeoff/) that "in most practical cases, there are simply far too many decisions to make in order for it to be practical for users to decide which fork they want to be on for every single one".
+ 
 A process is indeed required, and a Smart Contract may be a good place for it; However, this process does not *necessarily* need to occur in a Smart Contract, even less inside a single Smart Contract, or a Smart Contract necessarily residing on the same blockchain where the information in the contract is used.
 
 Any solution will require a process by which many different facts and judgements, many of which are only of interest to a small proportion of participants, can be efficiently settled, and errors and fraud detected and repaired. These social processes are not unique to crypto-currency; Existing judicial systems typically employ multiple tiers, with low-cost social peer-pressure handling the most common cases and increasingly expensive and coercive court systems handling only the cases where each subsequent tier has failed. The trust-based oracle service we have been operating since 2013, Reality Keys, uses a two-step process where data is first published for inspection, then verified in the event that a fee is paid. Martin Koeppelmann's proposed Ultimate Oracle operates this way in a decentralized context, with members of a DAO voting only in cases where they think a mistake has been made, and someone believes that the mistake is likely enough to be rectified by a larger voting panel to justify paying a fee. 
-
-Users choosing between branches need to take as an underlying requirement for the use of a token that the process which created that branch was one which they agree with and which was correctly followed. Regardless of the content of the information in the branch, unverifiability of the process used to decide on it should be a priori grounds for rejecting a branch in favour of another one. These principles should be further developed in defining the token's initial social contract. 
 
 Successful systems may also employ coordination games like those proposed by Paul Sztorc in the TruthCoin whitepaper and implemented by Augur and HiveMind. Alternatively, the market may prefer simple, quasi-centralized systems with known publishers of data monitored by their competitors and by users with money at stake. [TODO: Add links / citations ]
 
@@ -71,9 +69,20 @@ Information in the merkel root can be extracted by storing it in an intermediate
 Each block provides the address of a contract at which the publisher make make information contained in the tree available for contracts to query without the need to provide a Merkel proof. The Reality Token contract does not attempt to verify what information has been published in the suggested contract or whether it matches the contents of the merkel root; This is left to the validation process chosen in the social sphere.
 
 
+# User interaction
+
+The core requirement of the Reality Token contract is that direct interaction, whether sending funds or querying data, requires that the user specify which branch they want to interact with.
+
+In its crudest form, a betting contract might present a screen to the end user containing a pull-down with a list of available branches. The user would have to consult alternative sources to find out which branch they wanted to transact on. Having done so, they would make bets by sending money to the contract. Then when it came time to claim, they would select a more recent branch, which contained a report on the result of their bet, and claim their payment. In the event that multiple branches appeared valuable and they had won the bet on both branches, they might then also select that other branch and collect their payment on that branch as well.
+
+For some contexts, the user will benefit from assistance from a party he trusts in chosing the appropriate branch. This party may be a decision-making DAO, a trusted individual, or the judgement of an inter-branch market, or a combination of the above. In some circumstances the software they are using may make this decision for them, and in others it may provide or promote one or more of them as a default.
+
+
 # The social contract
 
 Many aspects of what would constitute approprate reporting behaviour will be subjective, and potentially controversial. Like existing crypto-currencies, this will depend on a social contract which is partially established at the outset, and partially evolves over time.
+
+The verification of a branch is likely to focus not only on the underlying information reported in it but also on the process by which it is created. Regardless of the content of the information in the branch, unverifiability of the process used to decide on it should be a priori grounds for rejecting a branch in favour of another one. These principles should be further developed in defining the token's initial social contract. 
 
 We propose an initial discussion prior to beginning operation to define the general parameters of the social contract. However, in case of subsequent intractable disagreements the system would sustain multiple competing persistent branches supporting alternative social contracts.
 
@@ -90,3 +99,7 @@ Although branches can only be added daily, transfers of tokens down a chain can 
 
 Transactions are modelled as a credit or debit at a particular fork point. A transaction is only permitted if the account sending it has sufficient credit working back up the chain from the fork point towards the root. Credits and debits can only be added either at the tip of the tree (like a conventional blockchain system) or at a lower level than the last transaction added by the payer. This restriction allows us to verify that a user has a sufficient balance to make any given payment without considering any credit or debit except the ones from which is directly descended, making gas costs bounded and predictable.
 
+
+# Conclusion
+
+By leveraging subjectivocracy we can create a decentralized arbitration layer that can be used in combination with a system executing code-as-law. This allows contracts to opt into a system of human judgementthat shares some of the security properties of the base system, without the need to trust voting process or identified third-parties, or, as we have seen in extreme cases, apply human arbitration to the base layer after the fact.
