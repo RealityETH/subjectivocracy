@@ -7,8 +7,9 @@ contract RealityToken {
         uint256 height;
         mapping(address => uint256) balance_change;
     }
-    mapping(bytes32 => Branch) branches;
-    mapping(address => uint256) user_heights;
+
+    mapping(bytes32 => Branch) public branches;
+    mapping(address => uint256) public user_heights;
 
     // Test framework not handling the constructor well, work around it for now
     function RealityToken() {
@@ -71,7 +72,7 @@ contract RealityToken {
     function createBranch(bytes32 parent_b_hash, bytes32 merkle_root) returns (bytes32) {
         bytes32 null_hash;
         bytes32 branch_hash = sha3(parent_b_hash, merkle_root);
-        // Only the constructor can create the root branch with no parent
+        // Probably impossible to make sha3 come out all zeroes but check to be safe
         if (branch_hash == null_hash) {
             throw;
         }
@@ -80,6 +81,7 @@ contract RealityToken {
             throw;
         }
         uint parent_ts = branches[parent_b_hash].timestamp;
+        // The parent branch must exist and have a timestamp
         if (parent_ts == 0) {
             throw;
         }

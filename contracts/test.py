@@ -25,6 +25,8 @@ class TestRealityToken(TestCase):
         # aaaa aaba aabb abaa
 
         genesis_hash = decode_hex("01bd7e296e8be10ff0f93bf1b7186d884f05bdc2c293dbc4ca3ea18a5f7c9ebd")
+        null_hash = decode_hex("0000000000000000000000000000000000000000000000000000000000000000")
+        # print encode_hex(null_hash)
 
         k0_addr = encode_hex(keys.privtoaddr(t.k0))
         k1_addr = encode_hex(keys.privtoaddr(t.k1))
@@ -36,6 +38,7 @@ class TestRealityToken(TestCase):
         u = self.s.block.gas_used
 
         self.rc.sendCoin(k1_addr, 1000000, genesis_hash, sender=t.k0)
+
 
         # self.s.block.timestamp = self.s.block.timestamp + 100
         # self.s = t.state()
@@ -62,8 +65,19 @@ class TestRealityToken(TestCase):
         branch_aa_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_aa)
         branch_ab_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_ab)
 
+        # print encode_hex(self.rc.branches(branch_ab_hash)[0])
+
         branch_aab_hash = self.rc.createBranch(branch_aa_hash, dummy_merkle_root_aab)
         branch_aba_hash = self.rc.createBranch(branch_ab_hash, dummy_merkle_root_aba)
+
+        null_test_merkel_root = decode_hex(sha3_256('nulltest').hexdigest())
+
+        failed = False
+        try:
+            self.rc.createBranch(null_hash, null_test_merkel_root)
+        except TransactionFailed:
+            failed = True 
+        self.assertTrue(failed, "You cannot create a branch with a null parent hash")
 
         self.assertEqual(self.rc.getBalance(k1_addr, branch_aa_hash), 1000000)
 
