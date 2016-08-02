@@ -14,7 +14,6 @@ class TestRealityToken(TestCase):
         self.s = t.state()
         rc_code = open('realitytoken.sol').read()
         self.rc = self.s.abi_contract(rc_code, language='solidity', sender=t.k0)
-        self.rc._constructor(sender=t.k0)
         # print encode_hex(genesis_branch_hash)
 
     def test_register_and_fetch(self):

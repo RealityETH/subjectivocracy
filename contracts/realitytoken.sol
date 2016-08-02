@@ -11,12 +11,7 @@ contract RealityToken {
     mapping(bytes32 => Branch) public branches;
     mapping(address => uint256) public user_heights;
 
-    // Test framework not handling the constructor well, work around it for now
     function RealityToken() {
-        _constructor();
-    }
-
-    function _constructor() {
         bytes32 null_hash;
         bytes32 genesis_merkel_root = sha3("I leave to several futures (not to all) my garden of forking paths");
         bytes32 genesis_branch_hash = sha3(null_hash, genesis_merkel_root);
