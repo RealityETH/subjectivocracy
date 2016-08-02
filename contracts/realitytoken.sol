@@ -3,7 +3,7 @@ contract RealityToken {
     struct Branch {
         bytes32 parent_hash;
         bytes32 merkle_root;
-        uint timestamp;
+        uint256 timestamp;
         uint256 height;
         mapping(address => int256) balance_change;
     }
@@ -81,7 +81,7 @@ contract RealityToken {
         if (branches[branch_hash].timestamp > 0) {
             throw;
         }
-        uint parent_ts = branches[parent_b_hash].timestamp;
+        uint256 parent_ts = branches[parent_b_hash].timestamp;
         // The parent branch must exist and have a timestamp
         if (parent_ts == 0) {
             throw;
