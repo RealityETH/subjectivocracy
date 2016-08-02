@@ -39,7 +39,6 @@ class TestRealityToken(TestCase):
 
         self.rc.sendCoin(k1_addr, 1000000, genesis_hash, sender=t.k0)
 
-
         # self.s.block.timestamp = self.s.block.timestamp + 100
         # self.s = t.state()
 
@@ -61,6 +60,7 @@ class TestRealityToken(TestCase):
 
         dummy_merkle_root_aaaa = decode_hex(sha3_256('aaaa').hexdigest())
         dummy_merkle_root_aaba = decode_hex(sha3_256('aaba').hexdigest())
+        dummy_merkle_root_abaa = decode_hex(sha3_256('abaa').hexdigest())
 
         branch_aa_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_aa)
         branch_ab_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_ab)
@@ -117,6 +117,18 @@ class TestRealityToken(TestCase):
             self.rc.sendCoin(k2_addr, 1, branch_aba_hash, sender=t.k1)
         except:
             failed = True
+
+
+        k0_bal = self.rc.getBalance(k0_addr, branch_ab_hash)
+        #print k0_bal
+        self.rc.sendCoin(k2_addr, 5, branch_aba_hash, sender=t.k0)
+        branch_abaa_hash = self.rc.createBranch(branch_aba_hash, dummy_merkle_root_abaa)
+        k0_bal_spent = self.rc.getBalance(k0_addr, branch_abaa_hash)
+
+        #print k0_bal_spent
+        self.assertEqual(k0_bal_spent, k0_bal - 5)
+
+
         return
         self.assertTrue(failed, "Sending back up to an earlier branch than you have already sent fails")
 

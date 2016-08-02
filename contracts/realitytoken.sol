@@ -5,7 +5,7 @@ contract RealityToken {
         bytes32 merkle_root;
         uint timestamp;
         uint256 height;
-        mapping(address => uint256) balance_change;
+        mapping(address => int256) balance_change;
     }
 
     mapping(bytes32 => Branch) public branches;
@@ -38,16 +38,17 @@ contract RealityToken {
             return false;
         }
         user_heights[msg.sender] = branches[to_branch].height; 
-        branches[to_branch].balance_change[msg.sender] -= amount;
-        branches[to_branch].balance_change[addr] += amount;
+        branches[to_branch].balance_change[msg.sender] -= int256(amount);
+        branches[to_branch].balance_change[addr] += int256(amount);
         return true;
     }
 
     // Crawl up towards the root of the tree until we get enough, or return false if we never do.
     // You never have negative balance above you, so if you have enough credit at any point then return.
     // This uses less gas than getBalance, which always has to go all the way to the root.
-    function isBalanceAtLeast(address addr, uint256 min_balance, bytes32 branch_hash) constant returns (bool) {
-        uint256 bal = 0;
+    function isBalanceAtLeast(address addr, uint256 _min_balance, bytes32 branch_hash) constant returns (bool) {
+        int256 bal = 0;
+        int256 min_balance = int256(_min_balance);
         bytes32 null_hash;
         while(branch_hash != null_hash) {
             bal += branches[branch_hash].balance_change[addr];
@@ -60,13 +61,13 @@ contract RealityToken {
     }
 
     function getBalance(address addr, bytes32 branch_hash) constant returns (uint256) {
-        uint256 bal = 0;
+        int256 bal = 0;
         bytes32 null_hash;
         while(branch_hash != null_hash) {
             bal += branches[branch_hash].balance_change[addr];
             branch_hash = branches[branch_hash].parent_hash;
         }
-        return bal;
+        return uint256(bal);
     }
 
     function createBranch(bytes32 parent_b_hash, bytes32 merkle_root) returns (bytes32) {
