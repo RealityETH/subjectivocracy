@@ -71,9 +71,9 @@ contract RealityToken {
         return uint256(bal);
     }
 
-    function createBranch(bytes32 parent_b_hash, bytes32 merkle_root) returns (bytes32) {
+    function createBranch(bytes32 parent_branch_hash, bytes32 merkle_root) returns (bytes32) {
         bytes32 null_hash;
-        bytes32 branch_hash = sha3(parent_b_hash, merkle_root);
+        bytes32 branch_hash = sha3(parent_branch_hash, merkle_root);
         // Probably impossible to make sha3 come out all zeroes but check to be safe
         if (branch_hash == null_hash) {
             throw;
@@ -83,15 +83,15 @@ contract RealityToken {
             throw;
         }
         // Parent branch must exist, which we check by seeing if its timestamp is set
-        if (branches[parent_b_hash].timestamp == 0) {
+        if (branches[parent_branch_hash].timestamp == 0) {
             throw;
         }
         uint256 window = (now - genesis_window_timestamp) / 86400;
         // We must now be a later 24-hour window than the parent
-        if (branches[parent_b_hash].window >= window) {
+        if (branches[parent_branch_hash].window >= window) {
             throw;
         }
-        branches[branch_hash] = Branch(parent_b_hash, merkle_root, now, window);
+        branches[branch_hash] = Branch(parent_branch_hash, merkle_root, now, window);
         return branch_hash;
     }
 }
