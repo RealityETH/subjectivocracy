@@ -35,7 +35,7 @@ contract RealityToken {
         if (!isBalanceAtLeast(msg.sender, amount, to_branch)) {
             return false;
         }
-        last_debit_windows[msg.sender] = branches[to_branch].window; 
+        last_debit_windows[msg.sender] = branch_window;
         branches[to_branch].balance_change[msg.sender] -= int256(amount);
         branches[to_branch].balance_change[addr] += int256(amount);
         return true;
