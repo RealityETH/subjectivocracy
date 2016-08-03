@@ -21,13 +21,13 @@ contract RealityToken {
 
     function sendCoin(address addr, uint256 amount, bytes32 to_branch) returns (bool) {
         if (amount > 2100000000000000) {
-            return false;
+            throw;
         }
         // You can only go forwards. 
         // That way when we check if you have enough to spend we only have to go backwards.
         uint256 branch_height = branches[to_branch].height;
         if (branch_height < user_heights[msg.sender]) {
-            throw;
+            return false;
         }
         if (!isBalanceAtLeast(msg.sender, amount, to_branch)) {
             return false;
@@ -42,6 +42,9 @@ contract RealityToken {
     // You never have negative balance above you, so if you have enough credit at any point then return.
     // This uses less gas than getBalance, which always has to go all the way to the root.
     function isBalanceAtLeast(address addr, uint256 _min_balance, bytes32 branch_hash) constant returns (bool) {
+        if (_min_balance > 2100000000000000) {
+            throw;
+        }
         int256 bal = 0;
         int256 min_balance = int256(_min_balance);
         bytes32 null_hash;

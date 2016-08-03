@@ -127,9 +127,9 @@ class TestRealityToken(TestCase):
         #print k0_bal_spent
         self.assertEqual(k0_bal_spent, k0_bal - 5)
 
-
+        self.assertFalse(self.rc.sendCoin(k2_addr, 5, branch_ab_hash, sender=t.k0), "Attempting to send coins on an earlier branch returns false")
+        self.assertEqual(k0_bal_spent, k0_bal - 5, "Attempt to send coins on an earlier branch left balance unchanged")
         return
-        self.assertTrue(failed, "Sending back up to an earlier branch than you have already sent fails")
 
 
 if __name__ == '__main__':
