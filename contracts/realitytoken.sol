@@ -9,7 +9,7 @@ contract RealityToken {
     }
 
     mapping(bytes32 => Branch) public branches;
-    mapping(address => uint256) public user_latest_windows;
+    mapping(address => uint256) public last_debit_windows;
 
     uint256 public window0timestamp; // 00:00:00 UTC on the day the contract was mined
 
@@ -29,13 +29,13 @@ contract RealityToken {
         // Spends, which may cause debits, can only go forwards. 
         // That way when we check if you have enough to spend we only have to go backwards.
         uint256 branch_window = branches[to_branch].window;
-        if (branch_window < user_latest_windows[msg.sender]) {
+        if (branch_window < last_debit_windows[msg.sender]) {
             return false;
         }
         if (!isBalanceAtLeast(msg.sender, amount, to_branch)) {
             return false;
         }
-        user_latest_windows[msg.sender] = branches[to_branch].window; 
+        last_debit_windows[msg.sender] = branches[to_branch].window; 
         branches[to_branch].balance_change[msg.sender] -= int256(amount);
         branches[to_branch].balance_change[addr] += int256(amount);
         return true;
