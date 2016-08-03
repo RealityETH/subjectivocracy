@@ -1,17 +1,20 @@
 contract RealityToken {
 
     struct Branch {
-        bytes32 parent_hash;
-        bytes32 merkle_root;
-        uint256 timestamp;
-        uint256 height;
+        bytes32 parent_hash; // Hash of the parent branch.
+        bytes32 merkle_root; // Merkel root of the data we commit to
+        uint256 timestamp; // Timestamp branch was mined
+        uint256 window; // Day x of the system's operation, starting at UTC 00:00:00
         mapping(address => int256) balance_change;
     }
 
     mapping(bytes32 => Branch) public branches;
-    mapping(address => uint256) public user_heights;
+    mapping(address => uint256) public user_latest_windows;
+
+    uint256 public window0timestamp; // 00:00:00 UTC on the day the contract was mined
 
     function RealityToken() {
+        window0timestamp = now - (now % 86400);
         bytes32 null_hash;
         bytes32 genesis_merkel_root = sha3("I leave to several futures (not to all) my garden of forking paths");
         bytes32 genesis_branch_hash = sha3(null_hash, genesis_merkel_root);
@@ -23,16 +26,16 @@ contract RealityToken {
         if (amount > 2100000000000000) {
             throw;
         }
-        // You can only go forwards. 
+        // Spends, which may cause debits, can only go forwards. 
         // That way when we check if you have enough to spend we only have to go backwards.
-        uint256 branch_height = branches[to_branch].height;
-        if (branch_height < user_heights[msg.sender]) {
+        uint256 branch_window = branches[to_branch].window;
+        if (branch_window < user_latest_windows[msg.sender]) {
             return false;
         }
         if (!isBalanceAtLeast(msg.sender, amount, to_branch)) {
             return false;
         }
-        user_heights[msg.sender] = branches[to_branch].height; 
+        user_latest_windows[msg.sender] = branches[to_branch].window; 
         branches[to_branch].balance_change[msg.sender] -= int256(amount);
         branches[to_branch].balance_change[addr] += int256(amount);
         return true;
@@ -79,15 +82,16 @@ contract RealityToken {
         if (branches[branch_hash].timestamp > 0) {
             throw;
         }
-        uint256 parent_ts = branches[parent_b_hash].timestamp;
-        // The parent branch must exist and have a timestamp
-        if (parent_ts == 0) {
+        // Parent branch must exist, which we check by seeing if its timestamp is set
+        if (branches[parent_b_hash].timestamp == 0) {
             throw;
         }
-        if (now - parent_ts < 86400) {
+        uint256 window = (now - window0timestamp) / 86400;
+        // We must now be a later 24-hour window than the parent
+        if (branches[parent_b_hash].window >= window) {
             throw;
         }
-        branches[branch_hash] = Branch(parent_b_hash, merkle_root, now, branches[parent_b_hash].height + 1);
+        branches[branch_hash] = Branch(parent_b_hash, merkle_root, now, window);
         return branch_hash;
     }
 }

@@ -24,6 +24,7 @@ class TestRealityToken(TestCase):
         # aaaa aaba aabb abaa
 
         genesis_hash = decode_hex("01bd7e296e8be10ff0f93bf1b7186d884f05bdc2c293dbc4ca3ea18a5f7c9ebd")
+
         null_hash = decode_hex("0000000000000000000000000000000000000000000000000000000000000000")
         # print encode_hex(null_hash)
 
@@ -48,6 +49,10 @@ class TestRealityToken(TestCase):
         self.assertEqual(self.rc.getBalance(keys.privtoaddr(t.k0), genesis_hash), 2100000000000000-1000000)
         self.assertEqual(self.rc.getBalance(k1_addr, genesis_hash), 1000000)
 
+        genesis_branch = self.rc.branches(genesis_hash);
+        self.assertEqual(null_hash, genesis_branch[0])
+        self.assertEqual(0, genesis_branch[3], "Genesis hash window is 0")
+
         madeup_block_hash = decode_hex(sha3_256('pants').hexdigest())
 
         dummy_merkle_root_aa = decode_hex(sha3_256('aa').hexdigest())
@@ -66,15 +71,23 @@ class TestRealityToken(TestCase):
             branch_aa_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_aa)
         except TransactionFailed:
             failed = True
-        self.assertTrue(failed, "You can't build on a block less than 24 hours after it was created")
+        self.assertTrue(failed, "You can't build on a block in the window in which it was created")
 
         self.s.block.timestamp = self.s.block.timestamp + 86400
         branch_aa_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_aa)
-        self.s.block.timestamp = self.s.block.timestamp + 86400
+
+        aa_branch = self.rc.branches(branch_aa_hash);
+        self.assertEqual(1, aa_branch[3], "First branch window is 1")
+
+        self.s.block.timestamp = self.s.block.timestamp + ( 86400 * 3 )
         self.s.mine(1)
         self.s.block.timestamp = self.s.block.timestamp + 86400
 
         branch_ab_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_ab)
+
+        ab_branch = self.rc.branches(branch_ab_hash);
+        self.assertEqual(5, ab_branch[3], "window of branch created a few days later is 5, despite having skipped several days")
+
         self.s.mine(1)
         self.s.block.timestamp = self.s.block.timestamp + 86400
 
