@@ -11,10 +11,10 @@ contract RealityToken {
     mapping(bytes32 => Branch) public branches;
     mapping(address => uint256) public last_debit_windows;
 
-    uint256 public window0timestamp; // 00:00:00 UTC on the day the contract was mined
+    uint256 public genesis_window_timestamp; // 00:00:00 UTC on the day the contract was mined
 
     function RealityToken() {
-        window0timestamp = now - (now % 86400);
+        genesis_window_timestamp = now - (now % 86400);
         bytes32 null_hash;
         bytes32 genesis_merkel_root = sha3("I leave to several futures (not to all) my garden of forking paths");
         bytes32 genesis_branch_hash = sha3(null_hash, genesis_merkel_root);
@@ -86,7 +86,7 @@ contract RealityToken {
         if (branches[parent_b_hash].timestamp == 0) {
             throw;
         }
-        uint256 window = (now - window0timestamp) / 86400;
+        uint256 window = (now - genesis_window_timestamp) / 86400;
         // We must now be a later 24-hour window than the parent
         if (branches[parent_b_hash].window >= window) {
             throw;
