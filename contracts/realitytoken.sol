@@ -75,7 +75,7 @@ contract RealityToken {
         if (branch_hash == null_hash) {
             throw;
         }
-        // You can only create a branch once
+        // You can only create a branch once. Check existence by timestamp, all branches have one.
         if (branches[branch_hash].timestamp > 0) {
             throw;
         }
@@ -84,11 +84,8 @@ contract RealityToken {
         if (parent_ts == 0) {
             throw;
         }
-        if (now < parent_ts) {
-            throw;
-        }
         if (now - parent_ts < 86400) {
-        //    throw;
+            throw;
         }
         branches[branch_hash] = Branch(parent_b_hash, merkle_root, now, branches[parent_b_hash].height + 1);
         return branch_hash;

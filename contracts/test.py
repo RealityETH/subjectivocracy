@@ -61,19 +61,37 @@ class TestRealityToken(TestCase):
         dummy_merkle_root_aaba = decode_hex(sha3_256('aaba').hexdigest())
         dummy_merkle_root_abaa = decode_hex(sha3_256('abaa').hexdigest())
 
+        failed = False
+        try:
+            branch_aa_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_aa)
+        except TransactionFailed:
+            failed = True
+        self.assertTrue(failed, "You can't build on a block less than 24 hours after it was created")
+
+        self.s.block.timestamp = self.s.block.timestamp + 86400
         branch_aa_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_aa)
+        self.s.block.timestamp = self.s.block.timestamp + 86400
+        self.s.mine(1)
+        self.s.block.timestamp = self.s.block.timestamp + 86400
+
         branch_ab_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_ab)
+        self.s.mine(1)
+        self.s.block.timestamp = self.s.block.timestamp + 86400
 
         # print encode_hex(self.rc.branches(branch_ab_hash)[0])
 
         branch_aab_hash = self.rc.createBranch(branch_aa_hash, dummy_merkle_root_aab)
         branch_aba_hash = self.rc.createBranch(branch_ab_hash, dummy_merkle_root_aba)
+        self.s.mine(1)
+        self.s.block.timestamp = self.s.block.timestamp + 86400
 
         null_test_merkel_root = decode_hex(sha3_256('nulltest').hexdigest())
 
         failed = False
         try:
             self.rc.createBranch(null_hash, null_test_merkel_root)
+            self.s.mine(1)
+            self.s.block.timestamp = self.s.block.timestamp + 86400
         except TransactionFailed:
             failed = True 
         self.assertTrue(failed, "You cannot create a branch with a null parent hash")
@@ -87,6 +105,8 @@ class TestRealityToken(TestCase):
         failed = False
         try:
             self.rc.createBranch(branch_ab_hash, dummy_merkle_root_aba)
+            self.s.mine(1)
+            self.s.block.timestamp = self.s.block.timestamp + 86400
         except TransactionFailed:
             failed = True
         self.assertTrue(failed, "You can only create a branch with a given hash once")
@@ -102,6 +122,8 @@ class TestRealityToken(TestCase):
         for i in range(0,100):
             dummy_merkel_root = decode_hex(sha3_256('dummy' + str(i)).hexdigest())
             branch_hash = self.rc.createBranch(branch_hash, dummy_merkel_root)
+            self.s.mine(1)
+            self.s.block.timestamp = self.s.block.timestamp + 86400
             # print encode_hex(branch_hash)
 
         u = self.s.block.gas_used
@@ -122,6 +144,8 @@ class TestRealityToken(TestCase):
         #print k0_bal
         self.rc.sendCoin(k2_addr, 5, branch_aba_hash, sender=t.k0)
         branch_abaa_hash = self.rc.createBranch(branch_aba_hash, dummy_merkle_root_abaa)
+        self.s.mine(1)
+        self.s.block.timestamp = self.s.block.timestamp + 86400
         k0_bal_spent = self.rc.getBalance(k0_addr, branch_abaa_hash)
 
         #print k0_bal_spent
