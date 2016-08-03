@@ -53,10 +53,10 @@ contract RealityToken {
         bytes32 null_hash;
         while(branch_hash != null_hash) {
             bal += branches[branch_hash].balance_change[addr];
-            branch_hash = branches[branch_hash].parent_hash;
             if (bal >= min_balance) {
                 return true;
             }
+            branch_hash = branches[branch_hash].parent_hash;
         }
         return false;
     }
