@@ -22,22 +22,22 @@ contract RealityToken {
         branches[genesis_branch_hash].balance_change[msg.sender] = 2100000000000000;
     }
 
-    function sendCoin(address addr, uint256 amount, bytes32 to_branch) returns (bool) {
+    function sendCoin(address addr, uint256 amount, bytes32 branch_hash) returns (bool) {
         if (amount > 2100000000000000) {
             throw;
         }
         // Spends, which may cause debits, can only go forwards. 
         // That way when we check if you have enough to spend we only have to go backwards.
-        uint256 branch_window = branches[to_branch].window;
+        uint256 branch_window = branches[branch_hash].window;
         if (branch_window < last_debit_windows[msg.sender]) {
             return false;
         }
-        if (!isBalanceAtLeast(msg.sender, amount, to_branch)) {
+        if (!isBalanceAtLeast(msg.sender, amount, branch_hash)) {
             return false;
         }
         last_debit_windows[msg.sender] = branch_window;
-        branches[to_branch].balance_change[msg.sender] -= int256(amount);
-        branches[to_branch].balance_change[addr] += int256(amount);
+        branches[branch_hash].balance_change[msg.sender] -= int256(amount);
+        branches[branch_hash].balance_change[addr] += int256(amount);
         return true;
     }
 
