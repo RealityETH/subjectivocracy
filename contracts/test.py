@@ -14,10 +14,11 @@ class TestRealityToken(TestCase):
         self.s = t.state()
         rc_code = open('realitytoken.sol').read()
         self.rc = self.s.abi_contract(rc_code, language='solidity', sender=t.k0)
-        # print encode_hex(genesis_branch_hash)
         #window_branches = self.rc.getWindowBranches(0)
-        genesis_branch = self.rc.window_branches(0, 0)
-        self.assertEqual(len(genesis_branch), 32)
+        genesis_branch_hash = self.rc.window_branches(0, 0)
+        #print encode_hex(genesis_branch_hash)
+        self.assertEqual(len(genesis_branch_hash), 32)
+
 
     def test_register_and_fetch(self):
 
@@ -26,7 +27,7 @@ class TestRealityToken(TestCase):
         # aaa  aab       aba
         # aaaa aaba aabb abaa
 
-        genesis_hash = decode_hex("01bd7e296e8be10ff0f93bf1b7186d884f05bdc2c293dbc4ca3ea18a5f7c9ebd")
+        genesis_hash = decode_hex("fca5e1a248b8fee34db137da5e38b41f95d11feb5a8fa192a150d8d5d8de1c59")
 
         null_hash = decode_hex("0000000000000000000000000000000000000000000000000000000000000000")
         # print encode_hex(null_hash)
@@ -35,7 +36,10 @@ class TestRealityToken(TestCase):
         k1_addr = encode_hex(keys.privtoaddr(t.k1))
         k2_addr = encode_hex(keys.privtoaddr(t.k2))
 
+        contract_addr = encode_hex(keys.privtoaddr(t.k9))
+
         self.assertEqual(k1_addr, '7d577a597b2742b498cb5cf0c26cdcd726d39e6e')
+
         self.assertEqual(self.rc.getBalance(keys.privtoaddr(t.k0), genesis_hash), 2100000000000000)
 
         u = self.s.block.gas_used
@@ -49,12 +53,14 @@ class TestRealityToken(TestCase):
         u = self.s.block.gas_used
         # print self.s.block.get_balance(k0_addr)
 
+        window_index = 4 # index of genesis hash in struct
+
         self.assertEqual(self.rc.getBalance(keys.privtoaddr(t.k0), genesis_hash), 2100000000000000-1000000)
         self.assertEqual(self.rc.getBalance(k1_addr, genesis_hash), 1000000)
 
         genesis_branch = self.rc.branches(genesis_hash);
         self.assertEqual(null_hash, genesis_branch[0])
-        self.assertEqual(0, genesis_branch[3], "Genesis hash window is 0")
+        self.assertEqual(0, genesis_branch[window_index], "Genesis hash window is 0")
 
         madeup_block_hash = decode_hex(sha3_256('pants').hexdigest())
 
@@ -71,36 +77,35 @@ class TestRealityToken(TestCase):
 
         failed = False
         try:
-            branch_aa_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_aa)
+            branch_aa_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_aa, contract_addr)
         except TransactionFailed:
             failed = True
         self.assertTrue(failed, "You can't build on a block in the window in which it was created")
 
         self.s.block.timestamp = self.s.block.timestamp + 86400
-        branch_aa_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_aa)
+        branch_aa_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_aa, contract_addr)
         self.assertEqual(1, len(self.rc.getWindowBranches(1)))
         self.assertEqual([branch_aa_hash], self.rc.getWindowBranches(1))
 
         aa_branch = self.rc.branches(branch_aa_hash);
-        self.assertEqual(1, aa_branch[3], "First branch window is 1")
+        self.assertEqual(1, aa_branch[window_index], "First branch window is 1")
 
         self.s.block.timestamp = self.s.block.timestamp + ( 86400 * 3 )
         self.s.mine(1)
         self.s.block.timestamp = self.s.block.timestamp + 86400
 
-        branch_ab_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_ab)
+        branch_ab_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_ab, contract_addr)
 
         ab_branch = self.rc.branches(branch_ab_hash);
-        self.assertEqual(5, ab_branch[3], "window of branch created a few days later is 5, despite having skipped several days")
+        self.assertEqual(5, ab_branch[window_index], "window of branch created a few days later is 5, despite having skipped several days")
 
         self.s.mine(1)
         self.s.block.timestamp = self.s.block.timestamp + 86400
 
         # print encode_hex(self.rc.branches(branch_ab_hash)[0])
 
-        branch_aab_hash = self.rc.createBranch(branch_aa_hash, dummy_merkle_root_aab)
-        branch_aba_hash = self.rc.createBranch(branch_ab_hash, dummy_merkle_root_aba)
-
+        branch_aab_hash = self.rc.createBranch(branch_aa_hash, dummy_merkle_root_aab, contract_addr)
+        branch_aba_hash = self.rc.createBranch(branch_ab_hash, dummy_merkle_root_aba, contract_addr)
         self.assertEqual(2, len(self.rc.getWindowBranches(6)))
         self.assertEqual([branch_aab_hash, branch_aba_hash], self.rc.getWindowBranches(6))
 
@@ -111,7 +116,7 @@ class TestRealityToken(TestCase):
 
         failed = False
         try:
-            self.rc.createBranch(null_hash, null_test_merkel_root)
+            self.rc.createBranch(null_hash, null_test_merkel_root, contract_addr)
             self.s.mine(1)
             self.s.block.timestamp = self.s.block.timestamp + 86400
         except TransactionFailed:
@@ -126,7 +131,7 @@ class TestRealityToken(TestCase):
 
         failed = False
         try:
-            self.rc.createBranch(branch_ab_hash, dummy_merkle_root_aba)
+            self.rc.createBranch(branch_ab_hash, dummy_merkle_root_aba, contract_addr)
             self.s.mine(1)
             self.s.block.timestamp = self.s.block.timestamp + 86400
         except TransactionFailed:
@@ -143,7 +148,7 @@ class TestRealityToken(TestCase):
         branch_hash = branch_aba_hash
         for i in range(0,100):
             dummy_merkel_root = decode_hex(sha3_256('dummy' + str(i)).hexdigest())
-            branch_hash = self.rc.createBranch(branch_hash, dummy_merkel_root)
+            branch_hash = self.rc.createBranch(branch_hash, dummy_merkel_root, contract_addr)
             self.s.mine(1)
             self.s.block.timestamp = self.s.block.timestamp + 86400
             # print encode_hex(branch_hash)
@@ -165,7 +170,7 @@ class TestRealityToken(TestCase):
         k0_bal = self.rc.getBalance(k0_addr, branch_ab_hash)
         #print k0_bal
         self.rc.sendCoin(k2_addr, 5, branch_aba_hash, sender=t.k0)
-        branch_abaa_hash = self.rc.createBranch(branch_aba_hash, dummy_merkle_root_abaa)
+        branch_abaa_hash = self.rc.createBranch(branch_aba_hash, dummy_merkle_root_abaa, contract_addr)
         self.s.mine(1)
         self.s.block.timestamp = self.s.block.timestamp + 86400
         k0_bal_spent = self.rc.getBalance(k0_addr, branch_abaa_hash)

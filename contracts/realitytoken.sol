@@ -3,6 +3,7 @@ contract RealityToken {
     struct Branch {
         bytes32 parent_hash; // Hash of the parent branch.
         bytes32 merkle_root; // Merkel root of the data we commit to
+        address data_contract; // Optional address of a contract containing this data
         uint256 timestamp; // Timestamp branch was mined
         uint256 window; // Day x of the system's operation, starting at UTC 00:00:00
         mapping(address => int256) balance_change;
@@ -16,10 +17,11 @@ contract RealityToken {
 
     function RealityToken() {
         genesis_window_timestamp = now - (now % 86400);
+        address null_address;
         bytes32 null_hash;
         bytes32 genesis_merkel_root = sha3("I leave to several futures (not to all) my garden of forking paths");
-        bytes32 genesis_branch_hash = sha3(null_hash, genesis_merkel_root);
-        branches[genesis_branch_hash] = Branch(null_hash, genesis_merkel_root, now, 0);
+        bytes32 genesis_branch_hash = sha3(null_hash, genesis_merkel_root, null_address);
+        branches[genesis_branch_hash] = Branch(null_hash, genesis_merkel_root, null_address, now, 0);
         branches[genesis_branch_hash].balance_change[msg.sender] = 2100000000000000;
         window_branches[0].push(genesis_branch_hash);
     }
@@ -73,9 +75,9 @@ contract RealityToken {
         return uint256(bal);
     }
 
-    function createBranch(bytes32 parent_branch_hash, bytes32 merkle_root) returns (bytes32) {
+    function createBranch(bytes32 parent_branch_hash, bytes32 merkle_root, address data_contract) returns (bytes32) {
         bytes32 null_hash;
-        bytes32 branch_hash = sha3(parent_branch_hash, merkle_root);
+        bytes32 branch_hash = sha3(parent_branch_hash, merkle_root, data_contract);
         // Probably impossible to make sha3 come out all zeroes but check to be safe
         if (branch_hash == null_hash) {
             throw;
@@ -93,7 +95,7 @@ contract RealityToken {
         if (branches[parent_branch_hash].window >= window) {
             throw;
         }
-        branches[branch_hash] = Branch(parent_branch_hash, merkle_root, now, window);
+        branches[branch_hash] = Branch(parent_branch_hash, merkle_root, data_contract, now, window);
         window_branches[window].push(branch_hash);
         return branch_hash;
     }
