@@ -15,6 +15,9 @@ class TestRealityToken(TestCase):
         rc_code = open('realitytoken.sol').read()
         self.rc = self.s.abi_contract(rc_code, language='solidity', sender=t.k0)
         # print encode_hex(genesis_branch_hash)
+        #window_branches = self.rc.getWindowBranches(0)
+        genesis_branch = self.rc.window_branches(0, 0)
+        self.assertEqual(len(genesis_branch), 32)
 
     def test_register_and_fetch(self):
 
@@ -75,6 +78,8 @@ class TestRealityToken(TestCase):
 
         self.s.block.timestamp = self.s.block.timestamp + 86400
         branch_aa_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_aa)
+        self.assertEqual(1, len(self.rc.getWindowBranches(1)))
+        self.assertEqual([branch_aa_hash], self.rc.getWindowBranches(1))
 
         aa_branch = self.rc.branches(branch_aa_hash);
         self.assertEqual(1, aa_branch[3], "First branch window is 1")
@@ -95,6 +100,10 @@ class TestRealityToken(TestCase):
 
         branch_aab_hash = self.rc.createBranch(branch_aa_hash, dummy_merkle_root_aab)
         branch_aba_hash = self.rc.createBranch(branch_ab_hash, dummy_merkle_root_aba)
+
+        self.assertEqual(2, len(self.rc.getWindowBranches(6)))
+        self.assertEqual([branch_aab_hash, branch_aba_hash], self.rc.getWindowBranches(6))
+
         self.s.mine(1)
         self.s.block.timestamp = self.s.block.timestamp + 86400
 

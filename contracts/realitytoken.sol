@@ -10,6 +10,7 @@ contract RealityToken {
 
     mapping(bytes32 => Branch) public branches;
     mapping(address => uint256) public last_debit_windows;
+    mapping(uint256 => bytes32[]) public window_branches; // index to easily get all branch hashes for a window
 
     uint256 public genesis_window_timestamp; // 00:00:00 UTC on the day the contract was mined
 
@@ -20,6 +21,7 @@ contract RealityToken {
         bytes32 genesis_branch_hash = sha3(null_hash, genesis_merkel_root);
         branches[genesis_branch_hash] = Branch(null_hash, genesis_merkel_root, now, 0);
         branches[genesis_branch_hash].balance_change[msg.sender] = 2100000000000000;
+        window_branches[0].push(genesis_branch_hash);
     }
 
     function sendCoin(address addr, uint256 amount, bytes32 branch_hash) returns (bool) {
@@ -92,6 +94,11 @@ contract RealityToken {
             throw;
         }
         branches[branch_hash] = Branch(parent_branch_hash, merkle_root, now, window);
+        window_branches[window].push(branch_hash);
         return branch_hash;
+    }
+
+    function getWindowBranches(uint256 window) constant returns (bytes32[]){
+        return window_branches[window];
     }
 }
