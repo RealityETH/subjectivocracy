@@ -93,7 +93,7 @@ Such a market can be manipulated by spending large sums of money buying coins on
 
 Information in the merkel root can be extracted by storing it in an intermediate contract, which can then queried, or by querying the data from an off-chain source such as IPFS and sending the result to an individual contract. 
 
-Each block provides the address of a contract at which the publisher can make information contained in the tree available for contracts to query without the need to provide a Merkel proof. The Reality Token contract does not attempt to verify what information has been published in the suggested contract or whether it matches the contents of the merkel root; This is left to the validation process chosen in the social sphere.
+Each branch provides the address of a contract at which the publisher can make information contained in the tree available for contracts to query without the need to provide a Merkel proof. The Reality Token contract does not attempt to verify what information has been published in the suggested contract or whether it matches the contents of the merkel root; This is left to the validation process chosen in the social sphere.
 
 A contract using the token natively would simply request the appropriate data for the branch specified when it was called.
 
@@ -130,7 +130,7 @@ The set of facts represented by a given merkel root can be arbitrarily large. If
 
 Although branches can only be added daily, transfers of tokens down a chain can be made at any time and confirm in the normal Ethereum block interval. 
 
-Transactions are modelled as a credit or debit at a particular fork point. A transaction is only permitted if the account sending it has sufficient credit working back up the chain from the fork point towards the root. Credits and debits can only be added either at the tip of the tree, as you would expect in a normal blockchain system, or at a lower level than the last transaction added by the payer. This restriction allows us to verify that a user has a sufficient balance to make any given payment without considering any credit or debit except the ones from which is directly descended. Since there is only ever one parent block at each height working up the chain from any given point, rather than the infinity of branches that may exist working down the chain, this makes gas costs bounded and predictable.
+Transactions are modelled as a credit or debit at a particular fork point. A transaction is only permitted if the account sending it has sufficient credit working back up the chain from the fork point towards the root. Credits and debits can only be added either at the tip of the tree, as you would expect in a normal blockchain system, or at a lower level than the last transaction added by the payer. This restriction allows us to verify that a user has a sufficient balance to make any given payment without considering any credit or debit except the ones from which is directly descended. Since there is only ever one parent branch at each height working up the chain from any given point, rather than the infinity of branches that may exist working down the chain, this makes gas costs bounded and predictable.
 
 
 ### Conclusion
