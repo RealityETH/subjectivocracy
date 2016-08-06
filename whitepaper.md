@@ -120,7 +120,7 @@ We propose an initial discussion prior to beginning operation to define the gene
 
 ### Our prototype
 
-Our Reality Token contract prototype is implemented as a contract on the Ethereum network. 
+[Our Reality Token contract prototype](https://github.com/realitykeys/subjectivocracy/blob/master/contracts/realitytoken.sol) is implemented as a contract on the Ethereum network. 
 
 To provide time for social mechanisms to alert to incorrect branches, and also to limit the length of each chain and make it possible to traverse a chain without excessive gas use, a new branch can only be added to any given chain once in every 24-hour period. There is no limit to how many competing branches can be created within that 24-hour period, and the system is designed such that adding a competing branch does not result in any additional gas use to a participant unless the participant spends coins on it. Thus the height of the chain is limited to a maximum of one new set of facts per day, but it may have an arbitrary large number of parallel forks.
 
