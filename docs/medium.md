@@ -4,7 +4,7 @@ There is a school of thought that says that smart contracts are mostly pointless
 
 Blockchains have no knowledge of reality. They do not know what happened to Apple stock, unless that stock is actually being traded on the blockchain. They do not know won a football game, or even what a football game is. They have no idea whether Tokyo is still standing.
 
-In practice we have tended to rely on trusted authorities to solve these problems. The EtherDelta exchange, for example, uses Reality Keys, which we have been running since 2014. But we use decentralized systems because we want to avoid being reliant on trusted parties. As Nick Szabo observes, <a href="http://szabo.best.vwh.net/ttps.html>trusted third parties are security holes</a>.
+In practice we have tended to rely on trusted authorities to solve these problems. The EtherDelta exchange, for example, uses Reality Keys, which we have been running since 2014. But we use decentralized systems because we want to avoid being reliant on trusted parties. As Nick Szabo observes, [trusted third parties are security holes](http://szabo.best.vwh.net/ttps.html).
 
 This lack of judgement appears in other places as well. It is difficult for smart contract developers to be confident that their contracts are correct. Many developers have responded by reintroducing developer back-doors, which brings back the trusted third party. Others, like The DAO, coded update procedures into the smart contracts themselves. This has not always worked out well.
 
