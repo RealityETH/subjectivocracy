@@ -1,4 +1,4 @@
-Smart contracts are dumb
+## Smart contracts are dumb
 
 There is a school of thought that says that smart contracts are mostly pointless. Most interesting contracts depend on some outside event happening in the real world: A stock price going up or down, a football game won or lost, an earthquake in Tokyo happening or not happening, 
 
@@ -9,7 +9,7 @@ In practice we have tended to rely on trusted authorities to solve these problem
 This lack of judgement appears in other places as well. It is difficult for smart contract developers to be confident that their contracts are correct. Many developers have responded by reintroducing developer back-doors, which brings back the trusted third party. Others, like The DAO, coded update procedures into the smart contracts themselves. This has not always worked out well.
 
 
-Fork this
+## Fork this
 
 But recently people were surprised to discover that our solidity code wasn't really trapped in the judgement-free box. When The DAO was hacked, it turned out that there was an escape route. The smart contract code is can't make judgements, but the people running the code can. Users of Ethereum could tell the difference between a hack and the intended operation of the code, and they changed Ethereum to match.
 
@@ -20,7 +20,7 @@ What we saw at the same time, however, is that the world of economic hard forks 
 Interaction with the world of human judgement is often useful and necessary. Inserting human judgement into the actions of blockchains is something we'd rather avoid. So what if we could the best of both worlds? By using the ability of humans to select a fork, we can build a human judgement layer on top of the machine layer. *That* layer can be forked, while leaving the underlying code-is-law layer alone. So let's fork it. Every day.
 
 
-A hard fork every day
+## A hard fork every day
 
 Here's what we do: Every day anyone who wants to can create a bundle of facts, gather it together in a single tree and add it to the bottom of an existing branch. Then we leave the world to decide whether it wants to use it or not.
 
@@ -29,7 +29,7 @@ When they hear that we intend to hard-fork every day, a lot of people imagine an
 We do not need to specify what process people will use to choose a branch. Indeed, this is something we should *not* specify. There are all kinds of possible solutions that may be adopted at any given time: Voting DAOs, coordination games, following a respected friend, trusting the person who distributes your software, copying today's recommended branch from the New York Times. You can also take the most valuable branch on a decentralized market, which we will come to in a moment. Some of these strategies are only starting to be tried in practice, and all of them can be manipulated or exploited if you're prepared to throw enough money at it. But no amount of money can prevent people from trading with each other on the fork that they consider best.
 
 
-Every possible world that anybody cares about, in a single contract
+## Every possible world that anybody cares about, in a single contract
 
 Our proposal is explained in detail in our whitepaper.
 
@@ -40,14 +40,14 @@ Once we can put different realities in different forks, smart contracts no longe
 Sometimes, as we saw with ETC vs ETH, there are fundamental disagreements that prevent people working together in the same reality. The same probably goes for a system of judgements and truths. If religious participants want to bet on divine intervention and settle some of the bets as miracles, they're welcome to do that on their own branch. They don't need to bother the rest of us.
 
 
-Decentralized markets: (exploitable) objective truth for everybody else
+## Decentralized markets: (exploitable) objective truth for everybody else
 
 Like a branch of bitcoin that makes more than 21 million bitcoins, some forks are worthless. The purpose of this token is to provide correct information, so a fork of that token full of bogus information is equally worthless. The same is true of a fork of that token whose correctness cannot be verified - for example, because it contains a large amount of information, but no clear process was followed in putting that information together. 
 
 Although there is no objective way for a contract to know which branch is true, a contract *is* able to check which contract is the most valuable. If the branches to be traded on a decentralized market, a contract can query that market to find which branch is valued the highest, and assume that this branch is correct. At a price, these markets can be manipulated. The more valuable the token and the more liquid the market, the more expensive the markets will be to rig. As far as people holding the token are concerned, they're welcome to try: Everyone holds tokens on the manipulated branches, and they will be happy to sell them to the manipulator.
 
 
-Making it happen
+## Making it happen
 
 Once smart contracts can interact trustlessly with reality, they become incredibly useful. Here's what we need to do to make this happen.
 
@@ -64,13 +64,11 @@ We need some help getting this done. Come and talk to us on our Gitter channel.
 
 
 
-Acknowledgements: 
+### Acknowledgements: 
 
 * Vitalik Buterin explains the theoretical foundation for "subjectivocracy" at length 
 https://blog.ethereum.org/2014/11/25/proof-stake-learned-love-weak-subjectivity/
 https://blog.ethereum.org/2015/02/14/subjectivity-exploitability-tradeoff/
-
-* Paul Sztorc
-Augur
-
+* Paul Sztorc and TruthCoin
+* Augur
 * Martin Koppelmann's Ultimate Oracle provides a clear road-map to scaling 
