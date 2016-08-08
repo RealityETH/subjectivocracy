@@ -22,7 +22,7 @@ Interaction with the world of human judgement is often useful and necessary. Ins
 
 ## A hard fork every day
 
-Here's what we do: Every day anyone who wants to can create a bundle of facts, gather it together in a single tree and add it to the bottom of an existing branch. Then we leave the world to decide whether it wants to use it or not.
+Our proposal is explained in detail in our whitepaper, but here's how it works: Every day anyone who wants to can create a bundle of facts, gather it together in a single tree and add it to the bottom of an existing branch. Then we leave the world to decide whether it wants to use it or not.
 
 When they hear that we intend to hard-fork every day, a lot of people imagine an unfathomable chaos of branches. But that is not what we see in the real world. Git makes software branching cheap and anyone can make their own version, yet we don't usually have trouble working out which software to use. When we do have a hard time deciding, it's a choice between a small number of alternatives that have emerged with a fundamentally different governance model or design choice.
 
@@ -33,7 +33,6 @@ Some of these strategies are only starting to be tried in practice, and all of t
 
 ## Every possible world that anybody cares about, in a single contract
 
-Our proposal is explained in detail in our whitepaper.
 
 We provide a token contract that manages an infinity of forking paths, each representing a different reality. In each possible world, the contract knows how much of the token you have, and enforces how much you can spend. It lives on top of Ethereum, and it can move money between around in the normal Ethereum block interval. Creating a fork is cheap, like creating a branch in Git, so anybody can create their version of reality, and see if they can persuade other people to live and transact in that reality with them.
 
