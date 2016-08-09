@@ -1,4 +1,4 @@
-How to hard-fork your way to truth
+# Hard-forking every day for fun and profit
 
 ## Smart contracts are dumb
 
