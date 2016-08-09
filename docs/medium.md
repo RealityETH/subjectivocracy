@@ -8,7 +8,7 @@ Blockchains have no knowledge of reality. They do not know what happened to Appl
 
 In practice we have tended to rely on trusted authorities to solve these problems. I started Reality Keys in 2013 to make some of these uses possible, and we are seeing some pioneering services built on top of it, such as EtherDelta. But we use decentralized systems because we want to avoid being reliant on trusted parties. As Nick Szabo observes, [trusted third parties are security holes](http://szabo.best.vwh.net/ttps.html).
 
-The ability for blockchain nodes to apply judgement shows in other places, too. It is difficult for smart contract developers to be confident that their contracts are correct. Many developers have responded by reintroducing developer back-doors, which brings back the trusted third party. Others, like The DAO, coded update procedures into the smart contracts themselves. This has not always worked out well.
+The inability for blockchain to apply judgement shows in other places, too. It is difficult for smart contract developers to be confident that their contracts are correct. Many developers have responded by reintroducing developer back-doors, which brings back the trusted third party. Others, like The DAO, coded update procedures into the smart contracts themselves. This has not always worked out well.
 
 
 ## Fork this
