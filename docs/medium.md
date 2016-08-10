@@ -44,7 +44,7 @@ This prototype [token contract](https://github.com/realitykeys/subjectivocracy/b
 
 Once we can put different realities in different forks, smart contracts no longer need to choose between them. Settling a bet ion whether Hillary Clinton beat Donald Trump no longer requires an objective source of truth about whether Hillary Clinton beat Donald Trump. Your contract simply pays the person who bet on Hillary on the branch that thinks Hillary won, and the person who bet on Trump on the branch that thinks Trump won. If it was Hillary Clinton who won, the tokens on the Trump branch probably won't be very valuable; But that's not something your smart contract needs to worry about.
 
-Sometimes, as we saw with ETC vs ETH, there are fundamental disagreements that prevent people working together in the same reality. The same probably goes for a system of judgements and truths. If religious participants want to bet on divine intervention and settle some of the bets as miracles, they're welcome to do that on their own branch. They don't need to bother the rest of us.
+Sometimes, as we saw with ETC vs ETH, there are fundamental disagreements that prevent people working together in the same reality. The same goes for a system of judgements and truths. If religious participants want to bet on divine intervention and settle some of the bets as miracles, they're welcome to do that on their own branch. They don't need to bother the rest of us.
 
 
 ## Decentralized markets: (exploitable) objective truth for everybody else
