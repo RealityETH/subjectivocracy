@@ -2,7 +2,7 @@
 
 ## Dumb smart contracts
 
-There is a school of thought that says that smart contracts are [mostly pointless](http://www.coindesk.com/three-smart-contract-misconceptions/). Most interesting contracts depend on some outside event happening in the real world: A stock price going up or down, a football game won or lost, an earthquake in Tokyo happening or not happening, 
+There is a school of thought that says that smart contracts are [mostly pointless](http://www.coindesk.com/three-smart-contract-misconceptions/). Most interesting contracts depend on some outside event happening in the real world: A stock price going up or down, a football game won or lost, an earthquake in Tokyo happening or [not happening](http://www.japantimes.co.jp/news/2016/08/01/national/erroneous-alert-massive-tokyo-quake-causes-brief-panic/), 
 
 Blockchains have no knowledge of reality. They do not know what happened to Apple stock, unless that stock is actually being traded on the blockchain. They do not know won a football game, or even what a football game is. They have no idea whether Tokyo is still standing.
 
@@ -21,6 +21,7 @@ What we saw at the same time, however, is that the world of economic hard forks 
 
 Interaction with the world of human judgement is often useful, but inserting human judgement into the actions of blockchains is something we'd rather avoid. So what if we could the best of both worlds? By using the ability of humans to select a fork, we can build a human judgement layer on top of the machine layer. *That* layer can be forked, while leaving the underlying code-is-law layer alone. So let's fork it. Every day.
 
+![Many forks](images/Fork_Beans.jpg)
 
 ## A hard fork every day
 
@@ -34,6 +35,7 @@ Some of these strategies are only starting to be tried in practice; [Augur](http
 
 All of these strategies can be manipulated or exploited if you're prepared to throw enough money at it. But no amount of money can prevent people from trading with each other on the fork that they consider best.
 
+![Borges](images/Jorge_Luis_Borges.jpg)
 
 ## Every possible world that anybody cares about, in a single contract
 
