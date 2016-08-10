@@ -71,11 +71,6 @@ We need some help getting this done. Come and talk to us on our Gitter channel.
 
 
 
-### Acknowledgements: 
+### Further reading: 
 
-* Vitalik Buterin explains the theoretical foundation for "subjectivocracy" at length 
-https://blog.ethereum.org/2014/11/25/proof-stake-learned-love-weak-subjectivity/
-https://blog.ethereum.org/2015/02/14/subjectivity-exploitability-tradeoff/
-* Paul Sztorc and TruthCoin
-* Augur
-* Martin Koppelmann's Ultimate Oracle provides a clear road-map to scaling 
+* Vitalik Buterin explains the theoretical foundation for "subjectivocracy" at length in his posts on (Weak Subjectivity)[https://blog.ethereum.org/2014/11/25/proof-stake-learned-love-weak-subjectivity/] and (The Subjectivity Exploitability Tradeoff)[https://blog.ethereum.org/2015/02/14/subjectivity-exploitability-tradeoff/].
