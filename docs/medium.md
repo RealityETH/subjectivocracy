@@ -2,9 +2,9 @@
 
 ## Dumb smart contracts
 
-There is a school of thought that says that smart contracts are [mostly pointless](http://www.coindesk.com/three-smart-contract-misconceptions/). Most interesting contracts depend on some outside event happening in the real world: A stock price going up or down, a football game won or lost, an earthquake in Tokyo happening or [not happening](http://www.japantimes.co.jp/news/2016/08/01/national/erroneous-alert-massive-tokyo-quake-causes-brief-panic/), 
+There is a school of thought that says that smart contracts are [mostly pointless](http://www.coindesk.com/three-smart-contract-misconceptions/). Most interesting contracts depend on some outside event happening in the real world: A stock price going up or down, an election being won or lost, an earthquake in Tokyo happening or [not happening](http://www.japantimes.co.jp/news/2016/08/01/national/erroneous-alert-massive-tokyo-quake-causes-brief-panic/), 
 
-Blockchains have no knowledge of reality. They do not know what happened to Apple stock, unless that stock is actually being traded on the blockchain. They do not know won a football game, or even what a football game is. They have no idea whether Tokyo is still standing.
+Blockchains have no knowledge of reality. They do not know what happened to Apple stock, unless that stock is actually being traded on the blockchain. They do not know won an election, or even what an election is. They have no idea whether Tokyo is still standing.
 
 In practice we have tended to rely on trusted authorities to solve these problems. I started [Reality Keys](https://www.realitykeys.com/) in 2013 to make some of these uses possible, and we are seeing some great services built on top of it, such as the pioneering decentralized exchange [EtherDelta](https://etherdelta.github.io/). But many people are justifiably unsatisfied with relying on reputation: We use decentralized systems because we want to avoid being reliant on trusted parties. As Nick Szabo observes, [trusted third parties are security holes](http://szabo.best.vwh.net/ttps.html).
 
