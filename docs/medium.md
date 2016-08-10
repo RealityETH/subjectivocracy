@@ -25,7 +25,7 @@ Interaction with the world of human judgement is often useful, but inserting hum
 
 ## A hard fork every day
 
-Our proposal is explained in detail in [our whitepaper](https://github.com/realitykeys/subjectivocracy/blob/master/whitepaper.md). But here's how it works in outline: Where a normal blockchain consists of bundles of transactions chained together into blocks, we instead chain together bundles of facts and judgements. Every day anybody can create a bundle of information add it to the bottom of an existing branch. Then we leave the world to decide whether it wants to use it or not.
+[This whitepaper](https://github.com/realitykeys/subjectivocracy/blob/master/whitepaper.md) explains the proposal in detail. But here's how it works in outline: Where a normal blockchain consists of bundles of transactions chained together into blocks, we instead chain together bundles of facts and judgements. Every day anybody can create a bundle of information add it to the bottom of an existing branch. Then we leave the world to decide whether it wants to use it or not.
 
 When they hear that we intend to hard-fork every day, a lot of people imagine an unfathomable chaos of branches. But that is not what we see in the real world. Git makes software branching cheap and anyone can make their own version, yet we don't usually have trouble working out which software to use. When we do have a hard time deciding, it's a choice between a small number of alternatives that have emerged with a fundamentally different governance model or design choice.
 
