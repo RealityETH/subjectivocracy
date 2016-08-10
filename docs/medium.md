@@ -35,11 +35,12 @@ Some of these strategies are only starting to be tried in practice; [Augur](http
 
 All of these strategies can be manipulated or exploited if you're prepared to throw enough money at it. But no amount of money can prevent people from trading with each other on the fork that they consider best.
 
-![Borges](images/Jorge_Luis_Borges.jpg)
 
 ## Every possible world that anybody cares about, in a single contract
 
-We provide [a token contract](https://github.com/realitykeys/subjectivocracy/blob/master/contracts/realitytoken.sol) that manages an infinity of forking paths, each representing a different reality. In each possible world, the contract knows how much of the token you have, and enforces how much you can spend. It lives on top of Ethereum, and it can move money between around as fast as Ethereum can. Creating a fork is cheap, like creating a branch in Git, so anybody can create their version of reality, then see if they can persuade other people to live and transact in that reality with them.
+![Borges](images/Jorge_Luis_Borges.jpg)
+
+This prototype [token contract](https://github.com/realitykeys/subjectivocracy/blob/master/contracts/realitytoken.sol) manages an infinity of forking paths, each representing a different reality. In each possible world, the contract knows how much of the token you have, and enforces how much you can spend. It lives on top of Ethereum, and it can move money between around as fast as Ethereum can. Creating a fork is cheap, like creating a branch in Git, so anybody can create their version of reality, then see if they can persuade other people to live and transact in that reality with them.
 
 Once we can put different realities in different forks, smart contracts no longer need to choose between them. If you want to make a bet on whether Hillary Clinton beat Donald Trump, you no longer need an objective source of truth about whether Hillary Clinton beat Donald Trump. You simply pay the person who bet on Hillary on the branch that things Hillary won, and the person who bet on Trump on the branch that thinks Trump won. If it was Hillary Clinton who won, the tokens on a fork that says she lost probably won't be very valuable; But that's not something your contract needs to worry about.
 
@@ -73,4 +74,4 @@ We need some help getting this done. Come and talk to us on our Gitter channel.
 
 ### Further reading: 
 
-* Vitalik Buterin explains the theoretical foundation for "subjectivocracy" at length in his posts on (Weak Subjectivity)[https://blog.ethereum.org/2014/11/25/proof-stake-learned-love-weak-subjectivity/] and (The Subjectivity Exploitability Tradeoff)[https://blog.ethereum.org/2015/02/14/subjectivity-exploitability-tradeoff/].
+* Vitalik Buterin explains the theoretical foundation for "subjectivocracy" at length in his posts on [Weak Subjectivity](https://blog.ethereum.org/2014/11/25/proof-stake-learned-love-weak-subjectivity/) and [The Subjectivity Exploitability Tradeoff](https://blog.ethereum.org/2015/02/14/subjectivity-exploitability-tradeoff/).
