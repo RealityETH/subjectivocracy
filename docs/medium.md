@@ -6,9 +6,9 @@ There is a school of thought that says that smart contracts are [mostly pointles
 
 Blockchains have no knowledge of reality. They do not know what happened to Apple stock, unless that stock is actually being traded on the blockchain. They do not know won a football game, or even what a football game is. They have no idea whether Tokyo is still standing.
 
-In practice we have tended to rely on trusted authorities to solve these problems. I started [Reality Keys](https://www.realitykeys.com/) in 2013 to make some of these uses possible, and we are seeing some great services built on top of it, such as the pioneering and superby executed [EtherDelta](https://etherdelta.github.io/). But many people are justifiably unsatisfied with this: We use decentralized systems because we want to avoid being reliant on trusted parties. As Nick Szabo observes, [trusted third parties are security holes](http://szabo.best.vwh.net/ttps.html).
+In practice we have tended to rely on trusted authorities to solve these problems. I started [Reality Keys](https://www.realitykeys.com/) in 2013 to make some of these uses possible, and we are seeing some great services built on top of it, such as the pioneering decentralized exchange [EtherDelta](https://etherdelta.github.io/). But many people are justifiably unsatisfied with relying on reputation: We use decentralized systems because we want to avoid being reliant on trusted parties. As Nick Szabo observes, [trusted third parties are security holes](http://szabo.best.vwh.net/ttps.html).
 
-The inability for blockchain to apply judgement shows in other places, too. It is difficult for smart contract developers to be confident that their contracts are correct. Many developers have responded by reintroducing developer back-doors, which brings back the trusted third party. Others, like The DAO, coded update procedures into the smart contracts themselves. This has not always worked out well.
+The inability for blockchain to apply judgement shows in other places, too. It is difficult for smart contract developers to be confident that their contracts are correct. Many developers have responded by reintroducing developer back-doors, which brings back the trusted third party. Others, like The DAO, coded update procedures into the smart contracts themselves. [This has not always worked out well](http://www.coindesk.com/dao-attacked-code-issue-leads-60-million-ether-theft/).
 
 
 ## Fork this
@@ -56,6 +56,7 @@ Although there is no objective way for a contract to know which branch is true, 
 Once smart contracts can interact trustlessly with reality, they become incredibly useful. Here's what we need to do to make this happen.
 
 * Discuss the initial social contract with a set of principles for what people should consider when they decide what is a good branch and what isn't.
+* Make a prototype Governance DAO contract to recommend which forks to use.
 * Review and improve the prototype token contract
 * Deploy the contract on a chain, with some method of distributing the initial tokens.
 * Start publishing daily bundles of facts and judgements. Reality Keys can do this if nobody else does.
