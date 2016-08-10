@@ -1,4 +1,4 @@
-# Hard-forking every day for fun and profit
+# Get the facts, hard-fork all the things
 
 ## Dumb smart contracts
 
