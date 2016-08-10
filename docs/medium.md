@@ -65,7 +65,7 @@ Once smart contracts can interact trustlessly with reality, they become incredib
 * Start publishing daily bundles of facts and judgements. Reality Keys can do this if nobody else does.
 * Tell people about the contract.
 * Make some applications that use the token, tell people about them and start using them
-* If people are depending on a single daily bundle, break it on purpose without warning to see if they can fix it
+* If people are depending on a single daily bundle from Reality Keys, break it on purpose without warning to see if they can fix it
 * Build an inter-branch market allowing people to query the most valuable branch and milk it for "objective" truth
 
 We need some help getting this done. Come and talk to us on our [TODO] channel.
