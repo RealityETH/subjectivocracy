@@ -30,7 +30,9 @@ When they hear that we intend to hard-fork every day, a lot of people imagine an
 
 We don't need to specify what process people will use to choose a branch. Indeed, this is something we should *not* specify. There are all kinds of possible solutions that may be adopted at any given time: Voting DAOs, coordination games, following a respected friend, trusting the person who distributes your software, copying today's recommended branch from the New York Times. You can also take the most valuable branch on a decentralized market, which we will come to in a moment. 
 
-Some of these strategies are only starting to be tried in practice, and all of them can be manipulated or exploited if you're prepared to throw enough money at it. But no amount of money can prevent people from trading with each other on the fork that they consider best.
+Some of these strategies are only starting to be tried in practice; [Augur](https://www.augur.net/), based loosely on [Paul Sztorc's Truthcoin design](http://bitcoinhivemind.com/papers/truthcoin-whitepaper.pdf), uses coordination games and tries to reward truth-tellers and punish liars. Gnosis propose a voting DAO, taking the role of an [Ultimate Oracle](http://forum.groupgnosis.com/t/the-ultimate-oracle/61) that can resolve provide backing for a trust-based system.
+
+All of these strategies can be manipulated or exploited if you're prepared to throw enough money at it. But no amount of money can prevent people from trading with each other on the fork that they consider best.
 
 
 ## Every possible world that anybody cares about, in a single contract
