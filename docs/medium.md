@@ -11,11 +11,11 @@ In practice we have tended to rely on trusted authorities to solve these problem
 The inability for blockchain to apply judgement shows in other places, too. It is difficult for smart contract developers to be confident that their contracts are correct. Many developers have responded by reintroducing developer back-doors, which brings back the trusted third party. Others, like The DAO, coded update procedures into the smart contracts themselves. [This has not always worked out well](http://www.coindesk.com/dao-attacked-code-issue-leads-60-million-ether-theft/).
 
 
-## Fork this
+## Code is law, except when it isn't
 
 But recently people were surprised to discover that our solidity code wasn't really trapped in the judgement-free box. When The DAO was hacked, it turned out that there was an escape route. The smart contract code is can't make judgements, but the people running the code can. Users of Ethereum believed they could tell the difference between a hack and the intended operation of the code, and they forked Ethereum to match their judgement.
 
-Bringing judgements about human reality into the operation of the blockchain was, unsurprisingly, controversial. A lot of users thought that the entire point of the blockchain was to be able to create a world where Code Is Law. Some people asked, if that world can be altered by human judgement at any time, what is the point of creating the blockchain in the first place?
+Bringing judgements about human reality into the operation of the blockchain was controversial. A lot of users thought that the entire point of the blockchain was to be able to create a world where Code Is Law. Some people asked, if that world can be altered by human judgement at any time, what is the point of creating the blockchain in the first place?
 
 What we saw at the same time, however, is that the world of economic hard forks provides kind of security that nothing else in crypto-currency can match. People who saw the DAO fork as an abuse, rather than a correction, simply carried on using their own preferred version. The hard fork provides the ultimate in censorship-proofing: Even with minority hashpower, ETC users are able to trade and transact according to the ledger that they think is correct.
 
@@ -68,7 +68,7 @@ Once smart contracts can interact trustlessly with reality, they become incredib
 * If people are depending on a single daily bundle from Reality Keys, break it on purpose without warning to see if they can fix it
 * Build an inter-branch market allowing people to query the most valuable branch and milk it for "objective" truth
 
-We need some help getting this done. Come and talk to us on our [TODO] channel.
+We need some help getting this done. Come and talk to us on [our Gitter channel](https://gitter.im/realitykeys/token).
 
 
 ### Further reading: 
