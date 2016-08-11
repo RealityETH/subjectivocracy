@@ -61,7 +61,7 @@ Once smart contracts can interact trustlessly with reality, they become incredib
 * Discuss the initial social contract with a set of principles for what people should consider when they decide what is a good branch and what isn't.
 * Make a prototype Governance DAO contract to recommend which forks to use.
 * Review and improve the prototype token contract
-* Deploy the contract on Ethereum or ETC, with ![some method of distributing the initial tokens](http://generator-meme.com/memes/oprah-you-get-a-car_568fbb65d58ba4317.jpg).
+* Deploy the contract on Ethereum or ETC, with [some method of distributing the initial tokens](http://generator-meme.com/memes/oprah-you-get-a-car_568fbb65d58ba4317.jpg).
 * Start publishing daily bundles of facts and judgements. Reality Keys can do this if nobody else does.
 * Tell people about the contract.
 * Make some applications that use the token, tell people about them and start using them
