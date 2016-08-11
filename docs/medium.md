@@ -53,10 +53,13 @@ Like a branch of bitcoin that makes more than 21 million bitcoins, some forks ar
 
 Although there is no objective way for a contract to know which branch is true, a contract *is* able to check which contract is the most valuable. If the branches are traded on a decentralized market, a contract can query that market to find which branch is valued the highest, and assume that this branch is correct. At a price, these markets can be manipulated. The more valuable the token and the more liquid the market, the more expensive the markets will be to rig. As far as people holding the token are concerned, [they're welcome to try](https://www.youtube.com/watch?v=Tb-6ikXdOzE&t=27m16s): Everyone holds tokens on the manipulated branches, and they will be happy to sell them to the manipulator.
 
+If the market works well, it can also be used to help select a fork before the event. If a data publisher is confident that their fork will ultimately win in the market, they can put up a bond to that effect, which they will lose if they are wrong. People trying to work out which branch to use can check the size of the bond.
 
 ## Making it happen
 
-Once smart contracts can interact trustlessly with reality, they become incredibly useful. Here's what we need to do to make this happen.
+Once smart contracts can interact trustlessly with reality, they become incredibly useful. Contracts can ask questions about the world and get the answers trustlessly. Contract developers can write upgrade code that asks if a human process has been followed, and their users can get upgrades without worrying about people with golden keys running amok.
+
+Here's what we need to do to make this happen.
 
 * Discuss the initial social contract with a set of principles for what people should consider when they decide what is a good branch and what isn't.
 * Make a prototype Governance DAO contract to recommend which forks to use.
