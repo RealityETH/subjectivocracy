@@ -2,7 +2,7 @@
 
 ## Dumb smart contracts
 
-There is a school of thought that says that smart contracts are [mostly pointless](http://www.coindesk.com/three-smart-contract-misconceptions/). Most interesting contracts depend on some outside event happening in the real world: A stock price going up or down, an election being won or lost, an earthquake in Tokyo happening or [not happening](http://www.japantimes.co.jp/news/2016/08/01/national/erroneous-alert-massive-tokyo-quake-causes-brief-panic/), 
+There has long been [a school of thought that says that smart contracts are mostly pointless](http://www.coindesk.com/three-smart-contract-misconceptions/). Most interesting contracts depend on some outside event happening in the real world: A stock price going up or down, an election being won or lost, an earthquake in Tokyo happening or [not happening](http://www.japantimes.co.jp/news/2016/08/01/national/erroneous-alert-massive-tokyo-quake-causes-brief-panic/), 
 
 Blockchains have no knowledge of reality. They do not know what happened to Apple stock, unless that stock is actually being traded on the blockchain. They do not know won an election, or even what an election is. They have no idea whether Tokyo is still standing.
 
