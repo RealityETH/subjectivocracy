@@ -88,6 +88,8 @@ We have seen that an application managing assets denominated in Reality Tokens d
 
 Such a market can be manipulated by spending large sums of money buying coins on a bogus branch. To the extent that one of the correct branches is valuable and the market liquid, such manipulation is likely to be expensive and and ultimately profitable to holders of the legitimate branch, who can sell coins to the manipulator while continuing to hold the coins they sold on other branches. Meanwhile, participants in markets denominated in Reality Tokens are free to ignore the manipulation and continue operating on the branch they consider correct.
 
+Data publishing DAOs or other organizations, or people with a stake in a particular branch being widely recognised may wish to post a bond that will be forfeited if their branch is not ultimately selected by the market. This provides information that can be used by clients choosing which branch to show to users. The result would be a mechanism ultimately similar to the one used in Augur, where people voting for a particular outcome can lose tokens if the system forks and the economic majority rejects the choice they voted for. 
+
 
 ### Querying the arbitration layer
 
