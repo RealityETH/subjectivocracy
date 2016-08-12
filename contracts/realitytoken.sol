@@ -74,19 +74,17 @@ contract RealityToken {
 
     function createBranch(bytes32 parent_branch_hash, bytes32 merkle_root, address data_contract) returns (bytes32) {
         bytes32 null_hash;
-        bytes32 branch_hash = sha3(parent_branch_hash, merkle_root, data_contract);
         uint256 window = (now - genesis_window_timestamp) / 86400; // NB remainder gets rounded down
 
-        // Probably impossible to make sha3 come out all zeroes but check to be safe
+        bytes32 branch_hash = sha3(parent_branch_hash, merkle_root, data_contract);
         if (branch_hash == null_hash) throw;
 
-        // You can only create a branch once. Check existence by timestamp, all branches have one.
+        // Your branch must not yet exist, the parent branch must exist.
+        // Check existence by timestamp, all branches have one.
         if (branches[branch_hash].timestamp > 0) throw;
-
-        // Parent branch must exist. Check existence by timestamp, all branches have one.
         if (branches[parent_branch_hash].timestamp == 0) throw;
 
-        // We must now be a later 24-hour window than the parent
+        // We must now be a later 24-hour window than the parent.
         if (branches[parent_branch_hash].window >= window) throw;
 
         branches[branch_hash] = Branch(parent_branch_hash, merkle_root, data_contract, now, window);
