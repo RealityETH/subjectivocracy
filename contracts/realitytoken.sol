@@ -28,49 +28,6 @@ contract RealityToken {
         window_branches[0].push(genesis_branch_hash);
     }
 
-    function sendCoin(address addr, uint256 amount, bytes32 branch_hash) returns (bool) {
-        uint256 branch_window = branches[branch_hash].window;
-
-        if (amount > 2100000000000000) throw;
-        if (branches[branch_hash].timestamp == 0) throw; // branch must exist
-
-        if (branch_window < last_debit_windows[msg.sender]) return false; // debits can't go backwards
-        if (!isAmountSpendable(msg.sender, amount, branch_hash)) return false; // can only spend what you have
-
-        last_debit_windows[msg.sender] = branch_window;
-        branches[branch_hash].balance_change[msg.sender] -= int256(amount);
-        branches[branch_hash].balance_change[addr] += int256(amount);
-        return true;
-    }
-
-    // Crawl up towards the root of the tree until we get enough, or return false if we never do.
-    // You never have negative total balance above you, so if you have enough credit at any point then return.
-    // This uses less gas than getBalance, which always has to go all the way to the root.
-    function isAmountSpendable(address addr, uint256 _min_balance, bytes32 branch_hash) constant returns (bool) {
-        if (_min_balance > 2100000000000000) throw;
-        int256 bal = 0;
-        int256 min_balance = int256(_min_balance);
-        bytes32 null_hash;
-        while(branch_hash != null_hash) {
-            bal += branches[branch_hash].balance_change[addr];
-            if (bal >= min_balance) {
-                return true;
-            }
-            branch_hash = branches[branch_hash].parent_hash;
-        }
-        return false;
-    }
-
-    function getBalance(address addr, bytes32 branch_hash) constant returns (uint256) {
-        int256 bal = 0;
-        bytes32 null_hash;
-        while(branch_hash != null_hash) {
-            bal += branches[branch_hash].balance_change[addr];
-            branch_hash = branches[branch_hash].parent_hash;
-        }
-        return uint256(bal);
-    }
-
     function createBranch(bytes32 parent_branch_hash, bytes32 merkle_root, address data_contract) returns (bytes32) {
         bytes32 null_hash;
         uint256 window = (now - genesis_window_timestamp) / 86400; // NB remainder gets rounded down
@@ -94,4 +51,48 @@ contract RealityToken {
     function getWindowBranches(uint256 window) constant returns (bytes32[]) {
         return window_branches[window];
     }
+
+    function getBalance(address addr, bytes32 branch_hash) constant returns (uint256) {
+        int256 bal = 0;
+        bytes32 null_hash;
+        while(branch_hash != null_hash) {
+            bal += branches[branch_hash].balance_change[addr];
+            branch_hash = branches[branch_hash].parent_hash;
+        }
+        return uint256(bal);
+    }
+
+    // Crawl up towards the root of the tree until we get enough, or return false if we never do.
+    // You never have negative total balance above you, so if you have enough credit at any point then return.
+    // This uses less gas than getBalance, which always has to go all the way to the root.
+    function isAmountSpendable(address addr, uint256 _min_balance, bytes32 branch_hash) constant returns (bool) {
+        if (_min_balance > 2100000000000000) throw;
+        int256 bal = 0;
+        int256 min_balance = int256(_min_balance);
+        bytes32 null_hash;
+        while(branch_hash != null_hash) {
+            bal += branches[branch_hash].balance_change[addr];
+            if (bal >= min_balance) {
+                return true;
+            }
+            branch_hash = branches[branch_hash].parent_hash;
+        }
+        return false;
+    }
+
+    function sendCoin(address addr, uint256 amount, bytes32 branch_hash) returns (bool) {
+        uint256 branch_window = branches[branch_hash].window;
+
+        if (amount > 2100000000000000) throw;
+        if (branches[branch_hash].timestamp == 0) throw; // branch must exist
+
+        if (branch_window < last_debit_windows[msg.sender]) return false; // debits can't go backwards
+        if (!isAmountSpendable(msg.sender, amount, branch_hash)) return false; // can only spend what you have
+
+        last_debit_windows[msg.sender] = branch_window;
+        branches[branch_hash].balance_change[msg.sender] -= int256(amount);
+        branches[branch_hash].balance_change[addr] += int256(amount);
+        return true;
+    }
+
 }
