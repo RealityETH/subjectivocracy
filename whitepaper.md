@@ -3,7 +3,7 @@
 Edmund Edgar
 <ed@realitykeys.com>
 
-2016-04-20, last updated 2016-07-30
+2016-04-20, last updated 2016-08-12
 
 ### This is a work-in-progress. It is not yet complete.
 
