@@ -45,7 +45,7 @@ contract RealityToken {
     }
 
     // Crawl up towards the root of the tree until we get enough, or return false if we never do.
-    // You never have negative balance above you, so if you have enough credit at any point then return.
+    // You never have negative total balance above you, so if you have enough credit at any point then return.
     // This uses less gas than getBalance, which always has to go all the way to the root.
     function isBalanceAtLeast(address addr, uint256 _min_balance, bytes32 branch_hash) constant returns (bool) {
         if (_min_balance > 2100000000000000) throw;
@@ -75,7 +75,7 @@ contract RealityToken {
     function createBranch(bytes32 parent_branch_hash, bytes32 merkle_root, address data_contract) returns (bytes32) {
         bytes32 null_hash;
         bytes32 branch_hash = sha3(parent_branch_hash, merkle_root, data_contract);
-        uint256 window = (now - genesis_window_timestamp) / 86400;
+        uint256 window = (now - genesis_window_timestamp) / 86400; // NB remainder gets rounded down
 
         // Probably impossible to make sha3 come out all zeroes but check to be safe
         if (branch_hash == null_hash) throw;
