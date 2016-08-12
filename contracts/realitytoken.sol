@@ -6,11 +6,11 @@ contract RealityToken {
         address data_contract; // Optional address of a contract containing this data
         uint256 timestamp; // Timestamp branch was mined
         uint256 window; // Day x of the system's operation, starting at UTC 00:00:00
-        mapping(address => int256) balance_change;
+        mapping(address => int256) balance_change; // user debits and credits
     }
-
     mapping(bytes32 => Branch) public branches;
-    mapping(address => uint256) public last_debit_windows;
+
+    mapping(address => uint256) public last_debit_windows; // index of last user debits to stop you going backwards
     mapping(uint256 => bytes32[]) public window_branches; // index to easily get all branch hashes for a window
 
     uint256 public genesis_window_timestamp; // 00:00:00 UTC on the day the contract was mined
@@ -27,9 +27,8 @@ contract RealityToken {
     }
 
     function sendCoin(address addr, uint256 amount, bytes32 branch_hash) returns (bool) {
-        if (amount > 2100000000000000) {
-            throw;
-        }
+        if (amount > 2100000000000000) throw;
+
         // Spends, which may cause debits, can only go forwards. 
         // That way when we check if you have enough to spend we only have to go backwards.
         uint256 branch_window = branches[branch_hash].window;
@@ -49,9 +48,7 @@ contract RealityToken {
     // You never have negative balance above you, so if you have enough credit at any point then return.
     // This uses less gas than getBalance, which always has to go all the way to the root.
     function isBalanceAtLeast(address addr, uint256 _min_balance, bytes32 branch_hash) constant returns (bool) {
-        if (_min_balance > 2100000000000000) {
-            throw;
-        }
+        if (_min_balance > 2100000000000000) throw;
         int256 bal = 0;
         int256 min_balance = int256(_min_balance);
         bytes32 null_hash;
@@ -78,29 +75,26 @@ contract RealityToken {
     function createBranch(bytes32 parent_branch_hash, bytes32 merkle_root, address data_contract) returns (bytes32) {
         bytes32 null_hash;
         bytes32 branch_hash = sha3(parent_branch_hash, merkle_root, data_contract);
-        // Probably impossible to make sha3 come out all zeroes but check to be safe
-        if (branch_hash == null_hash) {
-            throw;
-        }
-        // You can only create a branch once. Check existence by timestamp, all branches have one.
-        if (branches[branch_hash].timestamp > 0) {
-            throw;
-        }
-        // Parent branch must exist, which we check by seeing if its timestamp is set
-        if (branches[parent_branch_hash].timestamp == 0) {
-            throw;
-        }
         uint256 window = (now - genesis_window_timestamp) / 86400;
+
+        // Probably impossible to make sha3 come out all zeroes but check to be safe
+        if (branch_hash == null_hash) throw;
+
+        // You can only create a branch once. Check existence by timestamp, all branches have one.
+        if (branches[branch_hash].timestamp > 0) throw;
+
+        // Parent branch must exist. Check existence by timestamp, all branches have one.
+        if (branches[parent_branch_hash].timestamp == 0) throw;
+
         // We must now be a later 24-hour window than the parent
-        if (branches[parent_branch_hash].window >= window) {
-            throw;
-        }
+        if (branches[parent_branch_hash].window >= window) throw;
+
         branches[branch_hash] = Branch(parent_branch_hash, merkle_root, data_contract, now, window);
         window_branches[window].push(branch_hash);
         return branch_hash;
     }
 
-    function getWindowBranches(uint256 window) constant returns (bytes32[]){
+    function getWindowBranches(uint256 window) constant returns (bytes32[]) {
         return window_branches[window];
     }
 }
