@@ -10,9 +10,11 @@ contract RealityToken {
     }
     mapping(bytes32 => Branch) public branches;
 
+    // Spends, which may cause debits, can only go forwards. 
+    // That way when we check if you have enough to spend we only have to go backwards.
     mapping(address => uint256) public last_debit_windows; // index of last user debits to stop you going backwards
-    mapping(uint256 => bytes32[]) public window_branches; // index to easily get all branch hashes for a window
 
+    mapping(uint256 => bytes32[]) public window_branches; // index to easily get all branch hashes for a window
     uint256 public genesis_window_timestamp; // 00:00:00 UTC on the day the contract was mined
 
     function RealityToken() {
@@ -27,18 +29,14 @@ contract RealityToken {
     }
 
     function sendCoin(address addr, uint256 amount, bytes32 branch_hash) returns (bool) {
+        uint256 branch_window = branches[branch_hash].window;
+
         if (amount > 2100000000000000) throw;
         if (branches[branch_hash].timestamp == 0) throw; // branch must exist
 
-        // Spends, which may cause debits, can only go forwards. 
-        // That way when we check if you have enough to spend we only have to go backwards.
-        uint256 branch_window = branches[branch_hash].window;
-        if (branch_window < last_debit_windows[msg.sender]) {
-            return false;
-        }
-        if (!isAmountSpendable(msg.sender, amount, branch_hash)) {
-            return false;
-        }
+        if (branch_window < last_debit_windows[msg.sender]) return false; // debits can't go backwards
+        if (!isAmountSpendable(msg.sender, amount, branch_hash)) return false; // can only spend what you have
+
         last_debit_windows[msg.sender] = branch_window;
         branches[branch_hash].balance_change[msg.sender] -= int256(amount);
         branches[branch_hash].balance_change[addr] += int256(amount);
