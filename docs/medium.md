@@ -8,7 +8,7 @@ Blockchains have no knowledge of reality. They do not know what happened to Appl
 
 In practice we have tended to rely on trusted authorities to solve these problems. I started [Reality Keys](https://www.realitykeys.com/) in 2013 to make some of these uses possible, and we are seeing some great services built on top of it, such as the pioneering decentralized exchange [EtherDelta](https://etherdelta.github.io/). But many people are justifiably unsatisfied with relying on reputation: We use decentralized systems because we want to avoid being reliant on trusted parties. As Nick Szabo observes, [trusted third parties are security holes](http://szabo.best.vwh.net/ttps.html).
 
-The inability for blockchain to apply judgement shows in other places, too. It is difficult for smart contract developers to be confident that their contracts are correct. Many developers have responded by reintroducing developer back-doors, which brings back the trusted third party. Others, like The DAO, coded update procedures into the smart contracts themselves. [This has not always worked out well](http://www.coindesk.com/dao-attacked-code-issue-leads-60-million-ether-theft/).
+The inability for blockchain to apply judgement is causing pain in other places, too. It is difficult for smart contract developers to be confident that their contracts are correct. Many developers have responded by reintroducing developer back-doors, which brings back the trusted third party. Others, like The DAO, coded update procedures into the smart contracts themselves. [This has not always worked out well](http://www.coindesk.com/dao-attacked-code-issue-leads-60-million-ether-theft/).
 
 
 ## Code is law, except when it isn't
