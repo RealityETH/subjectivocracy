@@ -19,21 +19,21 @@ contract RealityToken {
 
     function RealityToken() {
         genesis_window_timestamp = now - (now % 86400);
-        address null_address;
-        bytes32 null_hash;
+        address NULL_ADDRESS;
+        bytes32 NULL_HASH;
         bytes32 genesis_merkel_root = sha3("I leave to several futures (not to all) my garden of forking paths");
-        bytes32 genesis_branch_hash = sha3(null_hash, genesis_merkel_root, null_address);
-        branches[genesis_branch_hash] = Branch(null_hash, genesis_merkel_root, null_address, now, 0);
+        bytes32 genesis_branch_hash = sha3(NULL_HASH, genesis_merkel_root, NULL_ADDRESS);
+        branches[genesis_branch_hash] = Branch(NULL_HASH, genesis_merkel_root, NULL_ADDRESS, now, 0);
         branches[genesis_branch_hash].balance_change[msg.sender] = 2100000000000000;
         window_branches[0].push(genesis_branch_hash);
     }
 
     function createBranch(bytes32 parent_branch_hash, bytes32 merkle_root, address data_contract) returns (bytes32) {
-        bytes32 null_hash;
+        bytes32 NULL_HASH;
         uint256 window = (now - genesis_window_timestamp) / 86400; // NB remainder gets rounded down
 
         bytes32 branch_hash = sha3(parent_branch_hash, merkle_root, data_contract);
-        if (branch_hash == null_hash) throw;
+        if (branch_hash == NULL_HASH) throw;
 
         // Your branch must not yet exist, the parent branch must exist.
         // Check existence by timestamp, all branches have one.
@@ -54,8 +54,8 @@ contract RealityToken {
 
     function getBalance(address addr, bytes32 branch_hash) constant returns (uint256) {
         int256 bal = 0;
-        bytes32 null_hash;
-        while(branch_hash != null_hash) {
+        bytes32 NULL_HASH;
+        while(branch_hash != NULL_HASH) {
             bal += branches[branch_hash].balance_change[addr];
             branch_hash = branches[branch_hash].parent_hash;
         }
@@ -69,8 +69,8 @@ contract RealityToken {
         if (_min_balance > 2100000000000000) throw;
         int256 bal = 0;
         int256 min_balance = int256(_min_balance);
-        bytes32 null_hash;
-        while(branch_hash != null_hash) {
+        bytes32 NULL_HASH;
+        while(branch_hash != NULL_HASH) {
             bal += branches[branch_hash].balance_change[addr];
             if (bal >= min_balance) {
                 return true;
