@@ -5,7 +5,7 @@ Edmund Edgar
 
 2016-04-20, last updated 2016-07-30
 
-# THIS IS A WORK IN PROGRESS. IT IS NOT YET COMPLETE.
+### This is a work-in-progress. It is not yet complete.
 
 
 ## Conceptual Overview 
