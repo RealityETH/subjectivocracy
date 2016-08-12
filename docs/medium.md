@@ -63,13 +63,13 @@ Here's what we need to do to make this happen.
 
 * Discuss the initial social contract with a set of principles for what people should consider when they decide what is a good branch and what isn't.
 * Make a prototype Governance DAO contract to recommend which forks to use.
-* Review and improve the prototype token contract
+* Review and improve the prototype token contract.
 * Deploy the contract on Ethereum and/or ETC, with [some method of distributing the initial tokens](http://generator-meme.com/memes/oprah-you-get-a-car_568fbb65d58ba4317.jpg).
 * Start publishing daily bundles of facts and judgements. Reality Keys can do this if nobody else does.
 * Tell people about the contract.
-* Make some applications that use the token, tell people about them and start using them
-* If people are depending on a single daily bundle from Reality Keys, break it on purpose without warning to see if they can fix it
-* Build an inter-branch market allowing people to query the most valuable branch and milk it for "objective" truth
+* Make some applications that use the token, tell people about them and start using them.
+* If people are depending on a single daily bundle from Reality Keys, break it on purpose without warning to see if they can fix it.
+* Build an inter-branch market allowing people to query the most valuable branch and milk it for "objective" truth.
 
 We need some help getting this done. Come and talk to us on [our Gitter channel](https://gitter.im/realitykeys/token).
 
