@@ -28,6 +28,7 @@ contract RealityToken {
 
     function sendCoin(address addr, uint256 amount, bytes32 branch_hash) returns (bool) {
         if (amount > 2100000000000000) throw;
+        if (branches[branch_hash].timestamp == 0) throw; // branch must exist
 
         // Spends, which may cause debits, can only go forwards. 
         // That way when we check if you have enough to spend we only have to go backwards.
