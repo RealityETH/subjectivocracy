@@ -57,7 +57,7 @@ If the market works well, it can also be used to help select a fork before the e
 
 ## Making it happen
 
-Once smart contracts can interact with reality, they become incredibly useful. Contracts can ask questions about the world and get the answers trustlessly. Contract developers can write upgrade code that asks if a human process has been followed, and their users can get upgrades without worrying about people with golden keys running amok.
+Once smart contracts can interact with reality, they become incredibly useful. Contracts can ask questions about the world and get the answers quickly, cheaply and trustlessly. Contract developers can write upgrade code that asks if a human process has been followed, and their users can get upgrades without worrying about people with golden keys running amok.
 
 Here's what we need to do to make this happen.
 
