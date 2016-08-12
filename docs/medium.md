@@ -40,7 +40,7 @@ All of these strategies can be manipulated or exploited if you're prepared to th
 
 ![Borges](images/Jorge_Luis_Borges.jpg)
 
-[This prototype token contract](https://github.com/realitykeys/subjectivocracy/blob/master/contracts/realitytoken.sol) manages an infinity of forking paths, each representing a different reality. In each possible world, the contract knows how much of the token you have, and enforces how much you can spend. It lives on top of Ethereum, and it can move money between around as fast as Ethereum can. Creating a fork is cheap, like creating a branch in Git, so anybody can create their version of reality, then see if they can persuade other people to live and transact in that reality with them.
+[This prototype token contract](https://github.com/realitykeys/subjectivocracy/blob/master/contracts/realitytoken.sol) manages an unlimited number of forking paths, each representing a different reality. In each possible world, the contract knows how much of the token you have, and enforces how much you can spend. It lives on top of Ethereum, and it can move money between around as fast as Ethereum can. Creating a fork is cheap, like creating a branch in Git, so anybody can create their version of reality, then see if they can persuade other people to live and transact in that reality with them.
 
 Once we can put different realities in different forks, smart contracts no longer need to choose between them. Settling a bet on whether Hillary Clinton beat Donald Trump no longer requires an objective source of truth about whether Hillary Clinton beat Donald Trump. Your contract simply pays the person who bet on Hillary on the branch that thinks Hillary won, and the person who bet on Trump on the branch that thinks Trump won. If it was Hillary Clinton who won, the tokens on the Trump branch probably won't be very valuable; But that's not something your smart contract needs to worry about.
 
@@ -64,7 +64,7 @@ Here's what we need to do to make this happen.
 * Discuss the initial social contract with a set of principles for what people should consider when they decide what is a good branch and what isn't.
 * Make a prototype Governance DAO contract to recommend which forks to use.
 * Review and improve the prototype token contract
-* Deploy the contract on Ethereum or ETC, with [some method of distributing the initial tokens](http://generator-meme.com/memes/oprah-you-get-a-car_568fbb65d58ba4317.jpg).
+* Deploy the contract on Ethereum and/or ETC, with [some method of distributing the initial tokens](http://generator-meme.com/memes/oprah-you-get-a-car_568fbb65d58ba4317.jpg).
 * Start publishing daily bundles of facts and judgements. Reality Keys can do this if nobody else does.
 * Tell people about the contract.
 * Make some applications that use the token, tell people about them and start using them
