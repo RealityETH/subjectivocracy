@@ -125,9 +125,9 @@ class TestRealityToken(TestCase):
 
         self.assertEqual(self.rc.getBalance(k1_addr, branch_aa_hash), 1000000)
 
-        self.assertTrue(self.rc.isBalanceAtLeast(k1_addr, 1000000, branch_aa_hash))
-        self.assertTrue(self.rc.isBalanceAtLeast(k1_addr, 1, branch_ab_hash))
-        self.assertFalse(self.rc.isBalanceAtLeast(k1_addr, 1000001, branch_ab_hash))
+        self.assertTrue(self.rc.isAmountSpendable(k1_addr, 1000000, branch_aa_hash))
+        self.assertTrue(self.rc.isAmountSpendable(k1_addr, 1, branch_ab_hash))
+        self.assertFalse(self.rc.isAmountSpendable(k1_addr, 1000001, branch_ab_hash))
 
         failed = False
         try:

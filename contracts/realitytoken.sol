@@ -35,7 +35,7 @@ contract RealityToken {
         if (branch_window < last_debit_windows[msg.sender]) {
             return false;
         }
-        if (!isBalanceAtLeast(msg.sender, amount, branch_hash)) {
+        if (!isAmountSpendable(msg.sender, amount, branch_hash)) {
             return false;
         }
         last_debit_windows[msg.sender] = branch_window;
@@ -47,7 +47,7 @@ contract RealityToken {
     // Crawl up towards the root of the tree until we get enough, or return false if we never do.
     // You never have negative total balance above you, so if you have enough credit at any point then return.
     // This uses less gas than getBalance, which always has to go all the way to the root.
-    function isBalanceAtLeast(address addr, uint256 _min_balance, bytes32 branch_hash) constant returns (bool) {
+    function isAmountSpendable(address addr, uint256 _min_balance, bytes32 branch_hash) constant returns (bool) {
         if (_min_balance > 2100000000000000) throw;
         int256 bal = 0;
         int256 min_balance = int256(_min_balance);
