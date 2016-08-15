@@ -93,9 +93,9 @@ Data publishing DAOs or other organizations, or people with a stake in a particu
 
 ### Querying the arbitration layer
 
-Information in the merkel root can be extracted by storing it in an intermediate contract, which can then queried, or by querying the data from an off-chain source such as IPFS and sending the result to an individual contract. 
+Information in the merkle root can be extracted by storing it in an intermediate contract, which can then queried, or by querying the data from an off-chain source such as IPFS and sending the result to an individual contract. 
 
-Each branch provides the address of a contract at which the publisher can make information contained in the tree available for contracts to query without the need to provide a Merkel proof. The Reality Token contract does not attempt to verify what information has been published in the suggested contract or whether it matches the contents of the merkel root; This is left to the validation process chosen in the social sphere.
+Each branch provides the address of a contract at which the publisher can make information contained in the tree available for contracts to query without the need to provide a Merkle proof. The Reality Token contract does not attempt to verify what information has been published in the suggested contract or whether it matches the contents of the merkle root; This is left to the validation process chosen in the social sphere.
 
 A contract using the token natively would simply request the appropriate data for the branch specified when it was called.
 
@@ -126,9 +126,9 @@ We propose an initial discussion prior to beginning operation to define the gene
 
 To provide time for social mechanisms to alert to incorrect branches, and also to limit the length of each chain and make it possible to traverse a chain without excessive gas use, a new branch can only be added to any given chain once in every 24-hour period. There is no limit to how many competing branches can be created within that 24-hour period, and the system is designed such that adding a competing branch does not result in any additional gas use to a participant unless the participant spends coins on it. Thus the height of the chain is limited to a maximum of one new set of facts per day, but it may have an arbitrary large number of parallel forks.
 
-A new branch point consists of a reference to the previous branch on top of which it builds, and a merkel root representing a merkel tree containing all the facts and judgements about which it makes claims. It is assumed the actual data will be stored elsewhere, and the market will not value a branch whose data is not available. The actual storage location of the data is not managed by the Reality Token contract, although we would suggest either another Ethereum contract, if a high proportion of the data is expected to be needed to be read on-chain, or IPFS, if the need to read the data from the blockchain is unusual.
+A new branch point consists of a reference to the previous branch on top of which it builds, and a merkle root representing a merkle tree containing all the facts and judgements about which it makes claims. It is assumed the actual data will be stored elsewhere, and the market will not value a branch whose data is not available. The actual storage location of the data is not managed by the Reality Token contract, although we would suggest either another Ethereum contract, if a high proportion of the data is expected to be needed to be read on-chain, or IPFS, if the need to read the data from the blockchain is unusual.
 
-The set of facts represented by a given merkel root can be arbitrarily large. If it is too large for market participants to verify, we would expect them to prefer an alternative branch that they were able to verify.
+The set of facts represented by a given merkle root can be arbitrarily large. If it is too large for market participants to verify, we would expect them to prefer an alternative branch that they were able to verify.
 
 Although branches can only be added daily, transfers of tokens down a chain can be made at any time and confirm in the normal Ethereum block interval. 
 
