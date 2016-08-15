@@ -112,11 +112,11 @@ class TestRealityToken(TestCase):
         self.s.mine(1)
         self.s.block.timestamp = self.s.block.timestamp + 86400
 
-        null_test_merkel_root = decode_hex(sha3_256('nulltest').hexdigest())
+        null_test_merkle_root = decode_hex(sha3_256('nulltest').hexdigest())
 
         failed = False
         try:
-            self.rc.createBranch(null_hash, null_test_merkel_root, contract_addr)
+            self.rc.createBranch(null_hash, null_test_merkle_root, contract_addr)
             self.s.mine(1)
             self.s.block.timestamp = self.s.block.timestamp + 86400
         except TransactionFailed:
@@ -147,8 +147,8 @@ class TestRealityToken(TestCase):
 
         branch_hash = branch_aba_hash
         for i in range(0,100):
-            dummy_merkel_root = decode_hex(sha3_256('dummy' + str(i)).hexdigest())
-            branch_hash = self.rc.createBranch(branch_hash, dummy_merkel_root, contract_addr)
+            dummy_merkle_root = decode_hex(sha3_256('dummy' + str(i)).hexdigest())
+            branch_hash = self.rc.createBranch(branch_hash, dummy_merkle_root, contract_addr)
             self.s.mine(1)
             self.s.block.timestamp = self.s.block.timestamp + 86400
             # print encode_hex(branch_hash)
