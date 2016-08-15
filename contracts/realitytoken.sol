@@ -2,7 +2,7 @@ contract RealityToken {
 
     struct Branch {
         bytes32 parent_hash; // Hash of the parent branch.
-        bytes32 merkle_root; // Merkel root of the data we commit to
+        bytes32 merkle_root; // Merkle root of the data we commit to
         address data_contract; // Optional address of a contract containing this data
         uint256 timestamp; // Timestamp branch was mined
         uint256 window; // Day x of the system's operation, starting at UTC 00:00:00
