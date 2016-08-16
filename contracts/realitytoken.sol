@@ -52,7 +52,7 @@ contract RealityToken {
         return window_branches[window];
     }
 
-    function getBalance(address addr, bytes32 branch_hash) constant returns (uint256) {
+    function getBalanceAbove(address addr, bytes32 branch_hash) constant returns (uint256) {
         int256 bal = 0;
         bytes32 NULL_HASH;
         while(branch_hash != NULL_HASH) {
@@ -64,7 +64,7 @@ contract RealityToken {
 
     // Crawl up towards the root of the tree until we get enough, or return false if we never do.
     // You never have negative total balance above you, so if you have enough credit at any point then return.
-    // This uses less gas than getBalance, which always has to go all the way to the root.
+    // This uses less gas than getBalanceAbove, which always has to go all the way to the root.
     function isAmountSpendable(address addr, uint256 _min_balance, bytes32 branch_hash) constant returns (bool) {
         if (_min_balance > 2100000000000000) throw;
         int256 bal = 0;

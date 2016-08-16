@@ -40,7 +40,7 @@ class TestRealityToken(TestCase):
 
         self.assertEqual(k1_addr, '7d577a597b2742b498cb5cf0c26cdcd726d39e6e')
 
-        self.assertEqual(self.rc.getBalance(keys.privtoaddr(t.k0), genesis_hash), 2100000000000000)
+        self.assertEqual(self.rc.getBalanceAbove(keys.privtoaddr(t.k0), genesis_hash), 2100000000000000)
 
         u = self.s.block.gas_used
 
@@ -55,8 +55,8 @@ class TestRealityToken(TestCase):
 
         window_index = 4 # index of genesis hash in struct
 
-        self.assertEqual(self.rc.getBalance(keys.privtoaddr(t.k0), genesis_hash), 2100000000000000-1000000)
-        self.assertEqual(self.rc.getBalance(k1_addr, genesis_hash), 1000000)
+        self.assertEqual(self.rc.getBalanceAbove(keys.privtoaddr(t.k0), genesis_hash), 2100000000000000-1000000)
+        self.assertEqual(self.rc.getBalanceAbove(k1_addr, genesis_hash), 1000000)
 
         genesis_branch = self.rc.branches(genesis_hash);
         self.assertEqual(null_hash, genesis_branch[0])
@@ -123,7 +123,7 @@ class TestRealityToken(TestCase):
             failed = True 
         self.assertTrue(failed, "You cannot create a branch with a null parent hash")
 
-        self.assertEqual(self.rc.getBalance(k1_addr, branch_aa_hash), 1000000)
+        self.assertEqual(self.rc.getBalanceAbove(k1_addr, branch_aa_hash), 1000000)
 
         self.assertTrue(self.rc.isAmountSpendable(k1_addr, 1000000, branch_aa_hash))
         self.assertTrue(self.rc.isAmountSpendable(k1_addr, 1, branch_ab_hash))
@@ -142,8 +142,8 @@ class TestRealityToken(TestCase):
         self.rc.sendCoin(k2_addr, 500000, branch_aa_hash, sender=t.k1)
         #print "Gas used to send coins after %d blocks: %d" % (2, self.s.block.gas_used - u)
 
-        self.assertEqual(self.rc.getBalance(k2_addr, branch_aa_hash), 500000)
-        self.assertEqual(self.rc.getBalance(k2_addr, branch_ab_hash), 0)
+        self.assertEqual(self.rc.getBalanceAbove(k2_addr, branch_aa_hash), 500000)
+        self.assertEqual(self.rc.getBalanceAbove(k2_addr, branch_ab_hash), 0)
 
         branch_hash = branch_aba_hash
         for i in range(0,100):
@@ -167,13 +167,13 @@ class TestRealityToken(TestCase):
             failed = True
 
 
-        k0_bal = self.rc.getBalance(k0_addr, branch_ab_hash)
+        k0_bal = self.rc.getBalanceAbove(k0_addr, branch_ab_hash)
         #print k0_bal
         self.rc.sendCoin(k2_addr, 5, branch_aba_hash, sender=t.k0)
         branch_abaa_hash = self.rc.createBranch(branch_aba_hash, dummy_merkle_root_abaa, contract_addr)
         self.s.mine(1)
         self.s.block.timestamp = self.s.block.timestamp + 86400
-        k0_bal_spent = self.rc.getBalance(k0_addr, branch_abaa_hash)
+        k0_bal_spent = self.rc.getBalanceAbove(k0_addr, branch_abaa_hash)
 
         #print k0_bal_spent
         self.assertEqual(k0_bal_spent, k0_bal - 5)
