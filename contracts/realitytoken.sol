@@ -6,7 +6,7 @@ contract RealityToken {
         address data_contract; // Optional address of a contract containing this data
         uint256 timestamp; // Timestamp branch was mined
         uint256 window; // Day x of the system's operation, starting at UTC 00:00:00
-        mapping(address => int256) balance_change; // user debits and credits
+        mapping(address => mapping(address=>int256)) balance_change; // owner->user debits and credits
     }
     mapping(bytes32 => Branch) public branches;
 
@@ -24,7 +24,7 @@ contract RealityToken {
         bytes32 genesis_merkle_root = sha3("I leave to several futures (not to all) my garden of forking paths");
         bytes32 genesis_branch_hash = sha3(NULL_HASH, genesis_merkle_root, NULL_ADDRESS);
         branches[genesis_branch_hash] = Branch(NULL_HASH, genesis_merkle_root, NULL_ADDRESS, now, 0);
-        branches[genesis_branch_hash].balance_change[msg.sender] = 2100000000000000;
+        branches[genesis_branch_hash].balance_change[msg.sender][msg.sender] = 2100000000000000;
         window_branches[0].push(genesis_branch_hash);
     }
 
@@ -52,11 +52,11 @@ contract RealityToken {
         return window_branches[window];
     }
 
-    function getBalanceAbove(address addr, bytes32 branch_hash) constant returns (uint256) {
+    function balanceOfAbove(address addr, bytes32 branch_hash) constant returns (uint256) {
         int256 bal = 0;
         bytes32 NULL_HASH;
         while(branch_hash != NULL_HASH) {
-            bal += branches[branch_hash].balance_change[addr];
+            bal += branches[branch_hash].balance_change[addr][addr];
             branch_hash = branches[branch_hash].parent_hash;
         }
         return uint256(bal);
@@ -71,7 +71,7 @@ contract RealityToken {
         int256 min_balance = int256(_min_balance);
         bytes32 NULL_HASH;
         while(branch_hash != NULL_HASH) {
-            bal += branches[branch_hash].balance_change[addr];
+            bal += branches[branch_hash].balance_change[addr][addr];
             branch_hash = branches[branch_hash].parent_hash;
             if (bal >= min_balance) {
                 return true;
@@ -80,7 +80,11 @@ contract RealityToken {
         return false;
     }
 
-    function sendCoin(address addr, uint256 amount, bytes32 branch_hash) returns (bool) {
+    function transferOnBranch(address addr, uint256 amount, bytes32 branch_hash) returns (bool) {
+        return transferFromOnBranch(msg.sender, addr, amount, branch_hash);
+    }
+
+    function transferFromOnBranch(address sender, address addr, uint256 amount, bytes32 branch_hash) returns (bool) {
         uint256 branch_window = branches[branch_hash].window;
 
         if (amount > 2100000000000000) throw;
@@ -90,8 +94,8 @@ contract RealityToken {
         if (!isAmountSpendable(msg.sender, amount, branch_hash)) return false; // can only spend what you have
 
         last_debit_windows[msg.sender] = branch_window;
-        branches[branch_hash].balance_change[msg.sender] -= int256(amount);
-        branches[branch_hash].balance_change[addr] += int256(amount);
+        branches[branch_hash].balance_change[msg.sender][msg.sender] -= int256(amount);
+        branches[branch_hash].balance_change[addr][addr] += int256(amount);
         return true;
     }
 
