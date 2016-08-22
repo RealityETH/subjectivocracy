@@ -14,10 +14,17 @@ class TestRealityToken(TestCase):
         self.s = t.state()
         rc_code = open('realitytoken.sol').read()
         self.rc = self.s.abi_contract(rc_code, language='solidity', sender=t.k0)
+        rc_address = self.rc.address
+
         #window_branches = self.rc.getWindowBranches(0)
         genesis_branch_hash = self.rc.window_branches(0, 0)
         #print encode_hex(genesis_branch_hash)
         self.assertEqual(len(genesis_branch_hash), 32)
+
+        portal_code = open('portaltoken.sol').read()
+        self.pc = self.s.abi_contract(portal_code, language='solidity', sender=t.k0)
+        self.pc.setRealityToken(rc_address, sender=t.k0)
+        self.pc.setBranch(genesis_branch_hash)
 
 
     def test_register_and_fetch(self):
@@ -29,8 +36,8 @@ class TestRealityToken(TestCase):
 
         genesis_hash = decode_hex("fca5e1a248b8fee34db137da5e38b41f95d11feb5a8fa192a150d8d5d8de1c59")
 
-        null_hash = decode_hex("0000000000000000000000000000000000000000000000000000000000000000")
-        # print encode_hex(null_hash)
+        NULL_HASH = decode_hex("0000000000000000000000000000000000000000000000000000000000000000")
+        # print encode_hex(NULL_HASH)
 
         k0_addr = encode_hex(keys.privtoaddr(t.k0))
         k1_addr = encode_hex(keys.privtoaddr(t.k1))
@@ -59,7 +66,7 @@ class TestRealityToken(TestCase):
         self.assertEqual(self.rc.balanceOfAbove(k1_addr, genesis_hash), 1000000)
 
         genesis_branch = self.rc.branches(genesis_hash);
-        self.assertEqual(null_hash, genesis_branch[0])
+        self.assertEqual(NULL_HASH, genesis_branch[0])
         self.assertEqual(0, genesis_branch[window_index], "Genesis hash window is 0")
 
         madeup_block_hash = decode_hex(sha3_256('pants').hexdigest())
@@ -116,7 +123,7 @@ class TestRealityToken(TestCase):
 
         failed = False
         try:
-            self.rc.createBranch(null_hash, null_test_merkle_root, contract_addr)
+            self.rc.createBranch(NULL_HASH, null_test_merkle_root, contract_addr)
             self.s.mine(1)
             self.s.block.timestamp = self.s.block.timestamp + 86400
         except TransactionFailed:
@@ -125,9 +132,9 @@ class TestRealityToken(TestCase):
 
         self.assertEqual(self.rc.balanceOfAbove(k1_addr, branch_aa_hash), 1000000)
 
-        self.assertTrue(self.rc.isAmountSpendable(k1_addr, 1000000, branch_aa_hash))
-        self.assertTrue(self.rc.isAmountSpendable(k1_addr, 1, branch_ab_hash))
-        self.assertFalse(self.rc.isAmountSpendable(k1_addr, 1000001, branch_ab_hash))
+        self.assertTrue(self.rc.isAmountSpendable(k1_addr, k1_addr, 1000000, branch_aa_hash))
+        self.assertTrue(self.rc.isAmountSpendable(k1_addr, k1_addr, 1, branch_ab_hash))
+        self.assertFalse(self.rc.isAmountSpendable(k1_addr, k1_addr, 1000001, branch_ab_hash))
 
         failed = False
         try:
@@ -181,6 +188,51 @@ class TestRealityToken(TestCase):
         self.assertFalse(self.rc.transferOnBranch(k2_addr, 5, branch_ab_hash, sender=t.k0), "Attempting to send coins on an earlier branch returns false")
         self.assertEqual(k0_bal_spent, k0_bal - 5, "Attempt to send coins on an earlier branch left balance unchanged")
         return
+
+
+    def test_portal_token(self):
+
+        k0_addr = encode_hex(keys.privtoaddr(t.k0))
+        k1_addr = encode_hex(keys.privtoaddr(t.k1))
+        k2_addr = encode_hex(keys.privtoaddr(t.k2))
+
+        exchange = t.k9
+        exchange_addr = encode_hex(keys.privtoaddr(exchange))
+
+        genesis_branch_hash = self.rc.window_branches(0, 0)
+        k0_bal = self.rc.balanceOfAbove(k0_addr, genesis_branch_hash)
+        self.assertEqual(k0_bal, 2100000000000000)
+
+        failed = False
+        try:
+            self.pc.approve(decode_hex(exchange_addr), 10000)
+        except TransactionFailed:
+            failed = True 
+        self.assertTrue(failed, "The portal can't lock funds to an exchange until the owner has authorized the portal")
+
+        self.rc.approveProxy(self.pc.address)
+        self.assertTrue(self.rc.approved_proxies(k0_addr, self.pc.address))
+        self.assertFalse(self.rc.approved_proxies(k1_addr, self.pc.address))
+
+        self.pc.approve(exchange_addr, 10000)
+
+        k0_bal = self.rc.balanceOfAbove(k0_addr, genesis_branch_hash)
+        self.assertEqual(k0_bal, 2100000000000000 - 10000)
+        last_bal = k0_bal
+        
+        self.pc.transfer(k1_addr, 20000)
+        k0_bal = self.rc.balanceOfAbove(k0_addr, genesis_branch_hash)
+        self.assertEqual(k0_bal, last_bal - 20000)
+        k1_bal = self.rc.balanceOfAbove(k1_addr, genesis_branch_hash)
+        self.assertEqual(k1_bal, 20000)
+
+        self.assertTrue(self.pc.transferFrom(k0_addr, k2_addr, 6000, sender=exchange))
+        self.assertFalse(self.pc.transferFrom(k0_addr, k2_addr, 6000, sender=exchange), "You cannot transfer more than has been approved")
+
+
+
+        pass
+
 
 
 if __name__ == '__main__':
