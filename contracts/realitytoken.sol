@@ -53,11 +53,11 @@ contract RealityToken {
         return window_branches[window];
     }
 
-    function balanceOfAbove(address addr, bytes32 branch_hash) constant returns (uint256) {
+    function balanceOfAbove(address manager, address addr, bytes32 branch_hash) constant returns (uint256) {
         int256 bal = 0;
         bytes32 NULL_HASH;
         while(branch_hash != NULL_HASH) {
-            bal += branches[branch_hash].balance_change[addr][addr];
+            bal += branches[branch_hash].balance_change[manager][addr];
             branch_hash = branches[branch_hash].parent_hash;
         }
         return uint256(bal);

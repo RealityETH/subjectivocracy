@@ -1,5 +1,6 @@
 contract RealityTokenAPI {
     function managedTransferFrom(address _from_manager, address _from_owner, address _to_manager, address _to_owner, uint256 amount, bytes32 branch_hash) returns (bool) {}
+    function balanceOfAbove(address manager, address owner, bytes32 branch_hash) returns (uint256) {}
 }
 
 /*
@@ -49,6 +50,15 @@ contract DictatorshipPortalToken {
     // TODO: Maybe this should be called "lock()".
     function approve(address _spender, uint256 _value) returns (bool success) {
         return realitytoken.managedTransferFrom(msg.sender, msg.sender, _spender, msg.sender, _value, branch);
+    }
+
+    // TODO: Maybe this should be called "lockedAmount()"
+    function allowance(address holder, address spender) constant returns (uint256 _value) {
+        return realitytoken.balanceOfAbove(spender, holder, branch);
+    }
+
+    function balanceOf(address holder) constant returns (uint256 _value) {
+        return realitytoken.balanceOfAbove(holder, holder, branch);
     }
 
 }
