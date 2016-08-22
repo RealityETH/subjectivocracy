@@ -11,6 +11,8 @@ contract RealityToken {
     mapping(bytes32 => Branch) public branches;
     mapping(address => mapping(address => bool)) public approved_proxies;
 
+    uint256 public totalSupply = 2100000000000000;
+
     // Spends, which may cause debits, can only go forwards. 
     // That way when we check if you have enough to spend we only have to go backwards.
     mapping(address => mapping(address => uint256)) public last_debit_windows; // index of last user debits to stop you going backwards

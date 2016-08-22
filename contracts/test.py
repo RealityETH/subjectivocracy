@@ -234,6 +234,8 @@ class TestRealityToken(TestCase):
         self.assertEqual(self.rc.balanceOfAbove(k2_addr, k2_addr, genesis_branch_hash), 6000)
         self.assertEqual(self.pc.balanceOf(k2_addr), 6000)
 
+        self.assertEqual(self.rc.totalSupply(), 2100000000000000);
+        self.assertEqual(self.pc.totalSupply(), 2100000000000000);
 
 
 if __name__ == '__main__':

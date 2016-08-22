@@ -1,6 +1,7 @@
 contract RealityTokenAPI {
     function managedTransferFrom(address _from_manager, address _from_owner, address _to_manager, address _to_owner, uint256 amount, bytes32 branch_hash) returns (bool) {}
     function balanceOfAbove(address manager, address owner, bytes32 branch_hash) returns (uint256) {}
+    function totalSupply() returns (uint256) {}
 }
 
 /*
@@ -59,6 +60,10 @@ contract DictatorshipPortalToken {
 
     function balanceOf(address holder) constant returns (uint256 _value) {
         return realitytoken.balanceOfAbove(holder, holder, branch);
+    }
+
+    function totalSupply() constant returns (uint256) {
+        return realitytoken.totalSupply();
     }
 
 }
