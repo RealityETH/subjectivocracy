@@ -229,6 +229,8 @@ class TestRealityToken(TestCase):
         self.assertTrue(self.pc.transferFrom(k0_addr, k2_addr, 6000, sender=exchange))
         self.assertFalse(self.pc.transferFrom(k0_addr, k2_addr, 6000, sender=exchange), "You cannot transfer more than has been approved")
 
+        self.assertEqual(self.rc.balanceOfAbove(k2_addr, genesis_branch_hash), 6000)
+
 
 
         pass
