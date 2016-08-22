@@ -35,7 +35,7 @@ contract DictatorshipPortalToken {
         return realitytoken.managedTransferFrom(msg.sender, msg.sender, _to, _to, _value, branch);
     }
 
-    // NB This requires that ufnds have been "approved", where approval actually locks the funds.
+    // NB This requires that funds have been "approved", where approval actually locks the funds.
     // TODO: Maybe this should be called "transferLockedFundsFrom()"
     function transferFrom(address _from, address _to, uint256 _value) returns (bool success) {
         // msg.sender is the manager, they specify the owner
