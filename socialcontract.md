@@ -55,10 +55,9 @@ TODO: Work through the detail of querying a fact and check we can sanely handle 
 The confidence level should be stated as a %, showing how confident a data source must be about a pice of data before they publish it. Depending on needs, data sources may set a policy for a single confidence level and which they release data, or publish multiple items of data at different confidence levels.
 
 
-Each bundle is added within a defined 24-hour window, starting at 00:00 UTC. Participants are encouraged to create rival branches within the defined window, or where necessary within the following window. Where practical, data providers should publish previews of the data they intend to publish in advance. 
-
-
 ## Reverting to earlier forks
+
+Each bundle is added within a defined 24-hour window, starting at 00:00 UTC. Participants are encouraged to create rival branches within the defined window, or where necessary within the following window. Where practical, data providers should publish previews of the data they intend to publish in advance. 
 
 Although it is technically possible to add a child to any previous bundle, including the initial one, participants should try to avoid reverting more than 3 days. We propose an absolute maximum of 7 days' reversion, allowing participants to make payments with funds that they have held for more than 7 days without worrying that the economic majority may settle on a different branch. If incorrect data or a failure to fulfill the social contract is undetected for 7 days, it should be considered too late to correct it.
 
