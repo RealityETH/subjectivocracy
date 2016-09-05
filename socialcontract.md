@@ -44,13 +44,21 @@ This cannot be guaranteed as some data may be difficult or expensive to provide,
 
 Even when facts and judgements are made on the best available information, there is always a risk that new information will show previously-published information to be incorrect. Facts and judgements may fall into the following classifications, people requesting information should be clear about which they want:
 
-Final vs Evolving: An evolving fact may be over-written in a subsequent bundle. A final fact cannot be over-written, and can only be changed by orphaning the bundle that produced it.
+### Final vs Evolving
+
+An evolving fact may be over-written in a subsequent bundle. A final fact cannot be over-written, and can only be changed by orphaning the bundle that produced it.
 
 TODO: Work through the detail of querying a fact and check we can sanely handle evolving facts.
 
-Confidence level: This should be stated as a %, showing how confident a data source must be about a pice of data before they publish it. Depending on needs, data sources may set a policy for a single confidence level and which they release data, or publish multiple items of data at different confidence levels.
+### Confidence level
+
+The confidence level should be stated as a %, showing how confident a data source must be about a pice of data before they publish it. Depending on needs, data sources may set a policy for a single confidence level and which they release data, or publish multiple items of data at different confidence levels.
+
 
 Each bundle is added within a defined 24-hour window, starting at 00:00 UTC. Participants are encouraged to create rival branches within the defined window, or where necessary within the following window. Where practical, data providers should publish previews of the data they intend to publish in advance. 
+
+
+## Reverting to earlier forks
 
 Although it is technically possible to add a child to any previous bundle, including the initial one, participants should try to avoid reverting more than 3 days. We propose an absolute maximum of 7 days' reversion, allowing participants to make payments with funds that they have held for more than 7 days without worrying that the economic majority may settle on a different branch. If incorrect data or a failure to fulfill the social contract is undetected for 7 days, it should be considered too late to correct it.
 
