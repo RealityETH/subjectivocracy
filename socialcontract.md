@@ -14,14 +14,14 @@ The Reality Token system provides infrastructure for attaching payments to a par
 
 The following draft proposes a set of principles which participants should follow when creating bundles of facts and propositions, or deciding which bundle to treat as valuable.
 
-We have no way to enforce these principles, except to the extent that participants do not consider bundles valuable unless they follow them.
+These principles are enforced only by the unwillingness of participants to value payments sent to bundles that do not follow them.
 
 
 ## Principles guiding data providers
 
 ### Verifiability
 
-All data added to a bundle should be verifiable by arbitrary participants. Where this requires an automated process, the code for that process should be open source and publicly available.
+All data added to a bundle should be verifiable by arbitrary participants. Where this requires an automated process, the code for that process should be open source and publicly available. Where it requires a human process, the steps involved should be clear in advance, and they should be followed with the greatest practical transparency.
 
 ### Procedural Transparency
 
@@ -52,14 +52,18 @@ TODO: Work through the detail of querying a fact and check we can sanely handle 
 
 ### Confidence level
 
-The confidence level should be stated as a %, showing how confident a data source must be about a pice of data before they publish it. Depending on needs, data sources may set a policy for a single confidence level and which they release data, or publish multiple items of data at different confidence levels.
+The confidence level should be stated as a %, showing how confident a data source must be about a piece of data before they publish it. Depending on needs, data sources may set a policy for a single confidence level and which they release data, or publish multiple items of data at different confidence levels.
 
 
 ## Reverting to earlier forks
 
 Each bundle is added within a defined 24-hour window, starting at 00:00:00 UTC. Participants are encouraged to create rival branches within the defined window, or where necessary within the following window. Where practical, data providers should publish previews of the data they intend to publish in advance.
 
-Although it is technically possible to add a child to any previous bundle, including the initial one, participants should try to avoid reverting more than 3 days. We propose an absolute maximum of 7 days' reversion, allowing participants to make payments with funds that they have held for more than 7 days without worrying that the economic majority may settle on a different branch. If incorrect data or a failure to fulfill the social contract is undetected for 7 days, it should be considered too late to correct it.
+Although it is technically possible to add a child to any previous bundle, including the initial one, the process of verifying a bundle and replacing it if necessary should be completed within 3 days where reasonably possible. 
+
+7 days' reversion should be considered an absolute maximum: If incorrect data or a failure to fulfill the social contract is undetected for 7 days, it should be considered too late to correct it.
+
+Note that this restriction is not enforced at a technical level, as it could trivially be avoided by adding dummy bundles to intermediate windows.
 
 
 ## Changing the social contract
