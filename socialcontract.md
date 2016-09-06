@@ -40,6 +40,11 @@ It should be possible for participants to write contracts in the expectation tha
 This cannot be guaranteed as some data may be difficult or expensive to provide, and providers may cease to make it available. Where this occurs, the bundle should prioritize restoring data access. Restoring predictable access to data may mean compromising on the quality of data provided.
 
 
+### Accepting new sources of data
+
+Data should be accepted inclusively into bundles, as long as the organization, individual or DAO supplying it satisfies the requirements specified in this document.
+
+
 ## Principles guiding certainty and reversibility
 
 Even when facts and judgements are made on the best available information, there is always a risk that new information will show previously-published information to be incorrect. Facts and judgements may fall into the following classifications, people requesting information should be clear about which they want:
