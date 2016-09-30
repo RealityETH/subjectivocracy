@@ -1,3 +1,5 @@
+pragma solidity ^0.4.1;
+
 contract RealityTokenAPI {
     function managedTransferFrom(address _from_manager, address _from_owner, address _to_manager, address _to_owner, uint256 amount, bytes32 branch_hash) returns (bool) {}
     function balanceOfAbove(address manager, address owner, bytes32 branch_hash) returns (uint256) {}
