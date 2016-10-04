@@ -1,123 +1,5 @@
 pragma solidity ^0.4.1;
 
-
-
-contract RealityTokenOld {
-
-    struct Branch {
-        bytes32 parent_hash; // Hash of the parent branch.
-        bytes32 merkle_root; // Merkle root of the data we commit to
-        address data_contract; // Optional address of a contract containing this data
-        uint256 timestamp; // Timestamp branch was mined
-        uint256 window; // Day x of the system's operation, starting at UTC 00:00:00
-        mapping(address => mapping(address=>int256)) balance_change; // owner->user debits and credits
-    }
-    mapping(bytes32 => Branch) public branches;
-    mapping(address => mapping(address => bool)) public approved_proxies;
-
-    uint256 public totalSupply = 2100000000000000;
-
-    // Spends, which may cause debits, can only go forwards. 
-    // That way when we check if you have enough to spend we only have to go backwards.
-    mapping(address => mapping(address => uint256)) public last_debit_windows; // index of last user debits to stop you going backwards
-
-    mapping(uint256 => bytes32[]) public window_branches; // index to easily get all branch hashes for a window
-    uint256 public genesis_window_timestamp; // 00:00:00 UTC on the day the contract was mined
-
-    function RealityToken() {
-        genesis_window_timestamp = now - (now % 86400);
-        address NULL_ADDRESS;
-        bytes32 NULL_HASH;
-        bytes32 genesis_merkle_root = sha3("I leave to several futures (not to all) my garden of forking paths");
-        bytes32 genesis_branch_hash = sha3(NULL_HASH, genesis_merkle_root, NULL_ADDRESS);
-        branches[genesis_branch_hash] = Branch(NULL_HASH, genesis_merkle_root, NULL_ADDRESS, now, 0);
-        branches[genesis_branch_hash].balance_change[msg.sender][msg.sender] = 2100000000000000;
-        window_branches[0].push(genesis_branch_hash);
-    }
-
-    function createBranch(bytes32 parent_branch_hash, bytes32 merkle_root, address data_contract) returns (bytes32) {
-        bytes32 NULL_HASH;
-        uint256 window = (now - genesis_window_timestamp) / 86400; // NB remainder gets rounded down
-
-        bytes32 branch_hash = sha3(parent_branch_hash, merkle_root, data_contract);
-        if (branch_hash == NULL_HASH) throw;
-
-        // Your branch must not yet exist, the parent branch must exist.
-        // Check existence by timestamp, all branches have one.
-        if (branches[branch_hash].timestamp > 0) throw;
-        if (branches[parent_branch_hash].timestamp == 0) throw;
-
-        // We must now be a later 24-hour window than the parent.
-        if (branches[parent_branch_hash].window >= window) throw;
-
-        branches[branch_hash] = Branch(parent_branch_hash, merkle_root, data_contract, now, window);
-        window_branches[window].push(branch_hash);
-        return branch_hash;
-    }
-
-    function getWindowBranches(uint256 window) constant returns (bytes32[]) {
-        return window_branches[window];
-    }
-
-    function balanceOfAbove(address manager, address addr, bytes32 branch_hash) constant returns (uint256) {
-        int256 bal = 0;
-        bytes32 NULL_HASH;
-        while(branch_hash != NULL_HASH) {
-            bal += branches[branch_hash].balance_change[manager][addr];
-            branch_hash = branches[branch_hash].parent_hash;
-        }
-        return uint256(bal);
-    }
-
-    // Crawl up towards the root of the tree until we get enough, or return false if we never do.
-    // You never have negative total balance above you, so if you have enough credit at any point then return.
-    // This uses less gas than getBalanceAbove, which always has to go all the way to the root.
-    function isAmountSpendable(address manager, address addr, uint256 _min_balance, bytes32 branch_hash) constant returns (bool) {
-        if (_min_balance > 2100000000000000) throw;
-        int256 bal = 0;
-        int256 min_balance = int256(_min_balance);
-        bytes32 NULL_HASH;
-        while(branch_hash != NULL_HASH) {
-            bal += branches[branch_hash].balance_change[manager][addr];
-            branch_hash = branches[branch_hash].parent_hash;
-            if (bal >= min_balance) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function transferOnBranch(address addr, uint256 amount, bytes32 branch_hash) returns (bool) {
-        return managedTransferFrom(msg.sender, msg.sender, addr, addr, amount, branch_hash);
-    }
-
-    function managedTransferFrom(address _from_manager, address _from_owner, address _to_manager, address _to_owner, uint256 amount, bytes32 branch_hash) returns (bool) {
-
-        if ( (_from_manager != msg.sender) && (!approved_proxies[_from_owner][msg.sender]) ) throw;
-
-        uint256 branch_window = branches[branch_hash].window;
-
-        if (amount > 2100000000000000) throw;
-        if (branches[branch_hash].timestamp == 0) throw; // branch must exist
-
-        if (branch_window < last_debit_windows[_from_manager][_from_owner]) return false; // debits can't go backwards
-        if (!isAmountSpendable(_from_manager, _from_owner, amount, branch_hash)) return false; // can only spend what you have
-
-        last_debit_windows[_from_manager][_from_owner] = branch_window;
-        branches[branch_hash].balance_change[_from_manager][_from_owner] -= int256(amount);
-        branches[branch_hash].balance_change[_to_manager][_to_owner] += int256(amount);
-        return true;
-    }
-
-    function approveProxy(address addr) {
-        approved_proxies[msg.sender][addr] = true;
-    }
-    function unapproveProxy(address addr) {
-        approved_proxies[msg.sender][addr] = false;
-    }
-
-}
-
 /*
 You should inherit from StandardToken or, for a token like you would want to
 deploy in something like Mist, see HumanStandardToken.sol.
@@ -218,50 +100,63 @@ contract StandardToken is Token {
 
 }
 
+// Header for when we need to call ourselves
+contract RealityTokenAPI {
+    function balanceAtWindow(address _to, uint256 _window) constant returns (uint256) {}
+}
+
 contract RealityToken is StandardToken {
 
-    address forked_from_contract;
-    uint256 forked_at_window;
+    // This will be the timestamp when the system started
+    // It should be copied into each new contract whenever we fork
+    uint256 public genesis_window_timestamp;
 
-    bytes32 owner; // Contract that can publish branches to us
-    bytes32 merkle_root; // Merkle root of the data we commit to
-    uint256 timestamp; // Timestamp branch was mined
+    address public forked_from_contract;
+    uint256 public forked_at_window;
+
+    address public owner; // Contract that can publish bundlees to us
 
     // Day x of the system's operation, starting at UTC 00:00:00
-    uint256 first_window;
-    uint256 last_window;
+    uint256 public last_window;
 
-    uint256 genesis_window_timestamp;
+    mapping(uint256 => mapping(address=>int256)) public balanceChanges; // per-window transaction history for forking
+    mapping(address=>int256) public startingBalanceOf; // The balance when we forked. Not populated until copyBalanceFromParent called.
 
-    mapping(uint256 => mapping(address=>int256)) balanceChangeOf; // per-window transaction history for forking
-    mapping(address=>int256) startingBalanceOf; // The balance when we forked. Not populated until copyBalanceFromParent called.
+    mapping(address=>bool) public isCopyBalanceFromParentDone; 
+    mapping(uint256 => address[]) public child_forks; 
 
-    mapping(address=>bool) isCopyBalanceFromParentDone; 
-    public mapping(window => address[]) child_forks; 
+    struct FactBundle {
+        bytes32 merkle_root; // Merkle root of the data we commit to
+        address data_contract; // Optional address of a contract containing this data
+        uint256 timestamp; // Timestamp bundle was mined
+        uint256 window; // Day x of the system's operation, starting at UTC 00:00:00
+    }
+    mapping(uint256 => FactBundle) public fact_bundles;
 
-    function RealityToken(uint256 _forked_at_window, address _forked_from_contract, _genesis_window_timestamp) {
+    function RealityToken(uint256 _forked_at_window, address _forked_from_contract, uint256 _genesis_window_timestamp, address _owner) {
         if (_forked_at_window == 0) {
-            genesis_window_timestamp = now - (now % 86400);
+            owner = msg.sender;
         } else {
             forked_at_window = _forked_at_window;
             forked_from_contract = _forked_from_contract;
             genesis_window_timestamp = _genesis_window_timestamp;
+            owner = _owner;
         }
     }
 
-    function createFork(_window) {
-        child_forks[_window].push = new RealityToken(_window, this, genesis_window_timestamp);
-    }
+    function transfer(address _to, uint256 _value) returns (bool success) {
 
-    function transfer(address _to, uint256 _value) {
-        forkBalanceFromParent(_to);
-        if (balanceOf[msg.sender] < _value) throw;
-        if (balanceOf[_to] + _value < balanceOf[_to]) throw;
-        balanceOf[msg.sender] -= _value;
-        balanceOf[_to] += _value;
-        balanceChangeOf[window][_to] += int256(_value); 
-        balanceChangeOf[window][msg.sender] -= int256(_value); 
+        copyBalanceFromParent(_to);
+
+        uint256 window = (now - genesis_window_timestamp) / 86400; // remainder gets rounded down
+        if (balances[msg.sender] < _value) throw;
+        if (balances[_to] + _value < balances[_to]) throw;
+        balances[msg.sender] -= _value;
+        balances[_to] += _value;
+        balanceChanges[window][_to] += int256(_value); 
+        balanceChanges[window][msg.sender] -= int256(_value); 
         Transfer(msg.sender, _to, _value);
+        return true;
     }
 
     function transferFrom(address _from, address _to, uint256 _value) returns (bool success) {
@@ -271,8 +166,8 @@ contract RealityToken is StandardToken {
         if (balances[_from] >= _value && allowed[_from][msg.sender] >= _value && _value > 0) {
             balances[_to] += _value;
             balances[_from] -= _value;
-            balanceChangeOf[win][_to] += int256(_value); 
-            balanceChangeOf[win][_from] -= int256(_value); 
+            balanceChanges[win][_to] += int256(_value); 
+            balanceChanges[win][_from] -= int256(_value); 
             allowed[_from][msg.sender] -= _value;
             Transfer(_from, _to, _value);
             return true;
@@ -280,49 +175,63 @@ contract RealityToken is StandardToken {
     }
 
     function copyBalanceFromParent(address _to) returns (bool) {
+
         if (isCopyBalanceFromParentDone[_to]) return false;
+
         address NULL_ADDRESS;
-        if (forked_from_contract == NULL_ADDRESS) return false;
-        RealityToken parent = RealityToken(forked_from_contract);
-        uint256 val = parent.balanceAtWindow(forked_at_window);
-        balanceChangeOf[forked_at_window][_to] += int256(_value); 
-        balanceOf[_to] += val;
+        if (forked_from_contract == NULL_ADDRESS) return false; // no parent
+
+        RealityTokenAPI parent = RealityTokenAPI(forked_from_contract);
+        uint256 val = parent.balanceAtWindow(_to, forked_at_window);
+        balanceChanges[forked_at_window][_to] += int256(val); 
+        balances[_to] += val;
     }
 
     // Usually you fork near the end not near the beginning
     // So start at the final balance and apply changes backwards
-    // NB If we're near the start it may be better to go the other way...
-    function balanceAtWindow(_to, _window) constant returns (uint256) {
-        uint256 win = last_window; 
-        int256 bal = int256(balanceOf[_to]);
+    // TODO If we're near the start it may be better to go the other way...
+    function balanceAtWindow(address _to, uint256 _window) constant returns (uint256) {
+        uint256 win = (now - genesis_window_timestamp) / 86400; // NB remainder gets rounded down
+        int256 bal = int256(balances[_to]);
         while(win > _window) {
-            bal -= balanceChangeOf[win][_to];
+            bal -= balanceChanges[win][_to];
             win--; 
         }
         return uint256(win);
     }
 
-    function publishWindow(bytes32 merkle_root, address data_contract) returns (bytes32) {
-        bytes32 NULL_HASH;
+    function publishFactBundle(bytes32 merkle_root, address data_contract) returns (bool) {
         uint256 window = (now - genesis_window_timestamp) / 86400; // NB remainder gets rounded down
 
-        bytes32 merkle_root = sha3(this, window, merkle_root, data_contract);
-        if (branch_hash == NULL_HASH) throw;
+        // Only go forwards, max 1 per window
+        if (last_window >= window) throw;
 
-        // Your branch must not yet exist, the parent branch must exist.
-        // Check existence by timestamp, all branches have one.
-        if (branches[branch_hash].timestamp > 0) throw;
-        if (branches[parent_branch_hash].timestamp == 0) throw;
-
-        // We must now be a later 24-hour window than the parent.
-        if (branches[parent_branch_hash].window >= window) throw;
-
-        window_branches[window].push(branch_hash);
-        return branch_hash;
+        fact_bundles[window] = FactBundle(
+            merkle_root,
+            data_contract,
+            now, 
+            window
+        );
+        return true;
     }
 
-    function getWindowBranches(uint256 window) constant returns (bytes32[]) {
-        return window_branches[window];
+}
+
+contract RealityTokenFactory {
+
+    uint256 genesis_window_timestamp;
+    RealityToken genesis_token;
+
+    function createGenesisContract() {
+        if (genesis_window_timestamp > 0) throw;
+        address NULL_ADDRESS;
+        genesis_window_timestamp = now - (now % 86400);
+        genesis_token = new RealityToken(0, NULL_ADDRESS, genesis_window_timestamp, msg.sender);
+    }
+
+    function createFork(address _parent, uint256 _window) {
+        if (genesis_window_timestamp == 0) throw;
+        RealityToken rt = new RealityToken(_window, _parent, genesis_window_timestamp, msg.sender);
     }
 
 }
