@@ -12,22 +12,83 @@ class TestRealityToken(TestCase):
     def setUp(self):
 
         self.s = t.state()
-        rc_code = open('realitytoken.sol').read()
-        self.rc = self.s.abi_contract(rc_code, language='solidity', sender=t.k0)
-        rc_address = self.rc.address
+
+        token_code = open('token.sol').read()
+        standardtoken_code = open('standardtoken.sol').read()
+        realitytoken_code = open('realitytoken.sol').read()
+        realitytokenfactory_code = open('realitytokenfactory.sol').read()
+
+        #all_code = token_code + standardtoken_code + realitytoken_code + realitytokenfactory_code
+        self.rc_code = token_code + standardtoken_code + realitytoken_code
+
+        NULL_ADDRESS = decode_hex("0000000000000000000000000000000000000000")
+
+        genesis_window_timestamp = self.s.block.timestamp
+
+        self.rc0 = self.s.abi_contract(self.rc_code, language='solidity', sender=t.k0)
+        # Should really be called via the constructor
+        self.rc0.initialize(0, NULL_ADDRESS, genesis_window_timestamp, keys.privtoaddr(t.k0));
+
+        rc0addr = self.rc0.address
+
+        self.s.block.timestamp = self.s.block.timestamp + 86400
+
+        self.rc1a = self.s.abi_contract(self.rc_code, language='solidity', sender=t.k0)
+        # Should really be called via the constructor
+        self.rc1a.initialize(1, rc0addr, genesis_window_timestamp, keys.privtoaddr(t.k1));
 
         #window_branches = self.rc.getWindowBranches(0)
-        genesis_branch_hash = self.rc.window_branches(0, 0)
+        #genesis_branch_hash = self.rc.window_branches(0, 0)
         #print encode_hex(genesis_branch_hash)
-        self.assertEqual(len(genesis_branch_hash), 32)
+        #self.assertEqual(len(genesis_branch_hash), 32)
 
 
-    def test_register_and_fetch(self):
+    def test_simple_sending(self):
+
+        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k0)), 2100000000000000)
+        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k1)), 0)
+        self.rc0.transfer(keys.privtoaddr(t.k1), 100000000000000, sender=t.k0);
+        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k0)), 2000000000000000)
+        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k1)), 100000000000000)
+
+    def test_simple_sending_on_early_branch(self):
+
+        self.assertEqual(self.rc1a.forked_at_window(), 1)
+        self.assertEqual(self.rc1a.balanceOf(keys.privtoaddr(t.k0)), 2100000000000000)
+        self.assertEqual(self.rc1a.balanceOf(keys.privtoaddr(t.k1)), 0)
+        return
+        self.rc1a.transfer(keys.privtoaddr(t.k1), 100000000000000, sender=t.k0);
+        self.assertEqual(self.rc1a.balanceOf(keys.privtoaddr(t.k0)), 2000000000000000)
+        self.assertEqual(self.rc1a.balanceOf(keys.privtoaddr(t.k1)), 100000000000000)
+
+    def test_balance_deduction_on_fork(self):
+        return
+
+        self.rc0.transfer(keys.privtoaddr(t.k1), 100000000000000, sender=t.k0);
+        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k0)), 2000000000000000)
+
+        self.assertEqual(self.rc0.getWindowForTimestamp(self.s.block.timestamp), 0)
+        self.s.block.timestamp = self.s.block.timestamp + 86400
+        self.assertEqual(self.rc0.getWindowForTimestamp(self.s.block.timestamp), 1)
+        return
+
+        self.rc1b = self.s.abi_contract(self.rc_code, language='solidity', sender=t.k0)
+        self.rc1b.initialize(1, self.rc0.address, self.rc0.genesis_window_timestamp(), keys.privtoaddr(t.k1));
+        self.assertEqual(self.rc1b.balanceOf(keys.privtoaddr(t.k0)), 2000000000000000)
+
+
+
+
+
+
 
         # a
         # aa             ab
         # aaa  aab       aba
         # aaaa aaba aabb abaa
+
+        return
+        self.assertEqual(self.genesis_token.forked_at_window(), 0)
 
         return
 
