@@ -30,6 +30,8 @@ class TestRealityToken(TestCase):
         self.rc0.initialize(0, NULL_ADDRESS, genesis_window_timestamp, keys.privtoaddr(t.k0));
 
         rc0addr = self.rc0.address
+        #self.assertEqual(self.rc0.getWindowForTimestamp(self.s.block.timestamp), 1)
+        self.assertEqual(self.s.block.timestamp, genesis_window_timestamp)
 
         self.s.block.timestamp = self.s.block.timestamp + 86400
 
@@ -54,33 +56,45 @@ class TestRealityToken(TestCase):
     def test_simple_sending_on_early_branch(self):
 
         self.assertEqual(self.rc1a.forked_at_window(), 1)
+        #self.rc1a.copyBalanceFromParent(keys.privtoaddr(t.k0))
+        #self.rc1a.copyBalanceFromParent(keys.privtoaddr(t.k1))
         self.assertEqual(self.rc1a.balanceOf(keys.privtoaddr(t.k0)), 2100000000000000)
         self.assertEqual(self.rc1a.balanceOf(keys.privtoaddr(t.k1)), 0)
-        return
         self.rc1a.transfer(keys.privtoaddr(t.k1), 100000000000000, sender=t.k0);
-        self.assertEqual(self.rc1a.balanceOf(keys.privtoaddr(t.k0)), 2000000000000000)
         self.assertEqual(self.rc1a.balanceOf(keys.privtoaddr(t.k1)), 100000000000000)
+        self.assertEqual(self.rc1a.balanceOf(keys.privtoaddr(t.k0)), 2000000000000000)
+
+
+        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k0)), 2100000000000000, "Moving funds on the fork doesn't affect the parent")
+        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k1)), 0, "Moving funds on the fork doesn't affect the parent")
+        return
 
     def test_balance_deduction_on_fork(self):
-        return
 
-        self.rc0.transfer(keys.privtoaddr(t.k1), 100000000000000, sender=t.k0);
-        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k0)), 2000000000000000)
+        #self.rc0.transfer(keys.privtoaddr(t.k1), 100000000000000, sender=t.k0);
+        #self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k0)), 2000000000000000)
 
-        self.assertEqual(self.rc0.getWindowForTimestamp(self.s.block.timestamp), 0)
+        # self.assertEqual(self.rc0.getWindowForTimestamp(self.s.block.timestamp), 0)
         self.s.block.timestamp = self.s.block.timestamp + 86400
+        print "timestamp"
+        print self.s.block.timestamp 
+        self.s.block.timestamp = self.s.block.timestamp + 86400
+        print "timestamp2"
+        print self.s.block.timestamp 
+        return
         self.assertEqual(self.rc0.getWindowForTimestamp(self.s.block.timestamp), 1)
+        self.rc0.transfer(keys.privtoaddr(t.k1), 50000000000000, sender=t.k0);
+        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k0)), 2000000000000000 - 50000000000000)
+        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k1)), 100000000000000 + 50000000000000)
+
+
+        self.assertEqual(self.rc0.balanceAtWindow(keys.privtoaddr(t.k0), 0), 2000000000000000)
+        self.assertEqual(self.rc0.balanceAtWindow(keys.privtoaddr(t.k0), 1), 2000000000000000 - 50000000000000)
         return
 
         self.rc1b = self.s.abi_contract(self.rc_code, language='solidity', sender=t.k0)
         self.rc1b.initialize(1, self.rc0.address, self.rc0.genesis_window_timestamp(), keys.privtoaddr(t.k1));
         self.assertEqual(self.rc1b.balanceOf(keys.privtoaddr(t.k0)), 2000000000000000)
-
-
-
-
-
-
 
         # a
         # aa             ab

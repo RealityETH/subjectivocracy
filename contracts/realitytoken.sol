@@ -37,9 +37,12 @@ contract RealityToken is StandardToken {
 
     // TODO remove this, just use the constructor
     function initialize(uint256 _forked_at_window, address _forked_from_contract, uint256 _genesis_window_timestamp, address _owner) {
-        if (forked_at_window == 0) {
+        if (_forked_at_window == 0) {
             balanceChanges[0][msg.sender] = 2100000000000000;
             balances[msg.sender] = 2100000000000000;
+        } else {
+            uint256 win = (now - genesis_window_timestamp) / 86400; // NB remainder gets rounded down
+            if (win <= forked_at_window) throw;
         }
         forked_at_window = _forked_at_window;
         forked_from_contract = _forked_from_contract;
@@ -49,7 +52,16 @@ contract RealityToken is StandardToken {
 
     function transfer(address _to, uint256 _value) returns (bool success) {
 
+        copyBalanceFromParent(msg.sender);
         copyBalanceFromParent(_to);
+        /*
+        if (copyBalanceFromParent(_to)) {
+            LogMe("copied balance", _to, balances[msg.sender]);
+        } else {
+            LogMe("copy  balance returned false", this, balances[msg.sender]);
+
+        }
+        */
 
         uint256 window = (now - genesis_window_timestamp) / 86400; // remainder gets rounded down
         if (balances[msg.sender] < _value) throw;
@@ -58,6 +70,7 @@ contract RealityToken is StandardToken {
         balances[_to] += _value;
         balanceChanges[window][_to] += int256(_value); 
         balanceChanges[window][msg.sender] -= int256(_value); 
+        //LogMe("after send sender has ", msg.sender, balances[msg.sender]);
         Transfer(msg.sender, _to, _value);
         return true;
     }
@@ -78,15 +91,23 @@ contract RealityToken is StandardToken {
     }
 
     function copyBalanceFromParent(address _to) returns (bool) {
-        if (isCopyBalanceFromParentDone[_to]) return false;
+        if (isCopyBalanceFromParentDone[_to]) { 
+            return false;
+        }
 
         address NULL_ADDRESS;
-        if (forked_from_contract == NULL_ADDRESS) return false; // no parent
+        if (forked_from_contract == NULL_ADDRESS) {
+//LogMe("no forked_from_contract", this, 0);
+            return false; // no parent
+        }
+//LogMe("going ahead with copy", this, 0);
 
         RealityTokenAPI parent = RealityTokenAPI(forked_from_contract);
         uint256 val = parent.balanceAtWindow(_to, forked_at_window);
+        isCopyBalanceFromParentDone[_to] = true;
         balanceChanges[forked_at_window][_to] += int256(val); 
         balances[_to] += val;
+        return true;
     }
 
     // Usually you fork near the end not near the beginning
@@ -131,5 +152,7 @@ contract RealityToken is StandardToken {
             return val; 
         }
     }
+
+    event LogMe(string str, address addr, uint256 num);
 
 }
