@@ -23,21 +23,23 @@ class TestRealityToken(TestCase):
 
         NULL_ADDRESS = decode_hex("0000000000000000000000000000000000000000")
 
-        genesis_window_timestamp = self.s.block.timestamp
+        self.genesis_window_timestamp = self.s.block.timestamp
 
         self.rc0 = self.s.abi_contract(self.rc_code, language='solidity', sender=t.k0)
         # Should really be called via the constructor
-        self.rc0.initialize(0, NULL_ADDRESS, genesis_window_timestamp, keys.privtoaddr(t.k0));
+        self.rc0.initialize(0, NULL_ADDRESS, keys.privtoaddr(t.k0));
+        self.assertEqual(self.rc0.getWindowForTimestamp(self.s.block.timestamp), 0)
 
         rc0addr = self.rc0.address
         #self.assertEqual(self.rc0.getWindowForTimestamp(self.s.block.timestamp), 1)
-        self.assertEqual(self.s.block.timestamp, genesis_window_timestamp)
+        self.assertEqual(self.s.block.timestamp, self.genesis_window_timestamp)
 
         self.s.block.timestamp = self.s.block.timestamp + 86400
 
         self.rc1a = self.s.abi_contract(self.rc_code, language='solidity', sender=t.k0)
         # Should really be called via the constructor
-        self.rc1a.initialize(1, rc0addr, genesis_window_timestamp, keys.privtoaddr(t.k1));
+        self.rc1a.initialize(0, rc0addr, keys.privtoaddr(t.k1));
+        self.assertEqual(self.rc0.getWindowForTimestamp(self.s.block.timestamp), 1)
 
         #window_branches = self.rc.getWindowBranches(0)
         #genesis_branch_hash = self.rc.window_branches(0, 0)
@@ -55,7 +57,7 @@ class TestRealityToken(TestCase):
 
     def test_simple_sending_on_early_branch(self):
 
-        self.assertEqual(self.rc1a.forked_at_window(), 1)
+        self.assertEqual(self.rc1a.last_parent_window(), 0)
         #self.rc1a.copyBalanceFromParent(keys.privtoaddr(t.k0))
         #self.rc1a.copyBalanceFromParent(keys.privtoaddr(t.k1))
         self.assertEqual(self.rc1a.balanceOf(keys.privtoaddr(t.k0)), 2100000000000000)
@@ -64,45 +66,97 @@ class TestRealityToken(TestCase):
         self.assertEqual(self.rc1a.balanceOf(keys.privtoaddr(t.k1)), 100000000000000)
         self.assertEqual(self.rc1a.balanceOf(keys.privtoaddr(t.k0)), 2000000000000000)
 
-
         self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k0)), 2100000000000000, "Moving funds on the fork doesn't affect the parent")
         self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k1)), 0, "Moving funds on the fork doesn't affect the parent")
         return
 
     def test_balance_deduction_on_fork(self):
 
-        #self.rc0.transfer(keys.privtoaddr(t.k1), 100000000000000, sender=t.k0);
-        #self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k0)), 2000000000000000)
+        # Start with these balances on window 1
+        k0bal = 2100000000000000
+        k1bal = 0
 
-        # self.assertEqual(self.rc0.getWindowForTimestamp(self.s.block.timestamp), 0)
-        self.s.block.timestamp = self.s.block.timestamp + 86400
-        print "timestamp"
-        print self.s.block.timestamp 
-        self.s.block.timestamp = self.s.block.timestamp + 86400
-        print "timestamp2"
-        print self.s.block.timestamp 
-        return
         self.assertEqual(self.rc0.getWindowForTimestamp(self.s.block.timestamp), 1)
+
+        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k0)), k0bal)
+        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k1)), k1bal)
+
         self.rc0.transfer(keys.privtoaddr(t.k1), 50000000000000, sender=t.k0);
-        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k0)), 2000000000000000 - 50000000000000)
-        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k1)), 100000000000000 + 50000000000000)
+        k0bal = k0bal - 50000000000000
+        k1bal = k1bal + 50000000000000
+        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k0)), k0bal)
+        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k1)), k1bal)
 
+        # Store these balances for when we check forks
+        k0balw1 = k0bal
+        k1balw1 = k1bal
 
-        self.assertEqual(self.rc0.balanceAtWindow(keys.privtoaddr(t.k0), 0), 2000000000000000)
-        self.assertEqual(self.rc0.balanceAtWindow(keys.privtoaddr(t.k0), 1), 2000000000000000 - 50000000000000)
-        return
+        # Move forward a couple of days, then send some more funds
+        self.s.block.timestamp = self.s.block.timestamp + 86400
+        self.s.block.timestamp = self.s.block.timestamp + 86400
+        self.assertEqual(self.rc0.getWindowForTimestamp(self.s.block.timestamp), 3)
+
+        self.rc0.transfer(keys.privtoaddr(t.k1), 150000000000000, sender=t.k0);
+        k0bal = k0bal - 150000000000000
+        k1bal = k1bal + 150000000000000
+        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k0)), k0bal)
+        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k1)), k1bal)
+
+        self.rc0.transfer(keys.privtoaddr(t.k0), 5, sender=t.k1);
+        k0bal = k0bal + 5
+        k1bal = k1bal - 5
+        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k0)), k0bal)
+        self.assertEqual(self.rc0.balanceOf(keys.privtoaddr(t.k1)), k1bal)
+
+        # Fork off window 2 (starting on window 3)
+        # This should give us the balances before the sends on window 3
 
         self.rc1b = self.s.abi_contract(self.rc_code, language='solidity', sender=t.k0)
-        self.rc1b.initialize(1, self.rc0.address, self.rc0.genesis_window_timestamp(), keys.privtoaddr(t.k1));
-        self.assertEqual(self.rc1b.balanceOf(keys.privtoaddr(t.k0)), 2000000000000000)
+        self.rc1b.initialize(2, self.rc0.address, keys.privtoaddr(t.k1));
+        self.assertEqual(self.rc1b.balanceOf(keys.privtoaddr(t.k0)), k0balw1)
+        self.assertEqual(self.rc1b.balanceOf(keys.privtoaddr(t.k1)), k1balw1)
 
+        # Likewise if we'd forked off window 1
+        self.rc1c = self.s.abi_contract(self.rc_code, language='solidity', sender=t.k0)
+        self.rc1c.initialize(1, self.rc0.address, keys.privtoaddr(t.k1));
+        # self.rc1c.copyBalanceFromParent(keys.privtoaddr(t.k0))
+        # self.rc1c.copyBalanceFromParent(keys.privtoaddr(t.k1))
+        self.assertEqual(self.rc1c.balanceOf(keys.privtoaddr(t.k0)), k0balw1)
+        self.assertEqual(self.rc1c.balanceOf(keys.privtoaddr(t.k1)), k1balw1)
+
+        self.rc1c.transfer(keys.privtoaddr(t.k0), 9, sender=t.k1);
+        self.assertEqual(self.rc1c.balanceOf(keys.privtoaddr(t.k0)), k0balw1 + 9)
+        self.assertEqual(self.rc1c.balanceOf(keys.privtoaddr(t.k1)), k1balw1 - 9)
+
+        # Try to fork off window 3.
+        # This should fail, because it's still window 3.
+
+        failed = False
+        self.rc1d = self.s.abi_contract(self.rc_code, language='solidity', sender=t.k0)
+        try:
+            self.rc1d.initialize(3, self.rc0.address, keys.privtoaddr(t.k1));
+        except TransactionFailed:
+            failed = True
+        self.assertTrue(failed, 'You cannot fork off a point until the window after it.')
+
+        self.s.block.timestamp = self.s.block.timestamp + 86400
+        self.rc1d.initialize(3, self.rc0.address, keys.privtoaddr(t.k1));
+
+
+
+        self.rc1c1 = self.s.abi_contract(self.rc_code, language='solidity', sender=t.k0)
+        self.rc1c1.initialize(3, self.rc0.address, keys.privtoaddr(t.k1));
+        self.assertEqual(self.rc1c1.balanceOf(keys.privtoaddr(t.k0)), k0balw1 + 9)
+
+
+        return
         # a
         # aa             ab
         # aaa  aab       aba
         # aaaa aaba aabb abaa
 
         return
-        self.assertEqual(self.genesis_token.forked_at_window(), 0)
+        self.assertEqual(self.genesis_token.last_parent_window(), 0)
 
         return
 

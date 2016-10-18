@@ -1,6 +1,7 @@
 pragma solidity ^0.4.1;
 
 contract RealityTokenAPI {
+    uint256 public genesis_window_timestamp;
     function balanceAtWindow(address _to, uint256 _window) constant returns (uint256) {}
     function balanceOf(address _owner) constant returns (uint256 balance) {}
 }
@@ -9,8 +10,8 @@ contract RealityToken is StandardToken {
 
     // This will be the timestamp when the system started
     // It should be copied into each new contract whenever we fork
-    uint256 public forked_at_window;
-    address public forked_from_contract;
+    uint256 public last_parent_window;
+    address public parent_contract;
     uint256 public genesis_window_timestamp;
     address public owner; // Contract that can publish bundlees to us
 
@@ -28,25 +29,28 @@ contract RealityToken is StandardToken {
     }
     mapping(uint256 => FactBundle) public fact_bundles;
 
-    function RealityToken(uint256 _forked_at_window, address _forked_from_contract, uint256 _genesis_window_timestamp, address _owner) {
-        forked_at_window = _forked_at_window;
-        forked_from_contract = _forked_from_contract;
-        genesis_window_timestamp = _genesis_window_timestamp;
-        owner = _owner;
+    function RealityToken(uint256 _last_parent_window, address _parent_contract, address _owner) {
+        //initialize(_last_parent_window, _parent_contract, _genesis_window_timestamp, _owner);
     }
 
     // TODO remove this, just use the constructor
-    function initialize(uint256 _forked_at_window, address _forked_from_contract, uint256 _genesis_window_timestamp, address _owner) {
-        if (_forked_at_window == 0) {
+    function initialize(uint256 _last_parent_window, address _parent_contract, address _owner) {
+        address NULL_ADDRESS;
+
+        if (_parent_contract == NULL_ADDRESS) { // genesis contract
+            genesis_window_timestamp = (now / 86400) * 86400; // NB remainder gets rounded down
+            if (_last_parent_window > 0) throw;
             balanceChanges[0][msg.sender] = 2100000000000000;
             balances[msg.sender] = 2100000000000000;
         } else {
+            RealityTokenAPI parent = RealityTokenAPI(_parent_contract);
+            genesis_window_timestamp = parent.genesis_window_timestamp();
             uint256 win = (now - genesis_window_timestamp) / 86400; // NB remainder gets rounded down
-            if (win <= forked_at_window) throw;
+            if (win <= _last_parent_window) throw; // you must be later than the parent
         }
-        forked_at_window = _forked_at_window;
-        forked_from_contract = _forked_from_contract;
-        genesis_window_timestamp = _genesis_window_timestamp;
+
+        last_parent_window = _last_parent_window;
+        parent_contract = _parent_contract;
         owner = _owner;
     }
 
@@ -96,16 +100,16 @@ contract RealityToken is StandardToken {
         }
 
         address NULL_ADDRESS;
-        if (forked_from_contract == NULL_ADDRESS) {
-//LogMe("no forked_from_contract", this, 0);
+        if (parent_contract == NULL_ADDRESS) {
+//LogMe("no parent_contract", this, 0);
             return false; // no parent
         }
 //LogMe("going ahead with copy", this, 0);
 
-        RealityTokenAPI parent = RealityTokenAPI(forked_from_contract);
-        uint256 val = parent.balanceAtWindow(_to, forked_at_window);
+        RealityTokenAPI parent = RealityTokenAPI(parent_contract);
+        uint256 val = parent.balanceAtWindow(_to, last_parent_window);
         isCopyBalanceFromParentDone[_to] = true;
-        balanceChanges[forked_at_window][_to] += int256(val); 
+        balanceChanges[last_parent_window][_to] += int256(val); 
         balances[_to] += val;
         return true;
     }
@@ -113,11 +117,20 @@ contract RealityToken is StandardToken {
     // Usually you fork near the end not near the beginning
     // So start at the final balance and apply changes backwards
     // TODO If we're near the start it may be better to go the other way...
-    function balanceAtWindow(address _to, uint256 _window) constant returns (uint256) {
+    function balanceAtWindow(address _owner, uint256 _window) constant returns (uint256) {
         uint256 win = (now - genesis_window_timestamp) / 86400; // NB remainder gets rounded down
-        int256 bal = int256(balances[_to]);
+        int256 bal = int256(balances[_owner]);
+
+        // If the window is the last, and we have the user's balance, we can just return that
+        if (_window >= win) {
+            if (isCopyBalanceFromParentDone[_owner] || (parent_contract == NULL_ADDRESS)) { 
+                return balances[_owner];
+            }
+        }
+
+
         while(win > _window) {
-            bal -= balanceChanges[win][_to];
+            bal -= balanceChanges[win][_owner];
             win--; 
         }
         return uint256(bal);
@@ -144,11 +157,11 @@ contract RealityToken is StandardToken {
 
     function balanceOf(address _owner) constant returns (uint256 balance) {
         address NULL_ADDRESS;
-        if (isCopyBalanceFromParentDone[_owner] || (forked_from_contract == NULL_ADDRESS)) { 
+        if (isCopyBalanceFromParentDone[_owner] || (parent_contract == NULL_ADDRESS)) { 
             return balances[_owner];
         } else {
-            RealityTokenAPI parent = RealityTokenAPI(forked_from_contract);
-            uint256 val = parent.balanceAtWindow(_owner, forked_at_window);
+            RealityTokenAPI parent = RealityTokenAPI(parent_contract);
+            uint256 val = parent.balanceAtWindow(_owner, last_parent_window);
             return val; 
         }
     }
