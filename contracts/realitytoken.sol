@@ -1,11 +1,11 @@
-pragma solidity ^0.4.1;
+pragma solidity ^0.4.6;
 
 contract RealityToken {
 
     struct Branch {
         bytes32 parent_hash; // Hash of the parent branch.
         bytes32 merkle_root; // Merkle root of the data we commit to
-        address data_cntrct; // Optional address of a cntrct containing this data
+        address data_cntrct; // Optional address of a contract containing this data
         uint256 timestamp; // Timestamp branch was mined
         uint256 window; // Day x of the system's operation, starting at UTC 00:00:00
         mapping(address => int256) balance_change; // user debits and credits
@@ -17,7 +17,7 @@ contract RealityToken {
     mapping(address => uint256) public last_debit_windows; // index of last user debits to stop you going backwards
 
     mapping(uint256 => bytes32[]) public window_branches; // index to easily get all branch hashes for a window
-    uint256 public genesis_window_timestamp; // 00:00:00 UTC on the day the cntrct was mined
+    uint256 public genesis_window_timestamp; // 00:00:00 UTC on the day the contract was mined
 
     function RealityToken() {
         genesis_window_timestamp = now - (now % 86400);
@@ -35,15 +35,15 @@ contract RealityToken {
         uint256 window = (now - genesis_window_timestamp) / 86400; // NB remainder gets rounded down
 
         bytes32 branch_hash = sha3(parent_branch_hash, merkle_root, data_cntrct);
-        if (branch_hash == NULL_HASH) throw;
+        require(branch_hash != NULL_HASH);
 
         // Your branch must not yet exist, the parent branch must exist.
         // Check existence by timestamp, all branches have one.
-        if (branches[branch_hash].timestamp > 0) throw;
-        if (branches[parent_branch_hash].timestamp == 0) throw;
+        require(branches[branch_hash].timestamp == 0);
+        require(branches[parent_branch_hash].timestamp > 0);
 
         // We must now be a later 24-hour window than the parent.
-        if (branches[parent_branch_hash].window >= window) throw;
+        require(branches[parent_branch_hash].window < window);
 
         branches[branch_hash] = Branch(parent_branch_hash, merkle_root, data_cntrct, now, window);
         window_branches[window].push(branch_hash);
@@ -68,7 +68,7 @@ contract RealityToken {
     // You never have negative total balance above you, so if you have enough credit at any point then return.
     // This uses less gas than getBalanceAbove, which always has to go all the way to the root.
     function isAmountSpendable(address addr, uint256 _min_balance, bytes32 branch_hash) constant returns (bool) {
-        if (_min_balance > 2100000000000000) throw;
+        require (_min_balance <= 2100000000000000);
         int256 bal = 0;
         int256 min_balance = int256(_min_balance);
         bytes32 NULL_HASH;
@@ -85,8 +85,8 @@ contract RealityToken {
     function sendCoin(address addr, uint256 amount, bytes32 branch_hash) returns (bool) {
         uint256 branch_window = branches[branch_hash].window;
 
-        if (amount > 2100000000000000) throw;
-        if (branches[branch_hash].timestamp == 0) throw; // branch must exist
+        require(amount <= 2100000000000000);
+        require(branches[branch_hash].timestamp > 0); // branch must exist
 
         if (branch_window < last_debit_windows[msg.sender]) return false; // debits can't go backwards
         if (!isAmountSpendable(msg.sender, amount, branch_hash)) return false; // can only spend what you have
