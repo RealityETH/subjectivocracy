@@ -19,6 +19,13 @@ contract RealityToken {
     mapping(uint256 => bytes32[]) public window_branches; // index to easily get all branch hashes for a window
     uint256 public genesis_window_timestamp; // 00:00:00 UTC on the day the contract was mined
 
+    mapping(address => mapping(address => mapping(bytes32=> uint256))) allowed_by_block;
+
+    function approve(address _spender, uint256 _amount, bytes32 branch) returns (bool success) {
+        allowed_by_block[msg.sender][_spender][branch] = _amount;
+        return true;
+    }
+
     function RealityToken() {
         genesis_window_timestamp = now - (now % 86400);
         address NULL_ADDRESS;
@@ -80,6 +87,29 @@ contract RealityToken {
             }
         }
         return false;
+    }
+
+    function sendCoinFrom(address from, address addr, uint256 amount, bytes32 branch_hash) returns (bool) {
+
+        require(allowed_by_block[from][msg.sender][branch_hash] >= amount);
+
+        uint256 branch_window = branches[branch_hash].window;
+
+        require(amount <= 2100000000000000);
+        require(branches[branch_hash].timestamp > 0); // branch must exist
+
+        if (branch_window < last_debit_windows[from]) return false; // debits can't go backwards
+        if (!isAmountSpendable(from, amount, branch_hash)) return false; // can only spend what you have
+
+        last_debit_windows[from] = branch_window;
+        branches[branch_hash].balance_change[from] -= int256(amount);
+        branches[branch_hash].balance_change[addr] += int256(amount);
+
+        uint256 allowed_before = allowed_by_block[from][msg.sender][branch_hash];
+        uint256 allowed_after = allowed_before - amount;
+        assert(allowed_before > allowed_after);
+
+        return true;
     }
 
     function sendCoin(address addr, uint256 amount, bytes32 branch_hash) returns (bool) {
