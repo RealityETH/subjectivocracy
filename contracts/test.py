@@ -12,7 +12,7 @@ class TestRealityToken(TestCase):
     def setUp(self):
 
         self.s = t.state()
-        rc_code = open('realitytoken.sol').read()
+        rc_code = open('RealityToken.sol').read()
         self.rc = self.s.abi_contract(rc_code, language='solidity', sender=t.k0)
         #window_branches = self.rc.getWindowBranches(0)
         genesis_branch_hash = self.rc.window_branches(0, 0)
@@ -181,6 +181,8 @@ class TestRealityToken(TestCase):
         self.assertFalse(self.rc.sendCoin(k2_addr, 5, branch_ab_hash, sender=t.k0), "Attempting to send coins on an earlier branch returns false")
         self.assertEqual(k0_bal_spent, k0_bal - 5, "Attempt to send coins on an earlier branch left balance unchanged")
         return
+
+
 
 
 if __name__ == '__main__':
