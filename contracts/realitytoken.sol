@@ -21,12 +21,14 @@ contract RealityToken {
 
     mapping(address => mapping(address => mapping(bytes32=> uint256))) allowed_by_block;
 
-    function approve(address _spender, uint256 _amount, bytes32 branch) returns (bool success) {
+    function approve(address _spender, uint256 _amount, bytes32 branch) 
+    public returns (bool success) {
         allowed_by_block[msg.sender][_spender][branch] = _amount;
         return true;
     }
 
-    function RealityToken() {
+    function RealityToken() 
+    public {
         genesis_window_timestamp = now - (now % 86400);
         address NULL_ADDRESS;
         bytes32 NULL_HASH;
@@ -37,7 +39,8 @@ contract RealityToken {
         window_branches[0].push(genesis_branch_hash);
     }
 
-    function createBranch(bytes32 parent_branch_hash, bytes32 merkle_root, address data_cntrct) returns (bytes32) {
+    function createBranch(bytes32 parent_branch_hash, bytes32 merkle_root, address data_cntrct) 
+    public returns (bytes32) {
         bytes32 NULL_HASH;
         uint256 window = (now - genesis_window_timestamp) / 86400; // NB remainder gets rounded down
 
@@ -57,11 +60,13 @@ contract RealityToken {
         return branch_hash;
     }
 
-    function getWindowBranches(uint256 window) constant returns (bytes32[]) {
+    function getWindowBranches(uint256 window) 
+    public constant returns (bytes32[]) {
         return window_branches[window];
     }
 
-    function getBalanceAbove(address addr, bytes32 branch_hash) constant returns (uint256) {
+    function getBalanceAbove(address addr, bytes32 branch_hash) 
+    public constant returns (uint256) {
         int256 bal = 0;
         bytes32 NULL_HASH;
         while(branch_hash != NULL_HASH) {
@@ -74,7 +79,8 @@ contract RealityToken {
     // Crawl up towards the root of the tree until we get enough, or return false if we never do.
     // You never have negative total balance above you, so if you have enough credit at any point then return.
     // This uses less gas than getBalanceAbove, which always has to go all the way to the root.
-    function isAmountSpendable(address addr, uint256 _min_balance, bytes32 branch_hash) constant returns (bool) {
+    function isAmountSpendable(address addr, uint256 _min_balance, bytes32 branch_hash) 
+    public constant returns (bool) {
         require (_min_balance <= 2100000000000000);
         int256 bal = 0;
         int256 min_balance = int256(_min_balance);
@@ -89,7 +95,8 @@ contract RealityToken {
         return false;
     }
 
-    function sendCoinFrom(address from, address addr, uint256 amount, bytes32 branch_hash) returns (bool) {
+    function sendCoinFrom(address from, address addr, uint256 amount, bytes32 branch_hash) 
+    public returns (bool) {
 
         require(allowed_by_block[from][msg.sender][branch_hash] >= amount);
 
@@ -112,7 +119,8 @@ contract RealityToken {
         return true;
     }
 
-    function sendCoin(address addr, uint256 amount, bytes32 branch_hash) returns (bool) {
+    function sendCoin(address addr, uint256 amount, bytes32 branch_hash) 
+    public returns (bool) {
         uint256 branch_window = branches[branch_hash].window;
 
         require(amount <= 2100000000000000);
