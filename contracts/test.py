@@ -183,7 +183,62 @@ class TestRealityToken(TestCase):
         return
 
 
+    def test_allowances(self):
 
+        # a
+        # aa             ab
+        # aaa  aab       aba
+        # aaaa aaba aabb abaa
+
+        genesis_hash = decode_hex("fca5e1a248b8fee34db137da5e38b41f95d11feb5a8fa192a150d8d5d8de1c59")
+
+        null_hash = decode_hex("0000000000000000000000000000000000000000000000000000000000000000")
+        # print encode_hex(null_hash)
+
+        k0_addr = encode_hex(keys.privtoaddr(t.k0))
+        k1_addr = encode_hex(keys.privtoaddr(t.k1))
+        k2_addr = encode_hex(keys.privtoaddr(t.k2))
+
+        contract_addr = encode_hex(keys.privtoaddr(t.k9))
+
+        self.assertEqual(k1_addr, '7d577a597b2742b498cb5cf0c26cdcd726d39e6e')
+
+        self.assertEqual(self.rc.balanceOf(keys.privtoaddr(t.k0), genesis_hash), 2100000000000000)
+
+        u = self.s.block.gas_used
+
+        self.rc.transfer(k1_addr, 1000000, genesis_hash, sender=t.k0)
+
+        # self.s.block.timestamp = self.s.block.timestamp + 100
+        # self.s = t.state()
+
+        # print self.s.block.gas_used - u
+        u = self.s.block.gas_used
+        # print self.s.block.get_balance(k0_addr)
+
+        window_index = 4 # index of genesis hash in struct
+
+        self.assertEqual(self.rc.balanceOf(keys.privtoaddr(t.k0), genesis_hash), 2100000000000000-1000000)
+        self.assertEqual(self.rc.balanceOf(k1_addr, genesis_hash), 1000000)
+
+        with self.assertRaises(TransactionFailed):
+            self.rc.transferFrom(k0_addr, k1_addr, 400000, genesis_hash, sender=t.k2)
+
+        self.rc.approve(k2_addr, 500000, genesis_hash, sender=t.k0)
+
+        with self.assertRaises(TransactionFailed):
+            self.rc.transferFrom(k0_addr, k1_addr, 600000, genesis_hash, sender=t.k2)
+
+        start_bal = self.rc.balanceOf(k0_addr, genesis_hash)
+
+        self.rc.transferFrom(k0_addr, k1_addr, 400000, genesis_hash, sender=t.k2)
+        #self.assertEqual(self.rc.balanceOf(k1_addr, genesis_hash), 1000000-500000)
+
+        self.assertEqual(self.rc.balanceOf(k1_addr, genesis_hash), 400000+1000000)
+        self.assertEqual(self.rc.balanceOf(k0_addr, genesis_hash), start_bal - 400000)
+
+        with self.assertRaises(TransactionFailed):
+            self.rc.transferFrom(k0_addr, 400000, genesis_hash, sender=t.k2)
 
 if __name__ == '__main__':
     main()

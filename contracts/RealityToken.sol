@@ -71,7 +71,7 @@ contract RealityToken {
     }
 
     function allowance(address _owner, address _spender, bytes32 branch) 
-    public returns (uint remaining) {
+    constant public returns (uint remaining) {
         return allowed[_owner][_spender][branch];
     }
 
