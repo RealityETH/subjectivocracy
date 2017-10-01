@@ -30,8 +30,8 @@ contract RealityToken {
         genesis_window_timestamp = now - (now % 86400);
         address NULL_ADDRESS;
         bytes32 NULL_HASH;
-        bytes32 genesis_merkle_root = sha3("I leave to several futures (not to all) my garden of forking paths");
-        bytes32 genesis_branch_hash = sha3(NULL_HASH, genesis_merkle_root, NULL_ADDRESS);
+        bytes32 genesis_merkle_root = keccak256("I leave to several futures (not to all) my garden of forking paths");
+        bytes32 genesis_branch_hash = keccak256(NULL_HASH, genesis_merkle_root, NULL_ADDRESS);
         branches[genesis_branch_hash] = Branch(NULL_HASH, genesis_merkle_root, NULL_ADDRESS, now, 0);
         branches[genesis_branch_hash].balance_change[msg.sender] = 2100000000000000;
         window_branches[0].push(genesis_branch_hash);
@@ -42,7 +42,7 @@ contract RealityToken {
         bytes32 NULL_HASH;
         uint256 window = (now - genesis_window_timestamp) / 86400; // NB remainder gets rounded down
 
-        bytes32 branch_hash = sha3(parent_branch_hash, merkle_root, data_cntrct);
+        bytes32 branch_hash = keccak256(parent_branch_hash, merkle_root, data_cntrct);
         require(branch_hash != NULL_HASH);
 
         // Your branch must not yet exist, the parent branch must exist.
