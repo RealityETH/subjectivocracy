@@ -150,4 +150,9 @@ contract RealityToken {
         return true;
     }
 
+    function getDataContract(bytes32 _branch) 
+    public constant returns (address) {
+        return branches[_branch].data_cntrct;
+    }
+
 }
