@@ -4,6 +4,7 @@ contract RealityToken {
 
     event Approval(address indexed _owner, address indexed _spender, uint _value, bytes32 branch);
     event Transfer(address indexed _from, address indexed _to, uint _value, bytes32 branch);
+    event BranchCreated(bytes32 hash, address data_cntrct);
 
     struct Branch {
         bytes32 parent_hash; // Hash of the parent branch.
@@ -15,7 +16,7 @@ contract RealityToken {
     }
     mapping(bytes32 => Branch) public branches;
 
-    // Spends, which may cause debits, can only go forwards. 
+    // Spends, which may cause debits, can only go forwards.
     // That way when we check if you have enough to spend we only have to go backwards.
     mapping(address => uint256) public last_debit_windows; // index of last user debits to stop you going backwards
 
@@ -25,7 +26,7 @@ contract RealityToken {
     mapping(address => mapping(address => mapping(bytes32=> uint256))) allowed;
 
 
-    function RealityToken() 
+    function RealityToken()
     public {
         genesis_window_timestamp = now - (now % 86400);
         address NULL_ADDRESS;
@@ -37,7 +38,7 @@ contract RealityToken {
         window_branches[0].push(genesis_branch_hash);
     }
 
-    function createBranch(bytes32 parent_branch_hash, bytes32 merkle_root, address data_cntrct) 
+    function createBranch(bytes32 parent_branch_hash, bytes32 merkle_root, address data_cntrct)
     public returns (bytes32) {
         bytes32 NULL_HASH;
         uint256 window = (now - genesis_window_timestamp) / 86400; // NB remainder gets rounded down
@@ -55,27 +56,28 @@ contract RealityToken {
 
         branches[branch_hash] = Branch(parent_branch_hash, merkle_root, data_cntrct, now, window);
         window_branches[window].push(branch_hash);
+        BranchCreated(branch_hash,data_cntrct);
         return branch_hash;
     }
 
-    function getWindowBranches(uint256 window) 
+    function getWindowBranches(uint256 window)
     public constant returns (bytes32[]) {
         return window_branches[window];
     }
 
-    function approve(address _spender, uint256 _amount, bytes32 _branch) 
+    function approve(address _spender, uint256 _amount, bytes32 _branch)
     public returns (bool success) {
         allowed[msg.sender][_spender][_branch] = _amount;
         Approval(msg.sender, _spender, _amount, _branch);
         return true;
     }
 
-    function allowance(address _owner, address _spender, bytes32 branch) 
+    function allowance(address _owner, address _spender, bytes32 branch)
     constant public returns (uint remaining) {
         return allowed[_owner][_spender][branch];
     }
 
-    function balanceOf(address addr, bytes32 branch) 
+    function balanceOf(address addr, bytes32 branch)
     public constant returns (uint256) {
         int256 bal = 0;
         bytes32 NULL_HASH;
@@ -89,7 +91,7 @@ contract RealityToken {
     // Crawl up towards the root of the tree until we get enough, or return false if we never do.
     // You never have negative total balance above you, so if you have enough credit at any point then return.
     // This uses less gas than balanceOfAbove, which always has to go all the way to the root.
-    function isAmountSpendable(address addr, uint256 _min_balance, bytes32 branch_hash) 
+    function isAmountSpendable(address addr, uint256 _min_balance, bytes32 branch_hash)
     public constant returns (bool) {
         require (_min_balance <= 2100000000000000);
         int256 bal = 0;
@@ -105,7 +107,7 @@ contract RealityToken {
         return false;
     }
 
-    function transferFrom(address from, address addr, uint256 amount, bytes32 branch) 
+    function transferFrom(address from, address addr, uint256 amount, bytes32 branch)
     public returns (bool) {
 
         require(allowed[from][msg.sender][branch] >= amount);
@@ -131,7 +133,7 @@ contract RealityToken {
         return true;
     }
 
-    function transfer(address addr, uint256 amount, bytes32 branch) 
+    function transfer(address addr, uint256 amount, bytes32 branch)
     public returns (bool) {
         uint256 branch_window = branches[branch].window;
 
@@ -150,9 +152,29 @@ contract RealityToken {
         return true;
     }
 
-    function getDataContract(bytes32 _branch) 
+    function getDataContract(bytes32 _branch)
     public constant returns (address) {
         return branches[_branch].data_cntrct;
     }
+
+    function getWindowOfBranch(bytes32 _branchHash)
+    public constant returns (uint id) {
+        return branches[_branchHash].window;
+    }
+
+    function isBranchInBetweenBranches(bytes32 investigationHash,bytes32 closerToRootHash, bytes32 fartherToRootHash)
+    public constant returns(bool){
+      bytes32 iterationHash=closerToRootHash;
+      while(iterationHash!=fartherToRootHash){
+        if(investigationHash==iterationHash){
+          return true;
+        }
+        else{
+        iterationHash=branches[iterationHash].parent_hash;
+        }
+      }
+      return false;
+    }
+
 
 }
