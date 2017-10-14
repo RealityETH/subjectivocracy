@@ -335,7 +335,9 @@ class TestRealityToken(TestCase):
         #print "Gas used to send coins after %d blocks: %d" % (2, self.s.block.gas_used - u)
 
         self.assertEqual(self.rc.balanceOfSub(k2_addr, branch_aa_hash, k2sub0), 500000)
+        self.assertEqual(self.rc.balanceOfSub(k2_addr, branch_aa_hash, k2sub1), 0)
         self.assertEqual(self.rc.balanceOfSub(k2_addr, branch_ab_hash, k2sub0), 0)
+
 
         branch_hash = branch_aba_hash
         for i in range(0,10):
@@ -370,9 +372,6 @@ class TestRealityToken(TestCase):
         self.assertFalse(self.rc.transferSub(k2_addr, 5, branch_ab_hash, NULL_BYTES, k2sub0, sender=t.k0), "Attempting to send coins on an earlier branch returns false")
         self.assertEqual(k0_bal_spent, k0_bal - 5, "Attempt to send coins on an earlier branch left balance unchanged")
         return
-
-
-
 
     def test_allowances(self):
 
@@ -428,6 +427,72 @@ class TestRealityToken(TestCase):
 
         with self.assertRaises(TransactionFailed):
             self.rc.transferFrom(k0_addr, 400000, genesis_hash, sender=t.k2, startgas=200000)
+
+    def test_allowances_sub(self):
+
+        return
+
+        # a
+        # aa             ab
+        # aaa  aab       aba
+        # aaaa aaba aabb abaa
+
+        genesis_hash = decode_hex("fca5e1a248b8fee34db137da5e38b41f95d11feb5a8fa192a150d8d5d8de1c59")
+
+        null_hash = decode_hex("0000000000000000000000000000000000000000000000000000000000000000")
+        # print encode_hex(null_hash)
+
+        k0_addr = encode_hex(keys.privtoaddr(t.k0))
+        k1_addr = encode_hex(keys.privtoaddr(t.k1))
+        k2_addr = encode_hex(keys.privtoaddr(t.k2))
+
+        k1sub1 = decode_hex("f100000000000000000000000000000000000000000000000000000000000001")
+
+        contract_addr = encode_hex(keys.privtoaddr(t.k9))
+
+        self.assertEqual(k1_addr, '7d577a597b2742b498cb5cf0c26cdcd726d39e6e')
+
+        self.assertEqual(self.rc.balanceOf(keys.privtoaddr(t.k0), genesis_hash), 2100000000000000)
+
+        self.rc.transfer(k1_addr, 1000000, genesis_hash, sender=t.k0, startgas=200000)
+
+        # self.s.block.timestamp = self.s.block.timestamp + 100
+        # self.s = t.state()
+
+        window_index = 4 # index of genesis hash in struct
+
+        self.assertEqual(self.rc.balanceOf(keys.privtoaddr(t.k0), genesis_hash), 2100000000000000-1000000)
+        self.assertEqual(self.rc.balanceOf(k1_addr, genesis_hash), 1000000)
+
+        with self.assertRaises(TransactionFailed):
+            self.rc.transferFrom(k0_addr, k1_addr, 400000, genesis_hash, sender=t.k2, startgas=200000)
+
+        self.rc.approve(k2_addr, 500000, genesis_hash, sender=t.k0, startgas=200000)
+
+        with self.assertRaises(TransactionFailed):
+            self.rc.transferFromSub(k0_addr, k1_addr, 600000, genesis_hash, NULL_BYTES, k1sub0, sender=t.k2, startgas=200000)
+
+
+        self.mine()
+        start_bal = self.rc.balanceOf(k0_addr, genesis_hash)
+
+        self.rc.transferFrom(k0_addr, k1_addr, 400000, genesis_hash, NULL_BYTES, k1sub0, sender=t.k2, startgas=200000)
+        #self.assertEqual(self.rc.balanceOf(k1_addr, genesis_hash), 1000000-500000)
+
+        self.mine()
+
+        self.assertEqual(self.rc.balanceOfSub(k1_addr, genesis_hash, k1sub0), 400000+1000000)
+        self.assertEqual(self.rc.balanceOf(k0_addr, genesis_hash), start_bal - 400000)
+
+        with self.assertRaises(TransactionFailed):
+            self.rc.transferFrom(k0_addr, 400000, genesis_hash, NULL_BYTES, k1sub0, sender=t.k2, startgas=200000)
+
+        self.rc.approve(k2_addr, 5000, genesis_hash, sender=t.k1, startgas=200000)
+        self.rc.transferFromSub(k1_addr, k2_addr, 2500, genesis_hash, k2sub0, k1sub0, sender=t.k2, startgas=200000)
+
+        self.assertEqual(self.rc.balanceOfSub(k1_addr, genesis_hash, k1sub0), 400000+1000000-2500)
+        self.assertEqual(self.rc.balanceOfSub(k2_addr, genesis_hash, k2sub0), 2500)
+
 
 if __name__ == '__main__':
     main()
