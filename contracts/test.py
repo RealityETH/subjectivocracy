@@ -430,8 +430,6 @@ class TestRealityToken(TestCase):
 
     def test_allowances_sub(self):
 
-        return
-
         # a
         # aa             ab
         # aaa  aab       aba
@@ -440,13 +438,18 @@ class TestRealityToken(TestCase):
         genesis_hash = decode_hex("fca5e1a248b8fee34db137da5e38b41f95d11feb5a8fa192a150d8d5d8de1c59")
 
         null_hash = decode_hex("0000000000000000000000000000000000000000000000000000000000000000")
+        NULL_BYTES = decode_hex("0000000000000000000000000000000000000000000000000000000000000000")
         # print encode_hex(null_hash)
 
         k0_addr = encode_hex(keys.privtoaddr(t.k0))
         k1_addr = encode_hex(keys.privtoaddr(t.k1))
         k2_addr = encode_hex(keys.privtoaddr(t.k2))
 
+        k1sub0 = decode_hex("f100000000000000000000000000000000000000000000000000000000000000")
         k1sub1 = decode_hex("f100000000000000000000000000000000000000000000000000000000000001")
+
+        k2sub0 = decode_hex("f200000000000000000000000000000000000000000000000000000000000000")
+        k2sub1 = decode_hex("f200000000000000000000000000000000000000000000000000000000000001")
 
         contract_addr = encode_hex(keys.privtoaddr(t.k9))
 
@@ -476,21 +479,21 @@ class TestRealityToken(TestCase):
         self.mine()
         start_bal = self.rc.balanceOf(k0_addr, genesis_hash)
 
-        self.rc.transferFrom(k0_addr, k1_addr, 400000, genesis_hash, NULL_BYTES, k1sub0, sender=t.k2, startgas=200000)
+        self.rc.transferFromSub(k0_addr, k1_addr, 400000, genesis_hash, NULL_BYTES, k1sub0, sender=t.k2, startgas=200000)
         #self.assertEqual(self.rc.balanceOf(k1_addr, genesis_hash), 1000000-500000)
 
         self.mine()
 
-        self.assertEqual(self.rc.balanceOfSub(k1_addr, genesis_hash, k1sub0), 400000+1000000)
+        self.assertEqual(self.rc.balanceOfSub(k1_addr, genesis_hash, k1sub0), 400000)
         self.assertEqual(self.rc.balanceOf(k0_addr, genesis_hash), start_bal - 400000)
 
         with self.assertRaises(TransactionFailed):
-            self.rc.transferFrom(k0_addr, 400000, genesis_hash, NULL_BYTES, k1sub0, sender=t.k2, startgas=200000)
+            self.rc.transferFromSub(k0_addr, 400000, genesis_hash, NULL_BYTES, k1sub0, sender=t.k2, startgas=200000)
 
         self.rc.approve(k2_addr, 5000, genesis_hash, sender=t.k1, startgas=200000)
-        self.rc.transferFromSub(k1_addr, k2_addr, 2500, genesis_hash, k2sub0, k1sub0, sender=t.k2, startgas=200000)
+        self.rc.transferFromSub(k1_addr, k2_addr, 2500, genesis_hash, k1sub0, k2sub0, sender=t.k2, startgas=200000)
 
-        self.assertEqual(self.rc.balanceOfSub(k1_addr, genesis_hash, k1sub0), 400000+1000000-2500)
+        self.assertEqual(self.rc.balanceOfSub(k1_addr, genesis_hash, k1sub0), 400000-2500)
         self.assertEqual(self.rc.balanceOfSub(k2_addr, genesis_hash, k2sub0), 2500)
 
 

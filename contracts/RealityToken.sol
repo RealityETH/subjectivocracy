@@ -120,7 +120,7 @@ contract RealityToken {
         return _isAmountSpendable(keccak256(addr, acct), _min_balance, branch_hash);
     }
 
-    function transferFrom(address from, address addr, uint256 amount, bytes32 branch, bytes32 from_acct, bytes32 to_acct)
+    function transferFromSub(address from, address addr, uint256 amount, bytes32 branch, bytes32 from_acct, bytes32 to_acct)
     public returns (bool) {
 
         require(allowed[from][msg.sender][branch] >= amount);
@@ -146,14 +146,9 @@ contract RealityToken {
         return true;
     }
 
-    function transferFrom(address from, address addr, uint256 amount, bytes32 branch, bytes32 from_acct)
-    public returns (bool) {
-        return transferFrom(from, addr, amount, branch, from_acct, NULL_HASH);
-    }
-
     function transferFrom(address from, address addr, uint256 amount, bytes32 branch)
     public returns (bool) {
-        return transferFrom(from, addr, amount, branch, NULL_HASH, NULL_HASH);
+        return transferFromSub(from, addr, amount, branch, NULL_HASH, NULL_HASH);
     }
 
     function transferSub(address addr, uint256 amount, bytes32 branch, bytes32 from_acct, bytes32 to_acct)
