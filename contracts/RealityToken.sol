@@ -6,6 +6,9 @@ contract RealityToken {
     event Transfer(address indexed _from, address indexed _to, uint _value, bytes32 branch);
     event BranchCreated(bytes32 hash, address data_cntrct);
 
+    bytes32 constant NULL_HASH = "";
+    address constant NULL_ADDRESS = 0x0;
+
     struct Branch {
         bytes32 parent_hash; // Hash of the parent branch.
         bytes32 merkle_root; // Merkle root of the data we commit to
@@ -29,8 +32,6 @@ contract RealityToken {
     function RealityToken()
     public {
         genesis_window_timestamp = now - (now % 86400);
-        address NULL_ADDRESS;
-        bytes32 NULL_HASH;
         bytes32 genesis_merkle_root = keccak256("I leave to several futures (not to all) my garden of forking paths");
         bytes32 genesis_branch_hash = keccak256(NULL_HASH, genesis_merkle_root, NULL_ADDRESS);
         branches[genesis_branch_hash] = Branch(NULL_HASH, genesis_merkle_root, NULL_ADDRESS, now, 0);
@@ -40,7 +41,6 @@ contract RealityToken {
 
     function createBranch(bytes32 parent_branch_hash, bytes32 merkle_root, address data_cntrct)
     public returns (bytes32) {
-        bytes32 NULL_HASH;
         uint256 window = (now - genesis_window_timestamp) / 86400; // NB remainder gets rounded down
 
         bytes32 branch_hash = keccak256(parent_branch_hash, merkle_root, data_cntrct);
@@ -80,7 +80,6 @@ contract RealityToken {
     function balanceOf(address addr, bytes32 branch)
     public constant returns (uint256) {
         int256 bal = 0;
-        bytes32 NULL_HASH;
         while(branch != NULL_HASH) {
             bal += branches[branch].balance_change[addr];
             branch = branches[branch].parent_hash;
@@ -96,7 +95,6 @@ contract RealityToken {
         require (_min_balance <= 2100000000000000);
         int256 bal = 0;
         int256 min_balance = int256(_min_balance);
-        bytes32 NULL_HASH;
         while(branch_hash != NULL_HASH) {
             bal += branches[branch_hash].balance_change[addr];
             branch_hash = branches[branch_hash].parent_hash;
