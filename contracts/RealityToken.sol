@@ -3,7 +3,7 @@ pragma solidity ^0.4.6;
 contract RealityToken {
 
     event Approval(address indexed _owner, address indexed _spender, uint _value, bytes32 branch);
-    event Transfer(address indexed _from, address indexed _to, uint _value, bytes32 branch);
+    event Transfer(address indexed _from, address indexed _to, bytes32 _from_sub, bytes32 _to_sub, uint _value, bytes32 branch);
     event BranchCreated(bytes32 hash, address data_cntrct);
 
     bytes32 constant NULL_HASH = "";
@@ -15,13 +15,13 @@ contract RealityToken {
         address data_cntrct; // Optional address of a contract containing this data
         uint256 timestamp; // Timestamp branch was mined
         uint256 window; // Day x of the system's operation, starting at UTC 00:00:00
-        mapping(address => int256) balance_change; // user debits and credits
+        mapping(bytes32 => int256) balance_change; // user-account debits and credits
     }
     mapping(bytes32 => Branch) public branches;
 
     // Spends, which may cause debits, can only go forwards.
     // That way when we check if you have enough to spend we only have to go backwards.
-    mapping(address => uint256) public last_debit_windows; // index of last user debits to stop you going backwards
+    mapping(bytes32 => uint256) public last_debit_windows; // index of last user debits to stop you going backwards
 
     mapping(uint256 => bytes32[]) public window_branches; // index to easily get all branch hashes for a window
     uint256 public genesis_window_timestamp; // 00:00:00 UTC on the day the contract was mined
@@ -35,7 +35,7 @@ contract RealityToken {
         bytes32 genesis_merkle_root = keccak256("I leave to several futures (not to all) my garden of forking paths");
         bytes32 genesis_branch_hash = keccak256(NULL_HASH, genesis_merkle_root, NULL_ADDRESS);
         branches[genesis_branch_hash] = Branch(NULL_HASH, genesis_merkle_root, NULL_ADDRESS, now, 0);
-        branches[genesis_branch_hash].balance_change[msg.sender] = 2100000000000000;
+        branches[genesis_branch_hash].balance_change[keccak256(msg.sender, NULL_HASH)] = 2100000000000000;
         window_branches[0].push(genesis_branch_hash);
     }
 
@@ -81,7 +81,7 @@ contract RealityToken {
     public constant returns (uint256) {
         int256 bal = 0;
         while(branch != NULL_HASH) {
-            bal += branches[branch].balance_change[addr];
+            bal += branches[branch].balance_change[keccak256(addr, NULL_HASH)];
             branch = branches[branch].parent_hash;
         }
         return uint256(bal);
@@ -90,19 +90,24 @@ contract RealityToken {
     // Crawl up towards the root of the tree until we get enough, or return false if we never do.
     // You never have negative total balance above you, so if you have enough credit at any point then return.
     // This uses less gas than balanceOfAbove, which always has to go all the way to the root.
-    function isAmountSpendable(address addr, uint256 _min_balance, bytes32 branch_hash)
-    public constant returns (bool) {
+    function _isAmountSpendable(bytes32 acct, uint256 _min_balance, bytes32 branch_hash)
+    internal constant returns (bool) {
         require (_min_balance <= 2100000000000000);
         int256 bal = 0;
         int256 min_balance = int256(_min_balance);
         while(branch_hash != NULL_HASH) {
-            bal += branches[branch_hash].balance_change[addr];
+            bal += branches[branch_hash].balance_change[acct];
             branch_hash = branches[branch_hash].parent_hash;
             if (bal >= min_balance) {
                 return true;
             }
         }
         return false;
+    }
+
+    function isAmountSpendable(address addr, uint256 _min_balance, bytes32 branch_hash)
+    public constant returns (bool) {
+        return _isAmountSpendable(keccak256(addr, NULL_HASH), _min_balance, branch_hash);
     }
 
     function transferFrom(address from, address addr, uint256 amount, bytes32 branch)
@@ -115,18 +120,18 @@ contract RealityToken {
         require(amount <= 2100000000000000);
         require(branches[branch].timestamp > 0); // branch must exist
 
-        if (branch_window < last_debit_windows[from]) return false; // debits can't go backwards
-        if (!isAmountSpendable(from, amount, branch)) return false; // can only spend what you have
+        if (branch_window < last_debit_windows[keccak256(from, NULL_HASH)]) return false; // debits can't go backwards
+        if (!_isAmountSpendable(keccak256(from, NULL_HASH), amount, branch)) return false; // can only spend what you have
 
-        last_debit_windows[from] = branch_window;
-        branches[branch].balance_change[from] -= int256(amount);
-        branches[branch].balance_change[addr] += int256(amount);
+        last_debit_windows[keccak256(from, NULL_HASH)] = branch_window;
+        branches[branch].balance_change[keccak256(from, NULL_HASH)] -= int256(amount);
+        branches[branch].balance_change[keccak256(addr, NULL_HASH)] += int256(amount);
 
         uint256 allowed_before = allowed[from][msg.sender][branch];
         uint256 allowed_after = allowed_before - amount;
         assert(allowed_before > allowed_after);
 
-        Transfer(from, addr, amount, branch);
+        Transfer(from, addr, NULL_HASH, NULL_HASH, amount, branch);
 
         return true;
     }
@@ -138,14 +143,14 @@ contract RealityToken {
         require(amount <= 2100000000000000);
         require(branches[branch].timestamp > 0); // branch must exist
 
-        if (branch_window < last_debit_windows[msg.sender]) return false; // debits can't go backwards
-        if (!isAmountSpendable(msg.sender, amount, branch)) return false; // can only spend what you have
+        if (branch_window < last_debit_windows[keccak256(msg.sender, NULL_HASH)]) return false; // debits can't go backwards
+        if (!_isAmountSpendable(keccak256(msg.sender, NULL_HASH), amount, branch)) return false; // can only spend what you have
 
-        last_debit_windows[msg.sender] = branch_window;
-        branches[branch].balance_change[msg.sender] -= int256(amount);
-        branches[branch].balance_change[addr] += int256(amount);
+        last_debit_windows[keccak256(msg.sender, NULL_HASH)] = branch_window;
+        branches[branch].balance_change[keccak256(msg.sender, NULL_HASH)] -= int256(amount);
+        branches[branch].balance_change[keccak256(addr, NULL_HASH)] += int256(amount);
 
-        Transfer(msg.sender, addr, amount, branch);
+        Transfer(msg.sender, addr, NULL_HASH, NULL_HASH, amount, branch);
 
         return true;
     }
