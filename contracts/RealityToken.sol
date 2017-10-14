@@ -161,18 +161,16 @@ contract RealityToken {
     }
 
     function isBranchInBetweenBranches(bytes32 investigationHash,bytes32 closerToRootHash, bytes32 fartherToRootHash)
-    public constant returns(bool){
-      bytes32 iterationHash=closerToRootHash;
-      while(iterationHash!=fartherToRootHash){
-        if(investigationHash==iterationHash){
-          return true;
+    public constant returns (bool) {
+        bytes32 iterationHash = closerToRootHash;
+        while (iterationHash != fartherToRootHash) {
+            if (investigationHash == iterationHash) {
+                return true;
+            } else{
+                iterationHash = branches[iterationHash].parent_hash;
+            }
         }
-        else{
-        iterationHash=branches[iterationHash].parent_hash;
-        }
-      }
-      return false;
+        return false;
     }
-
 
 }
