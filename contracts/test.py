@@ -203,6 +203,177 @@ class TestRealityToken(TestCase):
         return
 
 
+    def test_sub_accounts(self):
+
+        # a
+        # aa             ab
+        # aaa  aab       aba
+        # aaaa aaba aabb abaa
+        #self.c.mine()
+        #self.s = self.c.head_state
+
+        genesis_hash = decode_hex("fca5e1a248b8fee34db137da5e38b41f95d11feb5a8fa192a150d8d5d8de1c59")
+
+        null_hash = decode_hex("0000000000000000000000000000000000000000000000000000000000000000")
+        # print encode_hex(null_hash)
+
+        k0_addr = encode_hex(keys.privtoaddr(t.k0))
+        k1_addr = encode_hex(keys.privtoaddr(t.k1))
+        k2_addr = encode_hex(keys.privtoaddr(t.k2))
+
+        NULL_BYTES = decode_hex("0000000000000000000000000000000000000000000000000000000000000000")
+
+        k0sub0 = decode_hex("f000000000000000000000000000000000000000000000000000000000000000")
+        k0sub1 = decode_hex("f000000000000000000000000000000000000000000000000000000000000001")
+
+        k1sub0 = decode_hex("f100000000000000000000000000000000000000000000000000000000000000")
+        k1sub1 = decode_hex("f100000000000000000000000000000000000000000000000000000000000001")
+
+        k2sub0 = decode_hex("f200000000000000000000000000000000000000000000000000000000000000")
+        k2sub1 = decode_hex("f200000000000000000000000000000000000000000000000000000000000001")
+
+        contract_addr = encode_hex(keys.privtoaddr(t.k9))
+
+        self.assertEqual(k1_addr, '7d577a597b2742b498cb5cf0c26cdcd726d39e6e')
+
+        self.assertEqual(self.rc.balanceOf(keys.privtoaddr(t.k0), genesis_hash), 2100000000000000)
+
+
+        self.rc.transferSub(k1_addr, 1000000, genesis_hash, NULL_BYTES, k1sub0, sender=t.k0)
+
+        # self.s.timestamp = self.s.timestamp + 100
+        # self.s = t.state()
+
+        # print self.s.gas_used - u
+        u = self.s.gas_used
+        # print self.s.get_balance(k0_addr)
+
+        window_index = 4 # index of genesis hash in struct
+
+        self.assertEqual(self.rc.balanceOf(keys.privtoaddr(t.k0), genesis_hash), 2100000000000000-1000000)
+        self.assertEqual(self.rc.balanceOfSub(k1_addr, genesis_hash, k1sub0), 1000000)
+
+        genesis_branch = self.rc.branches(genesis_hash);
+        self.assertEqual(null_hash, genesis_branch[0])
+        self.assertEqual(0, genesis_branch[window_index], "Genesis hash window is 0")
+
+        madeup_block_hash = decode_hex(sha3_256('pants').hexdigest())
+
+        dummy_merkle_root_aa = decode_hex(sha3_256('aa').hexdigest())
+        dummy_merkle_root_ab = decode_hex(sha3_256('ab').hexdigest())
+
+        dummy_merkle_root_aab = decode_hex(sha3_256('aab').hexdigest())
+        dummy_merkle_root_aba = decode_hex(sha3_256('aba').hexdigest())
+        dummy_merkle_root_abb = decode_hex(sha3_256('abb').hexdigest())
+
+        dummy_merkle_root_aaaa = decode_hex(sha3_256('aaaa').hexdigest())
+        dummy_merkle_root_aaba = decode_hex(sha3_256('aaba').hexdigest())
+        dummy_merkle_root_abaa = decode_hex(sha3_256('abaa').hexdigest())
+
+        failed = False
+        try:
+            branch_aa_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_aa, contract_addr, startgas=200000)
+        except TransactionFailed:
+            failed = True
+        self.assertTrue(failed, "You can't build on a block in the window in which it was created")
+
+        self.mine(secs=86400)
+
+        branch_aa_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_aa, contract_addr)
+
+        self.assertEqual(1, len(self.rc.getWindowBranches(1)))
+        self.assertEqual([branch_aa_hash], self.rc.getWindowBranches(1))
+
+        aa_branch = self.rc.branches(branch_aa_hash);
+        self.assertEqual(1, aa_branch[window_index], "First branch window is 1")
+
+        self.mine(secs=86400*4)
+
+        branch_ab_hash = self.rc.createBranch(genesis_hash, dummy_merkle_root_ab, contract_addr)
+
+        ab_branch = self.rc.branches(branch_ab_hash);
+        self.assertEqual(5, ab_branch[window_index])
+        self.assertEqual(5, ab_branch[window_index], "window of branch created a few days later is 5, despite having skipped several days")
+
+        self.mine(secs=86400)
+
+        # print encode_hex(self.rc.branches(branch_ab_hash)[0])
+
+        branch_aab_hash = self.rc.createBranch(branch_aa_hash, dummy_merkle_root_aab, contract_addr)
+        branch_aba_hash = self.rc.createBranch(branch_ab_hash, dummy_merkle_root_aba, contract_addr)
+        self.assertEqual(2, len(self.rc.getWindowBranches(6)))
+        self.assertEqual([branch_aab_hash, branch_aba_hash], self.rc.getWindowBranches(6))
+
+        self.mine(secs=86400)
+
+        null_test_merkle_root = decode_hex(sha3_256('nulltest').hexdigest())
+
+        failed = False
+        try:
+            self.rc.createBranch(null_hash, null_test_merkle_root, contract_addr, startgas=200000)
+            self.c.mine()
+        except TransactionFailed:
+            failed = True 
+        self.assertTrue(failed, "You cannot create a branch with a null parent hash")
+
+        self.assertEqual(self.rc.balanceOfSub(k1_addr, branch_aa_hash, k1sub0), 1000000)
+
+        self.assertTrue(self.rc.isAmountSpendableSub(k1_addr, 1000000, branch_aa_hash, k1sub0))
+        self.assertTrue(self.rc.isAmountSpendableSub(k1_addr, 1, branch_ab_hash, k1sub0))
+        self.assertFalse(self.rc.isAmountSpendableSub(k1_addr, 1000001, branch_ab_hash, k1sub0))
+
+        failed = False
+        try:
+            self.rc.createBranch(branch_ab_hash, dummy_merkle_root_aba, contract_addr, startgas=200000)
+            self.c.mine()
+        except TransactionFailed:
+            failed = True
+        self.assertTrue(failed, "You can only create a branch with a given hash once")
+
+        #print "Gas used to send coins after %d blocks: %d" % (2, self.s.gas_used - u)
+        self.rc.transferSub(k2_addr, 500000, branch_aa_hash, k1sub0, k2sub0, sender=t.k1)
+        #print "Gas used to send coins after %d blocks: %d" % (2, self.s.block.gas_used - u)
+
+        self.assertEqual(self.rc.balanceOfSub(k2_addr, branch_aa_hash, k2sub0), 500000)
+        self.assertEqual(self.rc.balanceOfSub(k2_addr, branch_ab_hash, k2sub0), 0)
+
+        branch_hash = branch_aba_hash
+        for i in range(0,10):
+            dummy_merkle_root = decode_hex(sha3_256('dummy' + str(i)).hexdigest())
+            branch_hash = self.rc.createBranch(branch_hash, dummy_merkle_root, contract_addr)
+            self.mine(secs=86400)
+            # print encode_hex(branch_hash)
+
+        u = self.c.block.gas_used
+        self.rc.transferSub(k2_addr, 500000, branch_hash, k1sub0, k2sub0, sender=t.k1)
+
+        gas_used = self.c.block.gas_used - u
+        #print "Gas used to send coins after %d blocks: %d" % (i+1, gas_used)
+        # self.assertTrue(u < 130000, "100 branches read in less than 130000 gas")
+
+        failed = False
+        try:
+            self.rc.transferSub(k2_addr, 1, branch_aba_hash, k1sub1, k2sub0, sender=t.k1)
+        except:
+            failed = True
+
+        k0_bal = self.rc.balanceOf(k0_addr, branch_ab_hash)
+        #print k0_bal
+        self.rc.transferSub(k2_addr, 5, branch_aba_hash, NULL_BYTES, k2sub0, sender=t.k0)
+        branch_abaa_hash = self.rc.createBranch(branch_aba_hash, dummy_merkle_root_abaa, contract_addr)
+        self.mine(secs=86400)
+        k0_bal_spent = self.rc.balanceOf(k0_addr, branch_abaa_hash)
+
+        #print k0_bal_spent
+        self.assertEqual(k0_bal_spent, k0_bal - 5)
+
+        self.assertFalse(self.rc.transferSub(k2_addr, 5, branch_ab_hash, NULL_BYTES, k2sub0, sender=t.k0), "Attempting to send coins on an earlier branch returns false")
+        self.assertEqual(k0_bal_spent, k0_bal - 5, "Attempt to send coins on an earlier branch left balance unchanged")
+        return
+
+
+
+
     def test_allowances(self):
 
         # a

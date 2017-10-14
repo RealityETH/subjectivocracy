@@ -79,9 +79,14 @@ contract RealityToken {
 
     function balanceOf(address addr, bytes32 branch)
     public constant returns (uint256) {
+        return balanceOfSub(addr, branch, NULL_HASH);
+    }
+
+    function balanceOfSub(address addr, bytes32 branch, bytes32 acct)
+    public constant returns (uint256) {
         int256 bal = 0;
         while(branch != NULL_HASH) {
-            bal += branches[branch].balance_change[keccak256(addr, NULL_HASH)];
+            bal += branches[branch].balance_change[keccak256(addr, acct)];
             branch = branches[branch].parent_hash;
         }
         return uint256(bal);
@@ -110,7 +115,12 @@ contract RealityToken {
         return _isAmountSpendable(keccak256(addr, NULL_HASH), _min_balance, branch_hash);
     }
 
-    function transferFrom(address from, address addr, uint256 amount, bytes32 branch)
+    function isAmountSpendableSub(address addr, uint256 _min_balance, bytes32 branch_hash, bytes32 acct)
+    public constant returns (bool) {
+        return _isAmountSpendable(keccak256(addr, acct), _min_balance, branch_hash);
+    }
+
+    function transferFrom(address from, address addr, uint256 amount, bytes32 branch, bytes32 from_acct, bytes32 to_acct)
     public returns (bool) {
 
         require(allowed[from][msg.sender][branch] >= amount);
@@ -121,11 +131,11 @@ contract RealityToken {
         require(branches[branch].timestamp > 0); // branch must exist
 
         if (branch_window < last_debit_windows[keccak256(from, NULL_HASH)]) return false; // debits can't go backwards
-        if (!_isAmountSpendable(keccak256(from, NULL_HASH), amount, branch)) return false; // can only spend what you have
+        if (!_isAmountSpendable(keccak256(from, from_acct), amount, branch)) return false; // can only spend what you have
 
         last_debit_windows[keccak256(from, NULL_HASH)] = branch_window;
-        branches[branch].balance_change[keccak256(from, NULL_HASH)] -= int256(amount);
-        branches[branch].balance_change[keccak256(addr, NULL_HASH)] += int256(amount);
+        branches[branch].balance_change[keccak256(from, from_acct)] -= int256(amount);
+        branches[branch].balance_change[keccak256(addr, to_acct)] += int256(amount);
 
         uint256 allowed_before = allowed[from][msg.sender][branch];
         uint256 allowed_after = allowed_before - amount;
@@ -136,23 +146,43 @@ contract RealityToken {
         return true;
     }
 
-    function transfer(address addr, uint256 amount, bytes32 branch)
+    function transferFrom(address from, address addr, uint256 amount, bytes32 branch, bytes32 from_acct)
+    public returns (bool) {
+        return transferFrom(from, addr, amount, branch, from_acct, NULL_HASH);
+    }
+
+    function transferFrom(address from, address addr, uint256 amount, bytes32 branch)
+    public returns (bool) {
+        return transferFrom(from, addr, amount, branch, NULL_HASH, NULL_HASH);
+    }
+
+    function transferSub(address addr, uint256 amount, bytes32 branch, bytes32 from_acct, bytes32 to_acct)
     public returns (bool) {
         uint256 branch_window = branches[branch].window;
 
         require(amount <= 2100000000000000);
         require(branches[branch].timestamp > 0); // branch must exist
 
-        if (branch_window < last_debit_windows[keccak256(msg.sender, NULL_HASH)]) return false; // debits can't go backwards
-        if (!_isAmountSpendable(keccak256(msg.sender, NULL_HASH), amount, branch)) return false; // can only spend what you have
+        if (branch_window < last_debit_windows[keccak256(msg.sender, from_acct)]) return false; // debits can't go backwards
+        if (!_isAmountSpendable(keccak256(msg.sender, from_acct), amount, branch)) return false; // can only spend what you have
 
-        last_debit_windows[keccak256(msg.sender, NULL_HASH)] = branch_window;
-        branches[branch].balance_change[keccak256(msg.sender, NULL_HASH)] -= int256(amount);
-        branches[branch].balance_change[keccak256(addr, NULL_HASH)] += int256(amount);
+        last_debit_windows[keccak256(msg.sender, from_acct)] = branch_window;
+        branches[branch].balance_change[keccak256(msg.sender, from_acct)] -= int256(amount);
+        branches[branch].balance_change[keccak256(addr, to_acct)] += int256(amount);
 
-        Transfer(msg.sender, addr, NULL_HASH, NULL_HASH, amount, branch);
+        Transfer(msg.sender, addr, from_acct, to_acct, amount, branch);
 
         return true;
+    }
+
+    function transfer(address addr, uint256 amount, bytes32 branch, bytes32 from_acct)
+    public returns (bool) {
+        return transferSub(addr, amount, branch, from_acct, NULL_HASH);
+    }
+
+    function transfer(address addr, uint256 amount, bytes32 branch)
+    public returns (bool) {
+        return transferSub(addr, amount, branch, NULL_HASH, NULL_HASH);
     }
 
     function getDataContract(bytes32 _branch)
