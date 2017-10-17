@@ -16,11 +16,11 @@ contract PayOnMilestone {
     address token;
     address payee;
 
-    function PayOnMilestone(address _realitycheck, address _token, address _arbitrator, address _payee) {
+    function PayOnMilestone(address _payee, address _realitycheck, address _token, address _arbitrator) {
+        payee = _payee;
         realitycheck = _realitycheck;
         token = _token;
         arbitrator = _arbitrator;
-        payee = _payee;
     }
 
     function claim(bytes32 question_id) {
