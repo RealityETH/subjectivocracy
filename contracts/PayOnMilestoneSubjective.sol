@@ -1,9 +1,9 @@
 pragma solidity ^0.4.13;
 
 contract RealityTokenAPI {
-    function transfer(address _to, uint _value) public returns (bool success);
-    function balanceOf(address _owner) constant public returns (uint balance);
-    function isWhitelisted(address arbitrator, bytes32 branch) constant public returns (bool val);
+    function transfer(address _to, uint _value, bytes32 _branch) public returns (bool success);
+    function balanceOf(address _owner, bytes32 _branch) constant public returns (uint balance);
+    function isWhitelisted(address arbitrator, bytes32 _branch) constant public returns (bool val);
 }
 
 contract RealityCheckAPI {
@@ -17,14 +17,14 @@ contract PayOnMilestoneSubjective {
     address payee;
     bytes32 branch;
 
-    function PayOnMilestone(address _realitycheck, address _token, address _payee) {
+    function PayOnMilestone(address _realitycheck, address _token, address _payee) public {
         realitycheck = _realitycheck;
         token = _token;
         payee = _payee;
     }
 
-    function claim(bytes32 question_id, bytes32 _branch, address _arbitrator) {
-        bytes32 content_hash = keccak256(0, "Did Ed complete milestone 1?");
+    function claim(bytes32 question_id, bytes32 _branch, address _arbitrator) public {
+        bytes32 content_hash = keccak256(uint256(0), "Did Ed complete milestone 1?");
         bytes32 answer = RealityCheckAPI(realitycheck).getFinalAnswerIfMatches(
             question_id,
             content_hash, _arbitrator, 1 days, 1 ether
@@ -32,8 +32,8 @@ contract PayOnMilestoneSubjective {
         require(answer == bytes32(1));
         
         require(RealityTokenAPI(token).isWhitelisted(_arbitrator, _branch));
-        uint256 tokens_held = RealityTokenAPI(token).balanceOf(this);
-        RealityTokenAPI(token).transfer(payee, tokens_held);
+        uint256 tokens_held = RealityTokenAPI(token).balanceOf(this, _branch);
+        RealityTokenAPI(token).transfer(payee, tokens_held, _branch);
     }
 
 }

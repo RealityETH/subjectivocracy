@@ -16,15 +16,15 @@ contract PayOnMilestone {
     address token;
     address payee;
 
-    function PayOnMilestone(address _payee, address _realitycheck, address _token, address _arbitrator) {
+    function PayOnMilestone(address _payee, address _realitycheck, address _token, address _arbitrator) public {
         payee = _payee;
         realitycheck = _realitycheck;
         token = _token;
         arbitrator = _arbitrator;
     }
 
-    function claim(bytes32 question_id) {
-        bytes32 content_hash = keccak256(0, "Did Ed complete milestone 1?");
+    function claim(bytes32 question_id) public {
+        bytes32 content_hash = keccak256(uint256(0), "Did Ed complete milestone 1?");
         bytes32 answer = RealityCheckAPI(realitycheck).getFinalAnswerIfMatches(
             question_id,
             content_hash, arbitrator, 1 days, 1 ether
