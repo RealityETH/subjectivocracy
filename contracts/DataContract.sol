@@ -1,6 +1,8 @@
+pragma solidity ^0.4.13;
+
 contract DataFeed {
-	mapping ( bytes32 => int256 ) data;
-	address owner;
+	mapping (bytes32 => bytes32) data;
+	address public owner;
 
 	function datafeed() {
 		owner = msg.sender;
@@ -11,7 +13,7 @@ contract DataFeed {
 		data[k] = v;
 	}
 
-	function get(bytes32 k) returns (bytes32 v) {
-		v = data[k];
+	function get(bytes32 k) public constant returns (bytes32) {
+		return data[k];
 	}
 }
