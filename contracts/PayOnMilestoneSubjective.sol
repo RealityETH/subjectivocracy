@@ -10,7 +10,7 @@ contract RealityCheckAPI {
     function getFinalAnswerIfMatches(bytes32 question_id, bytes32 content_hash, address arbitrator, uint256 min_timeout, uint256 min_bond) public constant returns (bytes32);
 }
 
-contract DataContract {
+contract DataContractAPI {
     function get(bytes32 k) public constant returns (bytes32);
 }
 
@@ -30,7 +30,7 @@ contract PayOnMilestoneSubjective {
     function isArbitratorValid(address _arbitrator, bytes32 _branch) returns (bool) {
         bytes32 content_hash = keccak256(uint256(8), _arbitrator);
         address data_cntrct = RealityTokenAPI(realitycheck).getDataContract(_branch);
-        uint256 valid_until = uint256(DataContract(data_cntrct).get(content_hash));
+        uint256 valid_until = uint256(DataContractAPI(data_cntrct).get(content_hash));
         return (valid_until > now);
     }
 
