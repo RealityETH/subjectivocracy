@@ -27,8 +27,9 @@ contract PayOnMilestoneSubjective {
         payee = _payee;
     }
 
-    function isArbitratorValid(address _arbitrator, address data_cntrct) returns (bool) {
+    function isArbitratorValid(address _arbitrator, bytes32 _branch) returns (bool) {
         bytes32 content_hash = keccak256(uint256(8), _arbitrator);
+        address data_cntrct = RealityTokenAPI(realitycheck).getDataContract(_branch);
         uint256 valid_until = uint256(DataContract(data_cntrct).get(content_hash));
         return (valid_until > now);
     }
@@ -41,8 +42,7 @@ contract PayOnMilestoneSubjective {
         );
         require(answer == bytes32(1));
         
-        address data_cntrct = RealityTokenAPI(realitycheck).getDataContract(_branch);
-        require(isArbitratorValid(_arbitrator, data_cntrct));
+        require(isArbitratorValid(_arbitrator, _branch));
 
         uint256 tokens_held = RealityTokenAPI(token).balanceOf(this, _branch);
         RealityTokenAPI(token).transfer(payee, tokens_held, _branch);
