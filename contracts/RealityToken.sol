@@ -5,11 +5,12 @@ contract RealityToken {
     event Approval(address indexed _owner, address indexed _spender, uint _value, bytes32 branch);
     event Transfer(address indexed _from, address indexed _to, uint _value, bytes32 branch);
     event BranchCreated(bytes32 hash, address data_cntrct);
+    event FundedDistributionContract(address contract_funded, int256 funding_amount);
 
     struct Branch {
         bytes32 parent_hash; // Hash of the parent branch.
         bytes32 merkle_root; // Merkle root of the data we commit to
-        address data_cntrct; // Optional address of a contract containing this data
+        address arbitrator_list; // Optional address of a contract containing arbitrators with good values
         uint256 timestamp; // Timestamp branch was mined
         uint256 window; // Day x of the system's operation, starting at UTC 00:00:00
         mapping(address => int256) balance_change; // user debits and credits
@@ -38,12 +39,12 @@ contract RealityToken {
         window_branches[0].push(genesis_branch_hash);
     }
 
-    function createBranch(bytes32 parent_branch_hash, bytes32 merkle_root, address data_cntrct)
+    function createBranch(bytes32 parent_branch_hash, bytes32 merkle_root, address arbitrator_list, address contract_funded, int256 funding_amount)
     public returns (bytes32) {
         bytes32 NULL_HASH;
         uint256 window = (now - genesis_window_timestamp) / 86400; // NB remainder gets rounded down
 
-        bytes32 branch_hash = keccak256(parent_branch_hash, merkle_root, data_cntrct);
+        bytes32 branch_hash = keccak256(parent_branch_hash, merkle_root, arbitrator_list);
         require(branch_hash != NULL_HASH);
 
         // Your branch must not yet exist, the parent branch must exist.
@@ -54,9 +55,15 @@ contract RealityToken {
         // We must now be a later 24-hour window than the parent.
         require(branches[parent_branch_hash].window < window);
 
-        branches[branch_hash] = Branch(parent_branch_hash, merkle_root, data_cntrct, now, window);
+        // distribute further RealityTokens when requested via subjectiviocracy
+        if (funding_amount > 0) {
+            branches[branch_hash].balance_change[contract_funded] += funding_amount;
+            emit FundedDistributionContract(contract_funded, funding_amount);
+        }
+
+        branches[branch_hash] = Branch(parent_branch_hash, merkle_root, arbitrator_list, now, window);
         window_branches[window].push(branch_hash);
-        BranchCreated(branch_hash,data_cntrct);
+        emit BranchCreated(branch_hash, arbitrator_list);
         return branch_hash;
     }
 
@@ -68,7 +75,7 @@ contract RealityToken {
     function approve(address _spender, uint256 _amount, bytes32 _branch)
     public returns (bool success) {
         allowed[msg.sender][_spender][_branch] = _amount;
-        Approval(msg.sender, _spender, _amount, _branch);
+        emit Approval(msg.sender, _spender, _amount, _branch);
         return true;
     }
 
@@ -128,7 +135,7 @@ contract RealityToken {
         uint256 allowed_after = allowed_before - amount;
         assert(allowed_before > allowed_after);
 
-        Transfer(from, addr, amount, branch);
+        emit Transfer(from, addr, amount, branch);
 
         return true;
     }
@@ -147,14 +154,14 @@ contract RealityToken {
         branches[branch].balance_change[msg.sender] -= int256(amount);
         branches[branch].balance_change[addr] += int256(amount);
 
-        Transfer(msg.sender, addr, amount, branch);
+        emit Transfer(msg.sender, addr, amount, branch);
 
         return true;
     }
 
-    function getDataContract(bytes32 _branch)
+    function getArbitratorList(bytes32 _branch)
     public constant returns (address) {
-        return branches[_branch].data_cntrct;
+        return branches[_branch].arbitrator_list;
     }
 
     function getWindowOfBranch(bytes32 _branchHash)
@@ -162,15 +169,15 @@ contract RealityToken {
         return branches[_branchHash].window;
     }
 
-    function isBranchInBetweenBranches(bytes32 investigationHash,bytes32 closerToRootHash, bytes32 fartherToRootHash)
-    public constant returns(bool){
-      bytes32 iterationHash=closerToRootHash;
-      while(iterationHash!=fartherToRootHash){
-        if(investigationHash==iterationHash){
+    function isBranchInBetweenBranches(bytes32 investigationHash, bytes32 hashOlderBranch, bytes32 hashNewerBranch)
+    public constant returns(bool) {
+      bytes32 iterationHash=hashNewerBranch;
+      while(iterationHash != hashOlderBranch) {
+        if(investigationHash == iterationHash) {
           return true;
         }
-        else{
-        iterationHash=branches[iterationHash].parent_hash;
+        else {
+            iterationHash = branches[iterationHash].parent_hash;
         }
       }
       return false;
