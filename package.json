@@ -1,6 +1,6 @@
 {
   "name": "realitytoken-contracts",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "realitytoken basic contracts",
   "main": "truffle.js",
   "directories": {
