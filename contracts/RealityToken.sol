@@ -55,14 +55,15 @@ contract RealityToken {
         // We must now be a later 24-hour window than the parent.
         require(branches[parent_branch_hash].window < window);
 
+        branches[branch_hash] = Branch(parent_branch_hash, merkle_root, arbitrator_list, now, window);
+        window_branches[window].push(branch_hash);
+
         // distribute further RealityTokens when requested via subjectiviocracy
         if (funding_amount > 0) {
             branches[branch_hash].balance_change[contract_funded] += funding_amount;
             emit FundedDistributionContract(contract_funded, funding_amount);
         }
 
-        branches[branch_hash] = Branch(parent_branch_hash, merkle_root, arbitrator_list, now, window);
-        window_branches[window].push(branch_hash);
         emit BranchCreated(branch_hash, arbitrator_list);
         return branch_hash;
     }
@@ -183,5 +184,11 @@ contract RealityToken {
       return false;
     }
 
+    function getTimestampOfBranch(bytes32 branch) public view returns(uint256){
+        return branches[branch].timestamp;
+    }
 
+    function getParentBranch(bytes32 branch) public view returns(bytes32){
+        return branches[branch].parent_hash;
+    }
 }

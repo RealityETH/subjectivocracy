@@ -1,0 +1,28 @@
+{
+  "name": "realitytoken-contracts",
+  "version": "0.0.1",
+  "description": "realitytoken basic contracts",
+  "main": "truffle.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "truffle test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/josojo/subjectivocracy.git"
+  },
+  "keywords": [
+    "realitytoken",
+    "oracle",
+    "subjectivity"
+  ],
+  "author": "josojo",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/josojo/subjectivocracy/issues"
+  },
+  "homepage": "https://github.com/josojo/subjectivocracy#readme"
+}
