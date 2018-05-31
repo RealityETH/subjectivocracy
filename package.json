@@ -1,5 +1,5 @@
 {
-  "name": "realitytoken-contracts",
+  "name": "@josojo/realitytoken-contracts",
   "version": "0.1.0",
   "description": "realitytoken basic contracts",
   "main": "truffle.js",
