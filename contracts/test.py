@@ -243,6 +243,8 @@ class TestRealityToken(TestCase):
         with self.assertRaises(TransactionFailed):
             self.rc.transferFrom(k0_addr, k1_addr, 600000, genesis_hash, sender=t.k2, startgas=200000)
 
+
+        self.mine()
         start_bal = self.rc.balanceOf(k0_addr, genesis_hash)
 
         self.rc.transferFrom(k0_addr, k1_addr, 400000, genesis_hash, sender=t.k2, startgas=200000)
