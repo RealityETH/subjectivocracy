@@ -1,0 +1,102 @@
+* Augur, on L2, with composability
+
+Imagine we have a smart contract consumer, (could be Omen but I'll do the example with WeTrust), reality.eth and Kleros and a load of other stuff all deployed on an Optimistic Rollup (OVM) ledger. OVM consists of a ledger run by an operator, and a verification contract on-chain that commits to the current validated ledger state.
+
+If there's a very heavily-escalated dispute, we can do an Augur-like fork of the entire OVM ledger.
+
+WeTrust contract: Did X finish task Y?
+ -> ask reality.eth, with Kleros as arbitrator, dispute creates a pool of funds
+
+Kleros: Did X finish task Y?
+ -> Funds go to Kleros, Kleros rules Yes.
+
+Dispute: Is Kleros trustworthy?
+ -> ask reality.eth, with Fork Manager as arbitrator, dispute creates a pool of funds
+ 
+Fork Manager: Is Kleros trustworthy?
+ -> Clone the L1 OVM manager contract and the off-chain OVM ledger, creating two parallel ledgers, one commited to "Kleros is good", the other to "Kleros is pwned".
+ -> Freeze movement of external assets (ETH, DAI etc) in and out of the OVM ledger, unless both forks agree it can be moved
+ -> Everything except movement in and out can carry on as usual.
+ -> Governance token holders can commit their tokens to one ledger or the other, allowing them to share in the fees.
+ -> Anything involving a token that lives on the OVM ledger can be forked, you can just carry on on both versions of the ledger
+ -> After time period X, the ledger with the most governance tokens committed to it gets exit rights to any ETH, DAI etc
+ -> Burn the dispute funds
+ 
+The above Augur-like security, on L2, with composability. From the point of view of assets on the ledger, forking tokens Just Works, contract authors never have to think about it. The system is a bit slow moving tokens out of L2 as you have to wait for challenges, but this was already the case with OVM.
+
+Alternatives:
+
+ - Replace Governance Token with Any Forkable Token:
+   - Any forkable asset on the chain can be used in governance, by committing it to one side of the ledger or the other.
+   - A Uniswap-like market is used to value the different assets with respect to each other.
+   - Taking part in governance gives you a share of the dispute fee.
+     - Issue: Is this better than just *selling* your other asset for the governance token?
+       - Possibly, better for attracting people who just want to carry on using the system, commit early and make some money
+
+ - Make commiting to a fork compulsory ("Move it or lose it")
+   - Augur did this in v2.
+   - Previously Augur had a "inflate the coinage on forking" to encourage more tokens to commit. This may create perverse incentives to make a fork.
+   - Breaks insurance? The model relies on the insuring tokens being available on both forks.
+
+TBD: 
+ - Need a system for how to divide up the dispute fee among people who commit, eg do you get more for committing early?
+ - Need to set the appropriate fees
+
+
+Economics
+
+An attacker can buy forkonomic tokens and transfer them into the "bad" branch. This will be profitable if the amount of hard assets they can steal from the "bad branch" is greater than the value of 51% of forking tokens. An attack makes forkonomic tokens valuable: Forkonomic token holders can sell their tokens on the attack fork to the attacker, and the reduction in supply on the "honest" fork concentrates its market cap on the remaining tokens. Forkonomic tokenholders also benefit from the dispute fees.
+
+Hard assets and insurance:
+
+If you have a "hard asset" like ETH or DAI, you risk losing it because it ends up on the dishonest fork. This may cause you to lose a bet you should have won, or in the event of a governance failure just lose the ETH you should have had.
+
+You may wish to insure against this possibility by buying a policy using forkonomic tokens.
+This could work as follows:
+ - Any contract can call the ForkManager to verify whether it is on the winning fork on the ledger on which it is being called.
+ - In the event that it finds itself on a losing fork, an insurance contract has a responsibility to pay out the face value of ETH on whatever fork it is on.
+ - The contract may have DAI-style recollateralizations and liquidations to ensure that it has enough forkonomic tokens at any give time to cover its likely liabilities.
+ - If the forkonomic tokens on a given fork are worthless, the insurance contract on that will go bankrupt and be unable to pay out the full face value of the ETH.
+
+Governance token value sources:
+ - Oracle usage fees
+ - Bond fees
+ - Dispute fees
+ - Insurance yield
+ - Reduced supply taken by an attacker onto another fork
+
+TBD: How to set the fees charged by the ForkManager?
+
+Leverage
+ - Some failure modes may not be ecosystem-wide.
+ - If a decision is not ecosystem-wide, you may be able to insure multiple hard assets using the same forkonomic token
+
+
+Issue: Can the attacker fund their attack by getting on one side or the other of this trade? War-game some attacks.
+Issue: Can we loosely couple the insurance part? Insurance is evolving, hopefully can get another project to build and promote it.
+Issue: If we're allowing governance forks, this is all assets, which is much more than you can steal in practice with oracle manipulation. Should we add another hurdle for governance upgrades?
+Issue: If we have governance forks, should it be possible for hard assets to opt out of them?
+
+
+Differences with Augur
+
+ - Although "hard" assets are supported, it is intended that people actually transact in assets that can be forked. This is more secure and not subject to a security bound.
+ - There is no attempt made to manage the total value of "hard" assets depending on the governance process. However, insurance contracts will be limited by the available value of forking tokens, so the amount of *insurable* ETH may be limited. Higher demand for insured ETH should increase the value of forking tokens.
+ - Relatedly, there is no attempt to collect fees based on open interest, as this is can be avoided using parasitical contracts in the event that the fees become attractive.
+
+
+Different security guarantees for different assets
+All the following may be used on the system:
+ - Pure forking assets which will exist on both sides of a fork
+ - "Hard" assets without insurance
+ - "Hard" assets with insurance
+There may be further gradiations depending on that the fork is about, eg you might fork over oracles but not over governance. 
+
+
+Implementation notes
+
+Generic forkmanager
+ - contains a key-value mapping
+ - forks over whether to update a given key-value pair
+ - key-value pair can be something like "best kleros-api-compatible governance contract" or "kleros is good"
+

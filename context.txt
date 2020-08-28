@@ -1,0 +1,21 @@
+The Borges
+Branching Oracle Rollup Governed Execution System
+
+Recently Justin Drake made a proposal to ethresear.ch for 
+
+Why put the oracle on the bottom layer? Well, 
+
+
+On L1: 
+
+
+Put inside its own contract: Augur. Loses composibility. Limits to hard assets, which creates a security bound.
+
+
+Manage forking on L1: Pushes complexity everywhere. Either everybody needs to be able to pass a branch through their contract calls, or arbitrator contracts need to handle what happens when the token they hold forks, and work out who owns forks of tokens that suddenly show up.
+
+This in turn damages composibility for contracts that do not take the complexity hit.
+
+
+
+Need a whole forking universe
