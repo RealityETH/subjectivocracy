@@ -1,0 +1,125 @@
+* Non-forkonomic design *
+
+-- OVM Ledger -----------------------
+
+WETH Token
+ - transfer
+ - transferL1:
+   - burn tokens, message L1:WETH wrapper to release X tokens for account Y
+ - mintFor
+   - receive message from WETH wrapper to mint X tokens for account Y
+
+FooToken
+ - transfer (internal to OVM ledger, doesn't exist on L1)
+
+WeTrust
+ - createCrowdFund
+   - Call Reality.eth askQuestion
+ - fundCrowdFund
+ - settleCrowdFund
+   - Call Reality.eth getFinalAnswer
+
+Reality.eth
+ - askQuestion
+ - getFinalAnswer
+ - requestArbitration
+
+Reality.eth - Kleros adaptor
+
+Kleros
+ - createIssue
+ - vote
+ - resolveIssue
+
+
+-- L1 ------------------------------
+
+OVM-Controller
+ - L1ToL2Queue
+ - L2ToL1Queue
+ - ledger hash
+ - various OVM challenge-related things
+
+WETH Wrapper / bridge
+ - lock ETH, message OVM-Controller.L1ToL2Queue to mint X tokens for account Y on OVM::WETH Token
+ - read message from OVM-Controller.L2ToL1Queue to release X tokens for account Y 
+
+
+
+
+* Forkonomic design *
+
+-- OVM Ledger -----------------------
+
+WETH Token
+ - transfer
+ - transferL1:
+   - burn tokens, message L1:WETH wrapper to release X tokens for account Y
+ - mintFor
+   - receive message from WETH wrapper to mint X tokens for account Y
+
+FooToken
+ - transfer (internal to OVM ledger, doesn't exist on L1)
+
+WeTrust
+ - createCrowdFund
+   - Call Reality.eth askQuestion
+ - fundCrowdFund
+ - settleCrowdFund
+   - Call Reality.eth getFinalAnswer
+
+Reality.eth
+ - askQuestion
+ - getFinalAnswer
+ - requestArbitration
+
+Reality.eth - Kleros adaptor
+
+Kleros
+ - createIssue
+ - vote
+ - resolveIssue
+
+WETHInsurer
+ - stake goverance tokens
+ - pays out ETH if !ForkManager::isInForkingState and L1:OVM-Controller != ForkManager::ovmcontroller, ie if there was a fork, and the one we're on didn't get the ETH
+ - can create credit you with a token WInsuredETH
+
+
+-- L1 ------------------------------
+
+OVM-Controller
+[ if there is a fork, there will be multiple of these, not just one ]
+ - L1ToL2Queue
+ - L2ToL1Queue
+ - ledger hash
+ - various OVM challenge-related things
+
+
+ForkManager
+ - ovmcontroller
+ - forkingOVMController1
+ - forkingOVMController2
+ - isInForkingState
+ - requestFork(forkingOVMController1, forkingOVMController2)
+   - burns tokens
+   - sets isInForkingState
+ - forkDeadline
+ - resolve
+   - sets winning forkingOVMController to ovmcontroller, turns off isInForkingState
+
+
+WETH Wrapper / bridge (traditional)
+[ No awareness of forks, if there's a fork you have to withdraw then redeposit on the new fork ]
+ - lock ETH, message OVM-Controller.L1ToL2Queue to mint X tokens for account Y on OVM::WETH Token
+ - read message from OVM-Controller.L2ToL1Queue to release X tokens for account Y 
+
+WETH Wrapper / bridge (fork-governed)
+ Normally:
+ - lock ETH, message L1ToL2Queue of ForkManager.ovmcontroller to mint X tokens for account Y on OVM::WETH Token
+ - read message from L2ToL1Queue of ForkManager.ovmcontroller to release X tokens for account Y 
+ But if in forking state:
+ - lock ETH, message L1ToL2Queue of ForkManager.forkingOVMController1 AND ForkManager.forkingOVMController2 to mint X tokens for account Y on OVM::WETH Token
+ - read message from L2ToL1Queue of ForkManager.forkingOVMController1 AND ForkManager.forkingOVMController2 release X tokens for account Y 
+
+
