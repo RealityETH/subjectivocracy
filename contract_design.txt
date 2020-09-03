@@ -1,6 +1,6 @@
 * Non-forkonomic design *
 
--- OVM Ledger -----------------------
+-- L2 Ledger -----------------------
 
 WETH Token
  - transfer
@@ -10,7 +10,7 @@ WETH Token
    - receive message from WETH wrapper to mint X tokens for account Y
 
 FooToken
- - transfer (internal to OVM ledger, doesn't exist on L1)
+ - transfer (internal to L2 ledger, doesn't exist on L1)
 
 WeTrust
  - createCrowdFund
@@ -34,22 +34,22 @@ Kleros
 
 -- L1 ------------------------------
 
-OVM-Controller
+L2-Controller
  - L1ToL2Queue
  - L2ToL1Queue
  - ledger hash
- - various OVM challenge-related things
+ - various L2 challenge-related things
 
 WETH Wrapper / bridge
- - lock ETH, message OVM-Controller.L1ToL2Queue to mint X tokens for account Y on OVM::WETH Token
- - read message from OVM-Controller.L2ToL1Queue to release X tokens for account Y 
+ - lock ETH, message L2-Controller.L1ToL2Queue to mint X tokens for account Y on L2::WETH Token
+ - read message from L2-Controller.L2ToL1Queue to release X tokens for account Y 
 
 
 
 
 * Forkonomic design *
 
--- OVM Ledger -----------------------
+-- L2 Ledger -----------------------
 
 WETH Token
  - transfer
@@ -59,7 +59,7 @@ WETH Token
    - receive message from WETH wrapper to mint X tokens for account Y
 
 FooToken
- - transfer (internal to OVM ledger, doesn't exist on L1)
+ - transfer (internal to L2 ledger, doesn't exist on L1)
 
 WeTrust
  - createCrowdFund
@@ -82,34 +82,35 @@ Kleros
 
 WETHInsurer
  - stake goverance tokens
- - pays out ETH if !ForkManager::isInForkingState and L1:OVM-Controller != ForkManager::ovmcontroller, ie if there was a fork, and the one we're on didn't get the ETH
+ - pays out ETH if !ForkManager::isInForkingState and L1:L2-Controller != ForkManager::l2controller, ie if there was a fork, and the one we're on didn't get the ETH
  - can create credit you with a token WInsuredETH
 
 Reality.eth - ForkManager adaptor
 
 -- L1 ------------------------------
 
-OVM-Controller
+L2-Controller
 [ if there is a fork, there will be multiple of these, not just one ]
  - L1ToL2Queue
  - L2ToL1Queue
  - ledger hash
- - various OVM challenge-related things
+ - various L2 challenge-related things
+ - forkManager
 
 
 ForkManager is ERC20
- - ovmcontroller
- - winningChild
- - losingChild
- - forkingOVMController1
- - forkingOVMController2
- - isInForkingState
- - requestFork(forkingOVMController1, forkingOVMController2)
+ - l2controller
+ - parentForkManager
+ - forkingL2Controller1
+ - forkingL2Controller2
+ - isInForkingState()
+ - requestFork(proposedL2Controller)
    - burns tokens
    - sets isInForkingState
+   - clone L2-Controller? Or leave the current one as it is?
  - forkDeadline
  - resolve
-   - sets winning forkingOVMController to ovmcontroller, turns off isInForkingState
+   - sets winning forkingL2Controller to l2controller, turns off isInForkingState
  - currentBestForkManager() 
    - self unless forking completed
    - if forking completed, returns address of winner, recursively until we find a non-forked ForkManager
@@ -117,15 +118,16 @@ ForkManager is ERC20
 
 WETH Wrapper / bridge (traditional)
 [ No awareness of forks, if there's a fork you have to withdraw then redeposit on the new fork ]
- - lock ETH, message OVM-Controller.L1ToL2Queue to mint X tokens for account Y on OVM::WETH Token
- - read message from OVM-Controller.L2ToL1Queue to release X tokens for account Y 
+ - L2-Controller
+ - lock ETH, message L2-Controller.L1ToL2Queue to mint X tokens for account Y on L2::WETH Token
+ - read message from L2-Controller.L2ToL1Queue to release X tokens for account Y 
 
 WETH Wrapper / bridge (fork-governed)
  Normally:
- - lock ETH, message L1ToL2Queue of ForkManager.currentBestForkManager().ovmcontroller to mint X tokens for account Y on OVM::WETH Token
- - read message from L2ToL1Queue of ForkManager.currentBestForkManager().ovmcontroller to release X tokens for account Y 
+ - lock ETH, message L1ToL2Queue of ForkManager.currentBestForkManager().l2controller to mint X tokens for account Y on L2::WETH Token
+ - read message from L2ToL1Queue of ForkManager.currentBestForkManager().l2controller to release X tokens for account Y 
  But if in forking state:
- - lock ETH, message L1ToL2Queue of ForkManager.currentBestForkManager()'s forkingOVMController1 AND forkingOVMController2 to mint X tokens for account Y on OVM::WETH Token
- - read message from L2ToL1Queue of ForkManager.currentBestForkManager()'s forkingOVMController1 AND forkingOVMController2 release X tokens for account Y 
+ - lock ETH, message L1ToL2Queue of ForkManager.currentBestForkManager()'s forkingL2Controller1 AND forkingL2Controller2 to mint X tokens for account Y on L2::WETH Token
+ - read message from L2ToL1Queue of ForkManager.currentBestForkManager()'s forkingL2Controller1 AND forkingL2Controller2 release X tokens for account Y 
 
 
