@@ -85,6 +85,7 @@ WETHInsurer
  - pays out ETH if !ForkManager::isInForkingState and L1:OVM-Controller != ForkManager::ovmcontroller, ie if there was a fork, and the one we're on didn't get the ETH
  - can create credit you with a token WInsuredETH
 
+Reality.eth - ForkManager adaptor
 
 -- L1 ------------------------------
 
@@ -96,8 +97,10 @@ OVM-Controller
  - various OVM challenge-related things
 
 
-ForkManager
+ForkManager is ERC20
  - ovmcontroller
+ - winningChild
+ - losingChild
  - forkingOVMController1
  - forkingOVMController2
  - isInForkingState
@@ -107,6 +110,9 @@ ForkManager
  - forkDeadline
  - resolve
    - sets winning forkingOVMController to ovmcontroller, turns off isInForkingState
+ - currentBestForkManager() 
+   - self unless forking completed
+   - if forking completed, returns address of winner, recursively until we find a non-forked ForkManager
 
 
 WETH Wrapper / bridge (traditional)
@@ -116,10 +122,10 @@ WETH Wrapper / bridge (traditional)
 
 WETH Wrapper / bridge (fork-governed)
  Normally:
- - lock ETH, message L1ToL2Queue of ForkManager.ovmcontroller to mint X tokens for account Y on OVM::WETH Token
- - read message from L2ToL1Queue of ForkManager.ovmcontroller to release X tokens for account Y 
+ - lock ETH, message L1ToL2Queue of ForkManager.currentBestForkManager().ovmcontroller to mint X tokens for account Y on OVM::WETH Token
+ - read message from L2ToL1Queue of ForkManager.currentBestForkManager().ovmcontroller to release X tokens for account Y 
  But if in forking state:
- - lock ETH, message L1ToL2Queue of ForkManager.forkingOVMController1 AND ForkManager.forkingOVMController2 to mint X tokens for account Y on OVM::WETH Token
- - read message from L2ToL1Queue of ForkManager.forkingOVMController1 AND ForkManager.forkingOVMController2 release X tokens for account Y 
+ - lock ETH, message L1ToL2Queue of ForkManager.currentBestForkManager()'s forkingOVMController1 AND forkingOVMController2 to mint X tokens for account Y on OVM::WETH Token
+ - read message from L2ToL1Queue of ForkManager.currentBestForkManager()'s forkingOVMController1 AND forkingOVMController2 release X tokens for account Y 
 
 
