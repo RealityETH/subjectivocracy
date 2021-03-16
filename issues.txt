@@ -1,0 +1,24 @@
+ISSUE: 
+ - Token committing
+   - need to get people to commit?
+   - force committing, tokens only exist on L1 -> can't use them for insurance, other uses
+   - committers get fees - may not be enough, eg 10% of fees too little if unclear?
+     - first movers get more fees?
+   - moving to L2 takes out of staked pool?
+ - Token revenue
+   - Also get part of fees for transactions? Each block needs a burn? How to regulate how much?
+   - Whitelisted arbitrators must pay part of arbitration? 
+   - Bond has a burn, but only works if token used for reality.eth 
+   - Bond claim fee goes to arbitrators, arbitrator withdrawal must provide a % to tokenholders
+      -> other currency also works
+
+
+ - fees charged on escalations and arbitrations
+   - issue: if not in the governance token how to do they get split among token-holders
+    - track withdrawal dates
+    - auction to burn tokens
+
+ - How to price the MetaArbitrator
+
+ - How to move other tokens owned by the MetaArbitrator
+  
