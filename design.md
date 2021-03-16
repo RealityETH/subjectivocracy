@@ -32,14 +32,12 @@ If assets are locked up in contracts that on the L2 chain such that nobody has p
 We keep track of the forking with a contract which we call the Fork Manager. This is effectively a Token-Curated Registry managing which Message Bridge contract you should talk to when you want send messages to or from the L2 ledger. In the event of a fork, the Fork Manager clones itself into two copies and uses a governance process similar to Augur, requiring token holders to move their tokens to one or the other of the forks. The fork which attracts the most tokens is considered the "recommended" fork. During the dispute period where tokenholders are moving their tokens, an L1 contract should only redeem assets if given an identical instruction by both forks, ie if the assets in question are not involved in anything that the two rival ledgers disagree about. Once the dispute period is complete, it should redeem assets based on the instructions of the "winning" fork. 
 
 
-[diagram of forking]
-
 
 ## Sidestepping the unforkable asset security bound
 
 As we discussed earlier, unlike chain-native assets, which can be duplicated on both forks and therefore benefit from full "subjectivocratic" security, unforkable assets are subject to an economic security bound: They are only as secure as the ratio of goverance token value to the value of unforkable assets that are being secured. If the value of unforkable assets is high relative to the value of the governance tokens used by the TCR, an attacker may buy governance tokens and use them to direct assets following the "winning" fork to a malicious ledger, or bribe existing tokenholders to do the same.
 
-Users unwilling to take this additional risk can avoid this problem altogether by transacting only in forkable assets issued on the L2 ledger. However, where this is not practical, it is also possible to write contracts on the L2 chain that use forkable, L2-native collateral to insure against the possibility of your assets ending up on the losing side of a fork. This insurance will be unable to pay out on a forked ledger which is considered completely worthless, as the collateral will also be worthless. But in the case of an attack, where governance tokens have been bought up with the aim of stealing unforkable assets of greater value, the collateral on the "losing" chain should still be valuable, and provided it has been adequately collateralized, the insurance will be able to pay out. So although ETH and USD-pegged assets and other tokens representing unforkable things from the L1 chain do not benefit from "subjectivocratic" security, we can create synthetic assets that do.
+Users unwilling to take this additional risk can avoid this problem altogether by transacting only in forkable assets issued on the L2 ledger. However, where this is not practical, it is also possible to create contracts on the L2 chain that use forkable, L2-native collateral to insure against the possibility of your assets ending up on the losing side of a fork. This insurance will be unable to pay out on a forked ledger which is considered completely worthless, as the collateral will also be worthless. But in the case of an attack, where governance tokens have been bought up with the aim of stealing unforkable assets of greater value, the collateral on the "losing" chain should still be valuable, and provided it has been adequately collateralized, the insurance will be able to pay out. So although ETH and USD-pegged assets and other tokens representing unforkable things from the L1 chain do not benefit from "subjectivocratic" security, we can create synthetic assets that do.
 
 
 
@@ -55,7 +53,7 @@ A reality.eth instance on the L2 ledger can be asked questions, and escalate to 
 
 Once its fee has been paid calling on it to arbitrate, the Fork Manager contract forks the ledger into two, one representing each possible result for the question it has been asked. It immediately notifies the reality.eth instance on each fork of the result of arbitration: On one fork one option is considered to have been chosen, and on the other fork the other is considered to have been chosen. This means that people who posted bonds on each respective side of the dispute have "won", but only in tokens premised on the idea that they are correct.
 
-[diagram of each ledger getting its stuff]
+![Example of a crowdfund contract using an enshrined oracle](diagrams/reality_multi.png)
 
 
 ## Adding oracle indirection
@@ -64,6 +62,7 @@ Although the escalation process should make forks unusual, we propose adding an 
 
 The resulting diagram looks more complicated, but this layer of indirection consists mainly reuse of preexisting operations and can be implemented in a few hundred lines of code.
 
+![Example of a crowdfund contract using an enshrined oracle](diagrams/reality_multi_whitelist.png)
 
 ## Adding other governance features
 
