@@ -5,6 +5,7 @@ Summary
 
 We propose a design for handling forking layer-2 ledgers to provide a trust anchor for oracles and, optionally, goveranance allowing upgrades of the layer-2 system. It provides "subjectivocratic" security for assets issued on the ledger, and secures assets from the layer-1 ledger, albeit with an economic security bound. 
 
+
 Enshrining oracles
 
 Last year Justin Drake made a proposal to ethresear.ch for price feeds to be "enshrined" in the Ethereum 2 chain.
@@ -70,7 +71,7 @@ In principle the same process can be adapted to handle other upgrades of the sys
 Next steps
 
 * We would be interested to hear from teams working on L2 systems that would be practical to fork.
-* Someone needs to sell distrubute governance tokens, and potentially handle any funds resulting from the sale.
+* Someone needs to sell distrubute governance tokens, and potentially handle any funds resulting from the sale, possibly one of the DAOs that currently uses reality.eth.
 
 
 
