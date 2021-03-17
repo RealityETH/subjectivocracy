@@ -72,5 +72,5 @@ In principle the same process can be adapted to handle other upgrades of the sys
 ## Next steps
 
 - We would be interested to hear from teams working on L2 systems that would be practical to fork.
-- Someone needs to sell distrubute governance tokens, and potentially handle any funds resulting from the sale, possibly one of the DAOs that currently uses reality.eth.
+- Someone needs to distribute governance tokens, and potentially handle any funds resulting from the sale, possibly one of the DAOs that currently uses reality.eth.
 
