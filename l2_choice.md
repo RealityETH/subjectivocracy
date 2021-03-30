@@ -7,29 +7,30 @@ In [our design](design.md) we described a system for an L2 with an enshrined ora
 
 Here we will discuss the possible design parameters of the L2 system.
 
+## Governance models
+
 We can identify the following models for governance requirements:
 
-## Model A. No governance needed (except oracles)
+### Model A. No governance needed (except oracles)
 
 We can use a reality.eth instance on L2. The fork can deploy automatically-cloned L1 contracts.
 
-## Model B. May need governance for planned upgrades
+### Model B. May need governance for planned upgrades
 
 We can use a reality.eth instance on L2. The design is identical to oracle governance except that it forks over "should we use new contract X", and forks to versions that do and don't do that.
 
-## Model C. May stop and need governance to restart them
+### Model C. May stop and need governance to restart them
 
 We need a forkable reality.eth instance on L1. 
 
-## Model D. May need governance to detect and repair a bad ledger
+### Model D. May need governance to detect and repair a bad ledger
 
 We need a forkable reality.eth instance on L1. Additionally, payouts on L1 from bridges for L2 assets need to include delays to allow time for the system to detect and respond to bad ledgers.
 
 
+## Governance models
 
-Options
-
-## Simple PoS chain using Aura consensus
+### Simple PoS chain using Aura consensus
 
 We can run a PoS network like XDai.
 
@@ -40,7 +41,7 @@ An invalid bridge output can be detected by users, and a new bridge substituted 
 Since the bridge has a delay in the L2->L1 direction, it may be useful to use other methods to swap assets.
 
 
-## Optimism
+### Optimism
 
 We can run a custom version of the Optimism ledger.
 
@@ -49,7 +50,7 @@ NB Mainnet contracts are quite expensive to deploy - expect around 30 million ga
 In theory the system should ultimately support model A, however it has a delay for bridged assets as with D. In practice it may need to be handled as model C until matured.
 
 
-## ZKSync
+### ZKSync (future release with more contract support)
 
 We can run a custom version of the ZKSync ledger. On-chain contracts seem to be reasonably inexpensive.
 
