@@ -3,7 +3,7 @@
 
 ### Edmund Edgar, 2021-03-24
 
-In [design.md](our design) we described a system for an L2 with an enshrined oracle, and a mechanism on the L1 chain for governing the ledger such that "hard" assets on the L1 chain end up using the appropriate version of the chain.
+In [our design](design.md) we described a system for an L2 with an enshrined oracle, and a mechanism on the L1 chain for governing the ledger such that "hard" assets on the L1 chain end up using the appropriate version of the chain.
 
 Here we will discuss the possible design parameters of the L2 system.
 
