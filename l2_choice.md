@@ -7,13 +7,6 @@ In [our design](design.md) we described a system for an L2 with an enshrined ora
 
 Here we will discuss the possible design parameters of the L2 system.
 
-Different systems may or may not publish the following on-chain:
-
- * Bridge output
- * State roots allowing for validity proofs
- * Transaction data proving that data needed for validity proofs is available
- * Transactions that may otherwise be censored by L2 block constructors
-
 We can identify the following models for governance requirements:
 
 ## Model A. No governance needed (except oracles)
@@ -119,3 +112,14 @@ Issue
   - Delay bridge transactions for long enough to get straight, like optimism
 
 - Bridge conists of signers (or different set of signers) signing a set of transactions, can probably model on amb bridge
+
+
+
+Different systems may or may not publish the following on-chain:
+
+ * Bridge output
+ * State roots allowing for validity proofs
+ * Transaction data proving that data needed for validity proofs is available
+ * Transactions that may otherwise be censored by L2 block constructors
+
+
