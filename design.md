@@ -71,6 +71,6 @@ If the L2 system and its ability to get messages to L1 is not trusted, we need a
 
 ## Next steps
 
-- We need to select an L2 system to build a prototype. See [L2 choices](l2_choice.md) 
+- We need to select an L2 system to build a prototype. See [L2 choices](l2_choice.md).
 - Someone needs to distribute governance tokens, and potentially handle any funds resulting from the sale, possibly one of the DAOs that currently uses reality.eth.
 
