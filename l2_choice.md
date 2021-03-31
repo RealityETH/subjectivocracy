@@ -45,7 +45,7 @@ We can run a custom version of the Optimism ledger.
 
 NB Mainnet contracts are quite expensive to deploy - expect around 30 million gas for the initial deployment, and the same again per fork.
 
-In theory the system should ultimately support model A, however it has a delay for bridged assets as with D. In practice it may need to be handled as model C until matured.
+In theory the system should ultimately support model A, however it has a delay for bridged assets as with D. In practice it may need to be handled as Model C or D until matured.
 
 
 ### ZKSync (future release with more contract support)
@@ -59,66 +59,4 @@ The current version of ZKSync, which deals mainly with payments, seems to have a
 If it can support anyone performing validation, but still needs governance, we can do governance with a reality.eth instance on L2. (Model B).
 
 Currently it appears to use validator whitelists, so the best we can do is Model C, or potentially Model D until it matures.
-
-
-
-
-Notes dump
-
-  - If controversy, go to arbitration. Forking the 2 ledgers still works. 
-    - Issue: Also need to fork reality.eth? People should get paid on their respective branches in their respective versions of the token
-      Subjective way:
-        - Single-use reality.eth, only used for 1 fork
-        - Make a new L1 reality.eth, assign its balance to the new token
-        - Need new constructor with ability to clone a question?
-           - Issue: Commitments make this complicated as they're infinitely long, remove them
-          or
-        - Function to register the question with the new instance based on reading the previous instance
-            need to make question IDs unique per reality.eth instance
-            new variable for parent
-            migrateQuestion() reads question data from parent and registers it
-            could be in fork manager, question needs to be migrated before it's released from arbitration
-          or 
-        - Claim function using only history hash
-      Notify arbitration request locks preventing new questions
-      Winner way:
-        - Single result of the governance process, people putting up bonds on the losing side will lose
-  - Issue: We can only do one goverance challenge at a time, is that OK? 
-  
-
-
-
-TODO: What's the relationship between the signers of the PoS chain and the signers of the bridge transactions?
-
-
-Optimism 
-
- * Everything about the chain operation is verifiable on L1.
- * The tech isn't ready to be run without governance.
- * Forking Optimism is expensive because a lot of contracts need to be deployed.
-     Looks like about 30 million gas for the entire set
-     TODO: Do we need all of them or can some be reused?
-
-  Issue: What does it look like to say "we fork from block 123"
-   - challenges may cover that period?
-
-Issue
- - If validators sign a bad ledger, someone immediately forks to a new ledger with new validators
- - Invalid block should quickly be forked around
-   - Issue: How do you change a clique signer group
- - Bridge may already have handled transactions from a chain that turned out to be bad
-  - Make signers to the bridge put up collateral
-  - Delay bridge transactions for long enough to get straight, like optimism
-
-- Bridge conists of signers (or different set of signers) signing a set of transactions, can probably model on amb bridge
-
-
-
-Different systems may or may not publish the following on-chain:
-
- * Bridge output
- * State roots allowing for validity proofs
- * Transaction data proving that data needed for validity proofs is available
- * Transactions that may otherwise be censored by L2 block constructors
-
 
