@@ -35,9 +35,12 @@
     Bob     L2  NativeTokenA.approve(RealityETH, 100)
     Bob     L2  RealityETH.submitAnswer(question_id, 100)
 
-    [uncontested ? Claim a payout]
-    [contested   ? Report an answer (contested)]
+    
 ```
+
+Next step: 
+* Uncontested? [Claim a payout](#claim-a-payout)
+* Contested? [Report an answer (contested)](#report-an-answer-contested)
 
 ### Claim a payout                  
 ```
@@ -189,7 +192,7 @@
     Bob     L1  TokenA.sendToL1(123)
                     BridgeToL1.sendMessage("mint(Bob, 123"))
 
-    bot     L1  TokenWrapper.handleMessage(txid, "mint(Bob, 123"))
+    [bot]     L1  TokenWrapper.handleMessage(txid, "mint(Bob, 123"))
                     ForkManager.requireNotInGoveranceFreeze() # NB If bridges and L2 can't go wrong we don't need this
                     ForkManager.requiredBridges()
                     # for each bridge, usually 1 but during forks there are 2
