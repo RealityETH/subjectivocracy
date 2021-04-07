@@ -34,8 +34,6 @@
 ```
     Bob     L2  NativeTokenA.approve(RealityETH, 100)
     Bob     L2  RealityETH.submitAnswer(question_id, 100)
-
-    
 ```
 
 Next step: 
@@ -88,8 +86,11 @@ Next step:
     Arby    L2  ArbitratorA.submitAnswerByArbitrator(question_id, 1, Dave)
                     WhitelistArbitrator.submitAnswerByArbitrator(question_id, 1, Bob)
 
-    [uncontested arbitration after 1 week? Complete an arbitration]
+    
 ```
+Next step:
+* Uncontested arbitration after 1 week? [Complete an arbitration](complete-an-arbitration)
+* May be contested: [Contest an arbitration](contest-an-arbitration)
 
 ### Complete an arbitration         
 ```
