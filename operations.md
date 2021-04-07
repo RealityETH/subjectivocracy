@@ -66,6 +66,7 @@
     Charlie L2  NativeTokenA.approve(RealityETH, 2000000)
     Charlie L2  RealityETH.submitAnswer(question_id, 2000000)
                     NativeTokenA.transferFrom(Charlie, self, 2000000)
+```
 
 ### Contest an answer
 ```
