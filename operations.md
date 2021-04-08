@@ -164,8 +164,8 @@ Next step:
     Charlie L1  RealityETH.submitAnswer(gov_question_id, 1, 2000000)
 ```
 Next step:
-* Upgrade question finalizes as 1? [Execute an arbitrator removal]
-* Delist question finalizes as 9? [Cancel an arbitrator removal]
+* Upgrade question finalizes as 1? [Execute a governance change](#execute-a-governance-change)
+* Delist question finalizes as 0? No need to do anything
 * May be contested: [Challenge an arbitration result](#challenge-an-arbitration-or-governance-result)
 
 ### Propose an urgent governance change
@@ -178,6 +178,9 @@ Next step:
                     RealityETH.getBond(gov_question_id)
                     # Update self to say there are no available bridges
 ```
+* Upgrade question finalizes as 1? [Execute a governance change](#execute-a-governance-change)
+* Delist question finalizes as 0? [Clear a failed urgent governance proposal](#clear-a-failed-urgent-governance-proposal)
+* May be contested: [Challenge an arbitration result](#challenge-an-arbitration-or-governance-result)
 
 ### Execute a governance change
 ```
@@ -187,7 +190,7 @@ Next step:
                     # Has the effect of unfreezing bridges, may be new bridges
 ```
 
-### Execute a failed urgent governance proposal
+### Clear a failed urgent governance proposal
 ```
    Bob     L1  ForkManager.clearFailedGovernanceProposal(contest_question_id)
                     RealityETH.resultFor(contest_question_id)
