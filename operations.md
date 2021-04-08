@@ -87,12 +87,12 @@ Next step:
                     WhitelistArbitrator.submitAnswerByArbitrator(question_id, 1, Bob)
 ```
 Next step:
-* Uncontested arbitration after 1 week? [Complete an arbitration](#complete-an-arbitration)
+* Uncontested arbitration after 1 week? [Execute an arbitration](#execute-an-arbitration)
 * May be contested: [Contest an arbitration](#contest-an-arbitration)
 
-### Complete an arbitration         
+### Execute an arbitration         
 ```
-    Dave    L2  WhitelistArbitrator.completeArbitration(question_id)
+    Dave    L2  WhitelistArbitrator.executeArbitration(question_id)
                     NativeTokenA.transfer(Dave, 1000000)
                     RealityETH.submitAnswerByArbitrator(question_id, 1, Bob)
 ```
@@ -113,7 +113,7 @@ Next step:
                     WhitelistArbitrator.freezeArbitrator(ArbitratorA)
 ```
 Next step:
-* Delist question finalizes as 1? [Complete an arbitrator removal]
+* Delist question finalizes as 1? [Execute an arbitrator removal]
 * Delist question finalizes as 9? [Cancel an arbitrator removal]
 * May be contested: [Challenge an arbitration result](#challenge-an-arbitration-or-governance-result)
 
@@ -126,9 +126,9 @@ Next step:
 Next step: 
 * [Redeem an arbitration](#redeem-an-arbitration)
 
-### Complete an arbitrator removal    
+### Execute an arbitrator removal    
 ```
-    Charlie L1  ForkManager.completeArbitratorRemoval(contest_question_id) 
+    Charlie L1  ForkManager.executeArbitratorRemoval(contest_question_id) 
                     RealityETH.resultFor(contest_question_id)
                     BridgeToL2.sendMessage("WhitelistArbitrator.removeArbitrator(ArbitratorA)")
 ```
@@ -155,7 +155,7 @@ Next step:
                     RealityETH.freeze()
 ```
 Next step:
-* Wait for the fork date, then anyone can [Complete an arbitrator removal](#complete-an-arbitrator-removal) on one chain and [Cancel an arbitrator removal](#cancel-an-arbitrator-removal) on the other.
+* Wait for the fork date, then anyone can [Execute an arbitrator removal](#execute-an-arbitrator-removal) on one chain and [Cancel an arbitrator removal](#cancel-an-arbitrator-removal) on the other.
 
 ### Propose a routine governance change
 ```
@@ -164,7 +164,7 @@ Next step:
     Charlie L1  RealityETH.submitAnswer(gov_question_id, 1, 2000000)
 ```
 Next step:
-* Upgrade question finalizes as 1? [Complete an arbitrator removal]
+* Upgrade question finalizes as 1? [Execute an arbitrator removal]
 * Delist question finalizes as 9? [Cancel an arbitrator removal]
 * May be contested: [Challenge an arbitration result](#challenge-an-arbitration-or-governance-result)
 
@@ -179,15 +179,15 @@ Next step:
                     # Update self to say there are no available bridges
 ```
 
-### Complete a governance change
+### Execute a governance change
 ```
-    Charlie L1  ForkManager.completeGovernanceUpdate:(gov_question_id) 
+    Charlie L1  ForkManager.executeGovernanceUpdate:(gov_question_id) 
                     RealityETH.resultFor(gov_question_id)
                     # Update to reflect child forkmanager
                     # Has the effect of unfreezing bridges, may be new bridges
 ```
 
-### Complete a failed urgent governance proposal
+### Execute a failed urgent governance proposal
 ```
    Bob     L1  ForkManager.clearFailedGovernanceProposal(contest_question_id)
                     RealityETH.resultFor(contest_question_id)
@@ -215,7 +215,7 @@ Next step:
                     BridgeToL2.sendMessage("WhitelistArbitrator.buyTokens", order_id)
 
     [bot]   L2  BridgeFromL1.processQueue() # or similar
-                    WhitelistArbitrator.completeTokenSale(order_id)
+                    WhitelistArbitrator.executeTokenSale(order_id)
                         NativeTokenA.transfer(Eric, deposit+num)
 ```
 
