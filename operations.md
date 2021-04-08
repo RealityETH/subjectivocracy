@@ -85,7 +85,6 @@ Next step:
 
     Arby    L2  ArbitratorA.submitAnswerByArbitrator(question_id, 1, Dave)
                     WhitelistArbitrator.submitAnswerByArbitrator(question_id, 1, Bob)
-
     
 ```
 Next step:
@@ -98,9 +97,11 @@ Next step:
                     NativeTokenA.transfer(Dave, 1000000)
                     RealityETH.submitAnswerByArbitrator(question_id, 1, Bob)
 
-    [arbitration contested   ? Contest an arbitration]
     [arbitration uncontested ? Settle a crowdfund]
 ```
+Next step:
+* Arbitration contested? [Contest an arbitration](contest-an-arbitration)
+* Arbitration uncontested? [Settle a crowdfund](settle-a-crowdfund)
                                                 
 ### Contest an arbitration          
 ```
@@ -114,11 +115,11 @@ Next step:
     [bot]   L2  BridgeFromL1.processQueue() # or similar
                     WhitelistArbitrator.freezeArbitrator(ArbitratorA)
 
-    [delist question finalizes as 1 ? Complete an arbitration removal]
-    [delist question finalizes as 0 ? Cancel an arbitration removal]
-
-    [question goes to arbitration? See [Challenge an arbitration result]
 ```
+Next step:
+* Delist question finalizes as 1? [Complete an arbitrator removal]
+* Delist question finalizes as 9? [Cancel an arbitrator removal]
+* May be contested: [Challenge an arbitration result](challenge-an-arbitration-result)
 
 ### Cancel an arbitrator removal
 ```
@@ -126,8 +127,10 @@ Next step:
                 RealityETH.resultFor(contest_question_id)
                 BridgeToL2.sendMessage("WhitelistArbitrator.unFreezeArbitrator(ArbitratorA)")
 
-    [Redeem an arbitration]
+    
 ```
+Next step: 
+* [Redeem an arbitration](redeem-an-arbitration)
 
 ### Complete arbitrator removal    
 ```
@@ -135,8 +138,9 @@ Next step:
                     RealityETH.resultFor(contest_question_id)
                     BridgeToL2.sendMessage("WhitelistArbitrator.removeArbitrator(ArbitratorA)")
 
-    [Handle an arbitration]                 
 ```
+Next step:
+* [Handle an arbitration](handle-an-arbitration) to arbitrate the question again with a different arbitrator
 
 ### Challenge an arbitration result
 ```
@@ -157,8 +161,9 @@ Next step:
                         RealityETHFork2.submitAnswerByArbitrator(contest_question_id, 0)
                     RealityETH.freeze()
 
-    [ On fork date, someone can do [Complete an arbitrator removal] and [Cancel an arbitrator removal] on the respective chains. ]
 ```
+Next step:
+* Wait for the fork date, then anyone can [Complete an arbitrator removal](complete-an-arbitrator-removal) on one chain and [Cancel an arbitrator removal](cancel-an-arbitrator-removal) on the other.
 
 ### Cancel a governance proposition when we fork over a different governance proposition
 ```
@@ -166,6 +171,9 @@ Next step:
                     GovToken.transfer(Bob, 100)
                     GovToken.transfer(Charlie, 200)
 ```
+Next step:
+* The question can be recreated on each chain (TODO)
+* Anything frozen can be unfrozed (then potentially refrozen - TODO)
 
 ### Buy Accumulated Tokens for GovTokens
 ```
