@@ -9,7 +9,7 @@
 
 * L2.NativeTokenA: A forkable token native to L2
 
-* L1.GovToken: A dedicated governance token that can be forked on L1. There is only one per fork. In forks this must be committed to one fork or the other.
+* L1.GovToken: A dedicated governance token that can be forked on L1. There is only one per fork. In forks this must be committed to one fork or the other. Can also replace itself while preserving balances.
 
 * L2.Reality.eth: A normal ERC20-capable reality.eth instance on L2. Uses NativeTokenA. There may be other instances supporing other tokens.
 * L1.Reality.eth: A forkable ERC20-capable reality.eth instance on L1, using GovToken for bonds.
@@ -85,7 +85,6 @@ Next step:
 
     Arby    L2  ArbitratorA.submitAnswerByArbitrator(question_id, 1, Dave)
                     WhitelistArbitrator.submitAnswerByArbitrator(question_id, 1, Bob)
-    
 ```
 Next step:
 * Uncontested arbitration after 1 week? [Complete an arbitration](#complete-an-arbitration)
@@ -96,8 +95,6 @@ Next step:
     Dave    L2  WhitelistArbitrator.completeArbitration(question_id)
                     NativeTokenA.transfer(Dave, 1000000)
                     RealityETH.submitAnswerByArbitrator(question_id, 1, Bob)
-
-    [arbitration uncontested ? Settle a crowdfund]
 ```
 Next step:
 * Arbitration contested? [Contest an arbitration](#contest-an-arbitration)
@@ -105,7 +102,7 @@ Next step:
                                                 
 ### Contest an arbitration          
 ```
-    Charlie L1  contest_question_id = RealityETH.askQuestion("should we delist ArbitratorA?")
+    Charlie L1  contest_question_id = RealityETH.askQuestion(ARBITRATION_DELIST_TEMPLATE, "should we delist ArbitratorA?")
     Charlie L1  TokenX.approve(RealityETH, 2000000)
     Charlie L1  RealityETH.submitAnswer(contest_question_id, 1, 2000000)
     Charlie L1  ForkManager.freezeArbitrator(contest_question_id)
@@ -114,20 +111,17 @@ Next step:
                     BridgeToL2.sendMessage("WhitelistArbitrator.freezeArbitrator(ArbitratorA)")
     [bot]   L2  BridgeFromL1.processQueue() # or similar
                     WhitelistArbitrator.freezeArbitrator(ArbitratorA)
-
 ```
 Next step:
 * Delist question finalizes as 1? [Complete an arbitrator removal]
 * Delist question finalizes as 9? [Cancel an arbitrator removal]
-* May be contested: [Challenge an arbitration result](#challenge-an-arbitration-result)
+* May be contested: [Challenge an arbitration result](#challenge-an-arbitration-or-governance-result)
 
 ### Cancel an arbitrator removal
 ```
    Bob     L1  ForkManager.unfreezeArbitrator(contest_question_id)
                 RealityETH.resultFor(contest_question_id)
                 BridgeToL2.sendMessage("WhitelistArbitrator.unFreezeArbitrator(ArbitratorA)")
-
-    
 ```
 Next step: 
 * [Redeem an arbitration](#redeem-an-arbitration)
@@ -137,12 +131,11 @@ Next step:
     Charlie L1  ForkManager.completeArbitratorRemoval(contest_question_id) 
                     RealityETH.resultFor(contest_question_id)
                     BridgeToL2.sendMessage("WhitelistArbitrator.removeArbitrator(ArbitratorA)")
-
 ```
 Next step:
 * [Handle an arbitration](#handle-an-arbitration) to arbitrate the question again with a different arbitrator
 
-### Challenge an arbitration result
+### Challenge an arbitration or governance result
 ```
     Bob     L1  ForkManager.requestArbitration(contest_question_id)
                     f1 = self.clone(now + 7 days)
@@ -160,12 +153,48 @@ Next step:
                         RealityETHFork2.migrateQuestion(contest_question_id)
                         RealityETHFork2.submitAnswerByArbitrator(contest_question_id, 0)
                     RealityETH.freeze()
-
 ```
 Next step:
 * Wait for the fork date, then anyone can [Complete an arbitrator removal](#complete-an-arbitrator-removal) on one chain and [Cancel an arbitrator removal](#cancel-an-arbitrator-removal) on the other.
 
-### Cancel a governance proposition when we fork over a different governance proposition
+### Propose a routine governance change
+```
+    Charlie L1  gov_question_id = RealityETH.askQuestion(ROUTINE_GOVERNANCE_TEMPLATE, "should we do a routine upgrade to ForkManager XYZ?")
+    Charlie L1  TokenX.approve(RealityETH, 2000000)
+    Charlie L1  RealityETH.submitAnswer(gov_question_id, 1, 2000000)
+```
+Next step:
+* Upgrade question finalizes as 1? [Complete an arbitrator removal]
+* Delist question finalizes as 9? [Cancel an arbitrator removal]
+* May be contested: [Challenge an arbitration result](#challenge-an-arbitration-or-governance-result)
+
+### Propose an urgent governance change
+```
+    Charlie L1  gov_question_id = RealityETH.askQuestion(URGENT_GOVERNANCE_TEMPLATE, "should we freeze exits and upgrade to ForkManager XYZ?")
+    Charlie L1  TokenX.approve(RealityETH, 2000000)
+    Charlie L1  RealityETH.submitAnswer(gov_question_id, 1, 2000000)
+    Charlie L1  ForkManager.freezeBridges(gov_question_id)
+                    RealityETH.getBestAnswer(gov_question_id)
+                    RealityETH.getBond(gov_question_id)
+                    # Update self to say there are no available bridges
+```
+
+### Complete a governance change
+```
+    Charlie L1  ForkManager.completeGovernanceUpdate:(gov_question_id) 
+                    RealityETH.resultFor(gov_question_id)
+                    # Update to reflect child forkmanager
+                    # Has the effect of unfreezing bridges, may be new bridges
+```
+
+### Complete a failed urgent governance proposal
+```
+   Bob     L1  ForkManager.clearFailedGovernanceProposal(contest_question_id)
+                    RealityETH.resultFor(contest_question_id)
+                    # Update self to say the previous bridge is back in action
+```
+
+### Cancel a governance proposition or arbitrator change proposition when we fork over a different proposition
 ```
     Bob     L1  RealityETH.cancelQuestion(history) 
                     GovToken.transfer(Bob, 100)
@@ -175,7 +204,7 @@ Next step:
 * The question can be recreated on each chain (TODO)
 * Anything frozen can be unfrozed (then potentially refrozen - TODO)
 
-### Buy Accumulated Tokens for GovTokens
+### Buy Accumulated Tokens by burning GovTokens
 ```
     Eric    L2  NativeTokenA.approve(deposit)
     Eric    L2  orderer_id = WhitelistArbitrator.reserveTokens(num, min_price, deposit)
