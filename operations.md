@@ -7,9 +7,7 @@
 * L1.TokenA: A normal Ethereum-native token, eg DAI or WETH.
 * L1.TokenAWrapper: A contract that wraps TokenA on L1 to send it L2.
 * L2.TokenA: A representation of the L1.TokenA, bridged to it. Anywhere this is used on L2 here, a native token can also be used.
-
 * L2.NativeTokenA: A forkable token native to L2. There may be many of these.
-
 * L1.GovToken: A dedicated governance token that can be forked on L1. There is only one per fork. In forks this must be committed to one fork or the other. Can also replace itself while preserving balances.
 
 ### Reality.eth instances
