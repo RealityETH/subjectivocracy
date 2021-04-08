@@ -88,8 +88,8 @@ Next step:
     
 ```
 Next step:
-* Uncontested arbitration after 1 week? [Complete an arbitration](complete-an-arbitration)
-* May be contested: [Contest an arbitration](contest-an-arbitration)
+* Uncontested arbitration after 1 week? [Complete an arbitration](#complete-an-arbitration)
+* May be contested: [Contest an arbitration](#contest-an-arbitration)
 
 ### Complete an arbitration         
 ```
@@ -100,8 +100,8 @@ Next step:
     [arbitration uncontested ? Settle a crowdfund]
 ```
 Next step:
-* Arbitration contested? [Contest an arbitration](contest-an-arbitration)
-* Arbitration uncontested? [Settle a crowdfund](settle-a-crowdfund)
+* Arbitration contested? [Contest an arbitration](#contest-an-arbitration)
+* Arbitration uncontested? [Settle a crowdfund](#settle-a-crowdfund)
                                                 
 ### Contest an arbitration          
 ```
@@ -119,7 +119,7 @@ Next step:
 Next step:
 * Delist question finalizes as 1? [Complete an arbitrator removal]
 * Delist question finalizes as 9? [Cancel an arbitrator removal]
-* May be contested: [Challenge an arbitration result](challenge-an-arbitration-result)
+* May be contested: [Challenge an arbitration result](#challenge-an-arbitration-result)
 
 ### Cancel an arbitrator removal
 ```
@@ -130,7 +130,7 @@ Next step:
     
 ```
 Next step: 
-* [Redeem an arbitration](redeem-an-arbitration)
+* [Redeem an arbitration](#redeem-an-arbitration)
 
 ### Complete arbitrator removal    
 ```
@@ -140,7 +140,7 @@ Next step:
 
 ```
 Next step:
-* [Handle an arbitration](handle-an-arbitration) to arbitrate the question again with a different arbitrator
+* [Handle an arbitration](#handle-an-arbitration) to arbitrate the question again with a different arbitrator
 
 ### Challenge an arbitration result
 ```
@@ -163,7 +163,7 @@ Next step:
 
 ```
 Next step:
-* Wait for the fork date, then anyone can [Complete an arbitrator removal](complete-an-arbitrator-removal) on one chain and [Cancel an arbitrator removal](cancel-an-arbitrator-removal) on the other.
+* Wait for the fork date, then anyone can [Complete an arbitrator removal](#complete-an-arbitrator-removal) on one chain and [Cancel an arbitrator removal](#cancel-an-arbitrator-removal) on the other.
 
 ### Cancel a governance proposition when we fork over a different governance proposition
 ```
