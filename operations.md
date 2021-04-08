@@ -165,7 +165,7 @@ Next step:
 ```
 Next step:
 * Upgrade question finalizes as 1? [Execute a governance change](#execute-a-governance-change)
-* Delist question finalizes as 0? No need to do anything
+* Upgrade question finalizes as 0? No need to do anything
 * May be contested: [Challenge an arbitration result](#challenge-an-arbitration-or-governance-result)
 
 ### Propose an urgent governance change
@@ -179,7 +179,7 @@ Next step:
                     # Update self to say there are no available bridges
 ```
 * Upgrade question finalizes as 1? [Execute a governance change](#execute-a-governance-change)
-* Delist question finalizes as 0? [Clear a failed urgent governance proposal](#clear-a-failed-urgent-governance-proposal)
+* Upgrade question finalizes as 0? [Clear a failed urgent governance proposal](#clear-a-failed-urgent-governance-proposal)
 * May be contested: [Challenge an arbitration result](#challenge-an-arbitration-or-governance-result)
 
 ### Execute a governance change
