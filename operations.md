@@ -102,7 +102,7 @@ Next step:
                                                 
 ### Contest an arbitration          
 ```
-    Charlie L1  contest_question_id = RealityETH.askQuestion(ARBITRATION_DELIST_TEMPLATE, "should we delist ArbitratorA?")
+    Charlie L1  contest_question_id = RealityETH.askQuestion("should we delist ArbitratorA?")
     Charlie L1  TokenX.approve(RealityETH, 2000000)
     Charlie L1  RealityETH.submitAnswer(contest_question_id, 1, 2000000)
     Charlie L1  ForkManager.freezeArbitrator(contest_question_id)
@@ -159,7 +159,7 @@ Next step:
 
 ### Propose a routine governance change
 ```
-    Charlie L1  gov_question_id = RealityETH.askQuestion(ROUTINE_GOVERNANCE_TEMPLATE, "should we do a routine upgrade to ForkManager XYZ?")
+    Charlie L1  gov_question_id = RealityETH.askQuestion("should we do a routine upgrade to ForkManager XYZ?")
     Charlie L1  TokenX.approve(RealityETH, 2000000)
     Charlie L1  RealityETH.submitAnswer(gov_question_id, 1, 2000000)
 ```
@@ -170,7 +170,7 @@ Next step:
 
 ### Propose an urgent governance change
 ```
-    Charlie L1  gov_question_id = RealityETH.askQuestion(URGENT_GOVERNANCE_TEMPLATE, "should we freeze exits and upgrade to ForkManager XYZ?")
+    Charlie L1  gov_question_id = RealityETH.askQuestion("should we freeze exits and upgrade to ForkManager XYZ?")
     Charlie L1  TokenX.approve(RealityETH, 2000000)
     Charlie L1  RealityETH.submitAnswer(gov_question_id, 1, 2000000)
     Charlie L1  ForkManager.freezeBridges(gov_question_id)
