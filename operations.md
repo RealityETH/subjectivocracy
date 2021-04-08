@@ -3,17 +3,20 @@
 
 ## Contracts:
 
+### Tokens
 * L1.TokenA: A normal Ethereum-native token, eg DAI or WETH.
 * L1.TokenAWrapper: A contract that wraps TokenA on L1 to send it L2.
-* L2.TokenA: A token, native to L1 but with a proxy on L2. Anywhere this is used on L2 a native token can also be used.
+* L2.TokenA: A representation of the L1.TokenA, bridged to it. Anywhere this is used on L2 here, a native token can also be used.
 
-* L2.NativeTokenA: A forkable token native to L2
+* L2.NativeTokenA: A forkable token native to L2. There may be many of these.
 
 * L1.GovToken: A dedicated governance token that can be forked on L1. There is only one per fork. In forks this must be committed to one fork or the other. Can also replace itself while preserving balances.
 
+### Reality.eth instances
 * L2.Reality.eth: A normal ERC20-capable reality.eth instance on L2. Uses NativeTokenA. There may be other instances supporing other tokens.
 * L1.Reality.eth: A forkable ERC20-capable reality.eth instance on L1, using GovToken for bonds.
 
+### L1-L2 Bridges
 * L2.BridgeToL1: A contract sending messages between ledgers. Details will depend on the L2 implementation, including method signatures
 * L1.BridgeToL2: 
 * L2.BridgeFromL1: 
