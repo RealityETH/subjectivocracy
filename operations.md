@@ -132,7 +132,7 @@ Next step:
 Next step: 
 * [Redeem an arbitration](#redeem-an-arbitration)
 
-### Complete arbitrator removal    
+### Complete an arbitrator removal    
 ```
     Charlie L1  ForkManager.completeArbitratorRemoval(contest_question_id) 
                     RealityETH.resultFor(contest_question_id)
