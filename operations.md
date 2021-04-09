@@ -142,15 +142,15 @@ Next step:
                     f1 = self.clone(now + 7 days)
                         RealityETHFork1 = RealityETH.clone() 
                         BridgeToL2.clone()
-                        # Burn RealityETH balance
-                        # Mint same balance on clone
+                        # Burn balance of the question in ourselves
+                        # Mint same balance on the cloned token for the new RealityETH
                         RealityETHFork1.migrateQuestion(contest_question_id)
                         RealityETHFork1.submitAnswerByArbitrator(contest_question_id, 1)
                     f2 = self.clone(now + 7 days)
                         RealityETHFork2 = RealityETH.clone() 
                         BridgeToL2.clone()
-                        # Burn RealityETH balance
-                        # Mint same balance on clone
+                        # Burn balance of the question in ourselves
+                        # Mint same balance on the cloned token for the new RealityETH
                         RealityETHFork2.migrateQuestion(contest_question_id)
                         RealityETHFork2.submitAnswerByArbitrator(contest_question_id, 0)
                     RealityETH.freeze()
@@ -168,6 +168,15 @@ Next step:
 * Upgrade question finalizes as 1? [Execute a governance change](#execute-a-governance-change)
 * Upgrade question finalizes as 0? No need to do anything
 * May be contested: [Challenge an arbitration result](#challenge-an-arbitration-or-governance-result)
+
+### Finalize a completed governance change
+```
+    Charlie L1  RealityETH.finalizeQuestion(gov_question_id)
+```
+Next step: 
+* [Execute a governance change](execute-a-governance-change)
+
+NB On the normal non-forkable version of Reality.eth finalization happens automatically without a transaction.
 
 ### Propose an urgent governance change
 ```
@@ -198,15 +207,20 @@ Next step:
                     # Update self to say the previous bridge is back in action
 ```
 
-### Cancel a governance proposition or arbitrator change proposition when we fork over a different proposition
+### Return funds from a governance proposition or arbitrator change proposition when we fork over a different proposition
 ```
-    Bob     L1  RealityETH.cancelQuestion(history) 
+    Bob     L1  RealityETH.refund(history) 
                     GovToken.transfer(Bob, 100)
                     GovToken.transfer(Charlie, 200)
 ```
 Next step:
-* The question can be recreated on each chain (TODO)
-* Anything frozen can be unfrozed (then potentially refrozen - TODO)
+* The question can be recreated on each chain, [Recreate a question after a fork](recreate-a-question-after-a-fork) 
+
+### Recreate a question after a fork
+```
+    Bob     L1  ForkManager.migrateQuestion(question_id, RealityETHFork1) # could also be RealityETHFork2
+                    RealityETHFork1.migrateQuestion(question_id, RealityETHFork1, false)
+```
 
 ### Buy Accumulated Tokens by burning GovTokens
 ```
