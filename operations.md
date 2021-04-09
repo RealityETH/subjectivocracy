@@ -182,7 +182,8 @@ Next step:
 Next step: 
 * [Execute a governance change](execute-a-governance-change)
 
-NB On the normal non-forkable version of Reality.eth finalization happens automatically without a transaction.
+NB On the normal non-forkable version of Reality.eth finalization happens automatically without a transaction. 
+It's its own transaction on the forkable version because forking for one question affects whether others can finalize, even within the same timestamp.
 
 ### Propose an urgent governance change
 ```
