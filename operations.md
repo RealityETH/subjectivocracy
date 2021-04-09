@@ -115,7 +115,7 @@ Next step:
 ```
 Next step:
 * Delist question finalizes as 1? [Execute an arbitrator removal]
-* Delist question finalizes as 9? [Cancel an arbitrator removal]
+* Delist question finalizes as 0? [Cancel an arbitrator removal]
 * May be contested: [Challenge an arbitration result](#challenge-an-arbitration-or-governance-result)
 
 ### Cancel an arbitrator removal
