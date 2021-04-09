@@ -121,8 +121,11 @@ Next step:
 ### Cancel an arbitrator removal
 ```
    Bob     L1  ForkManager.unfreezeArbitrator(contest_question_id)
-                RealityETH.resultFor(contest_question_id)
-                BridgeToL2.sendMessage("WhitelistArbitrator.unFreezeArbitrator(ArbitratorA)")
+                    RealityETH.resultFor(contest_question_id)
+                    BridgeToL2.sendMessage("WhitelistArbitrator.unFreezeArbitrator(ArbitratorA)")
+
+   [bot]   L2  BridgeFromL1.processQueue() # or similar
+                    WhitelistArbitrator.unFreezeArbitrator(ArbitratorA)
 ```
 Next step: 
 * [Redeem an arbitration](#redeem-an-arbitration)
@@ -132,6 +135,9 @@ Next step:
     Charlie L1  ForkManager.executeArbitratorRemoval(contest_question_id) 
                     RealityETH.resultFor(contest_question_id)
                     BridgeToL2.sendMessage("WhitelistArbitrator.removeArbitrator(ArbitratorA)")
+
+    [bot]   L2  BridgeFromL1.processQueue() # or similar
+                    WhitelistArbitrator.removeArbitrator(ArbitratorA)
 ```
 Next step:
 * [Handle an arbitration](#handle-an-arbitration) to arbitrate the question again with a different arbitrator
@@ -246,22 +252,25 @@ Next step:
 ### Unlocking tokens on L1
 ```
     Bob     L1  TokenA.sendToL1(123)
-                    BridgeToL1.sendMessage("mint(Bob, 123"))
+                    BridgeToL1.sendMessage("TokenAWrappermint(Bob, 123"))
 
-    [bot]     L1  TokenWrapper.handleMessage(txid, "mint(Bob, 123"))
-                    ForkManager.requireNotInGoveranceFreeze() # NB If bridges and L2 can't go wrong we don't need this
-                    ForkManager.requiredBridges()
-                    # for each bridge, usually 1 but during forks there are 2
-                    BridgeToL2.requireTxExists(txid)
-                    TokenA.transfer(Bob, 123)
+    [bot]   L1  BridgeFromL2.processQueue() or similar 
+                    TokenAWrapper.mint(Bob, 123")
+                        ForkManager.requiredBridges()
+                        # for each bridge, usually 1 but during forks there are 2. If it's zero we're frozen so abort.
+                        # TODO: If aborted we need to be able to resend this later, maybe put in another queue?
+                        TokenA.transfer(Bob, 123)
 ```
 
 ### Moving tokens to L2
 ```
-    Alice   l1  
-                TokenA.approve(TokenWrapper, 123)
-                TokenWrapper.sendToL2(123)
+    Alice   L1  
+                TokenA.approve(TokenAWrapper, 123)
+                TokenAWrapper.sendToL2(123)
                     ForkManager.requiredBridges()
                     # for each bridge, usually 1 but during forks there are 2
                     BridgeToL2.sendMessage("mint(Alice, 123)")
-```              
+
+    [bot]   L2  BridgeFromL2.processQueue() # or similar
+                    TokenA.mint(Alice, 123) 
+```
