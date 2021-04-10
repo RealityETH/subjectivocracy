@@ -44,13 +44,6 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         uint256 created
     );
 
-    event LogFundAnswerBounty(
-        bytes32 indexed question_id,
-        uint256 bounty_added,
-        uint256 bounty,
-        address indexed user 
-    );
-
     event LogNewAnswer(
         bytes32 answer,
         bytes32 indexed question_id,
@@ -97,7 +90,7 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         uint32 timeout;
         uint32 finalize_ts;
         bool is_pending_arbitration;
-        uint256 bounty;
+        uint256 cumulative_bonds;
         bytes32 best_answer;
         bytes32 history_hash;
         uint256 bond;
@@ -116,7 +109,6 @@ contract RealitioERC20_v2_1 is BalanceHolder {
     mapping(uint256 => bytes32) public template_hashes;
     mapping(bytes32 => Question) public questions;
     mapping(bytes32 => Claim) public question_claims;
-    mapping(address => uint256) public arbitrator_question_fees; 
 
     modifier onlyArbitrator(bytes32 question_id) {
         require(msg.sender == questions[question_id].arbitrator, "msg.sender must be arbitrator");
@@ -192,16 +184,6 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         createTemplate('{"title": "%s", "type": "datetime", "category": "%s", "lang": "%s"}');
     }
 
-    /// @notice Function for arbitrator to set an optional per-question fee. 
-    /// @dev The per-question fee, charged when a question is asked, is intended as an anti-spam measure.
-    /// @param fee The fee to be charged by the arbitrator when a question is asked
-    function setQuestionFee(uint256 fee) 
-        stateAny() 
-    external {
-        arbitrator_question_fees[msg.sender] = fee;
-        emit LogSetQuestionFee(msg.sender, fee);
-    }
-
     /// @notice Create a reusable template, which should be a JSON document.
     /// Placeholders should use gettext() syntax, eg %s.
     /// @dev Template data is only stored in the event logs, but its block number is kept in contract storage.
@@ -257,7 +239,7 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         bytes32 content_hash = keccak256(abi.encodePacked(template_id, opening_ts, question));
         bytes32 question_id = keccak256(abi.encodePacked(content_hash, arbitrator, timeout, msg.sender, nonce));
 
-        _askQuestion(question_id, content_hash, arbitrator, timeout, opening_ts, 0);
+        _askQuestion(question_id, content_hash, arbitrator, timeout, opening_ts);
         emit LogNewQuestion(question_id, msg.sender, template_id, question, content_hash, arbitrator, timeout, opening_ts, nonce, now);
 
         return question_id;
@@ -288,47 +270,20 @@ contract RealitioERC20_v2_1 is BalanceHolder {
 
     }
 
-    function _askQuestion(bytes32 question_id, bytes32 content_hash, address arbitrator, uint32 timeout, uint32 opening_ts, uint256 tokens) 
+    function _askQuestion(bytes32 question_id, bytes32 content_hash, address arbitrator, uint32 timeout, uint32 opening_ts) 
         stateNotCreated(question_id)
     internal {
-
-        uint256 bounty = tokens;
 
         // A timeout of 0 makes no sense, and we will use this to check existence
         require(timeout > 0, "timeout must be positive"); 
         require(timeout < 365 days, "timeout must be less than 365 days"); 
         require(arbitrator != NULL_ADDRESS, "arbitrator must be set");
 
-        // The arbitrator can set a fee for asking a question. 
-        // This is intended as an anti-spam defence.
-        // The fee is waived if the arbitrator is asking the question.
-        // This allows them to set an impossibly high fee and make users proxy the question through them.
-        // This would allow more sophisticated pricing, question whitelisting etc.
-        if (msg.sender != arbitrator) {
-            uint256 question_fee = arbitrator_question_fees[arbitrator];
-            require(bounty >= question_fee, "Tokens provided must cover question fee"); 
-            bounty = bounty.sub(question_fee);
-            balanceOf[arbitrator] = balanceOf[arbitrator].add(question_fee);
-        }
-
         questions[question_id].content_hash = content_hash;
         questions[question_id].arbitrator = arbitrator;
         questions[question_id].opening_ts = opening_ts;
         questions[question_id].timeout = timeout;
-        questions[question_id].bounty = bounty;
 
-    }
-
-    /// @notice Add funds to the bounty for a question
-    /// @dev Add bounty funds after the initial question creation. Can be done any time until the question is finalized.
-    /// @param question_id The ID of the question you wish to fund
-    /// @param tokens The number of tokens to fund
-    function fundAnswerBountyERC20(bytes32 question_id, uint256 tokens) 
-        stateOpen(question_id)
-    external {
-        _deductTokensOrRevert(tokens);
-        questions[question_id].bounty = questions[question_id].bounty.add(tokens);
-        emit LogFundAnswerBounty(question_id, tokens, questions[question_id].bounty, msg.sender);
     }
 
     /// @notice Submit an answer for a question.
@@ -376,6 +331,7 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         // Update the current bond level, if there's a bond (ie anything except arbitration)
         if (bond > 0) {
             questions[question_id].bond = bond;
+            questions[question_id].cumulative_bonds = questions[question_id].cumulative_bonds.add(bond);
         }
         questions[question_id].history_hash = new_history_hash;
 
@@ -633,10 +589,7 @@ contract RealitioERC20_v2_1 is BalanceHolder {
             if (payee == NULL_ADDRESS) {
 
                 // The entry is for the first payee we come to, ie the winner.
-                // They get the question bounty.
                 payee = addr;
-                queued_funds = queued_funds.add(questions[question_id].bounty);
-                questions[question_id].bounty = 0;
 
             } else if (addr != payee) {
 
@@ -745,12 +698,12 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         return questions[question_id].is_pending_arbitration;
     }
 
-    /// @notice Returns the current total unclaimed bounty
-    /// @dev Set back to zero once the bounty has been claimed
+    /// @notice Returns the current total cumulative bonds
+    /// @dev Used when migrating questions in forks, as we have to give the child contract the money to pay out
     /// @param question_id The ID of the question 
-    function getBounty(bytes32 question_id) 
+    function getCumulativeBonds(bytes32 question_id) 
     public view returns(uint256) {
-        return questions[question_id].bounty;
+        return questions[question_id].cumulative_bonds;
     }
 
     /// @notice Returns the current best answer
