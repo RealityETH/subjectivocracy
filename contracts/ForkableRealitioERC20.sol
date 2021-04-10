@@ -156,8 +156,8 @@ contract ForkableRealitioERC20 is BalanceHolder {
     constructor() 
     public {
         owner = msg.sender;
-        createTemplate('{"title": "Should we add arbitrator %s", "type": "bool"}');
-        createTemplate('{"title": "Should we remove arbitrator %s", "type": "bool"}');
+        createTemplate('{"title": "Should we add arbitrator %s to whitelist contract %s", "type": "bool"}');
+        createTemplate('{"title": "Should we remove arbitrator %s to whitelist contract %s", "type": "bool"}');
         createTemplate('{"title": "Should switch to ForkManager %s", "type": "bool"}');
     }
 
