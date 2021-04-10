@@ -54,22 +54,9 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         bool is_commitment
     );
 
-    event LogAnswerReveal(
-        bytes32 indexed question_id, 
-        address indexed user, 
-        bytes32 indexed answer_hash, 
-        bytes32 answer, 
-        uint256 nonce, 
-        uint256 bond
-    );
-
     event LogNotifyOfArbitrationRequest(
         bytes32 indexed question_id,
         address indexed user 
-    );
-
-    event LogCancelArbitration(
-        bytes32 indexed question_id
     );
 
     event LogFinalize(
