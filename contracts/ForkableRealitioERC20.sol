@@ -134,15 +134,6 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         _;
     }
 
-    modifier stateOpenOrPendingArbitration(bytes32 question_id) {
-        require(questions[question_id].timeout > 0, "question must exist");
-        uint32 finalize_ts = questions[question_id].finalize_ts;
-        require(finalize_ts == UNANSWERED || finalize_ts > uint32(now), "finalization dealine must not have passed");
-        uint32 opening_ts = questions[question_id].opening_ts;
-        require(opening_ts == 0 || opening_ts <= uint32(now), "opening date must have passed"); 
-        _;
-    }
-
     modifier stateFinalized(bytes32 question_id) {
         require(isFinalized(question_id), "question must be finalized");
         _;
