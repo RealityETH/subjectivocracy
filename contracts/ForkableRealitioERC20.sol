@@ -396,6 +396,7 @@ contract RealitioERC20_v2_1 is BalanceHolder {
     external {
         require(canBeFinalized(question_id), "Cannot be finalized yet");
         questions[question_id].is_finalized = true;
+        emit LogFinalize(question_id, questions[question_id].best_answer);
     }
 
     /// @notice (Deprecated) Return the final answer to the specified question, or revert if there isn't one
@@ -790,7 +791,4 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         return questions[question_id].bond;
     }
 
-
 }
-
- 
