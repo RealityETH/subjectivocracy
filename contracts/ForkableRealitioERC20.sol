@@ -20,11 +20,6 @@ contract RealitioERC20_v2_1 is BalanceHolder {
     // Proportion withheld when you claim an earlier bond.
     uint256 constant BOND_CLAIM_FEE_PROPORTION = 40; // One 40th ie 2.5%
 
-    event LogSetQuestionFee(
-        address arbitrator,
-        uint256 amount
-    );
-
     event LogNewTemplate(
         uint256 indexed template_id,
         address indexed user, 
