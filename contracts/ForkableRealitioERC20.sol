@@ -323,7 +323,8 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         questions[question_id].finalize_ts = uint32(now);
     }
 
-    /// @notice Notify the contract that the arbitrator has been paid for a question, freezing it pending their decision.
+    /// @notice Notify the contract that the arbitrator has been paid for a question
+    /// @dev Normally this would freeze the question, but in the Forkable case we migrate the question to forks, cancel its answers, and freeze everything
     /// @dev The arbitrator contract is trusted to only call this if they've been paid, and tell us who paid them.
     /// @param question_id The ID of the question
     /// @param requester The account that requested arbitration
@@ -334,9 +335,13 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         previousBondMustNotBeatMaxPrevious(question_id, max_previous)
     external {
         require(questions[question_id].bond > 0, "Question must already have an answer when arbitration is requested");
-
         require(msg.sender == owner, "Only the owner (ForkManger) can do freeze the contract");
+
         is_frozen = true;
+
+        // Wipe the history hash to prevent refunds, as we already transferred the funds to the children.
+        // Leave the finalize_ts and best_answer alone, they don't matter as it'll never finalize now that we're frozen.
+        questions[question_id].history_hash = bytes32(0);
 
         emit LogNotifyOfArbitrationRequest(question_id, requester);
     }
