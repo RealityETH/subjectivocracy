@@ -20,6 +20,9 @@ contract RealitioERC20_v2_1 is BalanceHolder {
     // Proportion withheld when you claim an earlier bond.
     uint256 constant BOND_CLAIM_FEE_PROPORTION = 40; // One 40th ie 2.5%
 
+    bool is_frozen;
+    address owner;
+
     event LogNewTemplate(
         uint256 indexed template_id,
         address indexed user, 
@@ -84,7 +87,7 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         uint32 opening_ts;
         uint32 timeout;
         uint32 finalize_ts;
-        bool is_pending_arbitration;
+        bool is_finalized;
         uint256 cumulative_bonds;
         bytes32 best_answer;
         bytes32 history_hash;
@@ -121,16 +124,11 @@ contract RealitioERC20_v2_1 is BalanceHolder {
 
     modifier stateOpen(bytes32 question_id) {
         require(questions[question_id].timeout > 0, "question must exist");
-        require(!questions[question_id].is_pending_arbitration, "question must not be pending arbitration");
+        require(!is_frozen, "contract must not be pending frozen");
         uint32 finalize_ts = questions[question_id].finalize_ts;
         require(finalize_ts == UNANSWERED || finalize_ts > uint32(now), "finalization deadline must not have passed");
         uint32 opening_ts = questions[question_id].opening_ts;
         require(opening_ts == 0 || opening_ts <= uint32(now), "opening date must have passed"); 
-        _;
-    }
-
-    modifier statePendingArbitration(bytes32 question_id) {
-        require(questions[question_id].is_pending_arbitration, "question must be pending arbitration");
         _;
     }
 
@@ -172,6 +170,7 @@ contract RealitioERC20_v2_1 is BalanceHolder {
     /// @dev Creates some generalized templates for different question types used in the DApp.
     constructor() 
     public {
+        owner = msg.sender;
         createTemplate('{"title": "%s", "type": "bool", "category": "%s", "lang": "%s"}');
         createTemplate('{"title": "%s", "type": "uint", "decimals": 18, "category": "%s", "lang": "%s"}');
         createTemplate('{"title": "%s", "type": "single-select", "outcomes": [%s], "category": "%s", "lang": "%s"}');
@@ -358,21 +357,13 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         previousBondMustNotBeatMaxPrevious(question_id, max_previous)
     external {
         require(questions[question_id].bond > 0, "Question must already have an answer when arbitration is requested");
-        questions[question_id].is_pending_arbitration = true;
+
+        require(msg.sender == owner, "Only the owner (ForkManger) can do freeze the contract");
+        is_frozen = true;
+
         emit LogNotifyOfArbitrationRequest(question_id, requester);
     }
 
-    /// @notice Cancel a previously-requested arbitration and extend the timeout
-    /// @dev Useful when doing arbitration across chains that can't be requested atomically
-    /// @param question_id The ID of the question
-    function cancelArbitration(bytes32 question_id)
-        onlyArbitrator(question_id)
-        statePendingArbitration(question_id)
-    external {
-        questions[question_id].is_pending_arbitration = false;
-        questions[question_id].finalize_ts = uint32(now).add(questions[question_id].timeout);
-        emit LogCancelArbitration(question_id);
-    }
 
     /// @notice Submit the answer for a question, for use by the arbitrator.
     /// @dev Doesn't require (or allow) a bond.
@@ -384,13 +375,10 @@ contract RealitioERC20_v2_1 is BalanceHolder {
     /// @param answerer The account credited with this answer for the purpose of bond claims
     function submitAnswerByArbitrator(bytes32 question_id, bytes32 answer, address answerer) 
         onlyArbitrator(question_id)
-        statePendingArbitration(question_id)
     public {
-
         require(answerer != NULL_ADDRESS, "answerer must be provided");
         emit LogFinalize(question_id, answer);
 
-        questions[question_id].is_pending_arbitration = false;
         _addAnswerToHistory(question_id, answer, answerer, 0);
         _updateCurrentAnswerByArbitrator(question_id, answer);
     }
@@ -419,8 +407,23 @@ contract RealitioERC20_v2_1 is BalanceHolder {
     /// @return Return true if finalized
     function isFinalized(bytes32 question_id) 
     view public returns (bool) {
+        return questions[question_id].is_finalized;
+    }
+
+    /// @notice Report whether the answer to the specified question is finalized
+    /// @param question_id The ID of the question
+    /// @return Return true if finalized
+    function canBeFinalized(bytes32 question_id) 
+    view public returns (bool) {
         uint32 finalize_ts = questions[question_id].finalize_ts;
-        return ( !questions[question_id].is_pending_arbitration && (finalize_ts > UNANSWERED) && (finalize_ts <= uint32(now)) );
+        return ( !is_frozen && (finalize_ts > UNANSWERED) && (finalize_ts <= uint32(now)) );
+    }
+
+    function finalize(bytes32 question_id) 
+        stateOpen(question_id)
+    external {
+        require(canBeFinalized(question_id), "Cannot be finalized yet");
+        questions[question_id].is_finalized = true;
     }
 
     /// @notice (Deprecated) Return the final answer to the specified question, or revert if there isn't one
@@ -686,13 +689,6 @@ contract RealitioERC20_v2_1 is BalanceHolder {
     function getFinalizeTS(bytes32 question_id) 
     public view returns(uint32) {
         return questions[question_id].finalize_ts;
-    }
-
-    /// @notice Returns whether the question is pending arbitration
-    /// @param question_id The ID of the question 
-    function isPendingArbitration(bytes32 question_id) 
-    public view returns(bool) {
-        return questions[question_id].is_pending_arbitration;
     }
 
     /// @notice Returns the current total cumulative bonds
