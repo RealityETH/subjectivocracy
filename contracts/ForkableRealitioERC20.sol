@@ -102,7 +102,7 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         uint256 queued_funds;
     }
 
-    uint256 nextTemplateID = 0;
+    uint256 nextTemplateID = 2147483648; // Start well ahead of 1 to avoid clashes with the standard built-in templates
     mapping(uint256 => uint256) public templates;
     mapping(uint256 => bytes32) public template_hashes;
     mapping(bytes32 => Question) public questions;
@@ -171,11 +171,9 @@ contract RealitioERC20_v2_1 is BalanceHolder {
     constructor() 
     public {
         owner = msg.sender;
-        createTemplate('{"title": "%s", "type": "bool", "category": "%s", "lang": "%s"}');
-        createTemplate('{"title": "%s", "type": "uint", "decimals": 18, "category": "%s", "lang": "%s"}');
-        createTemplate('{"title": "%s", "type": "single-select", "outcomes": [%s], "category": "%s", "lang": "%s"}');
-        createTemplate('{"title": "%s", "type": "multiple-select", "outcomes": [%s], "category": "%s", "lang": "%s"}');
-        createTemplate('{"title": "%s", "type": "datetime", "category": "%s", "lang": "%s"}');
+        createTemplate('{"title": "Should we add arbitrator %s", "type": "bool"}');
+        createTemplate('{"title": "Should we remove arbitrator %s", "type": "bool"}');
+        createTemplate('{"title": "Should switch to ForkManager %s", "type": "bool"}');
     }
 
     /// @notice Create a reusable template, which should be a JSON document.
@@ -185,32 +183,13 @@ contract RealitioERC20_v2_1 is BalanceHolder {
     /// @return The ID of the newly-created template, which is created sequentially.
     function createTemplate(string content) 
         stateAny()
-    public returns (uint256) {
+    private returns (uint256) {
         uint256 id = nextTemplateID;
         templates[id] = block.number;
         template_hashes[id] = keccak256(abi.encodePacked(content));
         emit LogNewTemplate(id, msg.sender, content);
         nextTemplateID = id.add(1);
         return id;
-    }
-
-    /// @notice Create a new reusable template and use it to ask a question
-    /// @dev Template data is only stored in the event logs, but its block number is kept in contract storage.
-    /// @param content The template content
-    /// @param question A string containing the parameters that will be passed into the template to make the question
-    /// @param arbitrator The arbitration contract that will have the final word on the answer if there is a dispute
-    /// @param timeout How long the contract should wait after the answer is changed before finalizing on that answer
-    /// @param opening_ts If set, the earliest time it should be possible to answer the question.
-    /// @param nonce A user-specified nonce used in the question ID. Change it to repeat a question.
-    /// @return The ID of the newly-created template, which is created sequentially.
-    function createTemplateAndAskQuestion(
-        string content, 
-        string question, address arbitrator, uint32 timeout, uint32 opening_ts, uint256 nonce 
-    ) 
-        // stateNotCreated is enforced by the internal _askQuestion
-    public returns (bytes32) {
-        uint256 template_id = createTemplate(content);
-        return askQuestion(template_id, question, arbitrator, timeout, opening_ts, nonce);
     }
 
     /// @notice Ask a new question without a bounty and return the ID
