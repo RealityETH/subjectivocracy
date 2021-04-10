@@ -326,6 +326,8 @@ contract RealitioERC20_v2_1 is BalanceHolder {
     function _addAnswerToHistory(bytes32 question_id, bytes32 answer_or_commitment_id, address answerer, uint256 bond) 
     internal 
     {
+        require(answer_or_commitment_id == bytes32(1) || answer_or_commitment_id == bytes32(0), "Only answer 1 and 0 are supported");
+
         bytes32 new_history_hash = keccak256(abi.encodePacked(questions[question_id].history_hash, answer_or_commitment_id, bond, answerer, false));
 
         // Update the current bond level, if there's a bond (ie anything except arbitration)
