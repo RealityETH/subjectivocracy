@@ -4,6 +4,8 @@ import './RealitioSafeMath256.sol';
 import './RealitioSafeMath32.sol';
 import './BalanceHolderERC20.sol';
 
+import './IForkableRealitio.sol';
+
 contract RealitioERC20_v2_1 is BalanceHolder {
 
     using RealitioSafeMath256 for uint256;
@@ -398,6 +400,9 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         return ( !is_frozen && (finalize_ts > UNANSWERED) && (finalize_ts <= uint32(now)) );
     }
 
+    /// @notice Finalize the question
+    /// @dev This isn't done in the unforkable version, there we just finalize by time. 
+    /// @param question_id The ID of the question
     function finalize(bytes32 question_id) 
         stateOpen(question_id)
     external {
@@ -635,6 +640,31 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         withdraw();
     }
 
+    /// Copies a question from an old instance to this new one after a fork
+    /// The question we fork over will be migrated with its answers, and its budget should also transferred
+    /// Other questions will to be created as if asked new, but this method preserves their old question_ids
+    /// NB The question_id will no longer match the hash of the content, as the arbitrator has changed
+    /// @param question_id - The ID of the question to migrate.
+    /// @param from_parent - The parent fork's RealitioERC20 instance
+    /// @param include_answers - Whether the answered state should also be migrated
+    function migrateQuestion(bytes32 question_id, IForkableRealitio from_parent, bool include_answers) 
+    external {
+        require(msg.sender == owner, "Questions can only be migrated by our parent"); 
+
+        questions[question_id] = Question(
+			from_parent.getContentHash(question_id),	
+			owner,
+			from_parent.getOpeningTS(question_id),	
+			from_parent.getTimeout(question_id),	
+			from_parent.getFinalizeTS(question_id),	
+			false,
+			include_answers ? from_parent.getCumulativeBonds(question_id) : 0,
+			include_answers ? from_parent.getBestAnswer(question_id) : bytes32(0),
+			include_answers ? from_parent.getHistoryHash(question_id) : bytes32(0),
+			include_answers ? from_parent.getBond(question_id) : 0
+        );
+    }
+
     /// @notice Returns the questions's content hash, identifying the question content
     /// @param question_id The ID of the question 
     function getContentHash(bytes32 question_id) 
@@ -700,4 +730,6 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         return questions[question_id].bond;
     }
 
+
 }
+
