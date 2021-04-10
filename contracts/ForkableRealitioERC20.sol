@@ -148,6 +148,11 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         _;
     }
 
+    modifier stateFrozen() {
+        require(is_frozen, "Contract must be frozen");
+        _;
+    }
+
     modifier bondMustDouble(bytes32 question_id, uint256 tokens) {
         require(tokens > 0, "bond must be positive"); 
         require(tokens >= (questions[question_id].bond.mul(2)), "bond must be double at least previous bond");
@@ -640,6 +645,77 @@ contract RealitioERC20_v2_1 is BalanceHolder {
         withdraw();
     }
 
+    /// Notice Refunds everyone who took part.
+    /// Caller must provide the answer history, in reverse order, like when claiming winnings.
+    /// The first answer is authenticated by checking against the stored history_hash.
+    /// One of the inputs to history_hash is the history_hash before it, so we use that to authenticate the next entry, etc
+    /// Once we get to a null hash we'll know we're done and there are no more answers.
+    /// Usually you would call the whole thing in a single transaction, but if not then the data is persisted to pick up later.
+    /// @param question_id The ID of the question
+    /// @param history_hashes Second-last-to-first, the hash of each history entry. (Final one should be empty).
+    /// @param addrs Last-to-first, the address of each answerer or commitment sender
+    /// @param bonds Last-to-first, the bond supplied with each answer or commitment
+    /// @param answers Last-to-first, each answer supplied, or commitment ID if the answer was supplied with commit->reveal
+    function refund(
+        bytes32 question_id, 
+        bytes32[] history_hashes, address[] addrs, uint256[] bonds, bytes32[] answers
+    ) 
+        stateFrozen()
+    public {
+
+        require(history_hashes.length > 0, "at least one history hash entry must be provided");
+
+        uint256 i;
+        for (i = 0; i < history_hashes.length; i++) {
+        
+            // Check input against the history hash
+            _verifyHistoryInputOrRevert(questions[question_id].history_hash, history_hashes[i], answers[i], bonds[i], addrs[i]);
+            
+            balanceOf[addrs[i]] = balanceOf[addrs[i]].add(bonds[i]);
+            questions[question_id].history_hash = history_hashes[i];
+
+        }
+ 
+    }
+
+    /// @notice Convenience function to refund bonds for multiple questions in one go, then withdraw all your funds.
+    /// Caller must provide the answer history for each question, in reverse order
+    /// @dev Can be called by anyone to assign bonds/bounties, but funds are only withdrawn for the user making the call.
+    /// @param question_ids The IDs of the questions you want to claim for
+    /// @param lengths The number of history entries you will supply for each question ID
+    /// @param hist_hashes In a single list for all supplied questions, the hash of each history entry.
+    /// @param addrs In a single list for all supplied questions, the address of each answerer or commitment sender
+    /// @param bonds In a single list for all supplied questions, the bond supplied with each answer or commitment
+    /// @param answers In a single list for all supplied questions, each answer supplied, or commitment ID 
+    function refundMultipleAndWithdrawBalance(
+        bytes32[] question_ids, uint256[] lengths, 
+        bytes32[] hist_hashes, address[] addrs, uint256[] bonds, bytes32[] answers
+    ) 
+        stateFrozen()
+    public {
+        
+        uint256 qi;
+        uint256 i;
+        for (qi = 0; qi < question_ids.length; qi++) {
+            bytes32 qid = question_ids[qi];
+            uint256 ln = lengths[qi];
+            bytes32[] memory hh = new bytes32[](ln);
+            address[] memory ad = new address[](ln);
+            uint256[] memory bo = new uint256[](ln);
+            bytes32[] memory an = new bytes32[](ln);
+            uint256 j;
+            for (j = 0; j < ln; j++) {
+                hh[j] = hist_hashes[i];
+                ad[j] = addrs[i];
+                bo[j] = bonds[i];
+                an[j] = answers[i];
+                i++;
+            }
+            refund(qid, hh, ad, bo, an);
+        }
+        withdraw();
+    }
+
     /// Copies a question from an old instance to this new one after a fork
     /// The question we fork over will be migrated with its answers, and its budget should also transferred
     /// Other questions will to be created as if asked new, but this method preserves their old question_ids
@@ -733,3 +809,4 @@ contract RealitioERC20_v2_1 is BalanceHolder {
 
 }
 
+ 
