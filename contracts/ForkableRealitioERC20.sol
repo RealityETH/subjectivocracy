@@ -715,6 +715,7 @@ contract RealitioERC20_v2_1 is BalanceHolder {
     /// @param from_parent - The parent fork's RealitioERC20 instance
     /// @param include_answers - Whether the answered state should also be migrated
     function migrateQuestion(bytes32 question_id, IForkableRealitio from_parent, bool include_answers) 
+        stateNotCreated
     external {
         require(msg.sender == owner, "Questions can only be migrated by our parent"); 
 
