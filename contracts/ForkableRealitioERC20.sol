@@ -6,7 +6,7 @@ import './BalanceHolderERC20.sol';
 
 import './IForkableRealitio.sol';
 
-contract RealitioERC20_v2_1 is BalanceHolder {
+contract ForkableRealitioERC20 is BalanceHolder {
 
     using RealitioSafeMath256 for uint256;
     using RealitioSafeMath32 for uint32;
