@@ -24,6 +24,7 @@ contract ForkableRealitioERC20 is BalanceHolder {
 
     bool is_frozen;
     address owner;
+    address parent;
 
     event LogNewTemplate(
         uint256 indexed template_id,
@@ -150,6 +151,12 @@ contract ForkableRealitioERC20 is BalanceHolder {
         require(token == IERC20(0x0), "Token can only be initialized once");
         token = _token;
     }
+
+    function setParent(address _parent) 
+    public {
+        parent = _parent;
+    }
+
 
     /// @notice Constructor, sets up some initial templates
     /// @dev Creates some generalized templates for different question types used in the DApp.
@@ -707,10 +714,13 @@ contract ForkableRealitioERC20 is BalanceHolder {
     /// @param question_id - The ID of the question to migrate.
     /// @param from_parent - The parent fork's RealitioERC20 instance
     /// @param include_answers - Whether the answered state should also be migrated
-    function migrateQuestion(bytes32 question_id, IForkableRealitio from_parent, bool include_answers) 
+    function importQuestion(bytes32 question_id, bool include_answers) 
         stateNotCreated(question_id)
     external {
-        require(msg.sender == owner, "Questions can only be migrated by our parent"); 
+        require(parent != NULL_ADDRESS, "The genesis RealitioETH has no parent and cannot import a question");
+        if (include_answers) {
+            require(msg.sender == owner, "Questions can only be migrated with answers by our owner ForkManager"); 
+        }
 
         questions[question_id] = Question(
 			from_parent.getContentHash(question_id),	

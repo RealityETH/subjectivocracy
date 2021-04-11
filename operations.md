@@ -145,19 +145,21 @@ Next step:
 ### Challenge an arbitration or governance result
 ```
     Bob     L1  ForkManager.requestArbitration(contest_question_id, uint256 max_previous)
-                    f1 = self.clone(now + 7 days)
-                        RealityETHFork1 = RealityETH.clone() 
+                    f1 = self.clone(now + 1 days, RealityETH)
+                        RealityETHFork1 = RealityETH.clone();
+                        RealityETHFork1.setParent(address(RealityETH));
                         BridgeToL2.clone()
                         # Burn balance of the question in ourselves
                         # Mint same balance on the cloned token for the new RealityETH
-                        RealityETHFork1.migrateQuestion(contest_question_id)
+                        RealityETHFork1.importQuestion(contest_question_id, true)
                         RealityETHFork1.submitAnswerByArbitrator(contest_question_id, 1)
-                    f2 = self.clone(now + 7 days)
+                    f2 = self.clone(now + 1 days, RealityETH)
                         RealityETHFork2 = RealityETH.clone() 
                         BridgeToL2.clone()
+                        RealityETHFork2.setParent(address(RealityETH));
                         # Burn balance of the question in ourselves
                         # Mint same balance on the cloned token for the new RealityETH
-                        RealityETHFork2.migrateQuestion(contest_question_id)
+                        RealityETHFork2.importQuestion(contest_question_id, true)
                         RealityETHFork2.submitAnswerByArbitrator(contest_question_id, 0)
                     # Marks this question done and freezes everything else
                     RealityETH.notifyOfArbitrationRequest(contest_question_id, msg.sender, max_previous);
@@ -227,8 +229,7 @@ Next step:
 
 ### Recreate a question after a fork
 ```
-    Bob     L1  ForkManager.migrateQuestion(question_id, RealityETHFork1) # could also be RealityETHFork2
-                    RealityETHFork1.migrateQuestion(question_id, RealityETHFork1, false)
+    Bob     L1  RealityETHFork1.importQuestion(question_id, false) # could also be RealityETHFork2
 ```
 
 ### Buy Accumulated Tokens by burning GovTokens
