@@ -724,18 +724,17 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
     }
 
     /// Copies a question from an old instance to this new one after a fork
-    /// The question we fork over will be migrated with its answers, and its budget should also transferred
+    /// The question we fork over, which will be the only one pending arbitration, will be migrated with its answers. 
+    /// The budget for this question should have been transferred when we did the fork.
     /// Other questions will to be created as if asked new, but this method preserves their old question_ids
     /// NB The question_id will no longer match the hash of the content, as the arbitrator has changed
     /// @param question_id - The ID of the question to migrate.
-    /// @param include_answers - Whether the answered state should also be migrated
-    function importQuestion(bytes32 question_id, bool include_answers) 
+    function importQuestion(bytes32 question_id) 
         stateNotCreated(question_id)
     external {
+
         require(parent != address(NULL_ADDRESS), "The genesis RealitioETH has no parent and cannot import a question");
-        if (include_answers) {
-            require(msg.sender == address(token), "Questions can only be migrated with answers by our ForkManager token"); 
-        }
+        bool include_answers = parent.isPendingArbitration(question_id);
 
         questions[question_id] = Question(
 			parent.getContentHash(question_id),	
