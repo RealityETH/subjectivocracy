@@ -73,7 +73,7 @@ contract ForkableRealitioERC20 is BalanceHolder {
 
     struct Question {
         bytes32 content_hash;
-        address arbitrator;
+        address arbitrator; // We could do without this as we only allow the owner to be arbitrator, but keep it for API compatibility
         uint32 opening_ts;
         uint32 timeout;
         uint32 finalize_ts;
@@ -242,7 +242,7 @@ contract ForkableRealitioERC20 is BalanceHolder {
         // A timeout of 0 makes no sense, and we will use this to check existence
         require(timeout > 0, "timeout must be positive"); 
         require(timeout < 365 days, "timeout must be less than 365 days"); 
-        require(arbitrator != NULL_ADDRESS, "arbitrator must be set");
+        require(arbitrator == owner, "Our ForkManager must be the arbitrator");
 
         questions[question_id].content_hash = content_hash;
         questions[question_id].arbitrator = arbitrator;
