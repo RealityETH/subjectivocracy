@@ -24,7 +24,7 @@ contract ForkableRealitioERC20 is BalanceHolder {
 
     bool is_frozen;
     address owner;
-    address parent;
+    IForkableRealitio parent;
 
     event LogNewTemplate(
         uint256 indexed template_id,
@@ -152,7 +152,7 @@ contract ForkableRealitioERC20 is BalanceHolder {
         token = _token;
     }
 
-    function setParent(address _parent) 
+    function setParent(IForkableRealitio _parent) 
     public {
         parent = _parent;
     }
@@ -712,27 +712,26 @@ contract ForkableRealitioERC20 is BalanceHolder {
     /// Other questions will to be created as if asked new, but this method preserves their old question_ids
     /// NB The question_id will no longer match the hash of the content, as the arbitrator has changed
     /// @param question_id - The ID of the question to migrate.
-    /// @param from_parent - The parent fork's RealitioERC20 instance
     /// @param include_answers - Whether the answered state should also be migrated
     function importQuestion(bytes32 question_id, bool include_answers) 
         stateNotCreated(question_id)
     external {
-        require(parent != NULL_ADDRESS, "The genesis RealitioETH has no parent and cannot import a question");
+        require(parent != address(NULL_ADDRESS), "The genesis RealitioETH has no parent and cannot import a question");
         if (include_answers) {
             require(msg.sender == owner, "Questions can only be migrated with answers by our owner ForkManager"); 
         }
 
         questions[question_id] = Question(
-			from_parent.getContentHash(question_id),	
+			parent.getContentHash(question_id),	
 			owner,
-			from_parent.getOpeningTS(question_id),	
-			from_parent.getTimeout(question_id),	
-			from_parent.getFinalizeTS(question_id),	
+			parent.getOpeningTS(question_id),	
+			parent.getTimeout(question_id),	
+			parent.getFinalizeTS(question_id),	
 			false,
-			include_answers ? from_parent.getCumulativeBonds(question_id) : 0,
-			include_answers ? from_parent.getBestAnswer(question_id) : bytes32(0),
-			include_answers ? from_parent.getHistoryHash(question_id) : bytes32(0),
-			include_answers ? from_parent.getBond(question_id) : 0
+			include_answers ? parent.getCumulativeBonds(question_id) : 0,
+			include_answers ? parent.getBestAnswer(question_id) : bytes32(0),
+			include_answers ? parent.getHistoryHash(question_id) : bytes32(0),
+			include_answers ? parent.getBond(question_id) : 0
         );
     }
 
