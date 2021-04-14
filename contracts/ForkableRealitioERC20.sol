@@ -157,15 +157,20 @@ contract ForkableRealitioERC20 is BalanceHolder {
         parent = _parent;
     }
 
+    function init()
+    public {
+        require(owner == NULL_ADDRESS, "init can only be called once");
+        owner = msg.sender;
+        createTemplate('{"title": "Should we add arbitrator %s to whitelist contract %s", "type": "bool"}');
+        createTemplate('{"title": "Should we remove arbitrator %s to whitelist contract %s", "type": "bool"}');
+        createTemplate('{"title": "Should switch to ForkManager %s", "type": "bool"}');
+    }
 
     /// @notice Constructor, sets up some initial templates
     /// @dev Creates some generalized templates for different question types used in the DApp.
     constructor() 
     public {
-        owner = msg.sender;
-        createTemplate('{"title": "Should we add arbitrator %s to whitelist contract %s", "type": "bool"}');
-        createTemplate('{"title": "Should we remove arbitrator %s to whitelist contract %s", "type": "bool"}');
-        createTemplate('{"title": "Should switch to ForkManager %s", "type": "bool"}');
+        init();
     }
 
     /// @notice Create a reusable template, which should be a JSON document.
@@ -800,4 +805,18 @@ contract ForkableRealitioERC20 is BalanceHolder {
         return questions[question_id].bond;
     }
 
+	/// @notice Returns the address of a clone of this contract
+	/// @dev No initialization is done here
+	/// @dev based on https://github.com/optionality/clone-factory
+	function clone() 
+	external returns (address result) {
+        bytes20 targetBytes = bytes20(address(this));
+        assembly {
+            let clone := mload(0x40)
+            mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
+            mstore(add(clone, 0x14), targetBytes)
+            mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
+            result := create(0, clone, 0x37)
+        }
+    }
 }
