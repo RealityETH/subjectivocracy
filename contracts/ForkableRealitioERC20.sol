@@ -738,7 +738,7 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
 
         questions[question_id] = Question(
 			parent.getContentHash(question_id),	
-			token,
+			include_answers ? parent.getArbitrator(question_id) : token,
 			parent.getOpeningTS(question_id),	
 			parent.getTimeout(question_id),	
 			parent.getFinalizeTS(question_id),	
