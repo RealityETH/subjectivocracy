@@ -6,7 +6,7 @@ import './BalanceHolderERC20.sol';
 
 import './IForkableRealitio.sol';
 
-contract ForkableRealitioERC20 is BalanceHolder {
+contract ForkableRealitioERC20 is BalanceHolderERC20 {
 
     using RealitioSafeMath256 for uint256;
     using RealitioSafeMath32 for uint32;
@@ -23,7 +23,6 @@ contract ForkableRealitioERC20 is BalanceHolder {
     uint256 constant BOND_CLAIM_FEE_PROPORTION = 10; // One 10th ie 10%
 
     bool is_frozen;
-    address owner;
     IForkableRealitio parent;
 
     event LogNewTemplate(
@@ -73,15 +72,16 @@ contract ForkableRealitioERC20 is BalanceHolder {
 
     struct Question {
         bytes32 content_hash;
-        address arbitrator; // We could do without this as we only allow the owner to be arbitrator, but keep it for API compatibility
+        address arbitrator; // We could do without this as we only allow the token to be arbitrator, but keep it for API compatibility
         uint32 opening_ts;
         uint32 timeout;
         uint32 finalize_ts;
-        bool is_finalized;
+        bool is_pending_arbitration;
         uint256 cumulative_bonds;
         bytes32 best_answer;
         bytes32 history_hash;
         uint256 bond;
+        bool is_finalized;
     }
 
     // Only used when claiming more bonds than fits into a transaction
@@ -112,8 +112,14 @@ contract ForkableRealitioERC20 is BalanceHolder {
         _;
     }
 
+    modifier statePendingArbitration(bytes32 question_id) {
+        require(questions[question_id].is_pending_arbitration, "question must be pending arbitration");
+        _;
+    }
+
     modifier stateOpen(bytes32 question_id) {
         require(questions[question_id].timeout > 0, "question must exist");
+        require(!questions[question_id].is_pending_arbitration, "question must not be pending arbitration");
         require(!is_frozen, "contract must not be pending frozen");
         uint32 finalize_ts = questions[question_id].finalize_ts;
         require(finalize_ts == UNANSWERED || finalize_ts > uint32(now), "finalization deadline must not have passed");
@@ -159,8 +165,6 @@ contract ForkableRealitioERC20 is BalanceHolder {
 
     function init()
     public {
-        require(owner == NULL_ADDRESS, "init can only be called once");
-        owner = msg.sender;
         createTemplate('{"title": "Should we add arbitrator %s to whitelist contract %s", "type": "bool"}');
         createTemplate('{"title": "Should we remove arbitrator %s to whitelist contract %s", "type": "bool"}');
         createTemplate('{"title": "Should switch to ForkManager %s", "type": "bool"}');
@@ -247,7 +251,7 @@ contract ForkableRealitioERC20 is BalanceHolder {
         // A timeout of 0 makes no sense, and we will use this to check existence
         require(timeout > 0, "timeout must be positive"); 
         require(timeout < 365 days, "timeout must be less than 365 days"); 
-        require(arbitrator == owner, "Our ForkManager must be the arbitrator");
+        require(arbitrator == address(token), "Our ForkManager must be the arbitrator");
 
         questions[question_id].content_hash = content_hash;
         questions[question_id].arbitrator = arbitrator;
@@ -334,7 +338,8 @@ contract ForkableRealitioERC20 is BalanceHolder {
         previousBondMustNotBeatMaxPrevious(question_id, max_previous)
     external {
         require(questions[question_id].bond > 0, "Question must already have an answer when arbitration is requested");
-        require(msg.sender == owner, "Only the owner (ForkManger) can do freeze the contract");
+        questions[question_id].is_pending_arbitration = true;
+        require(msg.sender == address(token), "Only the owner (ForkManger token) can do freeze the contract");
 
         is_frozen = true;
 
@@ -356,10 +361,12 @@ contract ForkableRealitioERC20 is BalanceHolder {
     /// @param answerer The account credited with this answer for the purpose of bond claims
     function submitAnswerByArbitrator(bytes32 question_id, bytes32 answer, address answerer) 
         onlyArbitrator(question_id)
+        statePendingArbitration(question_id)
     public {
         require(answerer != NULL_ADDRESS, "answerer must be provided");
         emit LogFinalize(question_id, answer);
 
+        questions[question_id].is_pending_arbitration = false;
         _addAnswerToHistory(question_id, answer, answerer, 0);
         _updateCurrentAnswerByArbitrator(question_id, answer);
     }
@@ -392,12 +399,16 @@ contract ForkableRealitioERC20 is BalanceHolder {
     }
 
     /// @notice Report whether the answer to the specified question is finalized
+    /// @dev Returns false if pending arbitration
     /// @param question_id The ID of the question
     /// @return Return true if finalized
     function canBeFinalized(bytes32 question_id) 
     view public returns (bool) {
+        if (is_frozen) {
+            return false;
+        }
         uint32 finalize_ts = questions[question_id].finalize_ts;
-        return ( !is_frozen && (finalize_ts > UNANSWERED) && (finalize_ts <= uint32(now)) );
+        return ( !questions[question_id].is_pending_arbitration && (finalize_ts > UNANSWERED) && (finalize_ts <= uint32(now)) );
     }
 
     /// @notice Finalize the question
@@ -723,12 +734,12 @@ contract ForkableRealitioERC20 is BalanceHolder {
     external {
         require(parent != address(NULL_ADDRESS), "The genesis RealitioETH has no parent and cannot import a question");
         if (include_answers) {
-            require(msg.sender == owner, "Questions can only be migrated with answers by our owner ForkManager"); 
+            require(msg.sender == address(token), "Questions can only be migrated with answers by our ForkManager token"); 
         }
 
         questions[question_id] = Question(
 			parent.getContentHash(question_id),	
-			owner,
+			token,
 			parent.getOpeningTS(question_id),	
 			parent.getTimeout(question_id),	
 			parent.getFinalizeTS(question_id),	
@@ -736,7 +747,8 @@ contract ForkableRealitioERC20 is BalanceHolder {
 			include_answers ? parent.getCumulativeBonds(question_id) : 0,
 			include_answers ? parent.getBestAnswer(question_id) : bytes32(0),
 			include_answers ? parent.getHistoryHash(question_id) : bytes32(0),
-			include_answers ? parent.getBond(question_id) : 0
+			include_answers ? parent.getBond(question_id) : 0,
+            false
         );
     }
 
@@ -773,6 +785,13 @@ contract ForkableRealitioERC20 is BalanceHolder {
     function getFinalizeTS(bytes32 question_id) 
     public view returns(uint32) {
         return questions[question_id].finalize_ts;
+    }
+
+    /// @notice Returns whether the question is pending arbitration
+    /// @param question_id The ID of the question 
+    function isPendingArbitration(bytes32 question_id) 
+    public view returns(bool) {
+        return questions[question_id].is_pending_arbitration;
     }
 
     /// @notice Returns the current total cumulative bonds
