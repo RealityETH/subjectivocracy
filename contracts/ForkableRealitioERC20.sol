@@ -20,7 +20,7 @@ contract ForkableRealitioERC20 is BalanceHolder {
     uint32 constant UNANSWERED = 0;
 
     // Proportion withheld when you claim an earlier bond.
-    uint256 constant BOND_CLAIM_FEE_PROPORTION = 40; // One 40th ie 2.5%
+    uint256 constant BOND_CLAIM_FEE_PROPORTION = 10; // One 10th ie 10%
 
     bool is_frozen;
     address owner;
