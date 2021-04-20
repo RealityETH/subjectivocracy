@@ -145,16 +145,18 @@ Next step:
 ### Challenge an arbitration or governance result
 ```
     Bob     L1  ForkManager.requestArbitration(contest_question_id, uint256 max_previous)
-                    f1 = self.clone(now + 1 days, RealityETH)
+                    f1 = self.clone(now + 1 days, RealityETH, BridgeToL2, BridgeFromL2)
                         RealityETHFork1 = RealityETH.clone();
                         RealityETHFork1.setParent(address(RealityETH));
                         BridgeToL2.clone()
+                        BridgeFromL2.clone()
                         # Burn balance of the question in ourselves
                         # Mint same balance on the cloned token for the new RealityETH
                         RealityETHFork1.importQuestion(contest_question_id, true)
                         RealityETHFork1.submitAnswerByArbitrator(contest_question_id, 1)
-                    f2 = self.clone(now + 1 days, RealityETH)
+                    f2 = self.clone(now + 1 days, RealityETH, BridgeFromL2, BridgeFromL2)
                         RealityETHFork2 = RealityETH.clone() 
+                        BridgeFromL2.clone()
                         BridgeToL2.clone()
                         RealityETHFork2.setParent(address(RealityETH));
                         # Burn balance of the question in ourselves
