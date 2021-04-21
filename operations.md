@@ -15,7 +15,7 @@
 * L1.Reality.eth: A forkable ERC20-capable reality.eth instance on L1, using GovToken for bonds.
 
 ### L1-L2 Bridges
-* L2.BridgeToL1: A contract sending messages between ledgers. Details will depend on the L2 implementation, including method signatures
+* L2.BridgeToL1: A contract sending messages between ledgers. Details will depend on the L2 implementation, including method signatures.
 * L1.BridgeToL2: 
 * L2.BridgeFromL1: 
 * L1.BridgeFromL2: 
@@ -130,7 +130,7 @@ Next step:
 Next step: 
 * [Redeem an arbitration](#redeem-an-arbitration)
 
-### Execute an arbitrator removal    
+### Execute an arbitrator removal   
 ```
     Charlie L1  ForkManager.executeArbitratorRemoval(contest_question_id) 
                     RealityETH.resultFor(contest_question_id)
@@ -141,6 +141,26 @@ Next step:
 ```
 Next step:
 * [Handle an arbitration](#handle-an-arbitration) to arbitrate the question again with a different arbitrator
+
+### Propose an arbitrator addition
+```
+    Charlie L1  contest_question_id = RealityETH.askQuestion("should we add ArbitratorA?")
+    Charlie L1  TokenX.approve(RealityETH, 2000000)
+    Charlie L1  RealityETH.submitAnswer(contest_question_id, 1, 2000000)
+```
+Next step:
+* [Execute an arbitrator addition](#execute-an-arbitrator-addition) if uncontested
+
+### Execute  an arbitrator addition
+```
+    Charlie L1  RealityETH.finalizeQuestion(add_question_id)
+    Charlie L1  ForkManager.executeArbitratorAddition(add_question_id) 
+                    RealityETH.resultFor(add_question_id)
+                    BridgeToL2.sendMessage("WhitelistArbitrator.addArbitrator(ArbitratorA)")
+
+    [bot]   L2  BridgeFromL1.processQueue() # or similar
+                    WhitelistArbitrator.addArbitrator(ArbitratorA)
+```
 
 ### Challenge an arbitration or governance result
 ```
@@ -229,7 +249,7 @@ It's its own transaction on the forkable version because forking for one questio
 Next step:
 * The question can be recreated on each chain, [Recreate a question after a fork](recreate-a-question-after-a-fork) 
 
-### Recreate a question after a fork
+### Recreate a question after a fork - TODO: Maybe we don't need this and we can just work off question content
 ```
     Bob     L1  RealityETHFork1.importQuestion(question_id, false) # could also be RealityETHFork2
 ```
