@@ -149,7 +149,9 @@ Next step:
     Charlie L1  RealityETH.submitAnswer(contest_question_id, 1, 2000000)
 ```
 Next step:
-* [Execute an arbitrator addition](#execute-an-arbitrator-addition) if uncontested
+* [Execute an arbitrator addition](#execute-an-arbitrator-addition) if it finalizes as 1
+* Nothing to do if it finalizes as 0
+* May be escalated to [Challenge an arbitrator or governance result](#challenge-an-arbitration-or-governance-result) and create a fork
 
 ### Execute  an arbitrator addition
 ```
