@@ -262,12 +262,12 @@ Next step:
     Eric    L2  orderer_id = WhitelistArbitrator.reserveTokens(num, min_price, deposit)
                     NativeTokenA.transferFrom(Eric, self, deposit)
 
-    Eric    L1  ForkManager.buyTokens(WhitelistArbitrator, order_id)
+    Eric    L1  ForkManager.executeTokenSale(WhitelistArbitrator, reservation_id, num_gov_tokens_paid)
                     # Burn own GovTokens
-                    BridgeToL2.sendMessage("WhitelistArbitrator.buyTokens", order_id)
+                    BridgeToL2.sendMessage("WhitelistArbitrator.executeTokenSale", reservation_id, num_gov_tokens_paid)
 
     [bot]   L2  BridgeFromL1.processQueue() # or similar
-                    WhitelistArbitrator.executeTokenSale(order_id)
+                    WhitelistArbitrator.executeTokenSale(reservation_id)
                         NativeTokenA.transfer(Eric, deposit+num)
 ```
 

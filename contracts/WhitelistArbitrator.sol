@@ -3,6 +3,7 @@ pragma solidity ^0.4.25;
 import './RealitioERC20.sol';
 import './IArbitrator.sol';
 import './IAMB.sol';
+import './RealitioSafeMath256.sol';
 
 /*
 This contract sits between a Reality.eth instance and an Arbitrator.
@@ -14,8 +15,12 @@ To the normal Arbitrator contracts that do its arbitration jobs, it looks like R
 */
 contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
 
+    using RealitioSafeMath256 for uint256;
+
     IAMB bridge;
     uint256 constant ARB_DISPUTE_TIMEOUT = 86400;
+    uint256 constant TOKEN_RESERVATION_TIMEOUT = 86400;
+    uint256 constant TOKEN_RESERVATION_DEPOSIT = 10; // 1/10, ie 10%
 
     // The bridge (either on L1 or L2) should switch out real L1 forkmanager address for a special address
     address constant FORK_MANAGER_SPECIAL_ADDRESS = 0x00000000000000000000000000000000f0f0F0F0;
@@ -29,6 +34,17 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
 
     address fork_arbitrator_proxy;
 
+    uint256 last_gov_token_price;
+    uint256 last_gov_token_sale_ts;
+
+    struct TokenReservation {
+        address reserver;
+        uint256 num;
+        uint256 cost_in_gov_tokens;
+        uint256 deadline_ts;
+    }
+    mapping (bytes32 => TokenReservation) token_reservations;
+    uint256 reserved_tokens;
 
     // Whitelist of acceptable arbitrators
     mapping (address => bool) arbitrators;
@@ -208,7 +224,54 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
         arbitrators[arbitrator] = false;
 	}
 
+    // TODO: Make this adjust automatically on a bonding curve or something
+    function _tokenCost(uint256 num)
+    internal view returns (uint256) {
+        return uint256(123).mul(num);
+    }
 
+    function _numUnreservedTokens() 
+    internal view {
+        token.balanceOf(address(this)).sub(reserved_tokens);
+    }
 
+    function reserveTokens(uint256 num, uint256 max_cost, uint256 nonce)
+    external {
+        // TODO: For every block we fail to sell tokens we have, drop the price by x
+        uint256 cost = _tokenCost(num);
+        require(cost > max_cost, "The cost of the tokens we would sell you is higher than you want to pay");
+
+        bytes32 resid = keccak256(abi.encodePacked(msg.sender, nonce));
+        require(token_reservations[resid].deadline_ts == 0, "Nonce already used");
+
+        uint256 deposit = num.div(TOKEN_RESERVATION_DEPOSIT);
+            
+        // TODO Make sure this works
+        require(token.transferFrom(msg.sender, this, deposit), "Deposit transfer failed");
+
+        token_reservations[resid] = TokenReservation(
+            msg.sender, 
+            num,
+            cost,
+            block.timestamp + TOKEN_RESERVATION_TIMEOUT
+        );
+    }
+
+    function cancelTimedOutReservation(bytes32 resid) 
+    external {
+        require(token_reservations[resid].deadline_ts > block.timestamp, "Not timed out yet");
+        reserved_tokens = reserved_tokens.sub(token_reservations[resid].num);
+        delete(token_reservations[resid]); 
+    }
+
+    function executeTokenSale(bytes32 resid, uint256 gov_tokens_paid) 
+        l1_forkmanager_only
+    external {
+        require(gov_tokens_paid >= token_reservations[resid].cost_in_gov_tokens, "Insufficient gov tokens sent");
+        uint256 num = token_reservations[resid].num;
+        reserved_tokens = reserved_tokens.sub(num);
+        token.transfer(token_reservations[resid].reserver, num);
+        delete(token_reservations[resid]); 
+    }
 
 }

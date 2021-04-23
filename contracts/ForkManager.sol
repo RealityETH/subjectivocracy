@@ -313,6 +313,14 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
         delete remove_arbitrator_propositions[whitelist_arbitrator][arbitrator_to_remove];
     }
 
+    function executeTokenSale(WhitelistArbitrator wa, bytes32 order_id, uint256 num_gov_tokens)
+    external {
+        require(balanceOf[msg.sender] >= num_gov_tokens, "Not enough tokens");
+        balanceOf[msg.sender] = balanceOf[msg.sender].sub(num_gov_tokens);
+        bytes memory data = abi.encodeWithSelector(wa.executeTokenSale.selector, order_id, num_gov_tokens);
+        bridgeToL2.requireToPassMessage(address(wa), data, 0);
+    }
+
     function _toString(bytes memory data) 
 	internal pure returns(string memory) {
 		bytes memory alphabet = "0123456789abcdef";
