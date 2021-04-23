@@ -15,7 +15,7 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
     mapping(address => mapping(address => bytes32)) remove_arbitrator_propositions;
     mapping(address => bytes32) upgrade_bridge_propositions;
 
-    string constant QUESTION_DELIM = "\u241f"; // TODO: Check this is how you do it
+    string constant QUESTION_DELIM = "\u241f";
    
     // These are created by ForkableRealitioERC20 in its constructor
     uint256 ADD_ARBITRATOR_TEMPLATE_ID = 2147483648;
@@ -50,9 +50,6 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
 
     uint256 forkExpirationTS = 0;
 
-	// If we get called on to arbitrate, we handle a single question
-	// TODO: If there was some concurrent question, we may need to invalidate it
-	// This isn't yet a feature that realitio has
 	address arbitration_payer;
 	bytes32 arbitrating_question_id;
 
