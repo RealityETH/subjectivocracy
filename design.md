@@ -62,19 +62,6 @@ Although the escalation process should make forks unusual, we propose adding an 
 The Whitelist Arbitrator can charge fees in any token, but pays any tokens it collects to governance token holders by auctioning its balance to them in exchange for governance tokens, which it burns.
 
 
-## Prototype implementation
-
-The interactions between users and contracts are specified in detail in [operations](operations.md).
-
-The sytem is implemented in the following contracts (and their dependencies such as existing reality.eth contracts):
-
-  * [ForkManager.sol](contracts/ForkManager.sol) implements the governance token and fork management.
-  * [ForkableRealitioERC20.sol](contracts/ForkableRealitioERC20.sol) is a modified version of Reality.eth designed to be used only for governance and/or arbitration selection.
-
-  * [RealitioERC20.sol](contracts/RealitioERC20.sol) is the preexisting Reality.eth contract that would be deployed on Layer 2.
-  * [WhitelistArbitrator.sol](contracts/WhitelistArbitrator.sol) is an arbitration contract based on a whitelist managed by the ForkManager.
-
-
 ## Adding other governance features
 
 In principle the same process can be adapted to handle other upgrades of the system, based on technical changes. However, governance features often present opportunities to steal a much greater proportion of the "unforkable" assets controlled by a system than a single whitelisted oracle, so the ratio at which such assets become unsafe is potentially lower than with enshrined oracles. A system that does not need to be upgraded and only uses the forking process to govern its enshrined oracles will therefore be able to support more such assets safely than one which shares the process to allow arbitrary upgrades.
@@ -82,6 +69,18 @@ In principle the same process can be adapted to handle other upgrades of the sys
 If the L2 system and its ability to get messages to L1 is not trusted, we need a forkable instance of reality.eth on L1 to handle governance. This has the variations that it has a record of its parent, and can be made to import questions from the parent. On forking, the fork manager will transfer the balance held by the parent reality.eth instance to the two child instances before notifying each of its respective result. Users can import their questions to the child instances to claim any funds they are owed.
 
 ![Example of a crowdfund contract using an enshrined oracle](diagrams/reality_l1_reality.png)
+
+
+## Prototype implementation
+
+The interactions between users and contracts are specified in detail in [operations](operations.md).
+
+The sytem is implemented in the following contracts (and their dependencies such as existing reality.eth contracts):
+
+* [ForkManager.sol](contracts/ForkManager.sol) implements the governance token and fork management.
+* [ForkableRealitioERC20.sol](contracts/ForkableRealitioERC20.sol) is a modified version of Reality.eth designed to be used only for governance and/or arbitration selection.
+* [RealitioERC20.sol](contracts/RealitioERC20.sol) is the preexisting Reality.eth contract that would be deployed on Layer 2.
+* [WhitelistArbitrator.sol](contracts/WhitelistArbitrator.sol) is an arbitration contract based on a whitelist managed by the ForkManager.
 
 
 ## Next steps
