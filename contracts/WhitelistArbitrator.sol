@@ -34,14 +34,11 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
 
     address fork_arbitrator_proxy;
 
-    uint256 last_gov_token_price;
-    uint256 last_gov_token_sale_ts;
-
     struct TokenReservation {
         address reserver;
         uint256 num;
-        uint256 cost_in_gov_tokens;
-        uint256 deadline_ts;
+        uint256 price;
+        uint256 reserved_ts;
     }
     mapping (bytes32 => TokenReservation) token_reservations;
     uint256 reserved_tokens;
@@ -224,27 +221,18 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
         arbitrators[arbitrator] = false;
 	}
 
-    // TODO: Make this adjust automatically on a bonding curve or something
-    function _tokenCost(uint256 num)
-    internal view returns (uint256) {
-        return uint256(123).mul(num);
-    }
-
     function _numUnreservedTokens() 
-    internal view {
+    internal view returns (uint256) {
         token.balanceOf(address(this)).sub(reserved_tokens);
     }
 
-    function reserveTokens(uint256 num, uint256 max_cost, uint256 nonce)
-    external {
-        // TODO: For every block we fail to sell tokens we have, drop the price by x
-        uint256 cost = _tokenCost(num);
-        require(cost > max_cost, "The cost of the tokens we would sell you is higher than you want to pay");
-
+    function reserveTokens(uint256 num, uint256 price, uint256 nonce)
+    public {
         bytes32 resid = keccak256(abi.encodePacked(msg.sender, nonce));
-        require(token_reservations[resid].deadline_ts == 0, "Nonce already used");
+        require(token_reservations[resid].reserved_ts == 0, "Nonce already used");
 
-        uint256 deposit = num.div(TOKEN_RESERVATION_DEPOSIT);
+        require(_numUnreservedTokens() > num, "Not enough tokens unreserved");
+        uint256 deposit = num.mul(price).div(TOKEN_RESERVATION_DEPOSIT);
             
         // TODO Make sure this works
         require(token.transferFrom(msg.sender, this, deposit), "Deposit transfer failed");
@@ -252,14 +240,40 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
         token_reservations[resid] = TokenReservation(
             msg.sender, 
             num,
-            cost,
+            price,
             block.timestamp + TOKEN_RESERVATION_TIMEOUT
         );
+        reserved_tokens = reserved_tokens.add(num);
+    }
+
+    function outBidReservation(uint256 num, uint256 price, uint256 nonce, bytes32 resid) 
+    external {
+
+        require(token_reservations[resid].reserved_ts > 0, "Reservation you want to outbid does not exist");
+        uint256 age = block.timestamp - token_reservations[resid].reserved_ts;
+        require(age < 86400, "Bidding period has passed");
+
+        require(token_reservations[resid].num >= num, "More tokens requested than remain in the reservation"); 
+        require(price > token_reservations[resid].price * 101/100, "You must bid at least 1% more than the previous bid");
+
+        uint256 deposit_return = num.mul(token_reservations[resid].price).div(TOKEN_RESERVATION_DEPOSIT);
+
+        require(token.transfer(token_reservations[resid].reserver, deposit_return), "Deposit return failed");
+        reserved_tokens = reserved_tokens.sub(num);
+
+        if (num == token_reservations[resid].num) {
+            delete(token_reservations[resid]);
+        } else {
+            token_reservations[resid].num = token_reservations[resid].num.sub(num);
+        }
+
+        return reserveTokens(num, price, nonce);
     }
 
     function cancelTimedOutReservation(bytes32 resid) 
     external {
-        require(token_reservations[resid].deadline_ts > block.timestamp, "Not timed out yet");
+        uint256 age = block.timestamp - token_reservations[resid].reserved_ts;
+        require(age > 86400*7, "Not timed out yet");
         reserved_tokens = reserved_tokens.sub(token_reservations[resid].num);
         delete(token_reservations[resid]); 
     }
@@ -267,10 +281,17 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
     function executeTokenSale(bytes32 resid, uint256 gov_tokens_paid) 
         l1_forkmanager_only
     external {
-        require(gov_tokens_paid >= token_reservations[resid].cost_in_gov_tokens, "Insufficient gov tokens sent");
+
+        uint256 age = block.timestamp - token_reservations[resid].reserved_ts;
+        require(age > 86400, "Bidding period has not yet passed");
+
         uint256 num = token_reservations[resid].num;
+        uint256 price = token_reservations[resid].price;
+        uint256 cost = price.mul(num);
+        require(gov_tokens_paid >= cost, "Insufficient gov tokens sent");
         reserved_tokens = reserved_tokens.sub(num);
         token.transfer(token_reservations[resid].reserver, num);
+
         delete(token_reservations[resid]); 
     }
 

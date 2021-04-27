@@ -277,6 +277,12 @@ Next step:
                     # Makes funds reserved for Eric and his deposit available for someone else to order
 ```
 
+### Outbid a low reservation
+```
+    Frank   L2  WhitelistArbitrator.outBidReservation(num, price, nonce, resid)
+                    # Replace a bid
+```
+
 ### Unlocking tokens on L1
 ```
     Bob     L1  TokenA.sendToL1(123)
