@@ -29,6 +29,7 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
 
     // Give people 1 week to pick a side.
     uint256 constant FORK_TIME_SECS = 604800; // 1 week
+    uint256 constant INITIAL_GOVERNANCE_FREEZE_TIMEOUT = 604800;
     uint32 constant ARB_DISPUTE_TIMEOUT = 604800; // 1 week
     uint32 constant GOVERNANCE_QUESTION_TIMEOUT = 604800;
 
@@ -40,6 +41,14 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
 
     address fork_requested_by_contract;
     bytes32 forked_over_question_id;
+
+    // A list of questions that have been used to freeze governance
+    mapping(bytes32 => bool) governance_question_ids;
+    uint256 numGovernanceFreezes;
+
+    // Governance questions will be cleared on a fork and can be re-asked if still relevant
+    // However, if we forked over arbitration but had some unresolved governance questions, we stay frozen initially to give people time to recreate them
+    uint256 initial_governance_freeze_timeout;
 
     ForkManager public childForkManager1;
     ForkManager public childForkManager2;
@@ -57,7 +66,7 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
 
     mapping(bytes32 => bool) executed_questions;
 
-    function init(address _parentForkManager, address _chainmanager, address _realitio, address _bridgeToL2) 
+    function init(address _parentForkManager, address _chainmanager, address _realitio, address _bridgeToL2, bool _has_governance_freeze) 
     external {
 		require(address(chainmanager) == address(0), "You can only call init once");
 		require(address(_chainmanager) != address(0), "ChainManager address must be supplied");
@@ -68,6 +77,10 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
 		chainmanager = ChainManager(_chainmanager);
 		realitio = ForkableRealitioERC20(_realitio);
         bridgeToL2 = BridgeToL2(_bridgeToL2);
+
+        if (_has_governance_freeze) {
+            initial_governance_freeze_timeout = block.timestamp + INITIAL_GOVERNANCE_FREEZE_TIMEOUT;
+        }
     }
 
     function mint(address _to, uint256 _amount) 
@@ -107,7 +120,7 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
 		newRealitio.setParent(IForkableRealitio(realitio));
 		newRealitio.setToken(newFm);
 		newRealitio.init();
-		newFm.init(address(this), address(newCm), address(newRealitio), address(bridgeToL2));
+		newFm.init(address(this), address(newCm), address(newRealitio), address(bridgeToL2), (numGovernanceFreezes > 0));
 		return newFm;
     }
 
@@ -231,32 +244,7 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
         return PERCENT_TO_FORK * totalSupply / 100;
     }
 
-    function _verifyPropositionPassed(uint256 template_id, string memory question, uint32 opening_ts, address question_creator) {
-        bytes32 content_hash = keccak256(abi.encodePacked(template_id, opening_ts, question));
-        bytes32 question_id = keccak256(abi.encodePacked(content_hash, this, GOVERNANCE_QUESTION_TIMEOUT, msg.sender, uint256(0)));
-        require(realitio.resultFor(question_id) == bytes32(1), "Governance proposal did not pass");
-    }
-
-    // Verify that a question is still open with a minimum bond specified
-    // This can be used to freeze operations pending the outcome of a governance question
-    function _verifyMinimumBondPosted(uint256 template_id, string memory question, uint32 opening_ts, address question_creator, uint256 minimum_bond) 
-    internal {
-        bytes32 content_hash = keccak256(abi.encodePacked(template_id, opening_ts, question));
-        bytes32 question_id = keccak256(abi.encodePacked(content_hash, this, GOVERNANCE_QUESTION_TIMEOUT, msg.sender, uint256(0)));
-        require(!realitio.isFinalized(question_id), "Question is already finalized, execute instead");
-        require(realitio.getBestAnswer(question_id) == bytes32(1), "Current answer is not 1");
-        require(realitio.getBond(question_id) >= minimum_bond, "Bond not high enough");
-    }
-
-    // If you've sent a proposition to reality.eth and it passed without needing arbitration, you can complete it by passing the details in here
-    function completeBridgeUpgrade(address new_bridge, uint32 opening_ts, address question_asker) 
-    external {
-        string memory question = _toString(abi.encodePacked(new_bridge));
-        _verifyPropositionPassed(BRIDGE_UPGRADE_TEMPLATE_ID, question, opening_ts, question_asker);
-        bridgeToL2 = BridgeToL2(new_bridge);
-    }
-
-    // Governance has 2 steps
+    // Governance (including adding and removing arbitrators from the whitelist) has two steps:
     // 1) Create question
     // 2) Complete operation (if proposition succeeded) or nothing if it failed
 
@@ -264,6 +252,69 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
     // 1) Create question
     // 2) Prove bond posted, freeze
     // 3) Complete operation or Undo freeze
+
+    function _verifyPropositionPassed(uint256 template_id, string memory question, uint32 opening_ts, address question_creator) 
+    internal returns (bytes32) {
+        bytes32 content_hash = keccak256(abi.encodePacked(template_id, opening_ts, question));
+        bytes32 question_id = keccak256(abi.encodePacked(content_hash, this, GOVERNANCE_QUESTION_TIMEOUT, msg.sender, uint256(0)));
+        require(realitio.resultFor(question_id) == bytes32(1), "Governance proposal did not pass");
+        return question_id;
+    }
+
+    function _verifyPropositionFailed(uint256 template_id, string memory question, uint32 opening_ts, address question_creator) 
+    internal returns (bytes32) {
+        bytes32 content_hash = keccak256(abi.encodePacked(template_id, opening_ts, question));
+        bytes32 question_id = keccak256(abi.encodePacked(content_hash, this, GOVERNANCE_QUESTION_TIMEOUT, msg.sender, uint256(0)));
+        require(realitio.resultFor(question_id) != bytes32(1), "Governance proposal did not pass");
+        return question_id;
+    }
+
+    // Verify that a question is still open with a minimum bond specified
+    // This can be used to freeze operations pending the outcome of a governance question
+    function _verifyMinimumBondPosted(uint256 template_id, string memory question, uint32 opening_ts, address question_creator, uint256 minimum_bond) 
+    internal returns (bytes32) {
+        bytes32 content_hash = keccak256(abi.encodePacked(template_id, opening_ts, question));
+        bytes32 question_id = keccak256(abi.encodePacked(content_hash, this, GOVERNANCE_QUESTION_TIMEOUT, msg.sender, uint256(0)));
+        require(!realitio.isFinalized(question_id), "Question is already finalized, execute instead");
+        require(realitio.getBestAnswer(question_id) == bytes32(1), "Current answer is not 1");
+        require(realitio.getBond(question_id) >= minimum_bond, "Bond not high enough");
+        return question_id;
+    }
+
+    // If you've sent a proposition to reality.eth and it passed without needing arbitration, you can complete it by passing the details in here
+    function completeBridgeUpgrade(address new_bridge, uint32 opening_ts, address question_asker) 
+    external {
+        string memory question = _toString(abi.encodePacked(new_bridge));
+        bytes32 question_id = _verifyPropositionPassed(BRIDGE_UPGRADE_TEMPLATE_ID, question, opening_ts, question_asker);
+
+        // If we froze the bridges for this question, clear the freeze
+        if (governance_question_ids[question_id]) {
+            delete(governance_question_ids[question_id]);
+            numGovernanceFreezes--;
+        }
+
+
+        bridgeToL2 = BridgeToL2(new_bridge);
+    }
+
+    function clearFailedGovernanceProposal(address new_bridge, uint32 opening_ts, address question_asker) 
+    external {
+        bytes32 question_id = _verifyPropositionFailed(BRIDGE_UPGRADE_TEMPLATE_ID, question, opening_ts, question_asker);
+        if (governance_question_ids[question_id]) {
+            delete(governance_question_ids[question_id]);
+            numGovernanceFreezes--;
+        }
+    }
+
+    function freezeBridges(address new_bridge, uint32 opening_ts, address question_asker) {
+        // TODO: Think about whether this is bad right at the start of the fork process when stuff hasn't been migrated yet
+        uint256 required_bond = totalSupply/100 * PERCENT_TO_FREEZE;
+        string memory question = _toString(abi.encodePacked(new_bridge));
+        bytes32 question_id = _verifyMinimumBondPosted(BRIDGE_UPGRADE_TEMPLATE_ID, question, opening_ts, question_asker, required_bond);
+        require(!governance_question_ids[question_id], "Already frozen");
+        governance_question_ids[question_id] = true;
+        numGovernanceFreezes++;
+    }
 
 
     function beginAddArbitratorToWhitelist(WhitelistArbitrator whitelist_arbitrator, IArbitrator arbitrator_to_add) {
