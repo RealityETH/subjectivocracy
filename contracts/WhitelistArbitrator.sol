@@ -19,7 +19,9 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
 
     IAMB bridge;
     uint256 constant ARB_DISPUTE_TIMEOUT = 86400;
-    uint256 constant TOKEN_RESERVATION_TIMEOUT = 86400;
+
+    uint256 constant TOKEN_RESERVATION_BIDDING_PERIOD= 86400; // After you make a bid, people have 1 day to outbid you
+    uint256 constant TOKEN_RESERVATION_CLAIM_TIMEOUT = 864000; // After a bid is accepted, you have 9 days to complete it or you can lose your deposit
     uint256 constant TOKEN_RESERVATION_DEPOSIT = 10; // 1/10, ie 10%
 
     // The bridge (either on L1 or L2) should switch out real L1 forkmanager address for a special address
@@ -232,16 +234,15 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
         require(token_reservations[resid].reserved_ts == 0, "Nonce already used");
 
         require(_numUnreservedTokens() > num, "Not enough tokens unreserved");
+
         uint256 deposit = num.mul(price).div(TOKEN_RESERVATION_DEPOSIT);
-            
-        // TODO Make sure this works
         require(token.transferFrom(msg.sender, this, deposit), "Deposit transfer failed");
 
         token_reservations[resid] = TokenReservation(
             msg.sender, 
             num,
             price,
-            block.timestamp + TOKEN_RESERVATION_TIMEOUT
+            block.timestamp
         );
         reserved_tokens = reserved_tokens.add(num);
     }
@@ -251,7 +252,7 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
 
         require(token_reservations[resid].reserved_ts > 0, "Reservation you want to outbid does not exist");
         uint256 age = block.timestamp - token_reservations[resid].reserved_ts;
-        require(age < 86400, "Bidding period has passed");
+        require(age < TOKEN_RESERVATION_BIDDING_PERIOD, "Bidding period has passed");
 
         require(token_reservations[resid].num >= num, "More tokens requested than remain in the reservation"); 
         require(price > token_reservations[resid].price * 101/100, "You must bid at least 1% more than the previous bid");
@@ -273,7 +274,7 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
     function cancelTimedOutReservation(bytes32 resid) 
     external {
         uint256 age = block.timestamp - token_reservations[resid].reserved_ts;
-        require(age > 86400*7, "Not timed out yet");
+        require(age > TOKEN_RESERVATION_CLAIM_TIMEOUT, "Not timed out yet");
         reserved_tokens = reserved_tokens.sub(token_reservations[resid].num);
         delete(token_reservations[resid]); 
     }
@@ -281,9 +282,8 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
     function executeTokenSale(bytes32 resid, uint256 gov_tokens_paid) 
         l1_forkmanager_only
     external {
-
         uint256 age = block.timestamp - token_reservations[resid].reserved_ts;
-        require(age > 86400, "Bidding period has not yet passed");
+        require(age > TOKEN_RESERVATION_BIDDING_PERIOD, "Bidding period has not yet passed");
 
         uint256 num = token_reservations[resid].num;
         uint256 price = token_reservations[resid].price;
