@@ -58,11 +58,8 @@ Once its fee has been paid calling on it to arbitrate, the Fork Manager contract
 
 Although the escalation process should make forks unusual, we propose adding an additional layer of indirection between questions put to an oracle and the forking process. This can be done by forking not over individual questions but over a whitelist of arbitrators. Instead of forking over "Did X happen", we let a standard arbitrator answer the question in the first instance, then fork over whitelist membership such as "Should we start trusting Arbitrator Y" or "Should we stop trusting Arbitrator Z"? If the arbitrator that has attempted to answer the question is found to be untrustworthy (from the point of view of the version of the ledger it lives on) it is removed from the whitelist and the question made available for another arbitrator still on the whitelist to answer.
 
-The resulting diagram looks more complicated, but this layer of indirection consists mainly reuse of preexisting operations and can be implemented in a few hundred lines of code.
 
-![Example of a crowdfund contract using an enshrined oracle](diagrams/reality_multi_whitelist.png)
-
-The Whitelist Arbitrator can charge fees in any token, but pays any tokens it collects to governance token holders by auctioning its balance in exchange for governance tokens, which it burns.
+The Whitelist Arbitrator can charge fees in any token, but pays any tokens it collects to governance token holders by auctioning its balance to them in exchange for governance tokens, which it burns.
 
 
 ## Adding other governance features
@@ -70,6 +67,8 @@ The Whitelist Arbitrator can charge fees in any token, but pays any tokens it co
 In principle the same process can be adapted to handle other upgrades of the system, based on technical changes. However, governance features often present opportunities to steal a much greater proportion of the "unforkable" assets controlled by a system than a single whitelisted oracle, so the ratio at which such assets become unsafe is potentially lower than with enshrined oracles. A system that does not need to be upgraded and only uses the forking process to govern its enshrined oracles will therefore be able to support more such assets safely than one which shares the process to allow arbitrary upgrades.
 
 If the L2 system and its ability to get messages to L1 is not trusted, we need a forkable instance of reality.eth on L1 to handle governance. This has the variations that it has a record of its parent, and can be made to import questions from the parent. On forking, the fork manager will transfer the balance held by the parent reality.eth instance to the two child instances before notifying each of its respective result. Users can import their questions to the child instances to claim any funds they are owed.
+
+![Example of a crowdfund contract using an enshrined oracle](diagrams/reality_l1_reality.png)
 
 
 ## Next steps
