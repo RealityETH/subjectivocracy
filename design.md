@@ -73,7 +73,7 @@ If the L2 system and its ability to get messages to L1 is not trusted, we need a
 
 ## Prototype implementation
 
-The interactions between users and contracts are specified in detail in [operations](operations.md).
+The interactions between users and contracts are specified in detail in [interactions](interactions.md).
 
 The sytem is implemented in the following contracts (and their dependencies such as existing reality.eth contracts):
 
