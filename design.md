@@ -62,6 +62,19 @@ Although the escalation process should make forks unusual, we propose adding an 
 The Whitelist Arbitrator can charge fees in any token, but pays any tokens it collects to governance token holders by auctioning its balance to them in exchange for governance tokens, which it burns.
 
 
+## Prototype implementation
+
+The interactions between users and contracts are specified in detail in [operations](operations.md).
+
+The sytem is implemented in the following contracts (and their dependencies such as existing reality.eth contracts):
+
+  * [ForkManager.sol](contracts/ForkManager.sol) implements the governance token and fork management.
+  * [ForkableRealitioERC20.sol](contracts/ForkableRealitioERC20.sol) is a modified version of Reality.eth designed to be used only for governance and/or arbitration selection.
+
+  * [RealitioERC20.sol](contracts/RealitioERC20.sol) is the preexisting Reality.eth contract that would be deployed on Layer 2.
+  * [WhitelistArbitrator.sol](contracts/WhitelistArbitrator.sol) is an arbitration contract based on a whitelist managed by the ForkManager.
+
+
 ## Adding other governance features
 
 In principle the same process can be adapted to handle other upgrades of the system, based on technical changes. However, governance features often present opportunities to steal a much greater proportion of the "unforkable" assets controlled by a system than a single whitelisted oracle, so the ratio at which such assets become unsafe is potentially lower than with enshrined oracles. A system that does not need to be upgraded and only uses the forking process to govern its enshrined oracles will therefore be able to support more such assets safely than one which shares the process to allow arbitrary upgrades.
