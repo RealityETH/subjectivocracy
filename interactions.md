@@ -251,10 +251,6 @@ It's its own transaction on the forkable version because forking for one questio
 Next step:
 * The question can be recreated on each chain, [Recreate a question after a fork](recreate-a-question-after-a-fork) 
 
-### Recreate a question after a fork - TODO: Maybe we don't need this and we can just work off question content
-```
-    Bob     L1  RealityETHFork1.importQuestion(question_id, false) # could also be RealityETHFork2
-```
 
 ### Buy Accumulated Tokens by burning GovTokens
 ```
