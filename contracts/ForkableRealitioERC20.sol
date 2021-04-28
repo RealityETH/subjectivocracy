@@ -733,20 +733,19 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
         stateNotCreated(question_id)
     external {
 
-        require(parent != address(NULL_ADDRESS), "The genesis RealitioETH has no parent and cannot import a question");
-        bool include_answers = parent.isPendingArbitration(question_id);
+        require(msg.sender == address(parent), "Only the parent ForkManger can import questions");
 
         questions[question_id] = Question(
 			parent.getContentHash(question_id),	
-			include_answers ? parent.getArbitrator(question_id) : token,
+			token,
 			parent.getOpeningTS(question_id),	
 			parent.getTimeout(question_id),	
 			parent.getFinalizeTS(question_id),	
 			false,
-			include_answers ? parent.getCumulativeBonds(question_id) : 0,
-			include_answers ? parent.getBestAnswer(question_id) : bytes32(0),
-			include_answers ? parent.getHistoryHash(question_id) : bytes32(0),
-			include_answers ? parent.getBond(question_id) : 0,
+			parent.getCumulativeBonds(question_id),
+			parent.getBestAnswer(question_id),
+			parent.getHistoryHash(question_id),
+			parent.getBond(question_id),
             false
         );
     }
