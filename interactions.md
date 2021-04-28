@@ -1,6 +1,10 @@
 # Contract interactions, L1-governed design
 ### Edmund Edgar, 2021-04-01
 
+This document describes the interactions between actors (users and contracts) in the L1-governed version of the BORG design.
+
+For simplicity some contract parameters are omitted.
+
 ## Contracts:
 
 ### Tokens
