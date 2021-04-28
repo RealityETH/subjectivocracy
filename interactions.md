@@ -3,7 +3,7 @@
 
 This document describes the interactions between actors (users and contracts) in the L1-governed version of the BORG design.
 
-For simplicity some contract parameters are omitted.
+For simplicity some contract parameters are omitted. Details of the mechanism for sending messages between L1 and L2 will depend on the L2 mechanism.
 
 ## Contracts:
 
@@ -19,7 +19,7 @@ For simplicity some contract parameters are omitted.
 * L1.Reality.eth: A forkable ERC20-capable reality.eth instance on L1, using GovToken for bonds.
 
 ### L1-L2 Bridges
-* L2.BridgeToL1: A contract sending messages between ledgers. Details will depend on the L2 implementation, including method signatures.
+* L2.BridgeToL1: A contract sending messages between ledgers.
 * L1.BridgeToL2: 
 * L2.BridgeFromL1: 
 * L1.BridgeFromL2: 
