@@ -299,6 +299,7 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
 
     function clearFailedGovernanceProposal(address new_bridge, uint32 opening_ts, address question_asker) 
     external {
+        string memory question = _toString(abi.encodePacked(new_bridge));
         bytes32 question_id = _verifyPropositionFailed(BRIDGE_UPGRADE_TEMPLATE_ID, question, opening_ts, question_asker);
         if (governance_question_ids[question_id]) {
             delete(governance_question_ids[question_id]);
@@ -306,7 +307,8 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
         }
     }
 
-    function freezeBridges(address new_bridge, uint32 opening_ts, address question_asker) {
+    function freezeBridges(address new_bridge, uint32 opening_ts, address question_asker) 
+    external {
         // TODO: Think about whether this is bad right at the start of the fork process when stuff hasn't been migrated yet
         uint256 required_bond = totalSupply/100 * PERCENT_TO_FREEZE;
         string memory question = _toString(abi.encodePacked(new_bridge));
@@ -399,6 +401,40 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
             mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
             result := create(0, clone, 0x37)
         }
+    }
+
+    // This will return the bridges that should be used to manage assets
+    // If this ForkManager has been replaced it will return the bridges from that ForkManager, recursing many levels if necessary
+    // Clients may prefer to save gas by updating their internal currentBestForkManager themselves and calling the child instead of the parent
+    function requiredBridges() 
+    external returns (address[]) {
+        // If something is frozen pending a governance decision, return an empty array.
+        // This should be interpreted to mean no bridge can be trusted and transfers should stop.
+        address[] memory addrs;
+        if (numGovernanceFreezes > 0) {
+            return addrs;
+        }
+
+        // If there was something frozen when we forked over something else, maintain the freeze until people have had time to recreate it
+        if (initial_governance_freeze_timeout > 0 && block.timestamp < initial_governance_freeze_timeout) {
+            return addrs;
+        }
+
+        // If there's an unresolved fork, we need the consent of both child bridges before performing an operation
+        if (isForking()) {
+            if (isForkingResolved()) {
+                IForkManager fm = replacedByForkManager.currentBestForkManager();
+                return fm.requiredBridges();
+            } else {
+                addrs[0] = address(childForkManager1.bridgeToL2());
+                addrs[1] = address(childForkManager2.bridgeToL2());
+            }
+        } else {
+            addrs[0] = address(bridgeToL2);
+        }
+
+        return addrs;
+
     }
 
 }
