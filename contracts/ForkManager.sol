@@ -98,7 +98,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     // A governance fork will use the specified contract for one of the options.
     // It can have its own setup logic if you want to change the Realitio or bridge code.
     // TODO: Maybe better to find the uppermost library address instead of delegating proxies to delegating proxies?
-    function _cloneForFork(bytes32 question_id, uint256 migrate_funds) 
+    function _cloneForFork(bytes32 question_id, uint256 migrate_funds, bytes32 last_answer, address last_answerer, bytes32 result) 
     internal returns (IForkManager) {
         IForkManager newFm = IForkManager(_deployProxy(this));
         BridgeToL2 newBridgeToL2 = BridgeToL2(_deployProxy(bridgeToL2));
@@ -114,6 +114,9 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         newRealitio.init();
         newRealitio.importQuestion(question_id);
 
+        address payee = last_answer == result ? last_answerer : address(this);
+        newRealitio.submitAnswerByArbitrator(question_id, result, payee);
+
         newFm.init(address(this), address(newRealitio), address(bridgeToL2), (numGovernanceFreezes > 0));
         newFm.mint(newRealitio, migrate_funds);
 
@@ -123,9 +126,12 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     /// @notice Request arbitration, freezing the question until we send submitAnswerByArbitrator
     /// @param question_id The question in question
     /// @param max_previous If specified, reverts if a bond higher than this was submitted after you sent your transaction.
-    function requestArbitrationERC20(bytes32 question_id, uint256 max_previous)
+    function requestArbitrationByFork(bytes32 question_id, uint256 max_previous, bytes32 last_history_hash, bytes32 last_answer, address last_answerer)
     external returns (bool) {
 
+        require(realitio.getHistoryHash(question_id) == keccak256(abi.encodePacked(last_history_hash, last_answer, realitio.getBond(question_id), last_answer, false)));
+
+        require(question_id != bytes32(0), "Question ID is empty");
         require(isUnForked(), 'Already forked, call against the winning child');
 
         uint256 fork_cost = totalSupply * PERCENT_TO_FORK / 100;
@@ -135,27 +141,11 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         realitio.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
         uint256 migrate_funds = realitio.getCumulativeBonds(question_id);
 
-        childForkManager1 = ForkManager(_cloneForFork(question_id, migrate_funds));
-        childForkManager2 = ForkManager(_cloneForFork(question_id, migrate_funds));
+        childForkManager1 = ForkManager(_cloneForFork(question_id, migrate_funds, last_answer, last_answerer, bytes32(0)));
+        childForkManager2 = ForkManager(_cloneForFork(question_id, migrate_funds, last_answer, last_answerer, bytes32(1)));
 
         forkExpirationTS = block.timestamp + FORK_TIME_SECS;
 
-    }
-
-    function assignWinnerAndSubmitAnswerByArbitrator( bytes32 question_id, bytes32 answer, address payee_if_wrong, bytes32 last_history_hash, bytes32 last_answer, address last_answerer )
-    external {
-        require(question_id != bytes32(0), "Question ID is empty");
-        require(answer == bytes32(0) || answer == bytes32(1), "Answer can only be 1 or 2");
-        IForkManager fm = (answer == bytes32(0)) ? childForkManager1 : childForkManager2;
-        ForkableRealitioERC20 r = ForkableRealitioERC20(fm.realitio());
-
-        r.assignWinnerAndSubmitAnswerByArbitrator(question_id, answer, payee_if_wrong, last_history_hash, last_answer, last_answerer);
-
-        // Removed for now  - we should do this asynchronously somewhere as it also happens in non-arbitrated cases
-        // If this is an arbitration question, notify the ledger waiting to unfreeze on L2
-        // TODO: Should this come from the child forkmanager?
-        // bytes memory data1 = abi.encodeWithSelector(notify_who.handleFork.selector, question_id, bytes32(1));
-        // fm.bridgeToL2().requireToPassMessage(notify_who, data1);
     }
 
     function isUnForked() 
