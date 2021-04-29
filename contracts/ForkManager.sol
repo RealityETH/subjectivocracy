@@ -11,10 +11,10 @@ import './BridgeToL2.sol';
 // If enough funds are committed, it can enter a forking state, which effectively creates a futarchic market between two competing bridge contracts, and therefore two competing L2 ledgers.
 contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
 
-    mapping(address => mapping(address => bytes32)) add_arbitrator_propositions;
-    mapping(address => mapping(address => bytes32)) remove_arbitrator_propositions;
-    mapping(address => bytes32) upgrade_bridge_propositions;
+    // When we try to add or remove an arbitrator or upgrade the bridge, use this timeout for the reality.eth question
+    uint32 constant REALITY_ETH_TIMEOUT = 604800; // 1 week
 
+    // The standard reality.eth delimiter for questions with multiple arguments
     string constant QUESTION_DELIM = "\u241f";
    
     // These are created by ForkableRealitioERC20 in its constructor
@@ -25,13 +25,22 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
     // 5% of total supply will prompt a fork.
     // Usually you'd do this as part of a reality.eth arbitration request which will fund you, although you don't have to.
     uint256 constant PERCENT_TO_FORK = 5;
+
+    // 1% of total supply can freeze the bridges while we ask a governance question
     uint256 constant PERCENT_TO_FREEZE = 1;
 
-    // Give people 1 week to pick a side.
+    // In a fork, give people 1 week to pick a side.
     uint256 constant FORK_TIME_SECS = 604800; // 1 week
-    uint256 constant INITIAL_GOVERNANCE_FREEZE_TIMEOUT = 604800;
-    uint32 constant ARB_DISPUTE_TIMEOUT = 604800; // 1 week
-    uint32 constant GOVERNANCE_QUESTION_TIMEOUT = 604800;
+
+    // If we fork over one question, but bridges are already frozen over another, we reset any outstanding questions on child forks and you have to ask them again.
+    // However we keep the bridges frozen to give you time to recreate the question over which you froze the bridges.
+    // After this time, if nobody recreated them, anybody can unfreeze them.
+    uint256 constant POST_FORK_FREEZE_TIMEOUT = 604800;
+
+
+    mapping(address => mapping(address => bytes32)) add_arbitrator_propositions;
+    mapping(address => mapping(address => bytes32)) remove_arbitrator_propositions;
+    mapping(address => bytes32) upgrade_bridge_propositions;
 
     ForkableRealitioERC20 public realitio;
     BridgeToL2 public bridgeToL2;
@@ -75,7 +84,7 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
         bridgeToL2 = BridgeToL2(_bridgeToL2);
 
         if (_has_governance_freeze) {
-            initial_governance_freeze_timeout = block.timestamp + INITIAL_GOVERNANCE_FREEZE_TIMEOUT;
+            initial_governance_freeze_timeout = block.timestamp + POST_FORK_FREEZE_TIMEOUT;
         }
     }
 
@@ -254,7 +263,7 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
     function _verifyPropositionPassed(uint256 template_id, string memory question, uint32 opening_ts, address question_creator, uint256 nonce) 
     internal returns (bytes32) {
         bytes32 content_hash = keccak256(abi.encodePacked(template_id, opening_ts, question));
-        bytes32 question_id = keccak256(abi.encodePacked(content_hash, this, GOVERNANCE_QUESTION_TIMEOUT, msg.sender, nonce));
+        bytes32 question_id = keccak256(abi.encodePacked(content_hash, this, REALITY_ETH_TIMEOUT, msg.sender, nonce));
         require(realitio.resultFor(question_id) == bytes32(1), "Governance proposal did not pass");
         return question_id;
     }
@@ -262,7 +271,7 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
     function _verifyPropositionFailed(uint256 template_id, string memory question, uint32 opening_ts, address question_creator, uint256 nonce) 
     internal returns (bytes32) {
         bytes32 content_hash = keccak256(abi.encodePacked(template_id, opening_ts, question));
-        bytes32 question_id = keccak256(abi.encodePacked(content_hash, this, GOVERNANCE_QUESTION_TIMEOUT, question_creator, nonce));
+        bytes32 question_id = keccak256(abi.encodePacked(content_hash, this, REALITY_ETH_TIMEOUT, question_creator, nonce));
         require(realitio.resultFor(question_id) != bytes32(1), "Governance proposal did not pass");
         return question_id;
     }
@@ -272,7 +281,7 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
     function _verifyMinimumBondPosted(uint256 template_id, string memory question, uint32 opening_ts, address question_creator, uint256 minimum_bond) 
     internal returns (bytes32) {
         bytes32 content_hash = keccak256(abi.encodePacked(template_id, opening_ts, question));
-        bytes32 question_id = keccak256(abi.encodePacked(content_hash, this, GOVERNANCE_QUESTION_TIMEOUT, question_creator, uint256(0)));
+        bytes32 question_id = keccak256(abi.encodePacked(content_hash, this, REALITY_ETH_TIMEOUT, question_creator, uint256(0)));
         require(!realitio.isFinalized(question_id), "Question is already finalized, execute instead");
         require(realitio.getBestAnswer(question_id) == bytes32(1), "Current answer is not 1");
         require(realitio.getBond(question_id) >= minimum_bond, "Bond not high enough");
@@ -323,7 +332,7 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
         //TODO: Work out how the approve flow works
         string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_add));
         // TODO: Can an arbitrator be denied then approved then added again? If so we need to track the nonce or opening time
-        add_arbitrator_propositions[whitelist_arbitrator][arbitrator_to_add] = realitio.askQuestion(ADD_ARBITRATOR_TEMPLATE_ID, question, address(this), ARB_DISPUTE_TIMEOUT, 0, 0);
+        add_arbitrator_propositions[whitelist_arbitrator][arbitrator_to_add] = realitio.askQuestion(ADD_ARBITRATOR_TEMPLATE_ID, question, address(this), REALITY_ETH_TIMEOUT, 0, 0);
     }
 
     function completeAddArbitratorToWhitelist(address whitelist_arbitrator, address arbitrator_to_add, uint32 opening_ts, address question_creator, uint256 nonce) {
@@ -353,7 +362,7 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
         //TODO: Work out how the approve flow works
         string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_remove));
         // TODO: Can an arbitrator be added then removed then added again? If so we need to track the nonce
-        remove_arbitrator_propositions[whitelist_arbitrator][arbitrator_to_remove] = realitio.askQuestion(REMOVE_ARBITRATOR_TEMPLATE_ID, question, address(this), ARB_DISPUTE_TIMEOUT, 0, 0);
+        remove_arbitrator_propositions[whitelist_arbitrator][arbitrator_to_remove] = realitio.askQuestion(REMOVE_ARBITRATOR_TEMPLATE_ID, question, address(this), REALITY_ETH_TIMEOUT, 0, 0);
     }
 
     function completeRemoveArbitratorFromWhitelist(address whitelist_arbitrator, address arbitrator_to_remove, uint32 opening_ts, address question_asker, uint256 nonce) {
