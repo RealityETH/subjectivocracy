@@ -736,16 +736,16 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
         require(msg.sender == address(parent), "Only the parent ForkManger can import questions");
 
         questions[question_id] = Question(
-			parent.getContentHash(question_id),	
-			token,
-			parent.getOpeningTS(question_id),	
-			parent.getTimeout(question_id),	
-			parent.getFinalizeTS(question_id),	
-			false,
-			parent.getCumulativeBonds(question_id),
-			parent.getBestAnswer(question_id),
-			parent.getHistoryHash(question_id),
-			parent.getBond(question_id),
+            parent.getContentHash(question_id),	
+            token,
+            parent.getOpeningTS(question_id),	
+            parent.getTimeout(question_id),	
+            parent.getFinalizeTS(question_id),	
+            false,
+            parent.getCumulativeBonds(question_id),
+            parent.getBestAnswer(question_id),
+            parent.getHistoryHash(question_id),
+            parent.getBond(question_id),
             false
         );
     }
