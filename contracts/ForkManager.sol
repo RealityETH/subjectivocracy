@@ -1,6 +1,5 @@
 pragma solidity ^0.4.25;
 
-
 import './RealitioSafeMath256.sol';
 import './RealitioSafeMath32.sol';
 import './ERC20.sol';
@@ -41,7 +40,6 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     // However we keep the bridges frozen to give you time to recreate the question over which you froze the bridges.
     // After this time, if nobody recreated them, anybody can unfreeze them.
     uint256 constant POST_FORK_FREEZE_TIMEOUT = 604800;
-
 
     mapping(address => mapping(address => bytes32)) add_arbitrator_propositions;
     mapping(address => mapping(address => bytes32)) remove_arbitrator_propositions;
@@ -329,7 +327,6 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         governance_question_ids[question_id] = true;
         numGovernanceFreezes++;
     }
-
 
     function beginAddArbitratorToWhitelist(WhitelistArbitrator whitelist_arbitrator, IArbitrator arbitrator_to_add) {
         require(add_arbitrator_propositions[whitelist_arbitrator][arbitrator_to_add] == bytes32(0x0), "Existing proposition must be completed first");
