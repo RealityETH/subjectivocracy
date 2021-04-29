@@ -170,7 +170,7 @@ Next step:
 
 ### Challenge an arbitration or governance result
 ```
-    Bob     L1  ForkManager.requestArbitration(contest_question_id, uint256 max_previous)
+    Bob     L1  ForkManager.requestArbitrationByFork(contest_question_id, uint256 max_previous, ...)
                     f1 = self.clone(now + 1 days, RealityETH, BridgeToL2, BridgeFromL2)
                         RealityETHFork1 = RealityETH.clone();
                         RealityETHFork1.setParent(address(RealityETH));
@@ -193,8 +193,18 @@ Next step:
                     RealityETH.notifyOfArbitrationRequest(contest_question_id, msg.sender, max_previous);
 
 ```
+
 Next step:
 * Wait for the fork date, then anyone can [Execute an arbitrator removal](#execute-an-arbitrator-removal) on one chain and [Cancel an arbitrator removal](#cancel-an-arbitrator-removal) on the other.
+
+
+### Move your governance tokens onto your preferred fork
+```
+    Bob    L1   ForkManager.pickFork(address fork, uint256 tokens)
+                    # burns own tokens
+                    # fork.mint(msg.sender, tokens)
+```
+
 
 ### Propose a routine governance change
 ```
