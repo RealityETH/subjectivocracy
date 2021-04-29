@@ -16,4 +16,11 @@ contract BridgeToL2 is IAMB {
         parent = _fm;
     }
 
+    // Any initialization steps the contract needs other than the parent address go here
+    // This may include cloning other contracts
+    // If necessary it can call back to the parent to get the address of the bridge it was forked from
+    function init()
+    external {
+    }
+
 }

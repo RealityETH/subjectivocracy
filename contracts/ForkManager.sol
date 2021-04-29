@@ -8,7 +8,7 @@ import './WhitelistArbitrator.sol';
 import './BridgeToL2.sol';
 
 // An ERC20 token committed to a particular fork.
-// If enough funds are committed, it can enter a forking state, which effectively creates a futarchic market between two competing ChainManager contracts, and therefore two competing L2 ledgers.
+// If enough funds are committed, it can enter a forking state, which effectively creates a futarchic market between two competing bridge contracts, and therefore two competing L2 ledgers.
 contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
 
     mapping(address => mapping(address => bytes32)) add_arbitrator_propositions;
@@ -33,7 +33,6 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
     uint32 constant ARB_DISPUTE_TIMEOUT = 604800; // 1 week
     uint32 constant GOVERNANCE_QUESTION_TIMEOUT = 604800;
 
-    ChainManager public chainmanager;
     ForkableRealitioERC20 public realitio;
     BridgeToL2 public bridgeToL2;
 
@@ -66,15 +65,12 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
 
     mapping(bytes32 => bool) executed_questions;
 
-    function init(address _parentForkManager, address _chainmanager, address _realitio, address _bridgeToL2, bool _has_governance_freeze) 
+    function init(address _parentForkManager, address _realitio, address _bridgeToL2, bool _has_governance_freeze) 
     external {
-		require(address(chainmanager) == address(0), "You can only call init once");
-		require(address(_chainmanager) != address(0), "ChainManager address must be supplied");
 		require(address(_realitio) != address(0), "Realitio address must be supplied");
 		require(address(_bridgeToL2) != address(0), "Bridge address must be supplied");
 
         parentForkManager = ForkManager(_parentForkManager); // 0x0 for genesis
-		chainmanager = ChainManager(_chainmanager);
 		realitio = ForkableRealitioERC20(_realitio);
         bridgeToL2 = BridgeToL2(_bridgeToL2);
 
@@ -102,25 +98,27 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
     }
 
 	// Function to clone ourselves.
-	// This in turn clones the realitio instance and the ChainManager.
+	// This in turn clones the realitio instance and the bridge.
 	// An arbitrator fork will create this for both forks.
 	// A governance fork will use the specified contract for one of the options.
-	// It can have its own setup logic if you want to change the Realitio or ChainManager code.
+	// It can have its own setup logic if you want to change the Realitio or bridge code.
 	// TODO: Maybe better to find the uppermost library address instead of delegating proxies to delegating proxies?
     function _cloneForFork() 
     internal returns (IForkManager) {
         IForkManager newFm = IForkManager(_deployProxy(this));
-		ChainManager newCm = ChainManager(_deployProxy(chainmanager)); // TODO: May need other init steps
         BridgeToL2 newBridgeToL2 = BridgeToL2(_deployProxy(bridgeToL2));
-//TODO
-        //newBridgeFromL2ToL1 = BridgeFromL2(_deployProxy(bridgeFromL2ToL1));
+
+        // TODO Repeat for bridge in other direction?
+
         newBridgeToL2.setParent(this);
-        //newBridgeFromL2ToL1.setParent(this);
+        newBridgeToL2.init();
+
 		ForkableRealitioERC20 newRealitio = ForkableRealitioERC20(_deployProxy(realitio));
 		newRealitio.setParent(IForkableRealitio(realitio));
 		newRealitio.setToken(newFm);
 		newRealitio.init();
-		newFm.init(address(this), address(newCm), address(newRealitio), address(bridgeToL2), (numGovernanceFreezes > 0));
+		newFm.init(address(this), address(newRealitio), address(bridgeToL2), (numGovernanceFreezes > 0));
+
 		return newFm;
     }
 

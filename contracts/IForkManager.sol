@@ -12,7 +12,7 @@ contract IForkManager is IERC20 {
 
     function mint(address _to, uint256 _amount) external; 
 
-    function init(address _parentForkManager, address _chainmanager, address _realitio, address _bridgeToL2, bool _hasGovernanceFreeze) external; 
+    function init(address _parentForkManager, address _realitio, address _bridgeToL2, bool _hasGovernanceFreeze) external; 
 
     function realitio() external view returns (IRealitio);
 
