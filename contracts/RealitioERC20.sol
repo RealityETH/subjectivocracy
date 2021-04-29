@@ -3,7 +3,6 @@ pragma solidity ^0.4.25;
 import './RealitioSafeMath256.sol';
 import './RealitioSafeMath32.sol';
 import './BalanceHolderERC20.sol';
-import './ChainManager.sol';
 
 contract RealitioERC20 is BalanceHolderERC20 {
 
