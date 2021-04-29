@@ -55,16 +55,15 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
 
     uint256 dispute_fee;
 
-	struct ArbitrationRequest {
-		address arbitrator;
-		address payer;
-		uint256 bounty;
-		bytes32 msg_hash;
-		uint256 finalize_ts;
-	}
+    struct ArbitrationRequest {
+            address arbitrator;
+            address payer;
+            uint256 bounty;
+            bytes32 msg_hash;
+            uint256 finalize_ts;
+    }
 
-	mapping (bytes32 => ArbitrationRequest) question_arbitrations;
-
+    mapping (bytes32 => ArbitrationRequest) question_arbitrations;
 
     // TODO: Work out how this is implemented in xdai or whatever we use
     modifier l1_forkmanager_only() {
@@ -72,9 +71,6 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
         require(bridge.messageSender() == FORK_MANAGER_SPECIAL_ADDRESS, "Message must come from L1 ForkManager");
         _;
     }
-
-	// Submit content to timeout
-	//mapping (bytes32 => ArbitratorChallenge) challengeable_submissions;
 
     constructor(address _fork_arbitrator_proxy, uint256 _dispute_fee, IAMB _bridge) 
     public {
@@ -104,22 +100,22 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
 
         require(msg.value >= arbitration_fee); 
 
-		realitio.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
-		emit LogRequestArbitration(question_id, msg.value, msg.sender, 0);
+        realitio.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
+        emit LogRequestArbitration(question_id, msg.value, msg.sender, 0);
 
-		// Queue the question for arbitration by a whitelisted arbitrator
-		// Anybody can take the question off the queue and submit it to a whitelisted arbitrator
-		// They will have to pay the arbitration fee upfront
-		// They can claim the bounty when they get an answer
-		// If the arbitrator is removed in the meantime, they'll lose the money they spent on arbitration
-		question_arbitrations[question_id].bounty = msg.value;
+        // Queue the question for arbitration by a whitelisted arbitrator
+        // Anybody can take the question off the queue and submit it to a whitelisted arbitrator
+        // They will have to pay the arbitration fee upfront
+        // They can claim the bounty when they get an answer
+        // If the arbitrator is removed in the meantime, they'll lose the money they spent on arbitration
+        question_arbitrations[question_id].bounty = msg.value;
 
-		return true;
+        return true;
 
     }
 
-	// This function is normally in Reality.eth.
-	// We put it here so that we can be treated like Reality.eth from the pov of the arbitrator contract.
+    // This function is normally in Reality.eth.
+    // We put it here so that we can be treated like Reality.eth from the pov of the arbitrator contract.
 
     /// @notice Notify the contract that the arbitrator has been paid for a question, freezing it pending their decision.
     /// @dev The arbitrator contract is trusted to only call this if they've been paid, and tell us who paid them.
@@ -129,28 +125,27 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
     function notifyOfArbitrationRequest(bytes32 question_id, address requester, uint256 max_previous)
     external {
 
-		require(arbitrators[msg.sender], "Arbitrator must be on the whitelist");
-        require(question_arbitrations[question_id].bounty > 0, "Question must be in the arbitration queue");
+        require(arbitrators[msg.sender], "Arbitrator must be on the whitelist");
+require(question_arbitrations[question_id].bounty > 0, "Question must be in the arbitration queue");
 
-		// The only time you can pick up a question that's already being arbitrated is if it's been removed from the whitelist
-		if (question_arbitrations[question_id].arbitrator != address(0)) {
-			require(!arbitrators[question_arbitrations[question_id].arbitrator], "Question already taken, and the arbitrator who took it is still active");
+        // The only time you can pick up a question that's already being arbitrated is if it's been removed from the whitelist
+        if (question_arbitrations[question_id].arbitrator != address(0)) {
+            require(!arbitrators[question_arbitrations[question_id].arbitrator], "Question already taken, and the arbitrator who took it is still active");
 
-			// Clear any in-progress data from the arbitrator that has now been removed
-			question_arbitrations[question_id].msg_hash = 0x0;
-			question_arbitrations[question_id].finalize_ts = 0;
+            // Clear any in-progress data from the arbitrator that has now been removed
+            question_arbitrations[question_id].msg_hash = 0x0;
+            question_arbitrations[question_id].finalize_ts = 0;
+        }
 
-		}
-
-		question_arbitrations[question_id].payer = requester;
-		question_arbitrations[question_id].arbitrator = msg.sender;
+        question_arbitrations[question_id].payer = requester;
+        question_arbitrations[question_id].arbitrator = msg.sender;
 
         emit LogNotifyOfArbitrationRequest(question_id, requester);
     }
 
-	// The arbitrator submits the answer to us, instead of to realitio
-	// Instead of sending it to Reality.eth, we instead hold onto it for a challenge period in case someone disputes the arbitrator.
-	// TODO: We may need assignWinnerAndSubmitAnswerByArbitrator here instead
+    // The arbitrator submits the answer to us, instead of to realitio
+    // Instead of sending it to Reality.eth, we instead hold onto it for a challenge period in case someone disputes the arbitrator.
+    // TODO: We may need assignWinnerAndSubmitAnswerByArbitrator here instead
 
     /// @notice Submit the arbitrator's answer to a question.
     /// @param question_id The question in question
@@ -158,17 +153,17 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
     /// @param answerer The answerer. If arbitration changed the answer, it should be the payer. If not, the old answerer.
     function submitAnswerByArbitrator(bytes32 question_id, bytes32 answer, address answerer)
     external {
-		require(question_arbitrations[question_id].arbitrator == msg.sender, "An arbitrator can only submit their own arbitration result");
+        require(question_arbitrations[question_id].arbitrator == msg.sender, "An arbitrator can only submit their own arbitration result");
         require(question_arbitrations[question_id].bounty > 0, "Question must be in the arbitration queue");
 
-		bytes32 data_hash = keccak256(abi.encodePacked(msg.data));
-		uint256 finalize_ts = block.timestamp + ARB_DISPUTE_TIMEOUT; 
+        bytes32 data_hash = keccak256(abi.encodePacked(msg.data));
+        uint256 finalize_ts = block.timestamp + ARB_DISPUTE_TIMEOUT; 
 
-		question_arbitrations[question_id].msg_hash = data_hash;
-		question_arbitrations[question_id].finalize_ts = finalize_ts;
-	}
+        question_arbitrations[question_id].msg_hash = data_hash;
+        question_arbitrations[question_id].finalize_ts = finalize_ts;
+    }
 
-	/// @notice Resubmit the arbitrator's answer to a question once the challenge period for it has passed
+    /// @notice Resubmit the arbitrator's answer to a question once the challenge period for it has passed
     /// @param question_id The question in question
     /// @param answer The answer
     /// @param answerer The answerer. If arbitration changed the answer, it should be the payer. If not, the old answerer.
@@ -177,51 +172,51 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
 
         address arbitrator = questions[question_id].arbitrator;
 
-		require(arbitrators[arbitrator], "Arbitrator must be whitelisted");
-		require(!frozen_arbitrators[arbitrator], "Arbitrator must not be under dispute"); 
+        require(arbitrators[arbitrator], "Arbitrator must be whitelisted");
+        require(!frozen_arbitrators[arbitrator], "Arbitrator must not be under dispute"); 
 
-		bytes32 data_hash = keccak256(abi.encodePacked(msg.data));
-		require(question_arbitrations[question_id].msg_hash == data_hash, "You must resubmit the parameters previously sent");
+        bytes32 data_hash = keccak256(abi.encodePacked(msg.data));
+        require(question_arbitrations[question_id].msg_hash == data_hash, "You must resubmit the parameters previously sent");
 
-		uint256 finalize_ts = question_arbitrations[question_id].finalize_ts;
-		require(finalize_ts > 0, "Submission must have been queued");
-		require(finalize_ts < now, "Challenge deadline must have passed");
+        uint256 finalize_ts = question_arbitrations[question_id].finalize_ts;
+        require(finalize_ts > 0, "Submission must have been queued");
+        require(finalize_ts < now, "Challenge deadline must have passed");
 
-		balanceOf[question_arbitrations[question_id].payer] = balanceOf[question_arbitrations[question_id].payer].add(question_arbitrations[question_id].bounty);
+        balanceOf[question_arbitrations[question_id].payer] = balanceOf[question_arbitrations[question_id].payer].add(question_arbitrations[question_id].bounty);
 
         realitio.submitAnswerByArbitrator(question_id, answer, answerer);
-	}
+    }
 
     function freezeArbitrator(address arbitrator) 
         l1_forkmanager_only
     public {
-		require(arbitrators[arbitrator], "Arbitrator not whitelisted in the first place");
-		require(!frozen_arbitrators[arbitrator], "Arbitrator already frozen");
+        require(arbitrators[arbitrator], "Arbitrator not whitelisted in the first place");
+        require(!frozen_arbitrators[arbitrator], "Arbitrator already frozen");
         frozen_arbitrators[arbitrator] = true;
     }
 
-	function unfreezeArbitrator(address arbitrator) 
-        l1_forkmanager_only
-    public {
-		require(arbitrators[arbitrator], "Arbitrator not whitelisted in the first place");
-		require(frozen_arbitrators[arbitrator], "Arbitrator not already frozen");
+    function unfreezeArbitrator(address arbitrator) 
+    l1_forkmanager_only
+public {
+        require(arbitrators[arbitrator], "Arbitrator not whitelisted in the first place");
+        require(frozen_arbitrators[arbitrator], "Arbitrator not already frozen");
         frozen_arbitrators[arbitrator] = false;
-	}
+    }
 
-	function addArbitrator(address arbitrator) 
+    function addArbitrator(address arbitrator) 
         l1_forkmanager_only
     public {
-		require(!arbitrators[arbitrator], "Arbitrator already whitelisted");
+        require(!arbitrators[arbitrator], "Arbitrator already whitelisted");
         arbitrators[arbitrator] = true;
-	}
+    }
 
-	function removeArbitrator(address arbitrator) 
+    function removeArbitrator(address arbitrator) 
         l1_forkmanager_only
     public {
-		require(arbitrators[arbitrator], "Arbitrator already whitelisted");
+        require(arbitrators[arbitrator], "Arbitrator already whitelisted");
         frozen_arbitrators[arbitrator] = false;
         arbitrators[arbitrator] = false;
-	}
+    }
 
     function _numUnreservedTokens() 
     internal view returns (uint256) {

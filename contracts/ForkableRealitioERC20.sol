@@ -77,11 +77,11 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
         uint32 timeout;
         uint32 finalize_ts;
         bool is_pending_arbitration;
-        uint256 cumulative_bonds;
+        uint256 cumulative_bonds; // Not in regular reality.eth
         bytes32 best_answer;
         bytes32 history_hash;
         uint256 bond;
-        bool is_finalized;
+        bool is_finalized; // Not in regular reality.eth
     }
 
     // Only used when claiming more bonds than fits into a transaction

@@ -28,4 +28,3 @@ interface IForkableRealitio {
   function assignWinnerAndSubmitAnswerByArbitrator( bytes32 question_id, bytes32 answer, address payee_if_wrong, bytes32 last_history_hash, bytes32 last_answer_or_commitment_id, address last_answerer ) external;
   function getCumulativeBonds ( bytes32 question_id ) external view returns ( uint256 );
 }
-

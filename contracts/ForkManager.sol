@@ -58,8 +58,8 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
 
     uint256 forkExpirationTS = 0;
 
-	address arbitration_payer;
-	bytes32 arbitrating_question_id;
+    address arbitration_payer;
+    bytes32 arbitrating_question_id;
 
     uint256 public totalSupply;
 
@@ -67,8 +67,8 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
 
     function init(address _parentForkManager, address _realitio, address _bridgeToL2, bool _has_governance_freeze) 
     external {
-		require(address(_realitio) != address(0), "Realitio address must be supplied");
-		require(address(_bridgeToL2) != address(0), "Bridge address must be supplied");
+        require(address(_realitio) != address(0), "Realitio address must be supplied");
+        require(address(_bridgeToL2) != address(0), "Bridge address must be supplied");
 
         parentForkManager = ForkManager(_parentForkManager); // 0x0 for genesis
 		realitio = ForkableRealitioERC20(_realitio);
@@ -97,12 +97,12 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
         migratedBalances[yes_or_no] = migratedBalances[yes_or_no].add(amount);
     }
 
-	// Function to clone ourselves.
-	// This in turn clones the realitio instance and the bridge.
-	// An arbitrator fork will create this for both forks.
-	// A governance fork will use the specified contract for one of the options.
-	// It can have its own setup logic if you want to change the Realitio or bridge code.
-	// TODO: Maybe better to find the uppermost library address instead of delegating proxies to delegating proxies?
+    // Function to clone ourselves.
+    // This in turn clones the realitio instance and the bridge.
+    // An arbitrator fork will create this for both forks.
+    // A governance fork will use the specified contract for one of the options.
+    // It can have its own setup logic if you want to change the Realitio or bridge code.
+    // TODO: Maybe better to find the uppermost library address instead of delegating proxies to delegating proxies?
     function _cloneForFork() 
     internal returns (IForkManager) {
         IForkManager newFm = IForkManager(_deployProxy(this));
@@ -113,13 +113,13 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
         newBridgeToL2.setParent(this);
         newBridgeToL2.init();
 
-		ForkableRealitioERC20 newRealitio = ForkableRealitioERC20(_deployProxy(realitio));
-		newRealitio.setParent(IForkableRealitio(realitio));
-		newRealitio.setToken(newFm);
-		newRealitio.init();
-		newFm.init(address(this), address(newRealitio), address(bridgeToL2), (numGovernanceFreezes > 0));
+        ForkableRealitioERC20 newRealitio = ForkableRealitioERC20(_deployProxy(realitio));
+        newRealitio.setParent(IForkableRealitio(realitio));
+        newRealitio.setToken(newFm);
+        newRealitio.init();
+        newFm.init(address(this), address(newRealitio), address(bridgeToL2), (numGovernanceFreezes > 0));
 
-		return newFm;
+        return newFm;
     }
 
     /// @notice Request arbitration, freezing the question until we send submitAnswerByArbitrator
@@ -134,7 +134,7 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
         require(balanceOf[msg.sender] > fork_cost, 'Not enough tokens');
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(fork_cost);
 
-		realitio.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
+        realitio.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
 
         childForkManager1 = ForkManager(_cloneForFork());
         childForkManager2 = ForkManager(_cloneForFork());
@@ -374,17 +374,17 @@ contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
 
     function _toString(bytes memory data) 
 	internal pure returns(string memory) {
-		bytes memory alphabet = "0123456789abcdef";
+        bytes memory alphabet = "0123456789abcdef";
 
-		bytes memory str = new bytes(2 + data.length * 2);
-		str[0] = '0';
-		str[1] = 'x';
-		for (uint i = 0; i < data.length; i++) {
-			str[2+i*2] = alphabet[uint(uint8(data[i] >> 4))];
-			str[3+i*2] = alphabet[uint(uint8(data[i] & 0x0f))];
-		}
-		return string(str);
-	}
+        bytes memory str = new bytes(2 + data.length * 2);
+        str[0] = '0';
+        str[1] = 'x';
+        for (uint i = 0; i < data.length; i++) {
+                str[2+i*2] = alphabet[uint(uint8(data[i] >> 4))];
+                str[3+i*2] = alphabet[uint(uint8(data[i] & 0x0f))];
+        }
+        return string(str);
+    }
 
     /// @notice Returns the address of a proxy based on the specified address
     /// @dev No initialization is done here
