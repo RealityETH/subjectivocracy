@@ -41,17 +41,12 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     // After this time, if nobody recreated them, anybody can unfreeze them.
     uint256 constant POST_FORK_FREEZE_TIMEOUT = 604800;
 
-    mapping(address => mapping(address => bytes32)) add_arbitrator_propositions;
-    mapping(address => mapping(address => bytes32)) remove_arbitrator_propositions;
-    mapping(address => bytes32) upgrade_bridge_propositions;
+    mapping(bytes32 => bool) executed_propositions;
 
     ForkableRealitioERC20 public realitio;
     BridgeToL2 public bridgeToL2;
 
     ForkManager public parentForkManager;
-
-    address fork_requested_by_contract;
-    bytes32 forked_over_question_id;
 
     // A list of questions that have been used to freeze governance
     mapping(bytes32 => bool) governance_question_ids;
@@ -63,8 +58,6 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
 
     ForkManager public childForkManager1;
     ForkManager public childForkManager2;
-
-    mapping (bool => uint256) migratedBalances;
 
     ForkManager public replacedByForkManager;
 
@@ -83,7 +76,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         require(address(_bridgeToL2) != address(0), "Bridge address must be supplied");
 
         parentForkManager = ForkManager(_parentForkManager); // 0x0 for genesis
-		realitio = ForkableRealitioERC20(_realitio);
+        realitio = ForkableRealitioERC20(_realitio);
         bridgeToL2 = BridgeToL2(_bridgeToL2);
 
         if (_has_governance_freeze) {
@@ -99,23 +92,13 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         balanceOf[_to] = balanceOf[_to].add(_amount);
     }
 
-    function migrateToChild(bool yes_or_no, uint256 amount) 
-    external {
-        require(amount > balanceOf[msg.sender], "Balance too low");
-        balanceOf[msg.sender] = balanceOf[msg.sender].sub(amount);
-        totalSupply = totalSupply.sub(amount);
-        IForkManager fm = yes_or_no ? IForkManager(childForkManager1) : IForkManager(childForkManager2); 
-        fm.mint(msg.sender, amount);
-        migratedBalances[yes_or_no] = migratedBalances[yes_or_no].add(amount);
-    }
-
     // Function to clone ourselves.
     // This in turn clones the realitio instance and the bridge.
     // An arbitrator fork will create this for both forks.
     // A governance fork will use the specified contract for one of the options.
     // It can have its own setup logic if you want to change the Realitio or bridge code.
     // TODO: Maybe better to find the uppermost library address instead of delegating proxies to delegating proxies?
-    function _cloneForFork() 
+    function _cloneForFork(bytes32 question_id, uint256 migrate_funds) 
     internal returns (IForkManager) {
         IForkManager newFm = IForkManager(_deployProxy(this));
         BridgeToL2 newBridgeToL2 = BridgeToL2(_deployProxy(bridgeToL2));
@@ -129,7 +112,10 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         newRealitio.setParent(IForkableRealitio(realitio));
         newRealitio.setToken(newFm);
         newRealitio.init();
+        newRealitio.importQuestion(question_id);
+
         newFm.init(address(this), address(newRealitio), address(bridgeToL2), (numGovernanceFreezes > 0));
+        newFm.mint(newRealitio, migrate_funds);
 
         return newFm;
     }
@@ -147,32 +133,18 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(fork_cost);
 
         realitio.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
-
-        childForkManager1 = ForkManager(_cloneForFork());
-        childForkManager2 = ForkManager(_cloneForFork());
-
         uint256 migrate_funds = realitio.getCumulativeBonds(question_id);
 
-        childForkManager1.mint(childForkManager1.realitio(), migrate_funds);
-        childForkManager2.mint(childForkManager2.realitio(), migrate_funds);
-
-        migratedBalances[true] = migratedBalances[true].add(migrate_funds);
-        migratedBalances[false] = migratedBalances[false].add(migrate_funds);
-
-        fork_requested_by_contract = msg.sender;
-        forked_over_question_id = question_id;
+        childForkManager1 = ForkManager(_cloneForFork(question_id, migrate_funds));
+        childForkManager2 = ForkManager(_cloneForFork(question_id, migrate_funds));
 
         forkExpirationTS = block.timestamp + FORK_TIME_SECS;
-
-        // TODO: Do we need to tell anyone on L2 about this? Maybe not since it should already be frozen
-        // notifyOfFork(question_id);
 
     }
 
     function assignWinnerAndSubmitAnswerByArbitrator( bytes32 question_id, bytes32 answer, address payee_if_wrong, bytes32 last_history_hash, bytes32 last_answer, address last_answerer )
     external {
         require(question_id != bytes32(0), "Question ID is empty");
-        require(question_id == forked_over_question_id, "You can only arbitrate a question we forked over");
         require(answer == bytes32(0) || answer == bytes32(1), "Answer can only be 1 or 2");
         IForkManager fm = (answer == bytes32(0)) ? childForkManager1 : childForkManager2;
         ForkableRealitioERC20 r = ForkableRealitioERC20(fm.realitio());
@@ -292,17 +264,18 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     }
 
     // If you've sent a proposition to reality.eth and it passed without needing arbitration, you can complete it by passing the details in here
-    function completeBridgeUpgrade(address new_bridge, uint32 opening_ts, address question_asker, uint256 nonce) 
+    function executeBridgeUpgrade(address new_bridge, uint32 opening_ts, address question_asker, uint256 nonce) 
     external {
         string memory question = _toString(abi.encodePacked(new_bridge));
         bytes32 question_id = _verifyPropositionPassed(BRIDGE_UPGRADE_TEMPLATE_ID, question, opening_ts, question_asker, nonce);
+        require(!executed_propositions[question_id], "Proposition can only be executed once");
 
         // If we froze the bridges for this question, clear the freeze
         if (governance_question_ids[question_id]) {
             delete(governance_question_ids[question_id]);
             numGovernanceFreezes--;
         }
-
+        executed_propositions[question_id] = true;
 
         bridgeToL2 = BridgeToL2(new_bridge);
     }
@@ -328,21 +301,13 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         numGovernanceFreezes++;
     }
 
-    function beginAddArbitratorToWhitelist(WhitelistArbitrator whitelist_arbitrator, IArbitrator arbitrator_to_add) {
-        require(add_arbitrator_propositions[whitelist_arbitrator][arbitrator_to_add] == bytes32(0x0), "Existing proposition must be completed first");
-
-        //TODO: Work out how the approve flow works
+    function executeAddArbitratorToWhitelist(address whitelist_arbitrator, address arbitrator_to_add, uint32 opening_ts, address question_creator, uint256 nonce) {
         string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_add));
-        // TODO: Can an arbitrator be denied then approved then added again? If so we need to track the nonce or opening time
-        add_arbitrator_propositions[whitelist_arbitrator][arbitrator_to_add] = realitio.askQuestion(ADD_ARBITRATOR_TEMPLATE_ID, question, address(this), REALITY_ETH_TIMEOUT, 0, 0);
-    }
-
-    function completeAddArbitratorToWhitelist(address whitelist_arbitrator, address arbitrator_to_add, uint32 opening_ts, address question_creator, uint256 nonce) {
-        string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_add));
-        _verifyPropositionPassed(ADD_ARBITRATOR_TEMPLATE_ID, question, opening_ts, question_creator, nonce);
+        bytes32 question_id = _verifyPropositionPassed(ADD_ARBITRATOR_TEMPLATE_ID, question, opening_ts, question_creator, nonce);
+        require(!executed_propositions[question_id], "Question already executed");
         bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).addArbitrator.selector);
         bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
-        delete add_arbitrator_propositions[whitelist_arbitrator][arbitrator_to_add];
+        executed_propositions[question_id] = true;
     }
 
     // If you're about to pass a proposition but you don't want bad things to happen in the meantime
@@ -357,22 +322,13 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
     }
     
-    function beginRemoveArbitratorFromWhitelist(WhitelistArbitrator whitelist_arbitrator, IArbitrator arbitrator_to_remove) {
-
-        require(remove_arbitrator_propositions[whitelist_arbitrator][arbitrator_to_remove] == bytes32(0x0), "Existing proposition must be completed first");
-
-        //TODO: Work out how the approve flow works
+    function executeRemoveArbitratorFromWhitelist(address whitelist_arbitrator, address arbitrator_to_remove, uint32 opening_ts, address question_asker, uint256 nonce) {
         string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_remove));
-        // TODO: Can an arbitrator be added then removed then added again? If so we need to track the nonce
-        remove_arbitrator_propositions[whitelist_arbitrator][arbitrator_to_remove] = realitio.askQuestion(REMOVE_ARBITRATOR_TEMPLATE_ID, question, address(this), REALITY_ETH_TIMEOUT, 0, 0);
-    }
-
-    function completeRemoveArbitratorFromWhitelist(address whitelist_arbitrator, address arbitrator_to_remove, uint32 opening_ts, address question_asker, uint256 nonce) {
-        string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_remove));
-        _verifyPropositionPassed(REMOVE_ARBITRATOR_TEMPLATE_ID, question, opening_ts, question_asker, nonce);
+        bytes32 question_id =_verifyPropositionPassed(REMOVE_ARBITRATOR_TEMPLATE_ID, question, opening_ts, question_asker, nonce);
+        require(!executed_propositions[question_id], "Proposition can only be executed once");
         bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).removeArbitrator.selector);
         bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
-        delete remove_arbitrator_propositions[whitelist_arbitrator][arbitrator_to_remove];
+        executed_propositions[question_id] = true;
     }
 
     function executeTokenSale(WhitelistArbitrator wa, bytes32 order_id, uint256 num_gov_tokens)
