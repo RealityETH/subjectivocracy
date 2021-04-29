@@ -1,5 +1,10 @@
 pragma solidity ^0.4.25;
 
+
+import './RealitioSafeMath256.sol';
+import './RealitioSafeMath32.sol';
+import './ERC20.sol';
+
 import './ForkableRealitioERC20.sol';
 import './RealitioERC20.sol';
 import './IArbitrator.sol';
@@ -9,7 +14,7 @@ import './BridgeToL2.sol';
 
 // An ERC20 token committed to a particular fork.
 // If enough funds are committed, it can enter a forking state, which effectively creates a futarchic market between two competing bridge contracts, and therefore two competing L2 ledgers.
-contract ForkManager is IArbitrator, IForkManager, RealitioERC20  {
+contract ForkManager is IArbitrator, IForkManager, ERC20 {
 
     // When we try to add or remove an arbitrator or upgrade the bridge, use this timeout for the reality.eth question
     uint32 constant REALITY_ETH_TIMEOUT = 604800; // 1 week
