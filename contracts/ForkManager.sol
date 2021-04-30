@@ -104,10 +104,13 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         BridgeToL2 newBridgeToL2 = BridgeToL2(_deployProxy(bridgeToL2));
 
         // TODO Repeat for bridge in other direction?
+// TODO: Substitute the specified contract for an upgrade
 
         newBridgeToL2.setParent(this);
         newBridgeToL2.init();
 
+
+// TODO: We can simplify this to avoid the need to know the parent since we only migrate one question
         ForkableRealitioERC20 newRealitio = ForkableRealitioERC20(_deployProxy(realitio));
         newRealitio.setParent(IForkableRealitio(realitio));
         newRealitio.setToken(newFm);
@@ -390,6 +393,17 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
 
         return addrs;
 
+    }
+
+    function pickFork(IForkManager fork, uint256 num) 
+    external {
+        require(isForking(), "Not forking");
+        require(!isForkingResolved(), "Too late");
+        require(fork == childForkManager1 || fork == childForkManager2, "Fork not listed");
+        require(balanceOf[msg.sender] > num, "Not enough funds");
+        balanceOf[msg.sender] = balanceOf[msg.sender].sub(num);
+        totalSupply = totalSupply.sub(num);
+        fork.mint(msg.sender, num);
     }
 
 }
