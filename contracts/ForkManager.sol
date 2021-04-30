@@ -109,13 +109,8 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         newBridgeToL2.setParent(this);
         newBridgeToL2.init();
 
-
-// TODO: We can simplify this to avoid the need to know the parent since we only migrate one question
         ForkableRealitioERC20 newRealitio = ForkableRealitioERC20(_deployProxy(realitio));
-        newRealitio.setParent(IForkableRealitio(realitio));
-        newRealitio.setToken(newFm);
-        newRealitio.init();
-        newRealitio.importQuestion(question_id);
+        newRealitio.init(newFm, question_id);
 
         address payee = last_answer == result ? last_answerer : address(this);
         newRealitio.submitAnswerByArbitrator(question_id, result, payee);

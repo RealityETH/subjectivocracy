@@ -23,7 +23,6 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
     uint256 constant BOND_CLAIM_FEE_PROPORTION = 10; // One 10th ie 10%
 
     bool is_frozen;
-    IForkableRealitio parent;
 
     event LogNewTemplate(
         uint256 indexed template_id,
@@ -151,30 +150,16 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
         _;
     }
 
-    function setToken(IERC20 _token) 
-    public
-    {
-        require(token == IERC20(0x0), "Token can only be initialized once");
-        token = _token;
-    }
-
-    function setParent(IForkableRealitio _parent) 
+    function init(IERC20 _token, bytes32 _question_id)
     public {
-        parent = _parent;
-    }
-
-    function init()
-    public {
+        require(token == address(0), "Can only be initialized once");
         createTemplate('{"title": "Should we add arbitrator %s to whitelist contract %s", "type": "bool"}');
         createTemplate('{"title": "Should we remove arbitrator %s to whitelist contract %s", "type": "bool"}');
         createTemplate('{"title": "Should switch to ForkManager %s", "type": "bool"}');
-    }
-
-    /// @notice Constructor, sets up some initial templates
-    /// @dev Creates some generalized templates for different question types used in the DApp.
-    constructor() 
-    public {
-        init();
+        token = _token;
+        if (_question_id != bytes32(0x0)) {
+            _importQuestion(_question_id);
+        }
     }
 
     /// @notice Create a reusable template, which should be a JSON document.
@@ -710,12 +695,9 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
     /// Other questions will to be created as if asked new, but this method preserves their old question_ids
     /// NB The question_id will no longer match the hash of the content, as the arbitrator has changed
     /// @param question_id - The ID of the question to migrate.
-    function importQuestion(bytes32 question_id) 
-        stateNotCreated(question_id)
-    external {
-
-        require(msg.sender == address(parent), "Only the parent ForkManger can import questions");
-
+    function _importQuestion(bytes32 question_id) 
+    internal {
+        IForkableRealitio parent = IForkableRealitio(msg.sender);
         questions[question_id] = Question(
             parent.getContentHash(question_id),	
             token,
