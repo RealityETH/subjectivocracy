@@ -98,7 +98,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     // A governance fork will use the specified contract for one of the options.
     // It can have its own setup logic if you want to change the Realitio or bridge code.
     // TODO: Maybe better to find the uppermost library address instead of delegating proxies to delegating proxies?
-    function _cloneForFork(bytes32 question_id, uint256 migrate_funds, bytes32 last_answer, address last_answerer, bytes32 result) 
+    function _cloneForFork(bytes32 question_id, uint256 migrate_funds, bytes32 last_answer, address last_answerer, bytes32 result, address upgrade_bridge) 
     internal returns (IForkManager) {
         IForkManager newFm = IForkManager(_deployProxy(this));
         BridgeToL2 newBridgeToL2 = BridgeToL2(_deployProxy(bridgeToL2));
@@ -124,8 +124,18 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     /// @notice Request arbitration, freezing the question until we send submitAnswerByArbitrator
     /// @param question_id The question in question
     /// @param max_previous If specified, reverts if a bond higher than this was submitted after you sent your transaction.
-    function requestArbitrationByFork(bytes32 question_id, uint256 max_previous, bytes32 last_history_hash, bytes32 last_answer, address last_answerer)
+    function requestArbitrationByFork(bytes32 question_id, uint256 template_id, uint32 opening_ts, string question, uint256 max_previous, bytes32 last_history_hash, bytes32 last_answer, address last_answerer)
     external returns (bool) {
+
+        bytes32 content_hash = keccak256(abi.encodePacked(template_id, opening_ts, question));
+        require(realitio.getContentHash(question_id) == content_hash, "Incorrect params");
+
+        // In bridge upgrades we get the bridge to upgrade to in the fork
+        // In whitelist changes we just make two forks, we don't care what for
+        address upgrade_bridge;
+        if (template_id == BRIDGE_UPGRADE_TEMPLATE_ID) {
+            upgrade_bridge = _toAddress(abi.encodePacked(question)); // TODO: Check the _toString and _toAddress functions do the round-trip correctly
+        }
 
         require(realitio.getHistoryHash(question_id) == keccak256(abi.encodePacked(last_history_hash, last_answer, realitio.getBond(question_id), last_answer, false)));
 
@@ -139,8 +149,8 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         realitio.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
         uint256 migrate_funds = realitio.getCumulativeBonds(question_id);
 
-        childForkManager1 = ForkManager(_cloneForFork(question_id, migrate_funds, last_answer, last_answerer, bytes32(0)));
-        childForkManager2 = ForkManager(_cloneForFork(question_id, migrate_funds, last_answer, last_answerer, bytes32(1)));
+        childForkManager1 = ForkManager(_cloneForFork(question_id, migrate_funds, last_answer, last_answerer, bytes32(0), address(0x0)));
+        childForkManager2 = ForkManager(_cloneForFork(question_id, migrate_funds, last_answer, last_answerer, bytes32(1), upgrade_bridge));
 
         forkExpirationTS = block.timestamp + FORK_TIME_SECS;
 
@@ -328,7 +338,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     }
 
     function _toString(bytes memory data) 
-	internal pure returns(string memory) {
+    internal pure returns(string memory) {
         bytes memory alphabet = "0123456789abcdef";
 
         bytes memory str = new bytes(2 + data.length * 2);
@@ -339,6 +349,13 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
                 str[3+i*2] = alphabet[uint(uint8(data[i] & 0x0f))];
         }
         return string(str);
+    }
+
+    function _toAddress(bytes memory data) 
+    internal pure returns (address addr) {
+        assembly {
+            addr := mload(add(data, 32))
+        } 
     }
 
     /// @notice Returns the address of a proxy based on the specified address
