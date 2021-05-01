@@ -14,6 +14,15 @@ import './BridgeToL2.sol';
 // If enough funds are committed, it can enter a forking state, which effectively creates a futarchic market between two competing bridge contracts, and therefore two competing L2 ledgers.
 contract ForkManager is IArbitrator, IForkManager, ERC20 {
 
+    // The way we access L2
+    BridgeToL2 public bridgeToL2;
+
+    // If we fork, our parent will be able to tell us to mint funds
+    ForkManager public parentForkManager;
+
+    // We use a special Reality.eth instance for governance and arbitration whitelist management
+    ForkableRealitioERC20 public realitio;
+
     // When we try to add or remove an arbitrator or upgrade the bridge, use this timeout for the reality.eth question
     uint32 constant REALITY_ETH_TIMEOUT = 604800; // 1 week
 
@@ -25,14 +34,15 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     uint256 REMOVE_ARBITRATOR_TEMPLATE_ID = 2147483649;
     uint256 BRIDGE_UPGRADE_TEMPLATE_ID = 2147483650;
 
-    // 5% of total supply will prompt a fork.
+    // We act as the arbitrator for the ForkableRealitioERC20 instance. We arbitrate by forking.
+    // Our fee to arbitrate (ie fork) will be 5% of total supply.
     // Usually you'd do this as part of a reality.eth arbitration request which will fund you, although you don't have to.
     uint256 constant PERCENT_TO_FORK = 5;
 
     // 1% of total supply can freeze the bridges while we ask a governance question
     uint256 constant PERCENT_TO_FREEZE = 1;
 
-    // In a fork, give people 1 week to pick a side.
+    // In a fork, give people 1 week to pick a side. After that, we will declare one side the "winner".
     uint256 constant FORK_TIME_SECS = 604800; // 1 week
 
     // If we fork over one question, but bridges are already frozen over another, we reset any outstanding questions on child forks and you have to ask them again.
@@ -40,16 +50,11 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     // After this time, if nobody recreated them, anybody can unfreeze them.
     uint256 constant POST_FORK_FREEZE_TIMEOUT = 604800;
 
-    ForkableRealitioERC20 public realitio;
-    BridgeToL2 public bridgeToL2;
-
-    ForkManager public parentForkManager;
-
     // A list of questions that have been used to freeze governance
     mapping(bytes32 => bool) governance_freeze_question_ids;
     uint256 numGovernanceFreezes;
 
-    // Governance questions will be cleared on a fork and can be re-asked if still relevant
+    // Governance questions will be cleared when we fork, if you still care about them you can ask them again.
     // However, if we forked over arbitration but had some unresolved governance questions, we stay frozen initially to give people time to recreate them
     uint256 initial_governance_freeze_timeout;
 
