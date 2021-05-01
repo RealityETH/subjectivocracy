@@ -62,7 +62,6 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     ForkManager public childForkManager2;
 
     bytes32 fork_question_id;
-    address upgrade_bridge;
     uint256 public amountMigrated1;
     uint256 public amountMigrated2;
 
@@ -150,19 +149,12 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     /// @notice Request arbitration, freezing the question until we send submitAnswerByArbitrator
     /// @param question_id The question in question
     /// @param max_previous If specified, reverts if a bond higher than this was submitted after you sent your transaction.
-    function requestArbitrationByFork(bytes32 question_id, uint256 template_id, uint32 opening_ts, string question, uint256 max_previous, bytes32 last_history_hash, bytes32 last_answer, address last_answerer)
+    function requestArbitrationByFork(bytes32 question_id, uint256 max_previous, bytes32 last_history_hash, bytes32 last_answer, address last_answerer)
     external returns (bool) {
 
-        bytes32 content_hash = keccak256(abi.encodePacked(template_id, opening_ts, question));
-        require(realitio.getContentHash(question_id) == content_hash, "Incorrect params");
-
-        // In bridge upgrades we get the bridge to upgrade to in the fork
-        // In whitelist changes we just make two forks, we don't care what for
-        if (template_id == BRIDGE_UPGRADE_TEMPLATE_ID) {
-            upgrade_bridge = _toAddress(abi.encodePacked(question)); // TODO: Check the _toString and _toAddress functions do the round-trip correctly
-        }
-
-        require(realitio.getHistoryHash(question_id) == keccak256(abi.encodePacked(last_history_hash, last_answer, realitio.getBond(question_id), last_answer, false)));
+        // If it's an upgrade question we can get its question ID here.
+        // If it's not an upgrade question we don't need the detail here.
+        address upgrade_bridge = propositions_bridge_upgrade[question_id];
 
         require(question_id != bytes32(0), "Question ID is empty");
         require(isUnForked(), 'Already forked, call against the winning child');
