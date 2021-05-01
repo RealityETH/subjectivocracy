@@ -59,6 +59,11 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     ForkManager public childForkManager1;
     ForkManager public childForkManager2;
 
+    bytes32 fork_question_id;
+    address upgrade_bridge;
+    uint256 public amountMigrated1;
+    uint256 public amountMigrated2;
+
     ForkManager public replacedByForkManager;
 
     uint256 forkExpirationTS = 0;
@@ -98,27 +103,42 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     // A governance fork will use the specified contract for one of the options.
     // It can have its own setup logic if you want to change the Realitio or bridge code.
     // TODO: Maybe better to find the uppermost library address instead of delegating proxies to delegating proxies?
-    function _cloneForFork(bytes32 question_id, uint256 migrate_funds, bytes32 last_answer, address last_answerer, bytes32 result, address upgrade_bridge) 
-    internal returns (IForkManager) {
-        IForkManager newFm = IForkManager(_deployProxy(this));
+    function cloneForFork(bool yes_or_no, bytes32 last_answer, address last_answerer, bytes32 result) 
+    external {
+
+        if (yes_or_no) {
+            require(address(childForkManager1) == address(0), "Already migrated");
+        } else {
+            require(address(childForkManager2) == address(0), "Already migrated");
+        }
+
+        require(fork_question_id != bytes32(0), "Fork not initiated");
+        uint256 migrate_funds = realitio.getCumulativeBonds(fork_question_id);
+
+        ForkManager newFm = ForkManager(_deployProxy(this));
         BridgeToL2 newBridgeToL2 = BridgeToL2(_deployProxy(bridgeToL2));
 
         // TODO Repeat for bridge in other direction?
-// TODO: Substitute the specified contract for an upgrade
+        // TODO: Substitute the specified contract for an upgrade
 
         newBridgeToL2.setParent(this);
         newBridgeToL2.init();
 
         ForkableRealitioERC20 newRealitio = ForkableRealitioERC20(_deployProxy(realitio));
-        newRealitio.init(newFm, question_id);
+        newRealitio.init(newFm, fork_question_id);
 
         address payee = last_answer == result ? last_answerer : address(this);
-        newRealitio.submitAnswerByArbitrator(question_id, result, payee);
+        newRealitio.submitAnswerByArbitrator(fork_question_id, result, payee);
 
         newFm.init(address(this), address(newRealitio), address(bridgeToL2), (numGovernanceFreezes > 0));
         newFm.mint(newRealitio, migrate_funds);
 
-        return newFm;
+        if (yes_or_no) {
+            childForkManager1 = ForkManager(newFm);
+        } else {
+            childForkManager2 = ForkManager(newFm);
+        }
+
     }
 
     /// @notice Request arbitration, freezing the question until we send submitAnswerByArbitrator
@@ -132,7 +152,6 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
 
         // In bridge upgrades we get the bridge to upgrade to in the fork
         // In whitelist changes we just make two forks, we don't care what for
-        address upgrade_bridge;
         if (template_id == BRIDGE_UPGRADE_TEMPLATE_ID) {
             upgrade_bridge = _toAddress(abi.encodePacked(question)); // TODO: Check the _toString and _toAddress functions do the round-trip correctly
         }
@@ -147,12 +166,9 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(fork_cost);
 
         realitio.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
-        uint256 migrate_funds = realitio.getCumulativeBonds(question_id);
+        fork_question_id = question_id;
 
-        childForkManager1 = ForkManager(_cloneForFork(question_id, migrate_funds, last_answer, last_answerer, bytes32(0), address(0x0)));
-        childForkManager2 = ForkManager(_cloneForFork(question_id, migrate_funds, last_answer, last_answerer, bytes32(1), upgrade_bridge));
-
-        forkExpirationTS = block.timestamp + FORK_TIME_SECS;
+        // Anybody can now call cloneForFork() for each fork
 
     }
 
@@ -183,7 +199,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     external {
         require(isForkingResolved(), 'Not forking');
         require(block.timestamp > forkExpirationTS, 'Too soon');
-        if (childForkManager1.totalSupply() > childForkManager2.totalSupply()) {
+        if (amountMigrated1 > amountMigrated2) {
             replacedByForkManager = childForkManager1;
         } else {
             replacedByForkManager = childForkManager2;
@@ -407,15 +423,19 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
 
     }
 
-    function pickFork(IForkManager fork, uint256 num) 
+    function pickFork(bool yes_no, uint256 num) 
     external {
         require(isForking(), "Not forking");
         require(!isForkingResolved(), "Too late");
-        require(fork == childForkManager1 || fork == childForkManager2, "Fork not listed");
+
         require(balanceOf[msg.sender] > num, "Not enough funds");
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(num);
         totalSupply = totalSupply.sub(num);
-        fork.mint(msg.sender, num);
+        if (yes_no) {
+            childForkManager1.mint(msg.sender, num);
+        } else {
+            childForkManager2.mint(msg.sender, num);
+        }
     }
 
 }
