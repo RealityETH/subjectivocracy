@@ -427,13 +427,14 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     external {
         require(isForking(), "Not forking");
         require(!isForkingResolved(), "Too late");
-
         require(balanceOf[msg.sender] > num, "Not enough funds");
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(num);
         totalSupply = totalSupply.sub(num);
         if (yes_no) {
+            require(childForkManager1 != address(0), "Call deployFork first");
             childForkManager1.mint(msg.sender, num);
         } else {
+            require(childForkManager2 != address(0), "Call deployFork first");
             childForkManager2.mint(msg.sender, num);
         }
     }
