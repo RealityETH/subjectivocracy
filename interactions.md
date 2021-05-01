@@ -243,7 +243,7 @@ It's its own transaction on the forkable version because forking for one questio
 
 ### Execute a governance change
 ```
-    Charlie L1  ForkManager.executeGovernanceUpdate:(gov_question_id) 
+    Charlie L1  ForkManager.executeBridgeUpdate:(gov_question_id) 
                     RealityETH.resultFor(gov_question_id)
                     # Update to reflect child forkmanager
                     # Has the effect of unfreezing bridges, may be new bridges
@@ -251,7 +251,7 @@ It's its own transaction on the forkable version because forking for one questio
 
 ### Clear a failed urgent governance proposal
 ```
-   Bob     L1  ForkManager.clearFailedGovernanceProposal(contest_question_id)
+   Bob     L1  ForkManager.clearFailedBridgeProposal(contest_question_id)
                     RealityETH.resultFor(contest_question_id)
                     # Update self to say the previous bridge is back in action
 ```
@@ -263,7 +263,7 @@ It's its own transaction on the forkable version because forking for one questio
                     GovToken.transfer(Charlie, 200)
 ```
 Next step:
-* The question can be recreated on each chain, [Recreate a question after a fork](recreate-a-question-after-a-fork) 
+* If the question is still relevant it can be begun again on either chain or both.
 
 
 ### Buy Accumulated Tokens by burning GovTokens
