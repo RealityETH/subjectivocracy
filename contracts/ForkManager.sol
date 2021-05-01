@@ -103,7 +103,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     // A governance fork will use the specified contract for one of the options.
     // It can have its own setup logic if you want to change the Realitio or bridge code.
     // TODO: Maybe better to find the uppermost library address instead of delegating proxies to delegating proxies?
-    function cloneForFork(bool yes_or_no, bytes32 last_answer, address last_answerer, bytes32 result) 
+    function deployFork(bool yes_or_no, bytes32 last_answer, address last_answerer, bytes32 result) 
     external {
 
         if (yes_or_no) {
@@ -168,7 +168,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         realitio.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
         fork_question_id = question_id;
 
-        // Anybody can now call cloneForFork() for each fork
+        // Anybody can now call deployFork() for each fork
 
     }
 
