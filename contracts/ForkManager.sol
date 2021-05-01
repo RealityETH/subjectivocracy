@@ -120,14 +120,29 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         require(fork_question_id != bytes32(0), "Fork not initiated");
         uint256 migrate_funds = realitio.getCumulativeBonds(fork_question_id);
 
+        address upgrade_bridge = propositions_bridge_upgrade[fork_question_id];
+
         ForkManager newFm = ForkManager(_deployProxy(this));
-        BridgeToL2 newBridgeToL2 = BridgeToL2(_deployProxy(bridgeToL2));
 
-        // TODO Repeat for bridge in other direction?
-        // TODO: Substitute the specified contract for an upgrade
+        // If this is a bridge upgrade proposition, we use the specified bridge for the yes fork.
+        // Otherwise we just clone the current one.
 
-        newBridgeToL2.setParent(this);
-        newBridgeToL2.init();
+        BridgeToL2 newBridgeToL2;
+        if (yes_or_no && upgrade_bridge != address(0)) {
+
+            newBridgeToL2 = BridgeToL2(upgrade_bridge);
+
+        } else {
+
+            newBridgeToL2 = BridgeToL2(_deployProxy(bridgeToL2));
+
+            // TODO Repeat for bridge in other direction?
+            // TODO: Substitute the specified contract for an upgrade
+
+            newBridgeToL2.setParent(this);
+            newBridgeToL2.init();
+
+        }
 
         ForkableRealitioERC20 newRealitio = ForkableRealitioERC20(_deployProxy(realitio));
         newRealitio.init(newFm, fork_question_id);
@@ -151,10 +166,6 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     /// @param max_previous If specified, reverts if a bond higher than this was submitted after you sent your transaction.
     function requestArbitrationByFork(bytes32 question_id, uint256 max_previous, bytes32 last_history_hash, bytes32 last_answer, address last_answerer)
     external returns (bool) {
-
-        // If it's an upgrade question we can get its question ID here.
-        // If it's not an upgrade question we don't need the detail here.
-        address upgrade_bridge = propositions_bridge_upgrade[question_id];
 
         require(question_id != bytes32(0), "Question ID is empty");
         require(isUnForked(), 'Already forked, call against the winning child');
