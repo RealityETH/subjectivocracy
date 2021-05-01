@@ -270,7 +270,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     function beginUpgradeBridge(address new_bridge) 
     external {
         string memory question = _toString(abi.encodePacked(new_bridge));
-        bytes32 question_id = realitio.askQuestion(REMOVE_ARBITRATOR_TEMPLATE_ID, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
+        bytes32 question_id = realitio.askQuestion(BRIDGE_UPGRADE_TEMPLATE_ID, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
         propositions_bridge_upgrade[question_id] = new_bridge;
     }
 
