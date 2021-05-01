@@ -280,11 +280,10 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     // Verify that a question is still open with a minimum bond specified
     // This can be used to freeze operations pending the outcome of a governance question
     function _verifyMinimumBondPosted(bytes32 question_id, uint256 minimum_bond) 
-    internal returns (bytes32) {
+    internal {
         require(!realitio.isFinalized(question_id), "Question is already finalized, execute instead");
         require(realitio.getBestAnswer(question_id) == bytes32(1), "Current answer is not 1");
         require(realitio.getBond(question_id) >= minimum_bond, "Bond not high enough");
-        return question_id;
     }
 
     function clearFailedGovernanceProposal(bytes32 question_id) 
