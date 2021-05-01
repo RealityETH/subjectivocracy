@@ -108,13 +108,16 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     // A governance fork will use the specified contract for one of the options.
     // It can have its own setup logic if you want to change the Realitio or bridge code.
     // TODO: Maybe better to find the uppermost library address instead of delegating proxies to delegating proxies?
-    function deployFork(bool yes_or_no, bytes32 last_answer, address last_answerer, bytes32 result) 
+    function deployFork(bool yes_or_no, bytes32 last_answer, address last_answerer) 
     external {
 
+        bytes32 result;
         if (yes_or_no) {
             require(address(childForkManager1) == address(0), "Already migrated");
+            result = bytes32(1);
         } else {
             require(address(childForkManager2) == address(0), "Already migrated");
+            result = bytes32(0);
         }
 
         require(fork_question_id != bytes32(0), "Fork not initiated");
@@ -126,7 +129,6 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
 
         // If this is a bridge upgrade proposition, we use the specified bridge for the yes fork.
         // Otherwise we just clone the current one.
-
         BridgeToL2 newBridgeToL2;
         if (yes_or_no && upgrade_bridge != address(0)) {
             newBridgeToL2 = BridgeToL2(upgrade_bridge);
@@ -136,6 +138,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
 
         // TODO Repeat for bridge in other direction?
 
+        // If it's a new bridge should let us call these without error
         newBridgeToL2.setParent(this);
         newBridgeToL2.init();
 
