@@ -171,27 +171,22 @@ Next step:
 ### Challenge an arbitration or governance result
 ```
     Bob     L1  ForkManager.requestArbitrationByFork(contest_question_id, uint256 max_previous, ...)
-                    f1 = self.clone(now + 1 days, RealityETH, BridgeToL2, BridgeFromL2)
-                        RealityETHFork1 = RealityETH.clone();
-                        RealityETHFork1.setParent(address(RealityETH));
-                        BridgeToL2.clone()
-                        BridgeFromL2.clone()
-                        # Burn balance of the question in ourselves
-                        # Mint same balance on the cloned token for the new RealityETH
-                        RealityETHFork1.importQuestion(contest_question_id, true)
-                        RealityETHFork1.submitAnswerByArbitrator(contest_question_id, 1)
-                    f2 = self.clone(now + 1 days, RealityETH, BridgeFromL2, BridgeFromL2)
-                        RealityETHFork2 = RealityETH.clone() 
-                        BridgeFromL2.clone()
-                        BridgeToL2.clone()
-                        RealityETHFork2.setParent(address(RealityETH));
-                        # Burn balance of the question in ourselves
-                        # Mint same balance on the cloned token for the new RealityETH
-                        RealityETHFork2.importQuestion(contest_question_id, true)
-                        RealityETHFork2.submitAnswerByArbitrator(contest_question_id, 0)
                     # Marks this question done and freezes everything else
                     RealityETH.notifyOfArbitrationRequest(contest_question_id, msg.sender, max_previous);
 
+    Bob     L1  ForkManager.deployFork(false, contested question data)
+                # Clones ForkManager
+                # Clones Bridge
+                # Clones RealityETH
+                # Copies contested question to child RealityETH
+                # Tells child ForkManager to credit funds for contested question to new RealityETH
+
+    Charlie L1  ForkManager.deployFork(true, contested question data)
+                # Clones ForkManager
+                # Clones Bridge
+                # Clones RealityETH
+                # Copies contested question to child RealityETH
+                # Tells child ForkManager to credit funds for contested question to new RealityETH
 ```
 
 Next step:
