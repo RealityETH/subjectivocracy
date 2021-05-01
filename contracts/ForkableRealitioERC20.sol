@@ -635,6 +635,7 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
         bytes32[] history_hashes, address[] addrs, uint256[] bonds, bytes32[] answers
     ) 
         stateFrozen()
+        stateOpen(question_id)
     public {
 
         require(history_hashes.length > 0, "at least one history hash entry must be provided");
