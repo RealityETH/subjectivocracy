@@ -41,8 +41,6 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     // After this time, if nobody recreated them, anybody can unfreeze them.
     uint256 constant POST_FORK_FREEZE_TIMEOUT = 604800;
 
-    mapping(bytes32 => bool) executed_propositions;
-
     ForkableRealitioERC20 public realitio;
     BridgeToL2 public bridgeToL2;
 
@@ -73,7 +71,14 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
 
     uint256 public totalSupply;
 
-    mapping(bytes32 => bool) executed_questions;
+    struct ArbitratorProposition{
+        address whitelist_arbitrator;    
+        address arbitrator;    
+    }
+
+    mapping(bytes32 => ArbitratorProposition) propositions_arbitrator_add;
+    mapping(bytes32 => ArbitratorProposition) propositions_arbitrator_remove;
+    mapping(bytes32 => address) propositions_bridge_upgrade;
 
     function init(address _parentForkManager, address _realitio, address _bridgeToL2, bool _has_governance_freeze) 
     external {
@@ -249,100 +254,127 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     // 2) Prove bond posted, freeze
     // 3) Complete operation or Undo freeze
 
-    function _verifyPropositionPassed(uint256 template_id, string memory question, uint32 opening_ts, address question_creator, uint256 nonce) 
-    internal returns (bytes32) {
-        bytes32 content_hash = keccak256(abi.encodePacked(template_id, opening_ts, question));
-        bytes32 question_id = keccak256(abi.encodePacked(content_hash, this, REALITY_ETH_TIMEOUT, msg.sender, nonce));
-        require(realitio.resultFor(question_id) == bytes32(1), "Governance proposal did not pass");
-        return question_id;
+    function beginAddArbitratorToWhitelist(address whitelist_arbitrator, address arbitrator_to_add) 
+    external {
+        string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_add));
+        bytes32 question_id = realitio.askQuestion(ADD_ARBITRATOR_TEMPLATE_ID, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
+        propositions_arbitrator_add[question_id] = ArbitratorProposition(whitelist_arbitrator, arbitrator_to_add);
     }
 
-    function _verifyPropositionFailed(uint256 template_id, string memory question, uint32 opening_ts, address question_creator, uint256 nonce) 
-    internal returns (bytes32) {
-        bytes32 content_hash = keccak256(abi.encodePacked(template_id, opening_ts, question));
-        bytes32 question_id = keccak256(abi.encodePacked(content_hash, this, REALITY_ETH_TIMEOUT, question_creator, nonce));
-        require(realitio.resultFor(question_id) != bytes32(1), "Governance proposal did not pass");
-        return question_id;
+    function beginRemoveArbitratorFromWhitelist(address whitelist_arbitrator, address arbitrator_to_remove) 
+    external {
+        string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_remove));
+        bytes32 question_id = realitio.askQuestion(REMOVE_ARBITRATOR_TEMPLATE_ID, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
+        propositions_arbitrator_remove[question_id] = ArbitratorProposition(whitelist_arbitrator, arbitrator_to_remove);
+    }
+
+    function beginUpgradeBridge(address new_bridge) 
+    external {
+        string memory question = _toString(abi.encodePacked(new_bridge));
+        bytes32 question_id = realitio.askQuestion(REMOVE_ARBITRATOR_TEMPLATE_ID, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
+        propositions_bridge_upgrade[question_id] = new_bridge;
     }
 
     // Verify that a question is still open with a minimum bond specified
     // This can be used to freeze operations pending the outcome of a governance question
-    function _verifyMinimumBondPosted(uint256 template_id, string memory question, uint32 opening_ts, address question_creator, uint256 minimum_bond) 
+    function _verifyMinimumBondPosted(bytes32 question_id, uint256 minimum_bond) 
     internal returns (bytes32) {
-        bytes32 content_hash = keccak256(abi.encodePacked(template_id, opening_ts, question));
-        bytes32 question_id = keccak256(abi.encodePacked(content_hash, this, REALITY_ETH_TIMEOUT, question_creator, uint256(0)));
         require(!realitio.isFinalized(question_id), "Question is already finalized, execute instead");
         require(realitio.getBestAnswer(question_id) == bytes32(1), "Current answer is not 1");
         require(realitio.getBond(question_id) >= minimum_bond, "Bond not high enough");
         return question_id;
     }
 
-    // If you've sent a proposition to reality.eth and it passed without needing arbitration, you can complete it by passing the details in here
-    function executeBridgeUpgrade(address new_bridge, uint32 opening_ts, address question_asker, uint256 nonce) 
+    function clearFailedGovernanceProposal(bytes32 question_id) 
     external {
-        string memory question = _toString(abi.encodePacked(new_bridge));
-        bytes32 question_id = _verifyPropositionPassed(BRIDGE_UPGRADE_TEMPLATE_ID, question, opening_ts, question_asker, nonce);
-        require(!executed_propositions[question_id], "Proposition can only be executed once");
+
+        require(propositions_bridge_upgrade[question_id] != address(0x0), "Proposition not recognized");
+        require(realitio.resultFor(question_id) != bytes32(1), "Proposition passed");
+
+        if (governance_question_ids[question_id]) {
+            delete(governance_question_ids[question_id]);
+            numGovernanceFreezes--;
+        }
+    }
+
+    // If you've sent a proposition to reality.eth and it passed without needing arbitration, you can complete it by passing the details in here
+    function executeBridgeUpgrade(bytes32 question_id) 
+    external {
+
+        address new_bridge = propositions_bridge_upgrade[question_id];
+        require(new_bridge != address(0x0), "Proposition not recognized");
+        require(realitio.resultFor(question_id) == bytes32(1), "Proposition did not pass");
 
         // If we froze the bridges for this question, clear the freeze
         if (governance_question_ids[question_id]) {
             delete(governance_question_ids[question_id]);
             numGovernanceFreezes--;
         }
-        executed_propositions[question_id] = true;
+        delete(propositions_bridge_upgrade[question_id]);
 
         bridgeToL2 = BridgeToL2(new_bridge);
     }
 
-    function clearFailedGovernanceProposal(address new_bridge, uint32 opening_ts, address question_asker, uint256 nonce) 
-    external {
-        string memory question = _toString(abi.encodePacked(new_bridge));
-        bytes32 question_id = _verifyPropositionFailed(BRIDGE_UPGRADE_TEMPLATE_ID, question, opening_ts, question_asker, nonce);
-        if (governance_question_ids[question_id]) {
-            delete(governance_question_ids[question_id]);
-            numGovernanceFreezes--;
-        }
-    }
 
-    function freezeBridges(address new_bridge, uint32 opening_ts, address question_asker) 
+    // TODO: Think about whether this is bad right at the start of the fork process when stuff hasn't been migrated yet
+    function freezeBridges(bytes32 question_id) 
     external {
-        // TODO: Think about whether this is bad right at the start of the fork process when stuff hasn't been migrated yet
-        uint256 required_bond = totalSupply/100 * PERCENT_TO_FREEZE;
-        string memory question = _toString(abi.encodePacked(new_bridge));
-        bytes32 question_id = _verifyMinimumBondPosted(BRIDGE_UPGRADE_TEMPLATE_ID, question, opening_ts, question_asker, required_bond);
+        require(propositions_bridge_upgrade[question_id] != address(0), "Proposition not recognized");
         require(!governance_question_ids[question_id], "Already frozen");
+
+        uint256 required_bond = totalSupply/100 * PERCENT_TO_FREEZE;
+        _verifyMinimumBondPosted(question_id, required_bond);
         governance_question_ids[question_id] = true;
+
         numGovernanceFreezes++;
     }
 
-    function executeAddArbitratorToWhitelist(address whitelist_arbitrator, address arbitrator_to_add, uint32 opening_ts, address question_creator, uint256 nonce) {
-        string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_add));
-        bytes32 question_id = _verifyPropositionPassed(ADD_ARBITRATOR_TEMPLATE_ID, question, opening_ts, question_creator, nonce);
-        require(!executed_propositions[question_id], "Question already executed");
+    function executeAddArbitratorToWhitelist(bytes32 question_id) 
+    external {
+        address whitelist_arbitrator = propositions_arbitrator_add[question_id].whitelist_arbitrator;
+        address arbitrator_to_add = propositions_arbitrator_add[question_id].arbitrator;
+
+        require(whitelist_arbitrator != address(0x0), "Proposition not recognized");
+
+        require(realitio.resultFor(question_id) == bytes32(1), "Proposition did not pass");
+
         bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).addArbitrator.selector);
         bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
-        executed_propositions[question_id] = true;
+
+        delete(propositions_arbitrator_add[question_id]);
     }
 
     // If you're about to pass a proposition but you don't want bad things to happen in the meantime
     // ...you can freeze stuff by proving that you sent a reasonable bond.
     // TODO: Is the claim fee sufficient for this? You could grief by posting a bond then claiming it yourself.
-    function freezeArbitratorOnWhitelist(address whitelist_arbitrator, address arbitrator_to_remove, uint32 opening_ts, address question_creator) {
-        // Require a sufficient bond to have been posted
+    // TODO: Should we check the current answer to make sure the bond is for the remove answer not the keep answer?
+    function freezeArbitratorOnWhitelist(bytes32 question_id) {
+
+        address whitelist_arbitrator = propositions_arbitrator_remove[question_id].whitelist_arbitrator;
+        address arbitrator_to_remove = propositions_arbitrator_remove[question_id].arbitrator;
+
+        require(whitelist_arbitrator != address(0x0), "Proposition not recognized");
+
         uint256 required_bond = totalSupply/100 * PERCENT_TO_FREEZE;
-        string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_remove));
-        _verifyMinimumBondPosted(REMOVE_ARBITRATOR_TEMPLATE_ID, question, opening_ts, question_creator, required_bond);
-        bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).freezeArbitrator.selector);
+        _verifyMinimumBondPosted(question_id, required_bond);
+
+        bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(arbitrator_to_remove).freezeArbitrator.selector);
         bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
     }
     
-    function executeRemoveArbitratorFromWhitelist(address whitelist_arbitrator, address arbitrator_to_remove, uint32 opening_ts, address question_asker, uint256 nonce) {
-        string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_remove));
-        bytes32 question_id =_verifyPropositionPassed(REMOVE_ARBITRATOR_TEMPLATE_ID, question, opening_ts, question_asker, nonce);
-        require(!executed_propositions[question_id], "Proposition can only be executed once");
+    function executeRemoveArbitratorFromWhitelist(bytes32 question_id) 
+    external {
+        address whitelist_arbitrator = propositions_arbitrator_remove[question_id].whitelist_arbitrator;
+        address arbitrator_to_remove = propositions_arbitrator_remove[question_id].arbitrator;
+
+        require(whitelist_arbitrator != address(0x0), "Proposition not recognized");
+
+        require(realitio.resultFor(question_id) == bytes32(1), "Proposition did not pass");
+
         bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).removeArbitrator.selector);
         bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
-        executed_propositions[question_id] = true;
+
+        delete(propositions_arbitrator_add[question_id]);
     }
 
     function executeTokenSale(WhitelistArbitrator wa, bytes32 order_id, uint256 num_gov_tokens)

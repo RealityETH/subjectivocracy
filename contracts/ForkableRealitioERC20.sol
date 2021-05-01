@@ -237,6 +237,7 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
         require(timeout > 0, "timeout must be positive"); 
         require(timeout < 365 days, "timeout must be less than 365 days"); 
         require(arbitrator == address(token), "Our ForkManager must be the arbitrator");
+        require(arbitrator == msg.sender, "Questions must be proxied through the ForkManager");
 
         questions[question_id].content_hash = content_hash;
         questions[question_id].arbitrator = arbitrator;
