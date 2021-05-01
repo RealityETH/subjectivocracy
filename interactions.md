@@ -107,7 +107,8 @@ Next step:
                                                 
 ### Contest an arbitration          
 ```
-    Charlie L1  contest_question_id = RealityETH.askQuestion("should we delist ArbitratorA?")
+    Charlie L1  ForkManager.beginRemoveArbitratorFromWhitelist(address whitelist_arbitrator, address arbitrator_to_remove) 
+                    contest_question_id = RealityETH.askQuestion("should we delist ArbitratorA?")
     Charlie L1  TokenX.approve(RealityETH, 2000000)
     Charlie L1  RealityETH.submitAnswer(contest_question_id, 1, 2000000)
     Charlie L1  ForkManager.freezeArbitrator(contest_question_id)
@@ -148,7 +149,8 @@ Next step:
 
 ### Propose an arbitrator addition
 ```
-    Charlie L1  contest_question_id = RealityETH.askQuestion("should we add ArbitratorA?")
+    Charlie L1  ForkManager.beginAddArbitratorToWhitelist(whitelist_arbitrator, ArbitratorA) 
+                    contest_question_id = RealityETH.askQuestion("should we add ArbitratorA to WhitelistArbitrator?")
     Charlie L1  TokenX.approve(RealityETH, 2000000)
     Charlie L1  RealityETH.submitAnswer(contest_question_id, 1, 2000000)
 ```
@@ -203,7 +205,9 @@ Next step:
 
 ### Propose a routine governance change
 ```
-    Charlie L1  gov_question_id = RealityETH.askQuestion("should we do a routine upgrade to ForkManager XYZ?")
+    Charlie L1  ForkManager.beginUpgradeBridge
+                    gov_question_id = RealityETH.askQuestion("should we do a routine upgrade to ForkManager XYZ?")
+
     Charlie L1  TokenX.approve(RealityETH, 2000000)
     Charlie L1  RealityETH.submitAnswer(gov_question_id, 1, 2000000)
 ```
@@ -224,7 +228,8 @@ It's its own transaction on the forkable version because forking for one questio
 
 ### Propose an urgent governance change
 ```
-    Charlie L1  gov_question_id = RealityETH.askQuestion("should we freeze exits and upgrade to ForkManager XYZ?")
+    Charlie L1  ForkManager.beginUpgradeBridge
+        gov_question_id = RealityETH.askQuestion("should we freeze exits and upgrade to ForkManager XYZ?")
     Charlie L1  TokenX.approve(RealityETH, 2000000)
     Charlie L1  RealityETH.submitAnswer(gov_question_id, 1, 2000000)
     Charlie L1  ForkManager.freezeBridges(gov_question_id)
