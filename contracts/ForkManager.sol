@@ -47,7 +47,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     ForkManager public parentForkManager;
 
     // A list of questions that have been used to freeze governance
-    mapping(bytes32 => bool) governance_question_ids;
+    mapping(bytes32 => bool) governance_freeze_question_ids;
     uint256 numGovernanceFreezes;
 
     // Governance questions will be cleared on a fork and can be re-asked if still relevant
@@ -291,8 +291,8 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         require(propositions_bridge_upgrade[question_id] != address(0x0), "Proposition not recognized");
         require(realitio.resultFor(question_id) != bytes32(1), "Proposition passed");
 
-        if (governance_question_ids[question_id]) {
-            delete(governance_question_ids[question_id]);
+        if (governance_freeze_question_ids[question_id]) {
+            delete(governance_freeze_question_ids[question_id]);
             numGovernanceFreezes--;
         }
     }
@@ -306,8 +306,8 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         require(realitio.resultFor(question_id) == bytes32(1), "Proposition did not pass");
 
         // If we froze the bridges for this question, clear the freeze
-        if (governance_question_ids[question_id]) {
-            delete(governance_question_ids[question_id]);
+        if (governance_freeze_question_ids[question_id]) {
+            delete(governance_freeze_question_ids[question_id]);
             numGovernanceFreezes--;
         }
         delete(propositions_bridge_upgrade[question_id]);
@@ -320,11 +320,11 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     function freezeBridges(bytes32 question_id) 
     external {
         require(propositions_bridge_upgrade[question_id] != address(0), "Proposition not recognized");
-        require(!governance_question_ids[question_id], "Already frozen");
+        require(!governance_freeze_question_ids[question_id], "Already frozen");
 
         uint256 required_bond = totalSupply/100 * PERCENT_TO_FREEZE;
         _verifyMinimumBondPosted(question_id, required_bond);
-        governance_question_ids[question_id] = true;
+        governance_freeze_question_ids[question_id] = true;
 
         numGovernanceFreezes++;
     }
