@@ -129,20 +129,15 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
 
         BridgeToL2 newBridgeToL2;
         if (yes_or_no && upgrade_bridge != address(0)) {
-
             newBridgeToL2 = BridgeToL2(upgrade_bridge);
-
         } else {
-
             newBridgeToL2 = BridgeToL2(_deployProxy(bridgeToL2));
-
-            // TODO Repeat for bridge in other direction?
-            // TODO: Substitute the specified contract for an upgrade
-
-            newBridgeToL2.setParent(this);
-            newBridgeToL2.init();
-
         }
+
+        // TODO Repeat for bridge in other direction?
+
+        newBridgeToL2.setParent(this);
+        newBridgeToL2.init();
 
         ForkableRealitioERC20 newRealitio = ForkableRealitioERC20(_deployProxy(realitio));
         newRealitio.init(newFm, fork_question_id);
