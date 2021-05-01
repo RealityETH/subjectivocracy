@@ -5,7 +5,6 @@ import './RealitioSafeMath32.sol';
 import './ERC20.sol';
 
 import './ForkableRealitioERC20.sol';
-import './RealitioERC20.sol';
 import './IArbitrator.sol';
 import './IForkManager.sol';
 import './WhitelistArbitrator.sol';
