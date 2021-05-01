@@ -66,9 +66,6 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
 
     uint256 forkExpirationTS = 0;
 
-    address arbitration_payer;
-    bytes32 arbitrating_question_id;
-
     uint256 public totalSupply;
 
     struct ArbitratorProposition{
