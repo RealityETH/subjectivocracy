@@ -30,9 +30,9 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     string constant QUESTION_DELIM = "\u241f";
    
     // These are created by ForkableRealitioERC20 in its constructor
-    uint256 ADD_ARBITRATOR_TEMPLATE_ID = 2147483648;
-    uint256 REMOVE_ARBITRATOR_TEMPLATE_ID = 2147483649;
-    uint256 BRIDGE_UPGRADE_TEMPLATE_ID = 2147483650;
+    uint256 TEMPLATE_ID_ADD_ARBITRATOR = 2147483648;
+    uint256 TEMPLATE_ID_REMOVE_ARBITRATOR = 2147483649;
+    uint256 TEMPLATE_ID_BRIDGE_UPGRADE = 2147483650;
 
     // We act as the arbitrator for the ForkableRealitioERC20 instance. We arbitrate by forking.
     // Our fee to arbitrate (ie fork) will be 5% of total supply.
@@ -259,21 +259,21 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     function beginAddArbitratorToWhitelist(address whitelist_arbitrator, address arbitrator_to_add) 
     external {
         string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_add));
-        bytes32 question_id = realitio.askQuestion(ADD_ARBITRATOR_TEMPLATE_ID, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
+        bytes32 question_id = realitio.askQuestion(TEMPLATE_ID_ADD_ARBITRATOR, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
         propositions_arbitrator_add[question_id] = ArbitratorProposition(whitelist_arbitrator, arbitrator_to_add);
     }
 
     function beginRemoveArbitratorFromWhitelist(address whitelist_arbitrator, address arbitrator_to_remove) 
     external {
         string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_remove));
-        bytes32 question_id = realitio.askQuestion(REMOVE_ARBITRATOR_TEMPLATE_ID, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
+        bytes32 question_id = realitio.askQuestion(TEMPLATE_ID_REMOVE_ARBITRATOR, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
         propositions_arbitrator_remove[question_id] = ArbitratorProposition(whitelist_arbitrator, arbitrator_to_remove);
     }
 
     function beginUpgradeBridge(address new_bridge) 
     external {
         string memory question = _toString(abi.encodePacked(new_bridge));
-        bytes32 question_id = realitio.askQuestion(BRIDGE_UPGRADE_TEMPLATE_ID, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
+        bytes32 question_id = realitio.askQuestion(TEMPLATE_ID_BRIDGE_UPGRADE, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
         propositions_bridge_upgrade[question_id] = new_bridge;
     }
 
