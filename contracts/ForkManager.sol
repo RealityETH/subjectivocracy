@@ -400,13 +400,6 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         return string(str);
     }
 
-    function _toAddress(bytes memory data) 
-    internal pure returns (address addr) {
-        assembly {
-            addr := mload(add(data, 32))
-        } 
-    }
-
     /// @notice Returns the address of a proxy based on the specified address
     /// @dev No initialization is done here
     /// @dev based on https://github.com/optionality/clone-factory
