@@ -107,7 +107,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     // When forked, the ultimate totalSupply is not known until migration is complete, but we want to be able to freeze things.
     // Start with an approximation based on how many tokens the parent had.
     function effectiveTotalSupply()
-    internal returns (uint256) {
+    internal view returns (uint256) {
         if (forked_from_parent_ts == 0 || (block.timestamp - forked_from_parent_ts > FORK_TIME_SECS)) {
             return totalSupply;
         } else {
@@ -362,7 +362,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
 
         require(realitio.resultFor(question_id) == bytes32(1), "Proposition did not pass");
 
-        bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).addArbitrator.selector);
+        bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).addArbitrator.selector, arbitrator_to_add);
         bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
 
         delete(propositions_arbitrator_add[question_id]);
@@ -382,7 +382,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         uint256 required_bond = effectiveTotalSupply()/100 * PERCENT_TO_FREEZE;
         _verifyMinimumBondPosted(question_id, required_bond);
 
-        bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(arbitrator_to_remove).freezeArbitrator.selector);
+        bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(arbitrator_to_remove).freezeArbitrator.selector, arbitrator_to_remove);
         bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
     }
     
@@ -395,7 +395,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
 
         require(realitio.resultFor(question_id) == bytes32(1), "Proposition did not pass");
 
-        bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).removeArbitrator.selector);
+        bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).removeArbitrator.selector, arbitrator_to_remove);
         bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
 
         delete(propositions_arbitrator_add[question_id]);
