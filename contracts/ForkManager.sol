@@ -122,6 +122,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         // TODO check events
         totalSupply = totalSupply.add(_amount);
         balanceOf[_to] = balanceOf[_to].add(_amount);
+        emit Transfer(address(0), _to, _amount);
     }
 
     // Function to clone ourselves.
