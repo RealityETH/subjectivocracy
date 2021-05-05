@@ -64,12 +64,16 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     bytes32 fork_question_id;
     uint256 public amountMigrated1;
     uint256 public amountMigrated2;
+    uint256 forked_from_parent_ts = 0;
 
     ForkManager public replacedByForkManager;
 
     uint256 forkExpirationTS = 0;
 
     uint256 public totalSupply;
+
+    uint256 supplyAtFork;
+    uint256 public parentSupply;
 
     struct ArbitratorProposition{
         address whitelist_arbitrator;    
@@ -80,17 +84,35 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     mapping(bytes32 => ArbitratorProposition) propositions_arbitrator_remove;
     mapping(bytes32 => address) propositions_bridge_upgrade;
 
-    function init(address _parentForkManager, address _realitio, address _bridgeToL2, bool _has_governance_freeze) 
+    function init(address _parentForkManager, address _realitio, address _bridgeToL2, bool _has_governance_freeze, uint256 _parentSupply) 
     external {
         require(address(_realitio) != address(0), "Realitio address must be supplied");
         require(address(_bridgeToL2) != address(0), "Bridge address must be supplied");
 
         parentForkManager = ForkManager(_parentForkManager); // 0x0 for genesis
+
         realitio = ForkableRealitioERC20(_realitio);
         bridgeToL2 = BridgeToL2(_bridgeToL2);
 
         if (_has_governance_freeze) {
             initial_governance_freeze_timeout = block.timestamp + POST_FORK_FREEZE_TIMEOUT;
+        }
+        parentSupply = _parentSupply;
+        
+        if (_parentForkManager != address(0x0)) {
+            forked_from_parent_ts = block.timestamp;
+        }
+    }
+
+    // When forked, the ultimate totalSupply is not known until migration is complete, but we want to be able to freeze things.
+    // Start with an approximation based on how many tokens the parent had.
+    function effectiveTotalSupply()
+    internal returns (uint256) {
+        if (forked_from_parent_ts == 0 || (block.timestamp - forked_from_parent_ts > FORK_TIME_SECS)) {
+            return totalSupply;
+        } else {
+            uint256 halfParent = parentSupply.div(2);
+            return (halfParent > totalSupply) ? halfParent : totalSupply;
         }
     }
 
@@ -148,7 +170,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         address payee = last_answer == result ? last_answerer : address(this);
         newRealitio.submitAnswerByArbitrator(fork_question_id, result, payee);
 
-        newFm.init(address(this), address(newRealitio), address(bridgeToL2), (numGovernanceFreezes > 0));
+        newFm.init(address(this), address(newRealitio), address(bridgeToL2), (numGovernanceFreezes > 0), supplyAtFork);
         newFm.mint(newRealitio, migrate_funds);
 
         if (yes_or_no) {
@@ -174,6 +196,9 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
 
         realitio.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
         fork_question_id = question_id;
+
+        forkExpirationTS = block.timestamp + FORK_TIME_SECS;
+        supplyAtFork = totalSupply;
 
         // Anybody can now call deployFork() for each fork
 
@@ -323,7 +348,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         require(propositions_bridge_upgrade[question_id] != address(0), "Proposition not recognized");
         require(!governance_freeze_question_ids[question_id], "Already frozen");
 
-        uint256 required_bond = totalSupply/100 * PERCENT_TO_FREEZE;
+        uint256 required_bond = effectiveTotalSupply()/100 * PERCENT_TO_FREEZE;
         _verifyMinimumBondPosted(question_id, required_bond);
         governance_freeze_question_ids[question_id] = true;
 
@@ -356,7 +381,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
 
         require(whitelist_arbitrator != address(0x0), "Proposition not recognized");
 
-        uint256 required_bond = totalSupply/100 * PERCENT_TO_FREEZE;
+        uint256 required_bond = effectiveTotalSupply()/100 * PERCENT_TO_FREEZE;
         _verifyMinimumBondPosted(question_id, required_bond);
 
         bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(arbitrator_to_remove).freezeArbitrator.selector);
