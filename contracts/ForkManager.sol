@@ -119,7 +119,6 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     function mint(address _to, uint256 _amount) 
     external {
         require(msg.sender == address(parentForkManager), "Only our parent can mint tokens");
-        // TODO check events
         totalSupply = totalSupply.add(_amount);
         balanceOf[_to] = balanceOf[_to].add(_amount);
         emit Transfer(address(0), _to, _amount);
