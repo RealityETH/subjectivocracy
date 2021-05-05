@@ -266,10 +266,9 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         return (address(parentReplacement) == address(this));
     }
 
-    // TODO: Check what happens right after we fork
     function disputeFee(bytes32 question_id) 
     public constant returns (uint256) {
-        return PERCENT_TO_FORK * totalSupply / 100;
+        return PERCENT_TO_FORK * effectiveTotalSupply() / 100;
     }
 
     // Governance (including adding and removing arbitrators from the whitelist) has two steps:
@@ -342,7 +341,6 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     }
 
 
-    // TODO: Think about whether this is bad right at the start of the fork process when stuff hasn't been migrated yet
     function freezeBridges(bytes32 question_id) 
     external {
         require(propositions_bridge_upgrade[question_id] != address(0), "Proposition not recognized");
