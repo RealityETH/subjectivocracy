@@ -6,13 +6,12 @@ import './ERC20.sol';
 
 import './ForkableRealitioERC20.sol';
 import './IArbitrator.sol';
-import './IForkManager.sol';
 import './WhitelistArbitrator.sol';
 import './BridgeToL2.sol';
 
 // An ERC20 token committed to a particular fork.
 // If enough funds are committed, it can enter a forking state, which effectively creates a futarchic market between two competing bridge contracts, and therefore two competing L2 ledgers.
-contract ForkManager is IArbitrator, IForkManager, ERC20 {
+contract ForkManager is IArbitrator, ERC20 {
 
     // The way we access L2
     BridgeToL2 public bridgeToL2;
@@ -177,7 +176,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         newBridgeToL2.init();
 
         ForkableRealitioERC20 newRealitio = ForkableRealitioERC20(_deployProxy(libForkableRealitio));
-        newRealitio.init(newFm, fork_question_id);
+        newRealitio.init(IERC20(newFm), fork_question_id);
 
         address payee = last_answer == result ? last_answerer : address(this);
         newRealitio.submitAnswerByArbitrator(fork_question_id, result, payee);
@@ -469,7 +468,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         // If there's an unresolved fork, we need the consent of both child bridges before performing an operation
         if (isForking()) {
             if (isForkingResolved()) {
-                IForkManager fm = replacedByForkManager.currentBestForkManager();
+                ForkManager fm = replacedByForkManager.currentBestForkManager();
                 return fm.requiredBridges();
             } else {
                 addrs[0] = address(childForkManager1.bridgeToL2());
