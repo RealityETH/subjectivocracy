@@ -196,7 +196,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     /// @notice Request arbitration, freezing the question until we send submitAnswerByArbitrator
     /// @param question_id The question in question
     /// @param max_previous If specified, reverts if a bond higher than this was submitted after you sent your transaction.
-    function requestArbitrationByFork(bytes32 question_id, uint256 max_previous, bytes32 last_history_hash, bytes32 last_answer, address last_answerer)
+    function requestArbitrationByFork(bytes32 question_id, uint256 max_previous)
     external returns (bool) {
 
         require(question_id != bytes32(0), "Question ID is empty");
