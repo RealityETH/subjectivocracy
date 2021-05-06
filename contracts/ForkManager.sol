@@ -84,8 +84,20 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
     mapping(bytes32 => ArbitratorProposition) propositions_arbitrator_remove;
     mapping(bytes32 => address) propositions_bridge_upgrade;
 
-    function init(address _parentForkManager, address _realitio, address _bridgeToL2, bool _has_governance_freeze, uint256 _parentSupply) 
+    // Libraries used when creating the child contracts in a fork
+    // In theory we could query the current proxies for this information.
+    // In practice we'd have to either use ContractProbe which looks complex or modify the generic proxy contract to be able to return its library address
+    address libForkManager;
+    address libForkableRealitio;
+    address libBridgeToL2;
+
+    function init(address _parentForkManager, address _realitio, address _bridgeToL2, bool _has_governance_freeze, uint256 _parentSupply, address _libForkManager, address _libForkableRealitio, address _libBridgeToL2) 
     external {
+
+        libForkManager = _libForkManager;
+        libForkableRealitio = _libForkableRealitio;
+        libBridgeToL2 = _libBridgeToL2;
+
         require(address(_realitio) != address(0), "Realitio address must be supplied");
         require(address(_bridgeToL2) != address(0), "Bridge address must be supplied");
 
@@ -147,7 +159,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
 
         address upgrade_bridge = propositions_bridge_upgrade[fork_question_id];
 
-        ForkManager newFm = ForkManager(_deployProxy(this));
+        ForkManager newFm = ForkManager(_deployProxy(libForkManager));
 
         // If this is a bridge upgrade proposition, we use the specified bridge for the yes fork.
         // Otherwise we just clone the current one.
@@ -155,7 +167,7 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         if (yes_or_no && upgrade_bridge != address(0)) {
             newBridgeToL2 = BridgeToL2(upgrade_bridge);
         } else {
-            newBridgeToL2 = BridgeToL2(_deployProxy(bridgeToL2));
+            newBridgeToL2 = BridgeToL2(_deployProxy(libBridgeToL2));
         }
 
         // TODO Repeat for bridge in other direction?
@@ -164,13 +176,13 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
         newBridgeToL2.setParent(this);
         newBridgeToL2.init();
 
-        ForkableRealitioERC20 newRealitio = ForkableRealitioERC20(_deployProxy(realitio));
+        ForkableRealitioERC20 newRealitio = ForkableRealitioERC20(_deployProxy(libForkableRealitio));
         newRealitio.init(newFm, fork_question_id);
 
         address payee = last_answer == result ? last_answerer : address(this);
         newRealitio.submitAnswerByArbitrator(fork_question_id, result, payee);
 
-        newFm.init(address(this), address(newRealitio), address(bridgeToL2), (numGovernanceFreezes > 0), supplyAtFork);
+        newFm.init(address(this), address(newRealitio), address(bridgeToL2), (numGovernanceFreezes > 0), supplyAtFork, libForkManager, libForkableRealitio, libBridgeToL2);
         newFm.mint(newRealitio, migrate_funds);
 
         if (yes_or_no) {
@@ -370,7 +382,6 @@ contract ForkManager is IArbitrator, IForkManager, ERC20 {
 
     // If you're about to pass a proposition but you don't want bad things to happen in the meantime
     // ...you can freeze stuff by proving that you sent a reasonable bond.
-    // TODO: Is the claim fee sufficient for this? You could grief by posting a bond then claiming it yourself.
     // TODO: Should we check the current answer to make sure the bond is for the remove answer not the keep answer?
     function freezeArbitratorOnWhitelist(bytes32 question_id) {
 
