@@ -216,22 +216,22 @@ contract ForkManager is IArbitrator, ERC20 {
     }
 
     function isUnForked() 
-    public returns (bool) {
+    public view returns (bool) {
         return (forkExpirationTS == 0);
     }
 
     function isForking() 
-    public returns (bool) {
+    public view returns (bool) {
         return (forkExpirationTS > 0 && replacedByForkManager == address(0x0));
     }
 
     function isForkingResolved() 
-    public returns (bool) {
+    public view returns (bool) {
         return (replacedByForkManager != address(0x0));
     }
 
     function currentBestForkManager() 
-    external returns (ForkManager) {
+    external view returns (ForkManager) {
         if (!isForkingResolved()) {
             return this;
         }
@@ -382,7 +382,8 @@ contract ForkManager is IArbitrator, ERC20 {
     // If you're about to pass a proposition but you don't want bad things to happen in the meantime
     // ...you can freeze stuff by proving that you sent a reasonable bond.
     // TODO: Should we check the current answer to make sure the bond is for the remove answer not the keep answer?
-    function freezeArbitratorOnWhitelist(bytes32 question_id) {
+    function freezeArbitratorOnWhitelist(bytes32 question_id) 
+    external {
 
         address whitelist_arbitrator = propositions_arbitrator_remove[question_id].whitelist_arbitrator;
         address arbitrator_to_remove = propositions_arbitrator_remove[question_id].arbitrator;
