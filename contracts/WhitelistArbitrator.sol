@@ -56,11 +56,11 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
     uint256 dispute_fee;
 
     struct ArbitrationRequest {
-            address arbitrator;
-            address payer;
-            uint256 bounty;
-            bytes32 msg_hash;
-            uint256 finalize_ts;
+        address arbitrator;
+        address payer;
+        uint256 bounty;
+        bytes32 msg_hash;
+        uint256 finalize_ts;
     }
 
     mapping (bytes32 => ArbitrationRequest) question_arbitrations;
