@@ -46,7 +46,7 @@ contract ForkManager is IArbitrator, ERC20 {
 
     // If we fork over one question, but bridges are already frozen over another, we reset any outstanding questions on child forks and you have to ask them again.
     // However we keep the bridges frozen to give you time to recreate the question over which you froze the bridges.
-    // After this time, if nobody recreated them, anybody can unfreeze them.
+    // After this time, if nobody recreated them, they will be automatically unfrozen
     uint256 constant POST_FORK_FREEZE_TIMEOUT = 604800;
 
     // A list of questions that have been used to freeze governance
