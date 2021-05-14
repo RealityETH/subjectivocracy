@@ -220,7 +220,7 @@ contract ForkManager is IArbitrator, ERC20 {
         return (forkExpirationTS == 0);
     }
 
-    function isForking() 
+    function isForkingStarted() 
     public view returns (bool) {
         return (forkExpirationTS > 0 && replacedByForkManager == address(0x0));
     }
@@ -465,7 +465,7 @@ contract ForkManager is IArbitrator, ERC20 {
         }
 
         // If there's an unresolved fork, we need the consent of both child bridges before performing an operation
-        if (isForking()) {
+        if (isForkingStarted()) {
             if (isForkingResolved()) {
                 return addrs;
             } else {
@@ -483,7 +483,7 @@ contract ForkManager is IArbitrator, ERC20 {
 
     function pickFork(bool yes_no, uint256 num) 
     external {
-        require(isForking(), "Not forking");
+        require(isForkingStarted(), "Not forking");
         require(!isForkingResolved(), "Too late");
         require(balanceOf[msg.sender] > num, "Not enough funds");
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(num);
