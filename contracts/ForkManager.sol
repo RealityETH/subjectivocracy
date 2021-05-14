@@ -230,14 +230,6 @@ contract ForkManager is IArbitrator, ERC20 {
         return (replacedByForkManager != address(0x0));
     }
 
-    function currentBestForkManager() 
-    external view returns (ForkManager) {
-        if (!isForkingResolved()) {
-            return this;
-        }
-        return replacedByForkManager.currentBestForkManager();
-    }
-
     function resolveFork() 
     external {
         require(isForkingResolved(), 'Not forking');
