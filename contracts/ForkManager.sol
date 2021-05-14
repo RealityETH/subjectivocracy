@@ -450,8 +450,6 @@ contract ForkManager is IArbitrator, ERC20 {
     }
 
     // This will return the bridges that should be used to manage assets
-    // If this ForkManager has been replaced it will return the bridges from that ForkManager, recursing many levels if necessary
-    // Clients may prefer to save gas by updating their internal currentBestForkManager themselves and calling the child instead of the parent
     function requiredBridges() 
     external returns (address[]) {
         // If something is frozen pending a governance decision, return an empty array.
@@ -469,9 +467,9 @@ contract ForkManager is IArbitrator, ERC20 {
         // If there's an unresolved fork, we need the consent of both child bridges before performing an operation
         if (isForking()) {
             if (isForkingResolved()) {
-                ForkManager fm = replacedByForkManager.currentBestForkManager();
-                return fm.requiredBridges();
+                return addrs;
             } else {
+                // NB These may be empty if uninitialized
                 addrs[0] = address(childForkManager1.bridgeToL2());
                 addrs[1] = address(childForkManager2.bridgeToL2());
             }
