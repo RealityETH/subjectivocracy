@@ -151,6 +151,7 @@ require(question_arbitrations[question_id].bounty > 0, "Question must be in the 
     /// @param question_id The question in question
     /// @param answer The answer
     /// @param answerer The answerer. If arbitration changed the answer, it should be the payer. If not, the old answerer.
+    /// @dev solc will complain about unsued params but they're used, just via msg.data
     function submitAnswerByArbitrator(bytes32 question_id, bytes32 answer, address answerer)
     external {
         require(question_arbitrations[question_id].arbitrator == msg.sender, "An arbitrator can only submit their own arbitration result");
