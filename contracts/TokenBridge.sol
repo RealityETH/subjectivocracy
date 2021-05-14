@@ -9,16 +9,13 @@ contract TokenBridge {
 
     ForkManager forkmanager;
     IAMB bridge;
-    bytes32 homeChainId;
     address l2contract;
-
      
     mapping(bytes32 => uint256) queuedMessages;
 
-    constructor(IERC20 _token, bytes32 _homeChainId, address _l2contract) 
+    constructor(IERC20 _token, address _l2contract) 
     public {
         token = _token;
-        homeChainId = _homeChainId;
         l2contract = _l2contract;
     }
 
