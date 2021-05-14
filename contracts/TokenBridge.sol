@@ -6,20 +6,20 @@ import './ForkManager.sol';
 contract TokenBridge {
 
     IERC20 token;
-    IERC20 l2contract;
+
     ForkManager forkmanager;
     IAMB bridge;
     bytes32 homeChainId;
-    address homeProxy;
+    address l2contract;
 
      
     mapping(bytes32 => uint256) queuedMessages;
 
-    constructor(IERC20 _token, bytes32 _homeChainId, address _homeProxy) 
+    constructor(IERC20 _token, bytes32 _homeChainId, address _l2contract) 
     public {
         token = _token;
         homeChainId = _homeChainId;
-        homeProxy = _homeProxy;
+        l2contract = _l2contract;
     }
 
     // You can send via whatever bridges you like, if they're shady it's your problem
@@ -27,18 +27,19 @@ contract TokenBridge {
     external {
         require(token.transferFrom(msg.sender, this, _amount), "Transfer failed");
         for(uint256 i=0; i<_bridges.length; i++) {
-            bytes memory data = abi.encodeWithSelector(IERC20(homeProxy).mint.selector, msg.sender, _amount);
+            bytes memory data = abi.encodeWithSelector(IERC20(l2contract).mint.selector, msg.sender, _amount);
             IAMB(_bridges[i]).requireToPassMessage(l2contract, data, 0);
         }
     }
 
     // Handle a message from L2
+    // If everything looks fine we know tokens have been burned on the other chain so we transfer them to you here
     // If the message looks OK but the bridge is wrong, or we also need the same message from another bridge, queue it to retry later
     function receiveFromL2(address _to, uint256 _amount) 
     external {
 
         // We never want a message if the bridge says it comes from something other than the home proxy 
-        require(IAMB(msg.sender).messageSender() != homeProxy, "Wrong home proxy") ;
+        require(IAMB(msg.sender).messageSender() != l2contract, "Wrong home proxy") ;
 
         if (!_handleMessage(_to, _amount, msg.sender)) {
             // add to queue
