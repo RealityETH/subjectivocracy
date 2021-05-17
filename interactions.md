@@ -315,7 +315,7 @@ Next step:
                     TokenAWrapper.receiveFromL2(Bob, 123)
                         ForkManager.requiredBridges()
                         # If we the transfer cannot be completed, we queue the message. 
-                        # This happens if need to hear from multiple bridges or wait for something to be updated or unfrozen
+                        # This happens if need to hear from 2 bridges or wait for something to be updated/unfrozen
                         TokenA.transfer(Bob, 123)
 ```
 
