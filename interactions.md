@@ -293,19 +293,6 @@ Next step:
                     # Replace a bid
 ```
 
-### Unlocking tokens on L1
-```
-    Bob     L1  TokenA.sendToL1(123)
-                    BridgeToL1.sendMessage("TokenAWrappermint(Bob, 123"))
-
-    [bot]   L1  BridgeFromL2.processQueue() or similar 
-                    TokenAWrapper.mint(Bob, 123")
-                        ForkManager.requiredBridges()
-                        # for each bridge, usually 1 but during forks there are 2. If it's zero we're frozen so abort.
-                        # TODO: If aborted we need to be able to resend this later, maybe put in another queue?
-                        TokenA.transfer(Bob, 123)
-```
-
 ### Moving tokens to L2
 ```
     Alice   L1  
@@ -318,3 +305,27 @@ Next step:
     [bot]   L2  BridgeFromL2.processQueue() # or similar
                     TokenA.mint(Alice, 123) 
 ```
+
+### Unlocking tokens on L1
+```
+    Bob     L1  TokenA.sendToL1(123)
+                    BridgeToL1.sendMessage("TokenAWrappermint(Bob, 123"))
+
+    [bot]   L1  BridgeFromL2.processQueue() or similar 
+                    TokenAWrapper.receiveFromL2(Bob, 123)
+                        ForkManager.requiredBridges()
+                        # If we the transfer cannot be completed because we need to hear from multiple bridges or wait for something to be unfrozen, we queue the message
+                        TokenA.transfer(Bob, 123)
+```
+
+### Completing a move from L2 that resulted in a queued message because of a fork or governance freeze
+
+    Bob     L1  TokenAWrapper.retryMessage(Bob, 123, bridge_contract)
+                    TokenA.transfer(Bob, 123)
+
+### Notifying a token bridge after a fork
+
+    Alice   L1
+                TokenAWrapper.updateForkManager()
+                    ForkManager.replacedByForkManager()
+
