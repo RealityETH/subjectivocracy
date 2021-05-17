@@ -322,6 +322,7 @@ Next step:
 ### Completing a move from L2 that resulted in a queued message because of a fork or governance freeze
 
     Bob     L1  TokenAWrapper.retryMessage(Bob, 123, bridge_contract)
+                    ForkManager.requiredBridges()
                     TokenA.transfer(Bob, 123)
 
 ### Notifying a token bridge after a fork
