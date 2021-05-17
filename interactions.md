@@ -327,7 +327,6 @@ Next step:
 
 ### Notifying a token bridge after a fork
 
-    Alice   L1
-                TokenAWrapper.updateForkManager()
+    Alice   L1  TokenAWrapper.updateForkManager()
                     ForkManager.replacedByForkManager()
 
