@@ -309,7 +309,7 @@ Next step:
 ### Unlocking tokens on L1
 ```
     Bob     L1  TokenA.sendToL1(123)
-                    BridgeToL1.sendMessage("TokenAWrappermint(Bob, 123"))
+                    BridgeToL1.sendMessage("TokenAWrapper.mint(Bob, 123"))
 
     [bot]   L1  BridgeFromL2.processQueue() or similar 
                     TokenAWrapper.receiveFromL2(Bob, 123)
