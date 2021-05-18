@@ -1,7 +1,6 @@
 pragma solidity ^0.4.25;
 
 import './RealitioSafeMath256.sol';
-import './RealitioSafeMath32.sol';
 import './ERC20.sol';
 
 import './ForkableRealitioERC20.sol';
