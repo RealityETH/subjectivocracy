@@ -7,7 +7,7 @@
 
 ## Summary
 
-We propose a design for handling forking layer-2 ledgers to provide a trust anchor for oracles and, optionally, goveranance allowing upgrades of the layer-2 system. It provides "subjectivocratic" security for assets issued on the ledger, and secures assets from the layer-1 ledger, albeit with an economic security bound. 
+We propose a design for handling forking layer-2 ledgers to provide a trust anchor for oracles and, optionally, governance allowing upgrades of the layer-2 system. It provides "subjectivocratic" security for assets issued on the ledger, and secures assets from the layer-1 ledger, albeit with an economic security bound. 
 
 
 ## Enshrining oracles
