@@ -68,7 +68,7 @@ In principle the same process can be adapted to handle other upgrades of the sys
 
 If the L2 system and its ability to get messages to L1 is not trusted, we need a forkable instance of reality.eth on L1 to handle governance. This has the variations that it has a record of its parent, and can be made to import questions from the parent. On forking, the fork manager will transfer the balance held by the parent reality.eth instance to the two child instances before notifying each of its respective result. Users can import their questions to the child instances to claim any funds they are owed.
 
-If either the L2 system or the bridge on L1 is not trusted, contracts relying on it to unlock funds on L1 will need a timeout to allow the governance process to be used to freeze it, and potentially replace it.
+If either the L2 system or the bridge on L1 is not trusted, contracts relying on it to unlock funds on L1 will need a timeout to allow the governance process to be used to freeze it in case of misbehaviour, and potentially replace it.
 
 ![Example of a crowdfund contract using an enshrined oracle](diagrams/reality_l1_reality.png)
 
