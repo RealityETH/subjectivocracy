@@ -9,9 +9,9 @@ import './IArbitrator.sol';
 import './WhitelistArbitrator.sol';
 import './BridgeToL2.sol';
 
-// An ERC20 token committed to a particular fork.
-// If enough funds are committed, it can enter a forking state, which effectively creates a futarchic market between two competing bridge contracts, and therefore two competing L2 ledgers.
 contract ForkManager is IArbitrator, ERC20 {
+
+    uint256 public totalSupply;
 
     // The way we access L2
     BridgeToL2 public bridgeToL2;
@@ -53,32 +53,43 @@ contract ForkManager is IArbitrator, ERC20 {
     mapping(bytes32 => bool) governance_freeze_question_ids;
     uint256 numGovernanceFreezes;
 
+    // The reality.eth question over which we forked. This should be migrated so you can claim bonds on each fork.
+    bytes32 fork_question_id;
+
+    // The timestamp when were born in a fork. 0 for the genesis ForkManager.
+    uint256 forked_from_parent_ts = 0;
+
     // Governance questions will be cleared when we fork, if you still care about them you can ask them again.
     // However, if we forked over arbitration but had some unresolved governance questions, we stay frozen initially to give people time to recreate them
     uint256 initial_governance_freeze_timeout;
 
+    // If we fork we will produce two children
     ForkManager public childForkManager1;
     ForkManager public childForkManager2;
 
-    bytes32 fork_question_id;
-    uint256 public amountMigrated1;
-    uint256 public amountMigrated2;
-    uint256 forked_from_parent_ts = 0;
-
+    // Once the fork is resolved you can set the winner
     ForkManager public replacedByForkManager;
 
-    uint256 forkExpirationTS = 0;
+    // Having deployed each fork, you can move funds into it
+    uint256 public amountMigrated1;
+    uint256 public amountMigrated2;
 
-    uint256 public totalSupply;
-
-    uint256 supplyAtFork;
+    // The total supply of the parent when our fork was born.
+    // We use this as a freeze threshold when it's too early to use our own supply because people are still migrating funds.
     uint256 public parentSupply;
 
+    // The total supply we had when we forked
+    // Kept so we can tell our children what to set as their parentSupply
+    uint256 supplyAtFork;
+
+    // The deadline for moving funds, when we will decide which fork won.
+    uint256 forkExpirationTS = 0;
+
+    // Reality.eth questions for propositions we may be asked to rule on
     struct ArbitratorProposition{
         address whitelist_arbitrator;    
         address arbitrator;    
     }
-
     mapping(bytes32 => ArbitratorProposition) propositions_arbitrator_add;
     mapping(bytes32 => ArbitratorProposition) propositions_arbitrator_remove;
     mapping(bytes32 => address) propositions_bridge_upgrade;
@@ -113,6 +124,7 @@ contract ForkManager is IArbitrator, ERC20 {
         if (_parentForkManager != address(0x0)) {
             forked_from_parent_ts = block.timestamp;
         }
+
     }
 
     // When forked, the ultimate totalSupply is not known until migration is complete, but we want to be able to freeze things.
@@ -140,7 +152,6 @@ contract ForkManager is IArbitrator, ERC20 {
     // An arbitrator fork will create this for both forks.
     // A governance fork will use the specified contract for one of the options.
     // It can have its own setup logic if you want to change the Realitio or bridge code.
-    // TODO: Maybe better to find the uppermost library address instead of delegating proxies to delegating proxies?
     function deployFork(bool yes_or_no, bytes32 last_answer, address last_answerer) 
     external {
 
@@ -154,22 +165,22 @@ contract ForkManager is IArbitrator, ERC20 {
         }
 
         require(fork_question_id != bytes32(0), "Fork not initiated");
-        uint256 migrate_funds = realitio.getCumulativeBonds(fork_question_id);
+        require(block.timestamp < forkExpirationTS, "Too late to deploy a fork");
 
-        address upgrade_bridge = propositions_bridge_upgrade[fork_question_id];
+        uint256 migrate_funds = realitio.getCumulativeBonds(fork_question_id);
 
         ForkManager newFm = ForkManager(_deployProxy(libForkManager));
 
+        BridgeToL2 newBridgeToL2;
+
         // If this is a bridge upgrade proposition, we use the specified bridge for the yes fork.
         // Otherwise we just clone the current one.
-        BridgeToL2 newBridgeToL2;
+        address upgrade_bridge = propositions_bridge_upgrade[fork_question_id];
         if (yes_or_no && upgrade_bridge != address(0)) {
             newBridgeToL2 = BridgeToL2(upgrade_bridge);
         } else {
             newBridgeToL2 = BridgeToL2(_deployProxy(libBridgeToL2));
         }
-
-        // TODO Repeat for bridge in other direction?
 
         // If it's a new bridge should let us call these without error
         newBridgeToL2.setParent(this);
@@ -444,9 +455,12 @@ contract ForkManager is IArbitrator, ERC20 {
     // This will return the bridges that should be used to manage assets
     function requiredBridges() 
     external returns (address[]) {
+
+        address[] memory addrs;
+
         // If something is frozen pending a governance decision, return an empty array.
         // This should be interpreted to mean no bridge can be trusted and transfers should stop.
-        address[] memory addrs;
+
         if (numGovernanceFreezes > 0) {
             return addrs;
         }
@@ -473,14 +487,14 @@ contract ForkManager is IArbitrator, ERC20 {
 
     }
 
-    function pickFork(bool yes_no, uint256 num) 
+    function pickFork(bool yes_or_no, uint256 num) 
     external {
         require(isForkingStarted(), "Not forking");
         require(!isForkingResolved(), "Too late");
         require(balanceOf[msg.sender] > num, "Not enough funds");
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(num);
         totalSupply = totalSupply.sub(num);
-        if (yes_no) {
+        if (yes_or_no) {
             require(childForkManager1 != address(0), "Call deployFork first");
             childForkManager1.mint(msg.sender, num);
         } else {
