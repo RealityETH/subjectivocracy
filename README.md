@@ -94,3 +94,4 @@ The system is implemented in the following contracts (and their dependencies suc
 ## Discussion
 
 * [Discord](https://discord.gg/8ETpnUH)
+* [ethresear.ch](https://ethresear.ch/t/branching-oracle-enshrined-rollup-governance/9552)
