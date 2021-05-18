@@ -75,12 +75,13 @@ If the L2 system and its ability to get messages to L1 is not trusted, we need a
 
 The interactions between users and contracts are specified in detail in [interactions](interactions.md).
 
-The sytem is implemented in the following contracts (and their dependencies such as existing reality.eth contracts):
+The system is implemented in the following contracts (and their dependencies such as existing reality.eth contracts):
 
 * [ForkManager.sol](contracts/ForkManager.sol) implements the governance token and fork management.
-* [ForkableRealitioERC20.sol](contracts/ForkableRealitioERC20.sol) is a modified version of Reality.eth designed to be used only for governance and/or arbitration selection.
+* [ForkableRealitioERC20.sol](contracts/ForkableRealitioERC20.sol) is a modified version of Reality.eth designed to be used only for governance and/or arbitrator selection.
 * [RealitioERC20.sol](contracts/RealitioERC20.sol) is the preexisting Reality.eth contract that would be deployed on Layer 2.
 * [WhitelistArbitrator.sol](contracts/WhitelistArbitrator.sol) is an arbitration contract based on a whitelist managed by the ForkManager.
+* [TokenBridge.sol](contracts/TokenBridge.sol) is an example of how a token on Layer 1 would follow the direction of the ForkManager in locking assets to be credited on Layer 2 and unlocking them based on messages from the appropriate Layer 2 bridge.
 
 
 ## Next steps
