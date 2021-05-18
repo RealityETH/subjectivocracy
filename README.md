@@ -91,3 +91,6 @@ The system is implemented in the following contracts (and their dependencies suc
 - We need to select an L2 system to build a prototype. See [L2 choices](l2_choice.md).
 - Someone needs to distribute governance tokens, and potentially handle any funds resulting from the sale, possibly one of the DAOs that currently uses reality.eth.
 
+## Discussion
+
+* [Discord](https://discord.gg/8ETpnUH)
