@@ -23,4 +23,16 @@ contract BridgeToL2 is IAMB {
     external {
     }
 
+    function requireToPassMessage(
+        address _contract,
+        bytes _data,
+        uint256 _gas
+    ) external returns (bytes32) {
+        address sender = msg.sender;
+        if (sender == parent) {
+            sender = FORK_MANAGER_SPECIAL_ADDRESS;
+        }
+        // Do standard message passing
+    }
+
 }
