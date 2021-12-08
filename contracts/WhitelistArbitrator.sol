@@ -1,9 +1,10 @@
-pragma solidity ^0.4.25;
+// SPDX-License-Identifier: GPL-3.0-only
 
-import './RealitioERC20.sol';
+pragma solidity ^0.8.6;
+
+import './RealityETH_ERC20-3.0.sol';
 import './IArbitrator.sol';
 import './IAMB.sol';
-import './RealitioSafeMath256.sol';
 
 /*
 This contract sits between a Reality.eth instance and an Arbitrator.
@@ -13,9 +14,7 @@ Arbitrators can be disputed on L1.
 To Reality.eth it looks like a normal arbitrator, implementing the Arbitrator interface.
 To the normal Arbitrator contracts that do its arbitration jobs, it looks like Reality.eth.
 */
-contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
-
-    using RealitioSafeMath256 for uint256;
+contract WhitelistArbitrator is IArbitrator, RealityETH_ERC20_v3_0 {
 
     IAMB bridge;
     uint256 constant ARB_DISPUTE_TIMEOUT = 86400;
@@ -51,7 +50,7 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
     // List of arbitrators that are currently being challenged
     mapping (address => bool) frozen_arbitrators;
 
-    RealitioERC20 realitio;
+    RealityETH_ERC20_v3_0 realitio;
 
     uint256 dispute_fee;
 
@@ -181,9 +180,9 @@ require(question_arbitrations[question_id].bounty > 0, "Question must be in the 
 
         uint256 finalize_ts = question_arbitrations[question_id].finalize_ts;
         require(finalize_ts > 0, "Submission must have been queued");
-        require(finalize_ts < now, "Challenge deadline must have passed");
+        require(finalize_ts < block.timestamp, "Challenge deadline must have passed");
 
-        balanceOf[question_arbitrations[question_id].payer] = balanceOf[question_arbitrations[question_id].payer].add(question_arbitrations[question_id].bounty);
+        balanceOf[question_arbitrations[question_id].payer] = balanceOf[question_arbitrations[question_id].payer] + question_arbitrations[question_id].bounty;
 
         realitio.submitAnswerByArbitrator(question_id, answer, answerer);
     }
@@ -221,7 +220,7 @@ public {
 
     function _numUnreservedTokens() 
     internal view returns (uint256) {
-        token.balanceOf(address(this)).sub(reserved_tokens);
+        token.balanceOf(address(this)) - reserved_tokens;
     }
 
     function reserveTokens(uint256 num, uint256 price, uint256 nonce)
@@ -231,8 +230,8 @@ public {
 
         require(_numUnreservedTokens() > num, "Not enough tokens unreserved");
 
-        uint256 deposit = num.mul(price).div(TOKEN_RESERVATION_DEPOSIT);
-        require(token.transferFrom(msg.sender, this, deposit), "Deposit transfer failed");
+        uint256 deposit = num * price / TOKEN_RESERVATION_DEPOSIT;
+        require(token.transferFrom(msg.sender, address(this), deposit), "Deposit transfer failed");
 
         token_reservations[resid] = TokenReservation(
             msg.sender, 
@@ -240,7 +239,7 @@ public {
             price,
             block.timestamp
         );
-        reserved_tokens = reserved_tokens.add(num);
+        reserved_tokens = reserved_tokens + num;
     }
 
     function outBidReservation(uint256 num, uint256 price, uint256 nonce, bytes32 resid) 
@@ -253,15 +252,15 @@ public {
         require(token_reservations[resid].num >= num, "More tokens requested than remain in the reservation"); 
         require(price > token_reservations[resid].price * 101/100, "You must bid at least 1% more than the previous bid");
 
-        uint256 deposit_return = num.mul(token_reservations[resid].price).div(TOKEN_RESERVATION_DEPOSIT);
+        uint256 deposit_return = num * token_reservations[resid].price / TOKEN_RESERVATION_DEPOSIT;
 
         require(token.transfer(token_reservations[resid].reserver, deposit_return), "Deposit return failed");
-        reserved_tokens = reserved_tokens.sub(num);
+        reserved_tokens = reserved_tokens - num;
 
         if (num == token_reservations[resid].num) {
             delete(token_reservations[resid]);
         } else {
-            token_reservations[resid].num = token_reservations[resid].num.sub(num);
+            token_reservations[resid].num = token_reservations[resid].num - num;
         }
 
         return reserveTokens(num, price, nonce);
@@ -271,7 +270,7 @@ public {
     external {
         uint256 age = block.timestamp - token_reservations[resid].reserved_ts;
         require(age > TOKEN_RESERVATION_CLAIM_TIMEOUT, "Not timed out yet");
-        reserved_tokens = reserved_tokens.sub(token_reservations[resid].num);
+        reserved_tokens = reserved_tokens - token_reservations[resid].num;
         delete(token_reservations[resid]); 
     }
 
@@ -283,9 +282,9 @@ public {
 
         uint256 num = token_reservations[resid].num;
         uint256 price = token_reservations[resid].price;
-        uint256 cost = price.mul(num);
+        uint256 cost = price * num;
         require(gov_tokens_paid >= cost, "Insufficient gov tokens sent");
-        reserved_tokens = reserved_tokens.sub(num);
+        reserved_tokens = reserved_tokens - num;
         token.transfer(token_reservations[resid].reserver, num);
 
         delete(token_reservations[resid]); 

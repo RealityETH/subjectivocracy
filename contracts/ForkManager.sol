@@ -1,4 +1,6 @@
-pragma solidity ^0.4.25;
+// SPDX-License-Identifier: GPL-3.0-only
+
+pragma solidity ^0.8.6;
 
 import './RealitioSafeMath256.sol';
 import './ERC20.sol';
@@ -252,7 +254,7 @@ contract ForkManager is IArbitrator, ERC20 {
     }
 
     function isWinner() 
-    public constant returns (bool) {
+    public view returns (bool) {
         // Genesis fork manager
         if (address(parentForkManager) == address(0x0)) {
             return true;
@@ -266,7 +268,7 @@ contract ForkManager is IArbitrator, ERC20 {
     }
 
     function isLoser() 
-    public constant returns (bool) {
+    public view returns (bool) {
         if (address(parentForkManager) == address(0x0)) {
             // Genesis fork manager
             return false;
@@ -280,7 +282,7 @@ contract ForkManager is IArbitrator, ERC20 {
     }
 
     function disputeFee(bytes32 question_id) 
-    public constant returns (uint256) {
+    public view returns (uint256) {
         return PERCENT_TO_FORK * effectiveTotalSupply() / 100;
     }
 
