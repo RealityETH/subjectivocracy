@@ -1,16 +1,18 @@
-pragma solidity ^0.4.25;
+// SPDX-License-Identifier: GPL-3.0-only
+
+pragma solidity ^0.8.10;
 
 interface IForkableRealitio {
-  function claimWinnings ( bytes32 question_id, bytes32[] history_hashes, address[] addrs, uint256[] bonds, bytes32[] answers ) external;
+  function claimWinnings ( bytes32 question_id, bytes32[] memory history_hashes, address[] memory addrs, uint256[] memory bonds, bytes32[] memory answers ) external;
   function getFinalAnswerIfMatches ( bytes32 question_id, bytes32 content_hash, address arbitrator, uint32 min_timeout, uint256 min_bond ) external view returns ( bytes32 );
   function getArbitrator ( bytes32 question_id ) external view returns ( address );
   function getBond ( bytes32 question_id ) external view returns ( uint256 );
-  function claimMultipleAndWithdrawBalance ( bytes32[] question_ids, uint256[] lengths, bytes32[] hist_hashes, address[] addrs, uint256[] bonds, bytes32[] answers ) external;
+  function claimMultipleAndWithdrawBalance ( bytes32[] memory question_ids, uint256[] memory lengths, bytes32[] memory hist_hashes, address[] memory addrs, uint256[] memory bonds, bytes32[] memory answers ) external;
   function withdraw (  ) external;
   function template_hashes ( uint256 ) external view returns ( bytes32 );
   function getContentHash ( bytes32 question_id ) external view returns ( bytes32 );
   function balanceOf ( address ) external view returns ( uint256 );
-  function askQuestion ( uint256 template_id, string question, address arbitrator, uint32 timeout, uint32 opening_ts, uint256 nonce ) external payable returns ( bytes32 );
+  function askQuestion ( uint256 template_id, string memory question, address arbitrator, uint32 timeout, uint32 opening_ts, uint256 nonce ) external payable returns ( bytes32 );
   function submitAnswer ( bytes32 question_id, bytes32 answer, uint256 max_previous ) external payable;
   function isFinalized ( bytes32 question_id ) external view returns ( bool );
   function isPendingArbitration ( bytes32 question_id ) external view returns ( bool );

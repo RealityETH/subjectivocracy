@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.10;
 
-contract ERC20 {
+import './IERC20.sol';
+
+contract ERC20 is IERC20 {
 
     string public constant name = 'Test';
     string public constant symbol = 'TST';
@@ -11,9 +13,6 @@ contract ERC20 {
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
-
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-    event Transfer(address indexed from, address indexed to, uint256 value);
 
     function _approve(address owner, address spender, uint256 value) private {
         allowance[owner][spender] = value;
