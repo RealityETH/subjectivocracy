@@ -1,4 +1,7 @@
-pragma solidity ^0.4.25;
+// SPDX-License-Identifier: GPL-3.0-only
+
+pragma solidity ^0.8.10;
+
 
 /**
  * @title ERC20 interface
@@ -10,8 +13,6 @@ interface IERC20 {
     function balanceOf(address who) external view returns (uint256);
 
     function allowance(address owner, address spender) external view returns (uint256);
-
-    function mint(address to, uint256 value) external returns (bool);
 
     function transfer(address to, uint256 value) external returns (bool);
 

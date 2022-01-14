@@ -1,9 +1,10 @@
-pragma solidity ^0.4.25;
+// SPDX-License-Identifier: GPL-3.0-only
 
-import './RealitioSafeMath256.sol';
+pragma solidity ^0.8.10;
 
-contract ERC20 {
-    using RealitioSafeMath256 for uint256;
+import './IERC20.sol';
+
+contract ERC20 is IERC20 {
 
     string public constant name = 'Test';
     string public constant symbol = 'TST';
@@ -13,17 +14,14 @@ contract ERC20 {
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
 
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
     function _approve(address owner, address spender, uint256 value) private {
         allowance[owner][spender] = value;
         emit Approval(owner, spender, value);
     }
 
     function _transfer(address from, address to, uint256 value) private {
-        balanceOf[from] = balanceOf[from].sub(value);
-        balanceOf[to] = balanceOf[to].add(value);
+        balanceOf[from] = balanceOf[from] - value;
+        balanceOf[to] = balanceOf[to] + value;
         emit Transfer(from, to, value);
     }
 
@@ -38,8 +36,8 @@ contract ERC20 {
     }
 
     function transferFrom(address from, address to, uint256 value) external returns (bool) {
-        if (allowance[from][msg.sender] != uint256(-1)) {
-            allowance[from][msg.sender] = allowance[from][msg.sender].sub(value);
+        if (allowance[from][msg.sender] != type(uint256).max) {
+            allowance[from][msg.sender] = allowance[from][msg.sender] - value;
         }
         _transfer(from, to, value);
         return true;

@@ -1,9 +1,14 @@
-pragma solidity ^0.4.25;
+// SPDX-License-Identifier: GPL-3.0-only
 
-import './RealitioERC20.sol';
+pragma solidity ^0.8.6;
+
+import './BalanceHolder_ERC20.sol';
+
+import './RealityETH_ERC20-3.0.sol';
+
 import './IArbitrator.sol';
 import './IAMB.sol';
-import './RealitioSafeMath256.sol';
+import './IERC20.sol';
 
 /*
 This contract sits between a Reality.eth instance and an Arbitrator.
@@ -13,9 +18,30 @@ Arbitrators can be disputed on L1.
 To Reality.eth it looks like a normal arbitrator, implementing the Arbitrator interface.
 To the normal Arbitrator contracts that do its arbitration jobs, it looks like Reality.eth.
 */
-contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
+contract WhitelistArbitrator is BalanceHolder_ERC20 {
 
-    using RealitioSafeMath256 for uint256;
+    // From RealityETH_ERC20
+    struct Question {
+        bytes32 content_hash;
+        address arbitrator;
+        uint32 opening_ts;
+        uint32 timeout;
+        uint32 finalize_ts;
+        bool is_pending_arbitration;
+        uint256 bounty;
+        bytes32 best_answer;
+        bytes32 history_hash;
+        uint256 bond;
+        uint256 min_bond;
+    }
+
+    mapping(bytes32 => Question) public questions;
+
+
+
+
+
+
 
     IAMB bridge;
     uint256 constant ARB_DISPUTE_TIMEOUT = 86400;
@@ -32,6 +58,11 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
         uint256 fee_paid,
         address requester,
         uint256 remaining
+    );
+
+    event LogNotifyOfArbitrationRequest(
+        bytes32 indexed question_id,
+        address indexed user 
     );
 
     address fork_arbitrator_proxy;
@@ -51,7 +82,7 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
     // List of arbitrators that are currently being challenged
     mapping (address => bool) frozen_arbitrators;
 
-    RealitioERC20 realitio;
+    RealityETH_ERC20_v3_0 realityETH;
 
     uint256 dispute_fee;
 
@@ -73,7 +104,7 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
     }
 
     constructor(address _fork_arbitrator_proxy, uint256 _dispute_fee, IAMB _bridge) 
-    public {
+    {
         fork_arbitrator_proxy = _fork_arbitrator_proxy;
         dispute_fee = _dispute_fee;
         bridge = _bridge;
@@ -100,7 +131,7 @@ contract WhitelistArbitrator is IArbitrator, RealitioERC20 {
 
         require(msg.value >= arbitration_fee); 
 
-        realitio.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
+        realityETH.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
         emit LogRequestArbitration(question_id, msg.value, msg.sender, 0);
 
         // Queue the question for arbitration by a whitelisted arbitrator
@@ -143,7 +174,7 @@ require(question_arbitrations[question_id].bounty > 0, "Question must be in the 
         emit LogNotifyOfArbitrationRequest(question_id, requester);
     }
 
-    // The arbitrator submits the answer to us, instead of to realitio
+    // The arbitrator submits the answer to us, instead of to realityETH
     // Instead of sending it to Reality.eth, we instead hold onto it for a challenge period in case someone disputes the arbitrator.
     // TODO: We may need assignWinnerAndSubmitAnswerByArbitrator here instead
 
@@ -153,7 +184,8 @@ require(question_arbitrations[question_id].bounty > 0, "Question must be in the 
     /// @param answerer The answerer. If arbitration changed the answer, it should be the payer. If not, the old answerer.
     /// @dev solc will complain about unsued params but they're used, just via msg.data
     function submitAnswerByArbitrator(bytes32 question_id, bytes32 answer, address answerer)
-    external {
+    public 
+    {
         require(question_arbitrations[question_id].arbitrator == msg.sender, "An arbitrator can only submit their own arbitration result");
         require(question_arbitrations[question_id].bounty > 0, "Question must be in the arbitration queue");
 
@@ -181,11 +213,11 @@ require(question_arbitrations[question_id].bounty > 0, "Question must be in the 
 
         uint256 finalize_ts = question_arbitrations[question_id].finalize_ts;
         require(finalize_ts > 0, "Submission must have been queued");
-        require(finalize_ts < now, "Challenge deadline must have passed");
+        require(finalize_ts < block.timestamp, "Challenge deadline must have passed");
 
-        balanceOf[question_arbitrations[question_id].payer] = balanceOf[question_arbitrations[question_id].payer].add(question_arbitrations[question_id].bounty);
+        balanceOf[question_arbitrations[question_id].payer] = balanceOf[question_arbitrations[question_id].payer] + question_arbitrations[question_id].bounty;
 
-        realitio.submitAnswerByArbitrator(question_id, answer, answerer);
+        realityETH.submitAnswerByArbitrator(question_id, answer, answerer);
     }
 
     function freezeArbitrator(address arbitrator) 
@@ -221,7 +253,7 @@ public {
 
     function _numUnreservedTokens() 
     internal view returns (uint256) {
-        token.balanceOf(address(this)).sub(reserved_tokens);
+        token.balanceOf(address(this)) - reserved_tokens;
     }
 
     function reserveTokens(uint256 num, uint256 price, uint256 nonce)
@@ -231,8 +263,8 @@ public {
 
         require(_numUnreservedTokens() > num, "Not enough tokens unreserved");
 
-        uint256 deposit = num.mul(price).div(TOKEN_RESERVATION_DEPOSIT);
-        require(token.transferFrom(msg.sender, this, deposit), "Deposit transfer failed");
+        uint256 deposit = num * price / TOKEN_RESERVATION_DEPOSIT;
+        require(token.transferFrom(msg.sender, address(this), deposit), "Deposit transfer failed");
 
         token_reservations[resid] = TokenReservation(
             msg.sender, 
@@ -240,7 +272,7 @@ public {
             price,
             block.timestamp
         );
-        reserved_tokens = reserved_tokens.add(num);
+        reserved_tokens = reserved_tokens + num;
     }
 
     function outBidReservation(uint256 num, uint256 price, uint256 nonce, bytes32 resid) 
@@ -253,15 +285,15 @@ public {
         require(token_reservations[resid].num >= num, "More tokens requested than remain in the reservation"); 
         require(price > token_reservations[resid].price * 101/100, "You must bid at least 1% more than the previous bid");
 
-        uint256 deposit_return = num.mul(token_reservations[resid].price).div(TOKEN_RESERVATION_DEPOSIT);
+        uint256 deposit_return = num * token_reservations[resid].price / TOKEN_RESERVATION_DEPOSIT;
 
         require(token.transfer(token_reservations[resid].reserver, deposit_return), "Deposit return failed");
-        reserved_tokens = reserved_tokens.sub(num);
+        reserved_tokens = reserved_tokens - num;
 
         if (num == token_reservations[resid].num) {
             delete(token_reservations[resid]);
         } else {
-            token_reservations[resid].num = token_reservations[resid].num.sub(num);
+            token_reservations[resid].num = token_reservations[resid].num - num;
         }
 
         return reserveTokens(num, price, nonce);
@@ -271,7 +303,7 @@ public {
     external {
         uint256 age = block.timestamp - token_reservations[resid].reserved_ts;
         require(age > TOKEN_RESERVATION_CLAIM_TIMEOUT, "Not timed out yet");
-        reserved_tokens = reserved_tokens.sub(token_reservations[resid].num);
+        reserved_tokens = reserved_tokens - token_reservations[resid].num;
         delete(token_reservations[resid]); 
     }
 
@@ -283,9 +315,9 @@ public {
 
         uint256 num = token_reservations[resid].num;
         uint256 price = token_reservations[resid].price;
-        uint256 cost = price.mul(num);
+        uint256 cost = price * num;
         require(gov_tokens_paid >= cost, "Insufficient gov tokens sent");
-        reserved_tokens = reserved_tokens.sub(num);
+        reserved_tokens = reserved_tokens - num;
         token.transfer(token_reservations[resid].reserver, num);
 
         delete(token_reservations[resid]); 

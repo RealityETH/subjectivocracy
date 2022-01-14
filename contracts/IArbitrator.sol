@@ -1,15 +1,16 @@
-pragma solidity ^0.4.25;
+// SPDX-License-Identifier: GPL-3.0-only
 
-import './IRealitio.sol';
+pragma solidity ^0.8.10;
+
+import './IRealityETH.sol';
 import './IERC20.sol';
 import './IOwned.sol';
 
 interface IArbitrator {
-  function metadata (  ) external view returns ( string );
-  function owner (  ) external view returns ( address );
+  function metadata (  ) external view returns ( string memory );
   function arbitration_bounties ( bytes32 ) external view returns ( uint256 );
-  function realitio (  ) external view returns ( IRealitio );
-  function realitycheck (  ) external view returns ( IRealitio );
+  function realitio (  ) external view returns ( IRealityETH );
+  function realitycheck (  ) external view returns ( IRealityETH );
   function setRealitio ( address addr ) external;
   function setDisputeFee ( uint256 fee ) external;
   function setCustomDisputeFee ( bytes32 question_id, uint256 fee ) external;
@@ -20,8 +21,5 @@ interface IArbitrator {
   function withdraw ( address addr ) external;
   function withdrawERC20 ( IERC20 _token, address addr ) external;
   function callWithdraw (  ) external;
-  function setMetaData ( string _metadata ) external;
-  function foreignProxy() external returns (address);
-  function foreignChainId() external returns (uint256);
+  function setMetaData ( string memory _metadata ) external;
 }
-

@@ -1,15 +1,12 @@
-pragma solidity ^0.4.25;
+// SPDX-License-Identifier: GPL-3.0-only
 
-import './RealitioSafeMath256.sol';
-import './RealitioSafeMath32.sol';
-import './BalanceHolderERC20.sol';
+pragma solidity ^0.8.10;
 
-import './IForkableRealitio.sol';
+import './BalanceHolder_ERC20.sol';
 
-contract ForkableRealitioERC20 is BalanceHolderERC20 {
+import './IForkableRealityETH.sol';
 
-    using RealitioSafeMath256 for uint256;
-    using RealitioSafeMath32 for uint32;
+contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
 
     address constant NULL_ADDRESS = address(0);
 
@@ -121,9 +118,9 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
         require(!questions[question_id].is_pending_arbitration, "question must not be pending arbitration");
         require(!is_frozen, "contract must not be pending frozen");
         uint32 finalize_ts = questions[question_id].finalize_ts;
-        require(finalize_ts == UNANSWERED || finalize_ts > uint32(now), "finalization deadline must not have passed");
+        require(finalize_ts == UNANSWERED || finalize_ts > uint32(block.timestamp), "finalization deadline must not have passed");
         uint32 opening_ts = questions[question_id].opening_ts;
-        require(opening_ts == 0 || opening_ts <= uint32(now), "opening date must have passed"); 
+        require(opening_ts == 0 || opening_ts <= uint32(block.timestamp), "opening date must have passed"); 
         _;
     }
 
@@ -139,7 +136,7 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
 
     modifier bondMustDouble(bytes32 question_id, uint256 tokens) {
         require(tokens > 0, "bond must be positive"); 
-        require(tokens >= (questions[question_id].bond.mul(2)), "bond must be double at least previous bond");
+        require(tokens >= (questions[question_id].bond * 2), "bond must be double at least previous bond");
         _;
     }
 
@@ -152,7 +149,7 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
 
     function init(IERC20 _token, bytes32 _question_id)
     public {
-        require(token == address(0), "Can only be initialized once");
+        require(address(token) == address(0), "Can only be initialized once");
         createTemplate('{"title": "Should we add arbitrator %s to whitelist contract %s", "type": "bool"}');
         createTemplate('{"title": "Should we remove arbitrator %s to whitelist contract %s", "type": "bool"}');
         createTemplate('{"title": "Should switch to ForkManager %s", "type": "bool"}');
@@ -167,14 +164,14 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
     /// @dev Template data is only stored in the event logs, but its block number is kept in contract storage.
     /// @param content The template content
     /// @return The ID of the newly-created template, which is created sequentially.
-    function createTemplate(string content) 
+    function createTemplate(string memory content) 
         stateAny()
     private returns (uint256) {
         uint256 id = nextTemplateID;
         templates[id] = block.number;
         template_hashes[id] = keccak256(abi.encodePacked(content));
         emit LogNewTemplate(id, msg.sender, content);
-        nextTemplateID = id.add(1);
+        nextTemplateID = id + 1;
         return id;
     }
 
@@ -189,7 +186,7 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
     /// @param opening_ts If set, the earliest time it should be possible to answer the question.
     /// @param nonce A user-specified nonce used in the question ID. Change it to repeat a question.
     /// @return The ID of the newly-created question, created deterministically.
-    function askQuestion(uint256 template_id, string question, address arbitrator, uint32 timeout, uint32 opening_ts, uint256 nonce) 
+    function askQuestion(uint256 template_id, string memory question, address arbitrator, uint32 timeout, uint32 opening_ts, uint256 nonce) 
         // stateNotCreated is enforced by the internal _askQuestion
     public returns (bytes32) {
 
@@ -199,7 +196,7 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
         bytes32 question_id = keccak256(abi.encodePacked(content_hash, arbitrator, timeout, msg.sender, nonce));
 
         _askQuestion(question_id, content_hash, arbitrator, timeout, opening_ts);
-        emit LogNewQuestion(question_id, msg.sender, template_id, question, content_hash, arbitrator, timeout, opening_ts, nonce, now);
+        emit LogNewQuestion(question_id, msg.sender, template_id, question, content_hash, arbitrator, timeout, opening_ts, nonce, block.timestamp);
 
         return question_id;
     }
@@ -216,10 +213,10 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
         // Deduct any tokens you have in your internal balance first
         if (bal > 0) {
             if (bal >= tokens) {
-                balanceOf[msg.sender] = bal.sub(tokens);
+                balanceOf[msg.sender] = bal - tokens;
                 return;
             } else {
-                tokens = tokens.sub(bal);
+                tokens = tokens - bal;
                 balanceOf[msg.sender] = 0;
             }
         }
@@ -286,30 +283,30 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
     function _addAnswerToHistory(bytes32 question_id, bytes32 answer_or_commitment_id, address answerer, uint256 bond) 
     internal 
     {
-        require(answer_or_commitment_id == bytes32(1) || answer_or_commitment_id == bytes32(0), "Only answer 1 and 0 are supported");
+        require(answer_or_commitment_id == bytes32(uint256(1)) || answer_or_commitment_id == bytes32(uint256(0)), "Only answer 1 and 0 are supported");
 
         bytes32 new_history_hash = keccak256(abi.encodePacked(questions[question_id].history_hash, answer_or_commitment_id, bond, answerer, false));
 
         // Update the current bond level, if there's a bond (ie anything except arbitration)
         if (bond > 0) {
             questions[question_id].bond = bond;
-            questions[question_id].cumulative_bonds = questions[question_id].cumulative_bonds.add(bond);
+            questions[question_id].cumulative_bonds = questions[question_id].cumulative_bonds + bond;
         }
         questions[question_id].history_hash = new_history_hash;
 
-        emit LogNewAnswer(answer_or_commitment_id, question_id, new_history_hash, answerer, bond, now, false);
+        emit LogNewAnswer(answer_or_commitment_id, question_id, new_history_hash, answerer, bond, block.timestamp, false);
     }
 
     function _updateCurrentAnswer(bytes32 question_id, bytes32 answer)
     internal {
         questions[question_id].best_answer = answer;
-        questions[question_id].finalize_ts = uint32(now).add(questions[question_id].timeout);
+        questions[question_id].finalize_ts = uint32(block.timestamp) + questions[question_id].timeout;
     }
 
     function _updateCurrentAnswerByArbitrator(bytes32 question_id, bytes32 answer)
     internal {
         questions[question_id].best_answer = answer;
-        questions[question_id].finalize_ts = uint32(now);
+        questions[question_id].finalize_ts = uint32(block.timestamp);
     }
 
     /// @notice Notify the contract that the arbitrator has been paid for a question
@@ -375,7 +372,7 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
             return false;
         }
         uint32 finalize_ts = questions[question_id].finalize_ts;
-        return ( !questions[question_id].is_pending_arbitration && (finalize_ts > UNANSWERED) && (finalize_ts <= uint32(now)) );
+        return ( !questions[question_id].is_pending_arbitration && (finalize_ts > UNANSWERED) && (finalize_ts <= uint32(block.timestamp)) );
     }
 
     /// @notice Finalize the question
@@ -415,8 +412,8 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
         // This creates a cost to increasing your own bond, which could be used to delay resolution maliciously
         if (last_bond != questions[question_id].bond) {
             uint256 claim_fee = last_bond / BOND_CLAIM_FEE_PROPORTION;
-            last_bond = last_bond.sub(claim_fee);
-            balanceOf[arbitrator] = balanceOf[arbitrator].add(claim_fee);
+            last_bond = last_bond - claim_fee;
+            balanceOf[arbitrator] = balanceOf[arbitrator] + claim_fee;
         }
         return last_bond;
 
@@ -459,7 +456,7 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
     /// @param answers Last-to-first, each answer supplied, or commitment ID if the answer was supplied with commit->reveal
     function claimWinnings(
         bytes32 question_id, 
-        bytes32[] history_hashes, address[] addrs, uint256[] bonds, bytes32[] answers
+        bytes32[] memory history_hashes, address[] memory addrs, uint256[] memory bonds, bytes32[] memory answers
     ) 
         stateFinalized(question_id)
     public {
@@ -483,7 +480,7 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
             // Check input against the history hash, and see which of 2 possible values of is_commitment fits.
             _verifyHistoryInputOrRevert(last_history_hash, history_hashes[i], answers[i], bonds[i], addrs[i]);
             
-            queued_funds = queued_funds.add(last_bond); 
+            queued_funds = queued_funds + last_bond;
             (queued_funds, payee) = _processHistoryItem(
                 question_id, best_answer, queued_funds, payee, 
                 addrs[i], bonds[i], answers[i]);
@@ -510,7 +507,7 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
             question_claims[question_id].queued_funds = queued_funds;
         } else {
             // There is nothing left below us so the payee can keep what remains
-            _payPayee(question_id, payee, queued_funds.add(last_bond));
+            _payPayee(question_id, payee, queued_funds + last_bond);
             delete question_claims[question_id];
         }
 
@@ -520,7 +517,7 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
 
     function _payPayee(bytes32 question_id, address payee, uint256 value) 
     internal {
-        balanceOf[payee] = balanceOf[payee].add(value);
+        balanceOf[payee] = balanceOf[payee] + value;
         emit LogClaim(question_id, payee, value);
     }
 
@@ -567,7 +564,7 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
                 uint256 answer_takeover_fee = (queued_funds >= bond) ? bond : queued_funds;
 
                 // Settle up with the old (higher-bonded) payee
-                _payPayee(question_id, payee, queued_funds.sub(answer_takeover_fee));
+                _payPayee(question_id, payee, queued_funds - answer_takeover_fee);
 
                 // Now start queued_funds again for the new (lower-bonded) payee
                 payee = addr;
@@ -591,8 +588,8 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
     /// @param bonds In a single list for all supplied questions, the bond supplied with each answer or commitment
     /// @param answers In a single list for all supplied questions, each answer supplied, or commitment ID 
     function claimMultipleAndWithdrawBalance(
-        bytes32[] question_ids, uint256[] lengths, 
-        bytes32[] hist_hashes, address[] addrs, uint256[] bonds, bytes32[] answers
+        bytes32[] memory question_ids, uint256[] memory lengths, 
+        bytes32[] memory hist_hashes, address[] memory addrs, uint256[] memory bonds, bytes32[] memory answers
     ) 
         stateAny() // The finalization checks are done in the claimWinnings function
     public {
@@ -632,7 +629,7 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
     /// @param answers Last-to-first, each answer supplied, or commitment ID if the answer was supplied with commit->reveal
     function refund(
         bytes32 question_id, 
-        bytes32[] history_hashes, address[] addrs, uint256[] bonds, bytes32[] answers
+        bytes32[] memory history_hashes, address[] memory addrs, uint256[] memory bonds, bytes32[] memory answers
     ) 
         stateFrozen()
         stateOpen(question_id)
@@ -646,7 +643,7 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
             // Check input against the history hash
             _verifyHistoryInputOrRevert(questions[question_id].history_hash, history_hashes[i], answers[i], bonds[i], addrs[i]);
             
-            balanceOf[addrs[i]] = balanceOf[addrs[i]].add(bonds[i]);
+            balanceOf[addrs[i]] = balanceOf[addrs[i]] + bonds[i];
             questions[question_id].history_hash = history_hashes[i];
 
         }
@@ -663,8 +660,8 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
     /// @param bonds In a single list for all supplied questions, the bond supplied with each answer or commitment
     /// @param answers In a single list for all supplied questions, each answer supplied, or commitment ID 
     function refundMultipleAndWithdrawBalance(
-        bytes32[] question_ids, uint256[] lengths, 
-        bytes32[] hist_hashes, address[] addrs, uint256[] bonds, bytes32[] answers
+        bytes32[] memory question_ids, uint256[] memory lengths, 
+        bytes32[] memory hist_hashes, address[] memory addrs, uint256[] memory bonds, bytes32[] memory answers
     ) 
         stateFrozen()
     public {
@@ -699,10 +696,10 @@ contract ForkableRealitioERC20 is BalanceHolderERC20 {
     /// @param question_id - The ID of the question to migrate.
     function _importQuestion(bytes32 question_id) 
     internal {
-        IForkableRealitio parent = IForkableRealitio(msg.sender);
+        IForkableRealityETH parent = IForkableRealityETH(msg.sender);
         questions[question_id] = Question(
             parent.getContentHash(question_id),	
-            token,
+            address(token),
             parent.getOpeningTS(question_id),	
             parent.getTimeout(question_id),	
             parent.getFinalizeTS(question_id),	

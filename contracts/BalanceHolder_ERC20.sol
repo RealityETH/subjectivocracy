@@ -1,8 +1,11 @@
-pragma solidity ^0.4.25;
+// SPDX-License-Identifier: GPL-3.0-only
+
+pragma solidity ^0.8.10;
 
 import './IERC20.sol';
+import './IBalanceHolder_ERC20.sol';
 
-contract BalanceHolderERC20 {
+contract BalanceHolder_ERC20 is IBalanceHolder_ERC20 {
 
     IERC20 public token;
 

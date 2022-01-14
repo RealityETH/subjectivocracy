@@ -1,9 +1,12 @@
-pragma solidity ^0.4.25;
+// SPDX-License-Identifier: GPL-3.0-only
+
+pragma solidity ^0.8.10;
+
 
 interface IAMB {
     function requireToPassMessage(
         address _contract,
-        bytes _data,
+        bytes memory _data,
         uint256 _gas
     ) external returns (bytes32);
 

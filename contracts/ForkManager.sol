@@ -1,16 +1,18 @@
-pragma solidity ^0.4.25;
+// SPDX-License-Identifier: GPL-3.0-only
 
-import './RealitioSafeMath256.sol';
+pragma solidity ^0.8.10;
+
+import './IERC20.sol';
 import './ERC20.sol';
 
-import './ForkableRealitioERC20.sol';
-import './IArbitrator.sol';
+import './ForkableRealityETH_ERC20.sol';
+import './Arbitrator.sol';
 import './WhitelistArbitrator.sol';
 import './BridgeToL2.sol';
 
-contract ForkManager is IArbitrator, ERC20 {
+contract ForkManager is Arbitrator, IERC20, ERC20 {
 
-    uint256 public totalSupply;
+    //uint256 public totalSupply;
 
     // The way we access L2
     BridgeToL2 public bridgeToL2;
@@ -19,7 +21,7 @@ contract ForkManager is IArbitrator, ERC20 {
     ForkManager public parentForkManager;
 
     // We use a special Reality.eth instance for governance and arbitration whitelist management
-    ForkableRealitioERC20 public realitio;
+    ForkableRealityETH_ERC20 public realityETH;
 
     // When we try to add or remove an arbitrator or upgrade the bridge, use this timeout for the reality.eth question
     uint32 constant REALITY_ETH_TIMEOUT = 604800; // 1 week
@@ -27,12 +29,12 @@ contract ForkManager is IArbitrator, ERC20 {
     // The standard reality.eth delimiter for questions with multiple arguments
     string constant QUESTION_DELIM = "\u241f";
    
-    // These are created by ForkableRealitioERC20 in its constructor
+    // These are created by ForkableRealityETH_ERC20 in its constructor
     uint256 TEMPLATE_ID_ADD_ARBITRATOR = 2147483648;
     uint256 TEMPLATE_ID_REMOVE_ARBITRATOR = 2147483649;
     uint256 TEMPLATE_ID_BRIDGE_UPGRADE = 2147483650;
 
-    // We act as the arbitrator for the ForkableRealitioERC20 instance. We arbitrate by forking.
+    // We act as the arbitrator for the ForkableRealityETH_ERC20 instance. We arbitrate by forking.
     // Our fee to arbitrate (ie fork) will be 5% of total supply.
     // Usually you'd do this as part of a reality.eth arbitration request which will fund you, although you don't have to.
     uint256 constant PERCENT_TO_FORK = 5;
@@ -96,23 +98,23 @@ contract ForkManager is IArbitrator, ERC20 {
     // Libraries used when creating the child contracts in a fork
     // In theory we could query the current proxies for this information.
     // In practice we'd have to either use ContractProbe which looks complex or modify the generic proxy contract to be able to return its library address
-    address libForkManager;
-    address libForkableRealitio;
+    address payable libForkManager;
+    address libForkableRealityETH;
     address libBridgeToL2;
 
-    function init(address _parentForkManager, address _realitio, address _bridgeToL2, bool _has_governance_freeze, uint256 _parentSupply, address _libForkManager, address _libForkableRealitio, address _libBridgeToL2) 
+    function init(address payable _parentForkManager, address _realityETH, address _bridgeToL2, bool _has_governance_freeze, uint256 _parentSupply, address payable _libForkManager, address _libForkableRealityETH, address _libBridgeToL2) 
     external {
 
         libForkManager = _libForkManager;
-        libForkableRealitio = _libForkableRealitio;
+        libForkableRealityETH = _libForkableRealityETH;
         libBridgeToL2 = _libBridgeToL2;
 
-        require(address(_realitio) != address(0), "Realitio address must be supplied");
+        require(address(_realityETH) != address(0), "RealityETH address must be supplied");
         require(address(_bridgeToL2) != address(0), "Bridge address must be supplied");
 
         parentForkManager = ForkManager(_parentForkManager); // 0x0 for genesis
 
-        realitio = ForkableRealitioERC20(_realitio);
+        realityETH = ForkableRealityETH_ERC20(_realityETH);
         bridgeToL2 = BridgeToL2(_bridgeToL2);
 
         if (_has_governance_freeze) {
@@ -133,7 +135,7 @@ contract ForkManager is IArbitrator, ERC20 {
         if (forked_from_parent_ts == 0 || (block.timestamp - forked_from_parent_ts > FORK_TIME_SECS)) {
             return totalSupply;
         } else {
-            uint256 halfParent = parentSupply.div(2);
+            uint256 halfParent = parentSupply / 2;
             return (halfParent > totalSupply) ? halfParent : totalSupply;
         }
     }
@@ -141,34 +143,34 @@ contract ForkManager is IArbitrator, ERC20 {
     function mint(address _to, uint256 _amount) 
     external {
         require(msg.sender == address(parentForkManager), "Only our parent can mint tokens");
-        totalSupply = totalSupply.add(_amount);
-        balanceOf[_to] = balanceOf[_to].add(_amount);
+        totalSupply = totalSupply + _amount;
+        balanceOf[_to] = balanceOf[_to] + _amount;
         emit Transfer(address(0), _to, _amount);
     }
 
     // Function to clone ourselves.
-    // This in turn clones the realitio instance and the bridge.
+    // This in turn clones the realityETH instance and the bridge.
     // An arbitrator fork will create this for both forks.
     // A governance fork will use the specified contract for one of the options.
-    // It can have its own setup logic if you want to change the Realitio or bridge code.
+    // It can have its own setup logic if you want to change the RealityETH or bridge code.
     function deployFork(bool yes_or_no, bytes32 last_answer, address last_answerer) 
     external {
 
         bytes32 result;
         if (yes_or_no) {
             require(address(childForkManager1) == address(0), "Already migrated");
-            result = bytes32(1);
+            result = bytes32(uint256(1));
         } else {
             require(address(childForkManager2) == address(0), "Already migrated");
-            result = bytes32(0);
+            result = bytes32(uint256(0));
         }
 
-        require(fork_question_id != bytes32(0), "Fork not initiated");
+        require(fork_question_id != bytes32(uint256(0)), "Fork not initiated");
         require(block.timestamp < forkExpirationTS, "Too late to deploy a fork");
 
-        uint256 migrate_funds = realitio.getCumulativeBonds(fork_question_id);
+        uint256 migrate_funds = realityETH.getCumulativeBonds(fork_question_id);
 
-        ForkManager newFm = ForkManager(_deployProxy(libForkManager));
+        ForkManager newFm = ForkManager(payable(_deployProxy(libForkManager)));
 
         BridgeToL2 newBridgeToL2;
 
@@ -182,17 +184,17 @@ contract ForkManager is IArbitrator, ERC20 {
         }
 
         // If it's a new bridge should let us call these without error
-        newBridgeToL2.setParent(this);
+        newBridgeToL2.setParent(address(this));
         newBridgeToL2.init();
 
-        ForkableRealitioERC20 newRealitio = ForkableRealitioERC20(_deployProxy(libForkableRealitio));
-        newRealitio.init(IERC20(newFm), fork_question_id);
+        ForkableRealityETH_ERC20 newRealityETH = ForkableRealityETH_ERC20(_deployProxy(libForkableRealityETH));
+        newRealityETH.init(IERC20(newFm), fork_question_id);
 
         address payee = last_answer == result ? last_answerer : address(this);
-        newRealitio.submitAnswerByArbitrator(fork_question_id, result, payee);
+        newRealityETH.submitAnswerByArbitrator(fork_question_id, result, payee);
 
-        newFm.init(address(this), address(newRealitio), address(bridgeToL2), (numGovernanceFreezes > 0), supplyAtFork, libForkManager, libForkableRealitio, libBridgeToL2);
-        newFm.mint(newRealitio, migrate_funds);
+        newFm.init(payable(address(this)), address(newRealityETH), address(bridgeToL2), (numGovernanceFreezes > 0), supplyAtFork, libForkManager, libForkableRealityETH, libBridgeToL2);
+        newFm.mint(address(newRealityETH), migrate_funds);
 
         if (yes_or_no) {
             childForkManager1 = ForkManager(newFm);
@@ -208,14 +210,14 @@ contract ForkManager is IArbitrator, ERC20 {
     function requestArbitrationByFork(bytes32 question_id, uint256 max_previous)
     external returns (bool) {
 
-        require(question_id != bytes32(0), "Question ID is empty");
+        require(question_id != bytes32(uint256(0)), "Question ID is empty");
         require(isUnForked(), 'Already forked, call against the winning child');
 
         uint256 fork_cost = totalSupply * PERCENT_TO_FORK / 100;
         require(balanceOf[msg.sender] > fork_cost, 'Not enough tokens');
-        balanceOf[msg.sender] = balanceOf[msg.sender].sub(fork_cost);
+        balanceOf[msg.sender] = balanceOf[msg.sender] - fork_cost;
 
-        realitio.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
+        realityETH.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
         fork_question_id = question_id;
 
         forkExpirationTS = block.timestamp + FORK_TIME_SECS;
@@ -232,12 +234,12 @@ contract ForkManager is IArbitrator, ERC20 {
 
     function isForkingStarted() 
     public view returns (bool) {
-        return (forkExpirationTS > 0 && replacedByForkManager == address(0x0));
+        return (forkExpirationTS > 0 && address(replacedByForkManager) == address(0x0));
     }
 
     function isForkingResolved() 
     public view returns (bool) {
-        return (replacedByForkManager != address(0x0));
+        return (address(replacedByForkManager) != address(0x0));
     }
 
     function resolveFork() 
@@ -252,7 +254,7 @@ contract ForkManager is IArbitrator, ERC20 {
     }
 
     function isWinner() 
-    public constant returns (bool) {
+    public view returns (bool) {
         // Genesis fork manager
         if (address(parentForkManager) == address(0x0)) {
             return true;
@@ -266,7 +268,7 @@ contract ForkManager is IArbitrator, ERC20 {
     }
 
     function isLoser() 
-    public constant returns (bool) {
+    public view returns (bool) {
         if (address(parentForkManager) == address(0x0)) {
             // Genesis fork manager
             return false;
@@ -280,7 +282,7 @@ contract ForkManager is IArbitrator, ERC20 {
     }
 
     function disputeFee(bytes32 question_id) 
-    public constant returns (uint256) {
+    public view returns (uint256) {
         return PERCENT_TO_FORK * effectiveTotalSupply() / 100;
     }
 
@@ -296,21 +298,21 @@ contract ForkManager is IArbitrator, ERC20 {
     function beginAddArbitratorToWhitelist(address whitelist_arbitrator, address arbitrator_to_add) 
     external {
         string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_add));
-        bytes32 question_id = realitio.askQuestion(TEMPLATE_ID_ADD_ARBITRATOR, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
+        bytes32 question_id = realityETH.askQuestion(TEMPLATE_ID_ADD_ARBITRATOR, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
         propositions_arbitrator_add[question_id] = ArbitratorProposition(whitelist_arbitrator, arbitrator_to_add);
     }
 
     function beginRemoveArbitratorFromWhitelist(address whitelist_arbitrator, address arbitrator_to_remove) 
     external {
         string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_remove));
-        bytes32 question_id = realitio.askQuestion(TEMPLATE_ID_REMOVE_ARBITRATOR, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
+        bytes32 question_id = realityETH.askQuestion(TEMPLATE_ID_REMOVE_ARBITRATOR, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
         propositions_arbitrator_remove[question_id] = ArbitratorProposition(whitelist_arbitrator, arbitrator_to_remove);
     }
 
     function beginUpgradeBridge(address new_bridge) 
     external {
         string memory question = _toString(abi.encodePacked(new_bridge));
-        bytes32 question_id = realitio.askQuestion(TEMPLATE_ID_BRIDGE_UPGRADE, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
+        bytes32 question_id = realityETH.askQuestion(TEMPLATE_ID_BRIDGE_UPGRADE, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
         propositions_bridge_upgrade[question_id] = new_bridge;
     }
 
@@ -318,16 +320,16 @@ contract ForkManager is IArbitrator, ERC20 {
     // This can be used to freeze operations pending the outcome of a governance question
     function _verifyMinimumBondPosted(bytes32 question_id, uint256 minimum_bond) 
     internal {
-        require(!realitio.isFinalized(question_id), "Question is already finalized, execute instead");
-        require(realitio.getBestAnswer(question_id) == bytes32(1), "Current answer is not 1");
-        require(realitio.getBond(question_id) >= minimum_bond, "Bond not high enough");
+        require(!realityETH.isFinalized(question_id), "Question is already finalized, execute instead");
+        require(realityETH.getBestAnswer(question_id) == bytes32(uint256(1)), "Current answer is not 1");
+        require(realityETH.getBond(question_id) >= minimum_bond, "Bond not high enough");
     }
 
     function clearFailedGovernanceProposal(bytes32 question_id) 
     external {
 
         require(propositions_bridge_upgrade[question_id] != address(0x0), "Proposition not recognized");
-        require(realitio.resultFor(question_id) != bytes32(1), "Proposition passed");
+        require(realityETH.resultFor(question_id) != bytes32(uint256(1)), "Proposition passed");
 
         if (governance_freeze_question_ids[question_id]) {
             delete(governance_freeze_question_ids[question_id]);
@@ -341,7 +343,7 @@ contract ForkManager is IArbitrator, ERC20 {
 
         address new_bridge = propositions_bridge_upgrade[question_id];
         require(new_bridge != address(0x0), "Proposition not recognized");
-        require(realitio.resultFor(question_id) == bytes32(1), "Proposition did not pass");
+        require(realityETH.resultFor(question_id) == bytes32(uint256(1)), "Proposition did not pass");
 
         // If we froze the bridges for this question, clear the freeze
         if (governance_freeze_question_ids[question_id]) {
@@ -373,7 +375,7 @@ contract ForkManager is IArbitrator, ERC20 {
 
         require(whitelist_arbitrator != address(0x0), "Proposition not recognized");
 
-        require(realitio.resultFor(question_id) == bytes32(1), "Proposition did not pass");
+        require(realityETH.resultFor(question_id) == bytes32(uint256(1)), "Proposition did not pass");
 
         bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).addArbitrator.selector, arbitrator_to_add);
         bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
@@ -406,7 +408,7 @@ contract ForkManager is IArbitrator, ERC20 {
 
         require(whitelist_arbitrator != address(0x0), "Proposition not recognized");
 
-        require(realitio.resultFor(question_id) == bytes32(1), "Proposition did not pass");
+        require(realityETH.resultFor(question_id) == bytes32(uint256(1)), "Proposition did not pass");
 
         bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).removeArbitrator.selector, arbitrator_to_remove);
         bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
@@ -417,7 +419,7 @@ contract ForkManager is IArbitrator, ERC20 {
     function executeTokenSale(WhitelistArbitrator wa, bytes32 order_id, uint256 num_gov_tokens)
     external {
         require(balanceOf[msg.sender] >= num_gov_tokens, "Not enough tokens");
-        balanceOf[msg.sender] = balanceOf[msg.sender].sub(num_gov_tokens);
+        balanceOf[msg.sender] = balanceOf[msg.sender] - num_gov_tokens;
         bytes memory data = abi.encodeWithSelector(wa.executeTokenSale.selector, order_id, num_gov_tokens);
         bridgeToL2.requireToPassMessage(address(wa), data, 0);
     }
@@ -453,7 +455,7 @@ contract ForkManager is IArbitrator, ERC20 {
 
     // This will return the bridges that should be used to manage assets
     function requiredBridges() 
-    external returns (address[]) {
+    external returns (address[] memory) {
 
         address[] memory addrs;
 
@@ -491,13 +493,13 @@ contract ForkManager is IArbitrator, ERC20 {
         require(isForkingStarted(), "Not forking");
         require(!isForkingResolved(), "Too late");
         require(balanceOf[msg.sender] > num, "Not enough funds");
-        balanceOf[msg.sender] = balanceOf[msg.sender].sub(num);
-        totalSupply = totalSupply.sub(num);
+        balanceOf[msg.sender] = balanceOf[msg.sender] - num;
+        totalSupply = totalSupply - num;
         if (yes_or_no) {
-            require(childForkManager1 != address(0), "Call deployFork first");
+            require(address(childForkManager1) != address(0), "Call deployFork first");
             childForkManager1.mint(msg.sender, num);
         } else {
-            require(childForkManager2 != address(0), "Call deployFork first");
+            require(address(childForkManager2) != address(0), "Call deployFork first");
             childForkManager2.mint(msg.sender, num);
         }
     }

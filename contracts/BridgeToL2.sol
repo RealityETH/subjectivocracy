@@ -1,4 +1,6 @@
-pragma solidity 0.4.25;
+// SPDX-License-Identifier: GPL-3.0-only
+
+pragma solidity ^0.8.10;
 
 import './IAMB.sol';
 
@@ -24,15 +26,31 @@ contract BridgeToL2 is IAMB {
     }
 
     function requireToPassMessage(
-        address _contract,
-        bytes _data,
-        uint256 _gas
-    ) external returns (bytes32) {
+        address, // _contract,
+        bytes memory, // _data,
+        uint256 // _gas
+    ) override external returns (bytes32) {
         address sender = msg.sender;
         if (sender == parent) {
             sender = FORK_MANAGER_SPECIAL_ADDRESS;
         }
         // Do standard message passing
+
+        // Guess this should be an ID?
+        return bytes32(0x0);
+    }
+
+
+    function maxGasPerTx() override external view returns (uint256) {
+    }
+
+    function messageSender() override external view returns (address) {
+    }
+
+    function messageSourceChainId() override external view returns (bytes32) {
+    }
+
+    function messageId() override external view returns (bytes32) {
     }
 
 }
