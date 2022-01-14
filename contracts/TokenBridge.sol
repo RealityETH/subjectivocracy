@@ -1,6 +1,9 @@
-pragma solidity ^0.4.25;
+// SPDX-License-Identifier: GPL-3.0-only
+
+pragma solidity ^0.8.10;
 
 import './IERC20.sol';
+import './IERC20Mint.sol';
 import './ForkManager.sol';
 
 contract TokenBridge {
@@ -14,17 +17,17 @@ contract TokenBridge {
     mapping(bytes32 => uint256) queuedMessages;
 
     constructor(IERC20 _token, address _l2contract) 
-    public {
+    {
         token = _token;
         l2contract = _l2contract;
     }
 
     // You can send via whatever bridges you like, if they're shady it's your problem
-    function sendToL2(uint256 _amount, address[] _bridges) 
+    function sendToL2(uint256 _amount, address[] memory _bridges) 
     external {
-        require(token.transferFrom(msg.sender, this, _amount), "Transfer failed");
+        require(token.transferFrom(msg.sender, address(this), _amount), "Transfer failed");
         for(uint256 i=0; i<_bridges.length; i++) {
-            bytes memory data = abi.encodeWithSelector(IERC20(l2contract).mint.selector, msg.sender, _amount);
+            bytes memory data = abi.encodeWithSelector(IERC20Mint(l2contract).mint.selector, msg.sender, _amount);
             IAMB(_bridges[i]).requireToPassMessage(l2contract, data, 0);
         }
     }

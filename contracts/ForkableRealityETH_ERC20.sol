@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.10;
 
-import './BalanceHolderERC20.sol';
+import './BalanceHolder_ERC20.sol';
 
-import './IForkableRealitio.sol';
+import './IForkableRealityETH.sol';
 
-contract ForkableRealitioERC20 is BalanceHolder {
+contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
 
     address constant NULL_ADDRESS = address(0);
 
@@ -696,7 +696,7 @@ contract ForkableRealitioERC20 is BalanceHolder {
     /// @param question_id - The ID of the question to migrate.
     function _importQuestion(bytes32 question_id) 
     internal {
-        IForkableRealitio parent = IForkableRealitio(msg.sender);
+        IForkableRealityETH parent = IForkableRealityETH(msg.sender);
         questions[question_id] = Question(
             parent.getContentHash(question_id),	
             address(token),

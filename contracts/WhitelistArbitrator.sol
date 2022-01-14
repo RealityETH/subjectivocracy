@@ -2,9 +2,13 @@
 
 pragma solidity ^0.8.6;
 
+import './BalanceHolder_ERC20.sol';
+
 import './RealityETH_ERC20-3.0.sol';
+
 import './IArbitrator.sol';
 import './IAMB.sol';
+import './IERC20.sol';
 
 /*
 This contract sits between a Reality.eth instance and an Arbitrator.
@@ -14,7 +18,30 @@ Arbitrators can be disputed on L1.
 To Reality.eth it looks like a normal arbitrator, implementing the Arbitrator interface.
 To the normal Arbitrator contracts that do its arbitration jobs, it looks like Reality.eth.
 */
-contract WhitelistArbitrator is IArbitrator, RealityETH_ERC20_v3_0 {
+contract WhitelistArbitrator is BalanceHolder_ERC20 {
+
+    // From RealityETH_ERC20
+    struct Question {
+        bytes32 content_hash;
+        address arbitrator;
+        uint32 opening_ts;
+        uint32 timeout;
+        uint32 finalize_ts;
+        bool is_pending_arbitration;
+        uint256 bounty;
+        bytes32 best_answer;
+        bytes32 history_hash;
+        uint256 bond;
+        uint256 min_bond;
+    }
+
+    mapping(bytes32 => Question) public questions;
+
+
+
+
+
+
 
     IAMB bridge;
     uint256 constant ARB_DISPUTE_TIMEOUT = 86400;
@@ -31,6 +58,11 @@ contract WhitelistArbitrator is IArbitrator, RealityETH_ERC20_v3_0 {
         uint256 fee_paid,
         address requester,
         uint256 remaining
+    );
+
+    event LogNotifyOfArbitrationRequest(
+        bytes32 indexed question_id,
+        address indexed user 
     );
 
     address fork_arbitrator_proxy;
@@ -50,7 +82,7 @@ contract WhitelistArbitrator is IArbitrator, RealityETH_ERC20_v3_0 {
     // List of arbitrators that are currently being challenged
     mapping (address => bool) frozen_arbitrators;
 
-    RealityETH_ERC20_v3_0 realitio;
+    RealityETH_ERC20_v3_0 realityETH;
 
     uint256 dispute_fee;
 
@@ -72,7 +104,7 @@ contract WhitelistArbitrator is IArbitrator, RealityETH_ERC20_v3_0 {
     }
 
     constructor(address _fork_arbitrator_proxy, uint256 _dispute_fee, IAMB _bridge) 
-    public {
+    {
         fork_arbitrator_proxy = _fork_arbitrator_proxy;
         dispute_fee = _dispute_fee;
         bridge = _bridge;
@@ -99,7 +131,7 @@ contract WhitelistArbitrator is IArbitrator, RealityETH_ERC20_v3_0 {
 
         require(msg.value >= arbitration_fee); 
 
-        realitio.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
+        realityETH.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
         emit LogRequestArbitration(question_id, msg.value, msg.sender, 0);
 
         // Queue the question for arbitration by a whitelisted arbitrator
@@ -142,7 +174,7 @@ require(question_arbitrations[question_id].bounty > 0, "Question must be in the 
         emit LogNotifyOfArbitrationRequest(question_id, requester);
     }
 
-    // The arbitrator submits the answer to us, instead of to realitio
+    // The arbitrator submits the answer to us, instead of to realityETH
     // Instead of sending it to Reality.eth, we instead hold onto it for a challenge period in case someone disputes the arbitrator.
     // TODO: We may need assignWinnerAndSubmitAnswerByArbitrator here instead
 
@@ -152,7 +184,8 @@ require(question_arbitrations[question_id].bounty > 0, "Question must be in the 
     /// @param answerer The answerer. If arbitration changed the answer, it should be the payer. If not, the old answerer.
     /// @dev solc will complain about unsued params but they're used, just via msg.data
     function submitAnswerByArbitrator(bytes32 question_id, bytes32 answer, address answerer)
-    external {
+    public 
+    {
         require(question_arbitrations[question_id].arbitrator == msg.sender, "An arbitrator can only submit their own arbitration result");
         require(question_arbitrations[question_id].bounty > 0, "Question must be in the arbitration queue");
 
@@ -184,7 +217,7 @@ require(question_arbitrations[question_id].bounty > 0, "Question must be in the 
 
         balanceOf[question_arbitrations[question_id].payer] = balanceOf[question_arbitrations[question_id].payer] + question_arbitrations[question_id].bounty;
 
-        realitio.submitAnswerByArbitrator(question_id, answer, answerer);
+        realityETH.submitAnswerByArbitrator(question_id, answer, answerer);
     }
 
     function freezeArbitrator(address arbitrator) 
