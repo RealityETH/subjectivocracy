@@ -1,24 +1,25 @@
-ISSUE: 
- - Token committing
-   - need to get people to commit?
-   - force committing, tokens only exist on L1 -> can't use them for insurance, other uses
-   - committers get fees - may not be enough, eg 10% of fees too little if unclear?
-     - first movers get more fees?
-   - moving to L2 takes out of staked pool?
- - Token revenue
-   - Also get part of fees for transactions? Each block needs a burn? How to regulate how much?
-   - Whitelisted arbitrators must pay part of arbitration? 
-   - Bond has a burn, but only works if token used for reality.eth 
-   - Bond claim fee goes to arbitrators, arbitrator withdrawal must provide a % to tokenholders
-      -> other currency also works
+Work through full timeline
+
+L2 consensus failure
+
+ Bridge timeout 7 days
+
+ Invalid transitions signed Day 3
+ Fork started from that point Day 4
+ Governance freeze Day 5, messages start piling up
+
+ Switch to new bridge with different governance
+ Publish correct messages starting Day 3
+ Governance approves Day 11
 
 
- - fees charged on escalations and arbitrations
-   - issue: if not in the governance token how to do they get split among token-holders
-    - track withdrawal dates
-    - auction to burn tokens
 
- - How to price the MetaArbitrator
+Fake transactions sent to bridge
 
- - How to move other tokens owned by the MetaArbitrator
-  
+ Day 1 good tx
+ Day 2 good tx
+ Day 3 bad tx
+ 
+ Day 5 governance freeze
+ Day 10 proposition passes
+ 
