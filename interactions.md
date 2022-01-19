@@ -85,7 +85,7 @@ Next step:
 ```
     Dave    L2  NativeTokenA.approve(ArbitratorA, 500000) 
     Dave    L2  ArbitratorA.requestArbitration(question_id)
-                    NativeTokenA.transferFrom(Dave, self, 500000)
+                    NativeTokenA.transferFrom(Dave, self, 500000) # TODO: Maybe not needed because this is the native token?
                     WhitelistArbitrator.notifyOfArbitrationRequest(question_id, Dave)
 
     Arby    L2  ArbitratorA.submitAnswerByArbitrator(question_id, 1, Dave)
@@ -243,7 +243,7 @@ It's its own transaction on the forkable version because forking for one questio
 
 ### Execute a governance change
 ```
-    Charlie L1  ForkManager.executeBridgeUpdate:(gov_question_id) 
+    Charlie L1  ForkManager.executeBridgeUpdate(gov_question_id) 
                     RealityETH.resultFor(gov_question_id)
                     # Update to reflect child forkmanager
                     # Has the effect of unfreezing bridges, may be new bridges
