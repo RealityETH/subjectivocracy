@@ -37,12 +37,6 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
 
     mapping(bytes32 => Question) public questions;
 
-
-
-
-
-
-
     IAMB bridge;
     uint256 constant ARB_DISPUTE_TIMEOUT = 86400;
 
@@ -64,8 +58,6 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
         bytes32 indexed question_id,
         address indexed user 
     );
-
-    address fork_arbitrator_proxy;
 
     struct TokenReservation {
         address reserver;
@@ -103,9 +95,9 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
         _;
     }
 
-    constructor(address _fork_arbitrator_proxy, uint256 _dispute_fee, IAMB _bridge) 
+    constructor(address _realityETH, uint256 _dispute_fee, IAMB _bridge) 
     {
-        fork_arbitrator_proxy = _fork_arbitrator_proxy;
+        realityETH = RealityETH_ERC20_v3_0(_realityETH);
         dispute_fee = _dispute_fee;
         bridge = _bridge;
     }
@@ -321,6 +313,13 @@ public {
         token.transfer(token_reservations[resid].reserver, num);
 
         delete(token_reservations[resid]); 
+    }
+
+    function realitio() 
+    external view
+    returns (address)
+    {
+        return address(realityETH);
     }
 
 }
