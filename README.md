@@ -81,7 +81,7 @@ The system is implemented in the following contracts (and their dependencies suc
 
 * [ForkManager.sol](development/contracts/ForkManager.sol) implements the governance token and fork management.
 * [ForkableRealityETH_ERC20.sol](development/contracts/ForkableRealityETH_ERC20.sol) is a modified version of Reality.eth designed to be used only for governance and/or arbitrator selection.
-* [contracts/RealityETH_ERC20-3.0.sol](development/contracts/RealityETH_ERC20-3.0.sol) is the preexisting Reality.eth contract that would be deployed on Layer 2.
+* [RealityETH_ERC20-3.0.sol](development/contracts/RealityETH_ERC20-3.0.sol) is the preexisting Reality.eth contract that would be deployed on Layer 2.
 * [WhitelistArbitrator.sol](development/contracts/WhitelistArbitrator.sol) is an arbitration contract based on a whitelist managed by the ForkManager.
 * [TokenBridge.sol](development/contracts/TokenBridge.sol) is an example of how a token on Layer 1 would follow the direction of the ForkManager in locking assets to be credited on Layer 2 and unlocking them based on messages from the appropriate Layer 2 bridge. Untrusted bridges may instead require a [DelayedTokenBridge.sol](development/contracts/DelayedTokenBridge.sol).
 
