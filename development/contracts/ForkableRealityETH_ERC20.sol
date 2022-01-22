@@ -151,7 +151,7 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     public {
         require(address(token) == address(0), "Can only be initialized once");
         createTemplate('{"title": "Should we add arbitrator %s to whitelist contract %s", "type": "bool"}');
-        createTemplate('{"title": "Should we remove arbitrator %s to whitelist contract %s", "type": "bool"}');
+        createTemplate('{"title": "Should we remove arbitrator %s from whitelist contract %s", "type": "bool"}');
         createTemplate('{"title": "Should switch to ForkManager %s", "type": "bool"}');
         token = _token;
         if (_question_id != bytes32(0x0)) {
