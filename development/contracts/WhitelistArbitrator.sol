@@ -184,7 +184,7 @@ require(question_arbitrations[question_id].bounty > 0, "Question must be in the 
         require(question_arbitrations[question_id].arbitrator == msg.sender, "An arbitrator can only submit their own arbitration result");
         require(question_arbitrations[question_id].bounty > 0, "Question must be in the arbitration queue");
 
-        bytes32 data_hash = keccak256(abi.encodePacked(msg.data));
+        bytes32 data_hash = keccak256(abi.encodePacked(question_id, answer, answerer));
         uint256 finalize_ts = block.timestamp + ARB_DISPUTE_TIMEOUT; 
 
         question_arbitrations[question_id].msg_hash = data_hash;
@@ -198,12 +198,12 @@ require(question_arbitrations[question_id].bounty > 0, "Question must be in the 
     function completeArbitration(bytes32 question_id, bytes32 answer, address answerer)
     external {
 
-        address arbitrator = questions[question_id].arbitrator;
+        address arbitrator = question_arbitrations[question_id].arbitrator;
 
         require(arbitrators[arbitrator], "Arbitrator must be whitelisted");
         require(!frozen_arbitrators[arbitrator], "Arbitrator must not be under dispute"); 
 
-        bytes32 data_hash = keccak256(abi.encodePacked(msg.data));
+        bytes32 data_hash = keccak256(abi.encodePacked(question_id, answer, answerer));
         require(question_arbitrations[question_id].msg_hash == data_hash, "You must resubmit the parameters previously sent");
 
         uint256 finalize_ts = question_arbitrations[question_id].finalize_ts;
