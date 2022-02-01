@@ -38,11 +38,11 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
     mapping(bytes32 => Question) public questions;
 
     IAMB bridge;
-    uint256 constant ARB_DISPUTE_TIMEOUT = 86400;
+    uint256 constant public ARB_DISPUTE_TIMEOUT = 86400;
 
-    uint256 constant TOKEN_RESERVATION_BIDDING_PERIOD= 86400; // After you make a bid, people have 1 day to outbid you
-    uint256 constant TOKEN_RESERVATION_CLAIM_TIMEOUT = 864000; // After a bid is accepted, you have 9 days to complete it or you can lose your deposit
-    uint256 constant TOKEN_RESERVATION_DEPOSIT = 10; // 1/10, ie 10%
+    uint256 constant public TOKEN_RESERVATION_BIDDING_PERIOD= 86400; // After you make a bid, people have 1 day to outbid you
+    uint256 constant public TOKEN_RESERVATION_CLAIM_TIMEOUT = 864000; // After a bid is accepted, you have 9 days to complete it or you can lose your deposit
+    uint256 constant public TOKEN_RESERVATION_DEPOSIT = 10; // 1/10, ie 10%
 
     // The bridge (either on L1 or L2) should switch out real L1 forkmanager address for a special address
     address constant FORK_MANAGER_SPECIAL_ADDRESS = 0x00000000000000000000000000000000f0f0F0F0;
