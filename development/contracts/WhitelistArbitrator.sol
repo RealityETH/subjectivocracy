@@ -65,18 +65,18 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
         uint256 price;
         uint256 reserved_ts;
     }
-    mapping (bytes32 => TokenReservation) token_reservations;
-    uint256 reserved_tokens;
+    mapping (bytes32 => TokenReservation) public token_reservations;
+    uint256 public reserved_tokens;
 
     // Whitelist of acceptable arbitrators
-    mapping (address => bool) arbitrators;
+    mapping (address => bool) public arbitrators;
 
     // List of arbitrators that are currently being challenged
-    mapping (address => bool) frozen_arbitrators;
+    mapping (address => bool) public frozen_arbitrators;
 
-    RealityETH_ERC20_v3_0 realityETH;
+    RealityETH_ERC20_v3_0 public realityETH;
 
-    uint256 dispute_fee;
+    uint256 public dispute_fee;
 
     struct ArbitrationRequest {
         address arbitrator;
@@ -86,7 +86,7 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
         uint256 finalize_ts;
     }
 
-    mapping (bytes32 => ArbitrationRequest) question_arbitrations;
+    mapping (bytes32 => ArbitrationRequest) public question_arbitrations;
 
     // TODO: Work out how this is implemented in xdai or whatever we use
     modifier l1_forkmanager_only() {
@@ -95,11 +95,14 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
         _;
     }
 
-    constructor(address _realityETH, uint256 _dispute_fee, IAMB _bridge) 
+    constructor(address _realityETH, uint256 _dispute_fee, IAMB _bridge, address[] memory _initial_arbitrators) 
     {
         realityETH = RealityETH_ERC20_v3_0(_realityETH);
         dispute_fee = _dispute_fee;
         bridge = _bridge;
+        for(uint256 i = 0; i<_initial_arbitrators.length; i++) {
+            arbitrators[_initial_arbitrators[i]] = true;
+        }
     }
 	
     /// @notice Return the dispute fee for the specified question. 0 indicates that we won't arbitrate it.
