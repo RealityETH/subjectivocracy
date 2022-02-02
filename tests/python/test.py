@@ -131,7 +131,7 @@ class TestRealitio(TestCase):
         fee = self.rc0.functions.arbitrator_question_fees(self.arb0.address).call()
         self.assertEqual(fee, 100)
 
-        self._issueTokens(acct, amt+fee, amt+fee)
+        self._issueTokens(self.l2token1, acct, amt+fee, amt+fee)
 
         starting_bal = self.rc0.functions.balanceOf(acct).call()
 
@@ -204,9 +204,9 @@ class TestRealitio(TestCase):
 
         return standard_tx
 
-    def _issueTokens(self, addr, issued, approved):
-        self.l2token0.functions.mint(addr, issued).transact()
-        self.l2token0.functions.approve(self.rc0.address, approved).transact(self._txargs(sender=addr))
+    def _issueTokens(self, token, addr, issued, approved):
+        token.functions.mint(addr, issued).transact()
+        token.functions.approve(self.rc0.address, approved).transact(self._txargs(sender=addr))
 
     def _contractFromBuildJSON(self, web3, con_name, sender=None, startgas=DEPLOY_GAS, constructor_args=None):
 
@@ -645,9 +645,9 @@ class TestRealitio(TestCase):
         k4 = self.l2web3.eth.accounts[4]
 
         if ERC20:
-            self._issueTokens(k2, 100000, 50000)
-            self._issueTokens(k3, 100000, 50000)
-            self._issueTokens(k4, 100000, 50000)
+            self._issueTokens(self.l2token1, k2, 100000, 50000)
+            self._issueTokens(self.l2token1, k3, 100000, 50000)
+            self._issueTokens(self.l2token1, k4, 100000, 50000)
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1001, 0, 2, k4)
@@ -693,9 +693,9 @@ class TestRealitio(TestCase):
         k4 = self.l2web3.eth.accounts[4]
 
         if ERC20:
-            self._issueTokens(k2, 100000, 50000)
-            self._issueTokens(k3, 100000, 50000)
-            self._issueTokens(k4, 100000, 50000)
+            self._issueTokens(self.l2token1, k2, 100000, 50000)
+            self._issueTokens(self.l2token1, k3, 100000, 50000)
+            self._issueTokens(self.l2token1, k4, 100000, 50000)
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1001, 0, 2, k4)
@@ -738,9 +738,9 @@ class TestRealitio(TestCase):
         k4 = self.l2web3.eth.accounts[4]
 
         if ERC20:
-            self._issueTokens(k2, 100000, 50000)
-            self._issueTokens(k3, 100000, 50000)
-            self._issueTokens(k4, 100000, 50000)
+            self._issueTokens(self.l2token1, k2, 100000, 50000)
+            self._issueTokens(self.l2token1, k3, 100000, 50000)
+            self._issueTokens(self.l2token1, k4, 100000, 50000)
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1001, 0, 2, k4)
@@ -784,9 +784,9 @@ class TestRealitio(TestCase):
         k4 = self.l2web3.eth.accounts[4]
 
         if ERC20:
-            self._issueTokens(k2, 100000, 50000)
-            self._issueTokens(k3, 100000, 50000)
-            self._issueTokens(k4, 100000, 50000)
+            self._issueTokens(self.l2token1, k2, 100000, 50000)
+            self._issueTokens(self.l2token1, k3, 100000, 50000)
+            self._issueTokens(self.l2token1, k4, 100000, 50000)
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1001, 0, 2, k4)
@@ -828,9 +828,9 @@ class TestRealitio(TestCase):
         k4 = self.l2web3.eth.accounts[4]
 
         if ERC20:
-            self._issueTokens(k2, 100000, 50000)
-            self._issueTokens(k3, 100000, 50000)
-            self._issueTokens(k4, 100000, 50000)
+            self._issueTokens(self.l2token1, k2, 100000, 50000)
+            self._issueTokens(self.l2token1, k3, 100000, 50000)
+            self._issueTokens(self.l2token1, k4, 100000, 50000)
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1001, 0, 2, k4)
@@ -906,9 +906,9 @@ class TestRealitio(TestCase):
         k4 = self.l2web3.eth.accounts[4]
 
         if ERC20:
-            self._issueTokens(k2, 100000, 50000)
-            self._issueTokens(k3, 100000, 50000)
-            self._issueTokens(k4, 100000, 50000)
+            self._issueTokens(self.l2token1, k2, 100000, 50000)
+            self._issueTokens(self.l2token1, k3, 100000, 50000)
+            self._issueTokens(self.l2token1, k4, 100000, 50000)
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1001, 0, 2, k4, True)
@@ -1084,7 +1084,7 @@ class TestRealitio(TestCase):
         sdr = self.l2web3.eth.accounts[3]
 
         if ERC20:
-            self._issueTokens(sdr, 100000, 50000)
+            self._issueTokens(self.l2token1, sdr, 100000, 50000)
 
         ##hist_hash = self.rc0.functions.questions(self.question_id).call()[QINDEX_HISTORY_HASH]
         ##self.assertEqual(hist_hash, '0x0000000000000000000000000000000000000000000000000000000000000000')
@@ -1127,7 +1127,7 @@ class TestRealitio(TestCase):
         k3 = self.l2web3.eth.accounts[3]
 
         if ERC20:
-            self._issueTokens(k3, 100000, 50000)
+            self._issueTokens(self.l2token1, k3, 100000, 50000)
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1001, 0, 20, k3)
@@ -1176,8 +1176,8 @@ class TestRealitio(TestCase):
         k4 = self.l2web3.eth.accounts[4]
 
         if ERC20:
-            self._issueTokens(k3, 1000000, 1000000)
-            self._issueTokens(k4, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k3, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k4, 1000000, 1000000)
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1001, 0, 2, k4)
@@ -1204,8 +1204,8 @@ class TestRealitio(TestCase):
         k4 = self.l2web3.eth.accounts[4]
 
         if ERC20:
-            self._issueTokens(k3, 1000000, 1000000)
-            self._issueTokens(k4, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k3, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k4, 1000000, 1000000)
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1001, 0, 2, k4)
@@ -1231,7 +1231,7 @@ class TestRealitio(TestCase):
         k4 = self.l2web3.eth.accounts[4]
 
         if ERC20:
-            self._issueTokens(k4, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k4, 1000000, 1000000)
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1001, 0, 2, k4)
@@ -1254,10 +1254,10 @@ class TestRealitio(TestCase):
         k6 = self.l2web3.eth.accounts[6]
 
         if ERC20:
-            self._issueTokens(k3, 1000000, 1000000)
-            self._issueTokens(k4, 1000000, 1000000)
-            self._issueTokens(k5, 1000000, 1000000)
-            self._issueTokens(k6, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k3, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k4, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k5, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k6, 1000000, 1000000)
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1002,  0,  1, k3, False)
@@ -1281,10 +1281,10 @@ class TestRealitio(TestCase):
         k6 = self.l2web3.eth.accounts[6]
 
         if ERC20:
-            self._issueTokens(k3, 1000000, 1000000)
-            self._issueTokens(k4, 1000000, 1000000)
-            self._issueTokens(k5, 1000000, 1000000)
-            self._issueTokens(k6, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k3, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k4, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k5, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k6, 1000000, 1000000)
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1002,  0,  1, k3, False)
@@ -1314,10 +1314,10 @@ class TestRealitio(TestCase):
         k6 = self.l2web3.eth.accounts[6]
 
         if ERC20:
-            self._issueTokens(k3, 1000000, 1000000)
-            self._issueTokens(k4, 1000000, 1000000)
-            self._issueTokens(k5, 1000000, 1000000)
-            self._issueTokens(k6, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k3, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k4, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k5, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k6, 1000000, 1000000)
 
         self.l2web3.testing.mine()
         self.assertEqual(self.rc0.functions.questions(self.question_id).call()[QINDEX_STEP_DELAY], 30)
@@ -1372,10 +1372,10 @@ class TestRealitio(TestCase):
         k6 = self.l2web3.eth.accounts[6]
 
         if ERC20:
-            self._issueTokens(k3, 1000000, 1000000)
-            self._issueTokens(k4, 1000000, 1000000)
-            self._issueTokens(k5, 1000000, 1000000)
-            self._issueTokens(k6, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k3, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k4, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k5, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k6, 1000000, 1000000)
 
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1002,  0,  1, k3, True, False, True)
         nonce = st['nonce'][0]
@@ -1399,7 +1399,7 @@ class TestRealitio(TestCase):
 
         k3 = self.l2web3.eth.accounts[3]
         if ERC20:
-            self._issueTokens(k3, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k3, 1000000, 1000000)
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1002,  0,  1, k3, True)
@@ -1423,7 +1423,7 @@ class TestRealitio(TestCase):
 
         k3 = self.l2web3.eth.accounts[3]
         if ERC20:
-            self._issueTokens(k3, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k3, 1000000, 1000000)
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1002,  0,  1, k3, True)
@@ -1440,7 +1440,7 @@ class TestRealitio(TestCase):
     
         k3 = self.l2web3.eth.accounts[3]
         if ERC20:
-            self._issueTokens(k3, 1000, 1000)
+            self._issueTokens(self.l2token1, k3, 1000, 1000)
 
         fee = self.arb0.functions.getDisputeFee(encode_hex("0x00")).call()
 
@@ -1472,7 +1472,7 @@ class TestRealitio(TestCase):
             ).transact(self._txargs(sender=k3))
             self.raiseOnZeroStatus(txid)
 
-        self._issueTokens(k3, 500, 500)
+        self._issueTokens(self.l2token1, k3, 500, 500)
 
         with self.assertRaises(TransactionFailed):
             txid = self.rc0.functions.submitAnswerERC20(self.question_id, to_answer_for_contract(12345), 0
@@ -1480,7 +1480,7 @@ class TestRealitio(TestCase):
             ).transact(self._txargs(sender=k3))
             self.raiseOnZeroStatus(txid)
 
-        self._issueTokens(k3, 501, 1001)
+        self._issueTokens(self.l2token1, k3, 501, 1001)
 
         bal = self.l2token0.functions.balanceOf(k3).call()
         self.assertEqual(bal, 1001)
@@ -1519,7 +1519,7 @@ class TestRealitio(TestCase):
         self.assertEqual(tbal, start_tbal)
 
         # Sets the approval to 500, and makes sure there at least 500
-        self._issueTokens(k3, 500, 500)
+        self._issueTokens(self.l2token1, k3, 500, 500)
         start_tbal = self.l2token0.functions.balanceOf(k3).call()
 
         # We have 999 in the balance and only 500 approved, so this should fail
@@ -1551,8 +1551,8 @@ class TestRealitio(TestCase):
         k4 = self.l2web3.eth.accounts[4]
 
         if ERC20:
-            self._issueTokens(k3, 1000000, 1000000)
-            self._issueTokens(k4, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k3, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k4, 1000000, 1000000)
 
         fee = self.arb0.functions.getDisputeFee(encode_hex("0x00")).call()
 
@@ -1583,9 +1583,9 @@ class TestRealitio(TestCase):
 
         if ERC20:
 
-            self._issueTokens(k3, 1000000, 1000000)
-            self._issueTokens(k4, 1000000, 1000000)
-            self._issueTokens(k5, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k3, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k4, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k5, 1000000, 1000000)
 
             self.rc0.functions.submitAnswerERC20(self.question_id, to_answer_for_contract(12345), 0
             ,1
@@ -1639,9 +1639,9 @@ class TestRealitio(TestCase):
         k5 = self.l2web3.eth.accounts[5]
 
         if ERC20:
-            self._issueTokens(k3, 1000000, 1000000)
-            self._issueTokens(k4, 1000000, 1000000)
-            self._issueTokens(k5, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k3, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k4, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k5, 1000000, 1000000)
 
         claim_args_state = []
         claim_args_addrs = []
@@ -1816,7 +1816,7 @@ class TestRealitio(TestCase):
         k5 = self.l2web3.eth.accounts[5]
 
         if ERC20:
-            self._issueTokens(k3, 100000, 50000)
+            self._issueTokens(self.l2token1, k3, 100000, 50000)
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1001, 0, 2, k3)
@@ -1843,7 +1843,7 @@ class TestRealitio(TestCase):
         k5 = self.l2web3.eth.accounts[5]
         
         if ERC20:
-              self._issueTokens(k5, 1000000, 1000000)
+              self._issueTokens(self.l2token1, k5, 1000000, 1000000)
         
         if ERC20:
             self.rc0.functions.submitAnswerERC20(self.question_id, to_answer_for_contract(12345), 0
@@ -1892,8 +1892,8 @@ class TestRealitio(TestCase):
         k5 = self.l2web3.eth.accounts[5]
 
         if ERC20:
-            self._issueTokens(k4, 1000000, 1000000)
-            self._issueTokens(k5, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k4, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k5, 1000000, 1000000)
         
         if ERC20:
             with self.assertRaises(TransactionFailed):
@@ -2061,10 +2061,10 @@ class TestRealitio(TestCase):
         k7 = self.l2web3.eth.accounts[7]
 
         if ERC20:
-            self._issueTokens(k3, 1000000, 1000000)
-            self._issueTokens(k4, 1000000, 1000000)
-            self._issueTokens(k5, 1000000, 1000000)
-            self._issueTokens(k7, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k3, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k4, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k5, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k7, 1000000, 1000000)
 
         start_bal = self.rc0.functions.balanceOf(self.arb0.address).call()
         self.arb0.functions.setQuestionFee(321).transact()
@@ -2142,8 +2142,8 @@ class TestRealitio(TestCase):
         k5 = self.l2web3.eth.accounts[5]
 
         if ERC20:
-            self._issueTokens(k4, 1000000, 1000000)
-            self._issueTokens(k5, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k4, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k5, 1000000, 1000000)
 
         # Treat k5 as the arbitrator for these purposes, although really the arbitrator would be a contract
         self.rc0.functions.setQuestionFee(123).transact(self._txargs(sender=k5))
@@ -2325,10 +2325,10 @@ class TestRealitio(TestCase):
         k7 = self.l2web3.eth.accounts[7]
 
         if ERC20:
-            self._issueTokens(k2, 1000000, 1000000)
-            self._issueTokens(k4, 1000000, 1000000)
-            self._issueTokens(k5, 1000000, 1000000)
-            self._issueTokens(k7, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k2, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k4, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k5, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k7, 1000000, 1000000)
 
         start_bal = self.rc0.functions.balanceOf(self.arb0.address).call()
         self.arb0.functions.setQuestionFee(321).transact()
@@ -2417,7 +2417,7 @@ class TestRealitio(TestCase):
         k2 = self.l2web3.eth.accounts[2]
 
         if ERC20:
-            self._issueTokens(k2, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k2, 1000000, 1000000)
             txid = self.rc0.functions.askQuestionERC20(
                 0,
                 "my question 3",
@@ -2447,7 +2447,7 @@ class TestRealitio(TestCase):
 
         k0 = self.l2web3.eth.accounts[0]
         if ERC20:
-            self._issueTokens(k0, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k0, 1000000, 1000000)
 
         if ERC20:
             txid = self.rc0.functions.submitAnswerERC20(self.question_id, ANSWERED_TOO_SOON_VAL, 0, 3).transact() 
@@ -2594,8 +2594,8 @@ class TestRealitio(TestCase):
         k3 = self.l2web3.eth.accounts[3]
         k5 = self.l2web3.eth.accounts[5]
         if ERC20:
-            self._issueTokens(k0, 1000000, 1000000)
-            self._issueTokens(k3, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k0, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k3, 1000000, 1000000)
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1001, 0, 2, k3)
@@ -2629,9 +2629,9 @@ class TestRealitio(TestCase):
         k4 = self.l2web3.eth.accounts[4]
         k5 = self.l2web3.eth.accounts[5]
         if ERC20:
-            self._issueTokens(k0, 1000000, 1000000)
-            self._issueTokens(k3, 1000000, 1000000)
-            self._issueTokens(k4, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k0, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k3, 1000000, 1000000)
+            self._issueTokens(self.l2token1, k4, 1000000, 1000000)
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1001, 0, 200, k3)
