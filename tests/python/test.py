@@ -205,8 +205,8 @@ class TestRealitio(TestCase):
         return standard_tx
 
     def _issueTokens(self, addr, issued, approved):
-        self.token0.functions.mint(addr, issued).transact()
-        self.token0.functions.approve(self.rc0.address, approved).transact(self._txargs(sender=addr))
+        self.l2token0.functions.mint(addr, issued).transact()
+        self.l2token0.functions.approve(self.rc0.address, approved).transact(self._txargs(sender=addr))
 
     def _contractFromBuildJSON(self, web3, con_name, sender=None, startgas=DEPLOY_GAS, constructor_args=None):
 
@@ -253,7 +253,6 @@ class TestRealitio(TestCase):
         self.l2web3 = Web3(l2prov)
         self.l2web3.testing.mine()
 
-
         self.deploy_tx = {
             'from': self.l2web3.eth.accounts[0],
             'gas': DEPLOY_GAS
@@ -275,14 +274,14 @@ class TestRealitio(TestCase):
 
         # Make a token on L2
         k0 = self.l2web3.eth.accounts[0]
-        self.token0 = self._contractFromBuildJSON(self.l2web3, 'ERC20Mint')
-        self.token0.functions.mint(k0, 100000000000000).transact()
-        self.assertEqual(self.token0.functions.balanceOf(k0).call(), 100000000000000)
+        self.l2token0 = self._contractFromBuildJSON(self.l2web3, 'ERC20Mint')
+        self.l2token0.functions.mint(k0, 100000000000000).transact()
+        self.assertEqual(self.l2token0.functions.balanceOf(k0).call(), 100000000000000)
 
 
         # Make a reality.eth instance on L2
-        self.realityeth = self._contractFromBuildJSON(self.l2web3, 'RealityETH_ERC20-3.0')
-        self.realityeth.functions.setToken(self.token0.address).transact()
+        self.l2realityeth = self._contractFromBuildJSON(self.l2web3, 'RealityETH_ERC20-3.0')
+        self.l2realityeth.functions.setToken(self.l2token0.address).transact()
 
 
         # Make two competing arbitrators on L2, both will be added to the whitelist initially.
@@ -301,8 +300,8 @@ class TestRealitio(TestCase):
 
         # Make a WhitelistArbitrator. 
         # We set the reality.eth instance and dispute fee in the constructor, unlike the plain Arbitrator. TODO: should we standardize this?
-        self.whitelist_arbitrator = self._contractFromBuildJSON(self.l2web3, 'WhitelistArbitrator', None, None, [self.realityeth.address, self.dispute_fee, self.AMB.address, [self.arb1.address, self.arb2.address]])
-        self.assertEqual(self.whitelist_arbitrator.functions.realitio().call(), self.realityeth.address)
+        self.whitelist_arbitrator = self._contractFromBuildJSON(self.l2web3, 'WhitelistArbitrator', None, None, [self.l2realityeth.address, self.dispute_fee, self.AMB.address, [self.arb1.address, self.arb2.address]])
+        self.assertEqual(self.whitelist_arbitrator.functions.realitio().call(), self.l2realityeth.address)
         self.assertTrue(self.whitelist_arbitrator.functions.arbitrators(self.arb1.address).call())
         self.assertTrue(self.whitelist_arbitrator.functions.arbitrators(self.arb2.address).call())
         self.assertFalse(self.whitelist_arbitrator.functions.arbitrators(self.arb3.address).call())
@@ -317,12 +316,18 @@ class TestRealitio(TestCase):
 
 
         # Mint balances for our test users so and preapprove reality.eth so we don't have to keep calling approve whenever we do something.
-        self.token0.functions.mint(self.L2_ALICE, 30000000000000).transact()
-        self.token0.functions.mint(self.L2_BOB, 50000000000000).transact()
-        self.token0.functions.mint(self.L2_CHARLIE, 70000000000000).transact()
-        self.token0.functions.approve(self.realityeth.address, 30000000000000).transact(self._txargs(sender=self.L2_ALICE))
-        self.token0.functions.approve(self.realityeth.address, 50000000000000).transact(self._txargs(sender=self.L2_BOB))
-        self.token0.functions.approve(self.realityeth.address, 70000000000000).transact(self._txargs(sender=self.L2_CHARLIE))
+        self.l2token0.functions.mint(self.L2_ALICE, 30000000000000).transact()
+        self.l2token0.functions.mint(self.L2_BOB, 50000000000000).transact()
+        self.l2token0.functions.mint(self.L2_CHARLIE, 70000000000000).transact()
+        self.l2token0.functions.approve(self.l2realityeth.address, 30000000000000).transact(self._txargs(sender=self.L2_ALICE))
+        self.l2token0.functions.approve(self.l2realityeth.address, 50000000000000).transact(self._txargs(sender=self.L2_BOB))
+        self.l2token0.functions.approve(self.l2realityeth.address, 70000000000000).transact(self._txargs(sender=self.L2_CHARLIE))
+
+
+
+        # self.l1realityeth = self._contractFromBuildJSON(self.l1web3, 'ForkableRealityETH_ERC20', None, None, ["0x00", self.l1token0])
+
+        
 
 
         return
@@ -334,40 +339,40 @@ class TestRealitio(TestCase):
         ### Make a crowdfund            
         ### [Just asking the question that'll settle the crowdfund, crowdfund contract part skipped]
 
-        question_id = calculate_question_id(self.realityeth.address, 0, "my question x", self.whitelist_arbitrator.address, 30, 0, 0, self.L2_ALICE, 0)
+        question_id = calculate_question_id(self.l2realityeth.address, 0, "my question x", self.whitelist_arbitrator.address, 30, 0, 0, self.L2_ALICE, 0)
 
         NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
 
-        txid = self.realityeth.functions.askQuestion(0, "my question x", self.whitelist_arbitrator.address, 30, 0, 0).transact(self._txargs(sender=self.L2_ALICE))
+        txid = self.l2realityeth.functions.askQuestion(0, "my question x", self.whitelist_arbitrator.address, 30, 0, 0).transact(self._txargs(sender=self.L2_ALICE))
         self.raiseOnZeroStatus(txid)
 
-        self.assertEqual(self.realityeth.functions.questions(question_id).call()[QINDEX_ARBITRATOR], self.whitelist_arbitrator.address)
+        self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_ARBITRATOR], self.whitelist_arbitrator.address)
 
         ### Report an answer (contested)
 
-        txid = self.realityeth.functions.submitAnswerERC20(question_id, to_answer_for_contract(1), 0, 100).transact(self._txargs(sender=self.L2_BOB))
+        txid = self.l2realityeth.functions.submitAnswerERC20(question_id, to_answer_for_contract(1), 0, 100).transact(self._txargs(sender=self.L2_BOB))
         self.raiseOnZeroStatus(txid)
 
 
-        txid = self.realityeth.functions.submitAnswerERC20(question_id, to_answer_for_contract(0), 0, 200).transact(self._txargs(sender=self.L2_CHARLIE))
+        txid = self.l2realityeth.functions.submitAnswerERC20(question_id, to_answer_for_contract(0), 0, 200).transact(self._txargs(sender=self.L2_CHARLIE))
         self.raiseOnZeroStatus(txid)
 
-        txid = self.realityeth.functions.submitAnswerERC20(question_id, to_answer_for_contract(1), 0, 400).transact(self._txargs(sender=self.L2_BOB))
+        txid = self.l2realityeth.functions.submitAnswerERC20(question_id, to_answer_for_contract(1), 0, 400).transact(self._txargs(sender=self.L2_BOB))
         self.raiseOnZeroStatus(txid)
 
-        txid = self.realityeth.functions.submitAnswerERC20(question_id, to_answer_for_contract(0), 0, 2000000).transact(self._txargs(sender=self.L2_CHARLIE))
+        txid = self.l2realityeth.functions.submitAnswerERC20(question_id, to_answer_for_contract(0), 0, 2000000).transact(self._txargs(sender=self.L2_CHARLIE))
         self.raiseOnZeroStatus(txid)
 
         ### Contest an answer
 
         # TODO: Should the WhitelistArbitrator get paid in the native token or should it be an ERC20?
-        # self.token0.functions.approve(self.whitelist_arbitrator.address, self.dispute_fee).transact(self._txargs(sender=self.L2_BOB))
+        # self.l2token0.functions.approve(self.whitelist_arbitrator.address, self.dispute_fee).transact(self._txargs(sender=self.L2_BOB))
         # self.raiseOnZeroStatus(txid)
 
-        self.assertEqual(self.realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], False)
+        self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], False)
         self.whitelist_arbitrator.functions.requestArbitration(question_id, 3000000).transact(self._txargs(sender=self.L2_BOB, val=self.dispute_fee))
         self.raiseOnZeroStatus(txid)
-        self.assertEqual(self.realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], True)
+        self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], True)
 
         # We can now see the question on the WhitelistArbitrator waiting for someone to answer it, it shouldn't have been picked up yet
         qa = self.whitelist_arbitrator.functions.question_arbitrations(question_id).call()
@@ -394,7 +399,7 @@ class TestRealitio(TestCase):
         self.raiseOnZeroStatus(txid)
 
         # We haven't called anything against the reality.eth contract yet, so it should still be pending arbitration
-        self.assertEqual(self.realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], True)
+        self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], True)
 
         self.assertTrue(self.whitelist_arbitrator.functions.arbitrators(self.arb1.address).call())
         
@@ -419,7 +424,7 @@ class TestRealitio(TestCase):
         txid = self.whitelist_arbitrator.functions.completeArbitration(question_id, to_answer_for_contract(1), self.L2_DAVE).transact()
         self.raiseOnZeroStatus(txid)
 
-        self.assertEqual(self.realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], False)
+        self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], False)
 
 
     #@unittest.skipIf(WORKING_ONLY, "Not under construction")
@@ -434,13 +439,13 @@ class TestRealitio(TestCase):
         k0 = self.l2web3.eth.accounts[0]
 
         if ERC20:
-            start_bal = self.token0.functions.balanceOf(k0).call()
+            start_bal = self.l2token0.functions.balanceOf(k0).call()
 
             self.rc0.functions.fundAnswerBountyERC20(self.question_id
             ,500
             ).transact()
 
-            end_bal = self.token0.functions.balanceOf(k0).call()
+            end_bal = self.l2token0.functions.balanceOf(k0).call()
             self.assertEqual(end_bal, start_bal - 500)
         else:
             txargs = self.standard_tx
@@ -1458,7 +1463,7 @@ class TestRealitio(TestCase):
 
         k0 = self.l2web3.eth.accounts[0]
         k3 = self.l2web3.eth.accounts[3]
-        bal = self.token0.functions.balanceOf(k3).call()
+        bal = self.l2token0.functions.balanceOf(k3).call()
         self.assertEqual(bal, 0)
 
         with self.assertRaises(TransactionFailed):
@@ -1477,7 +1482,7 @@ class TestRealitio(TestCase):
 
         self._issueTokens(k3, 501, 1001)
 
-        bal = self.token0.functions.balanceOf(k3).call()
+        bal = self.l2token0.functions.balanceOf(k3).call()
         self.assertEqual(bal, 1001)
 
         txid = self.rc0.functions.submitAnswerERC20(self.question_id, to_answer_for_contract(12345), 0
@@ -1485,7 +1490,7 @@ class TestRealitio(TestCase):
         ).transact(self._txargs(sender=k3))
         self.raiseOnZeroStatus(txid)
 
-        bal = self.token0.functions.balanceOf(k3).call()
+        bal = self.l2token0.functions.balanceOf(k3).call()
         self.assertEqual(bal, 1)
 
 
@@ -1499,7 +1504,7 @@ class TestRealitio(TestCase):
         self._setup_balance(k3, 1000)
 
         start_rcbal = self.rc0.functions.balanceOf(k3).call()
-        start_tbal = self.token0.functions.balanceOf(k3).call()
+        start_tbal = self.l2token0.functions.balanceOf(k3).call()
 
         self.assertEqual(start_rcbal, 1000)
 
@@ -1510,12 +1515,12 @@ class TestRealitio(TestCase):
 
         rcbal = self.rc0.functions.balanceOf(k3).call()
         self.assertEqual(rcbal, 999)
-        tbal = self.token0.functions.balanceOf(k3).call()
+        tbal = self.l2token0.functions.balanceOf(k3).call()
         self.assertEqual(tbal, start_tbal)
 
         # Sets the approval to 500, and makes sure there at least 500
         self._issueTokens(k3, 500, 500)
-        start_tbal = self.token0.functions.balanceOf(k3).call()
+        start_tbal = self.l2token0.functions.balanceOf(k3).call()
 
         # We have 999 in the balance and only 500 approved, so this should fail
         with self.assertRaises(TransactionFailed):
@@ -1525,7 +1530,7 @@ class TestRealitio(TestCase):
             self.raiseOnZeroStatus(txid)
 
 
-        start_tbal = self.token0.functions.balanceOf(k3).call()
+        start_tbal = self.l2token0.functions.balanceOf(k3).call()
 
         # This will consume all the remaining balance, plus take 1 from the token
         txid = self.rc0.functions.submitAnswerERC20(self.question_id, to_answer_for_contract(12345), 0
@@ -1535,7 +1540,7 @@ class TestRealitio(TestCase):
 
         rcbal = self.rc0.functions.balanceOf(k3).call()
         self.assertEqual(rcbal, 0)
-        tbal = self.token0.functions.balanceOf(k3).call()
+        tbal = self.l2token0.functions.balanceOf(k3).call()
         self.assertEqual(tbal, start_tbal - 1)
 
 
@@ -1787,7 +1792,7 @@ class TestRealitio(TestCase):
         self.assertEqual(self.rc0.functions.balanceOf(k3).call(), 0, "Wrong answerers get nothing")
 
         if ERC20:
-            starting_bal = self.token0.functions.balanceOf(k5).call()
+            starting_bal = self.l2token0.functions.balanceOf(k5).call()
         else:
             starting_bal = self.l2web3.eth.getBalance(k5)
 
@@ -1796,7 +1801,7 @@ class TestRealitio(TestCase):
         gas_spent = rcpt['cumulativeGasUsed']
 
         if ERC20:
-            ending_bal = self.token0.functions.balanceOf(k5).call()
+            ending_bal = self.l2token0.functions.balanceOf(k5).call()
             self.assertEqual(ending_bal, starting_bal + k5bal)
         else:
             ending_bal = self.l2web3.eth.getBalance(k5)
@@ -1854,7 +1859,7 @@ class TestRealitio(TestCase):
 
         gas_used = 0
         if ERC20:
-            starting_bal = self.token0.functions.balanceOf(k5).call()
+            starting_bal = self.l2token0.functions.balanceOf(k5).call()
         else:
             starting_bal = self.l2web3.eth.getBalance(k5)
 
@@ -1863,7 +1868,7 @@ class TestRealitio(TestCase):
         gas_used = rcpt['cumulativeGasUsed']
 
         if ERC20:
-            ending_bal = self.token0.functions.balanceOf(k5).call()
+            ending_bal = self.l2token0.functions.balanceOf(k5).call()
         else:
             ending_bal = self.l2web3.eth.getBalance(k5)
 
@@ -1915,7 +1920,7 @@ class TestRealitio(TestCase):
         gas_used = 0
 
         if ERC20:
-            starting_bal = self.token0.functions.balanceOf(k5).call()
+            starting_bal = self.l2token0.functions.balanceOf(k5).call()
         else:
             starting_bal = self.l2web3.eth.getBalance(k5)
 
@@ -1924,7 +1929,7 @@ class TestRealitio(TestCase):
         gas_used = rcpt['cumulativeGasUsed']
 
         if ERC20:
-            ending_bal = self.token0.functions.balanceOf(k5).call()
+            ending_bal = self.l2token0.functions.balanceOf(k5).call()
         else:
             ending_bal = self.l2web3.eth.getBalance(k5)
 
@@ -2090,10 +2095,10 @@ class TestRealitio(TestCase):
             end_bal = self.rc0.functions.balanceOf(self.arb0.address).call()
             self.assertEqual(end_bal - start_bal, (321*2))
 
-            start_arb_bal = self.token0.functions.balanceOf(self.arb0.address).call()
+            start_arb_bal = self.l2token0.functions.balanceOf(self.arb0.address).call()
             txid = self.arb0.functions.callWithdraw().transact(self._txargs(sender=k7))
             rcpt = self.l2web3.eth.getTransactionReceipt(txid)
-            end_arb_bal = self.token0.functions.balanceOf(self.arb0.address).call()
+            end_arb_bal = self.l2token0.functions.balanceOf(self.arb0.address).call()
 
             self.assertEqual(end_arb_bal - start_arb_bal, 100 + (321*2))
             self.assertEqual(self.rc0.functions.balanceOf(self.arb0.address).call(), 0)
@@ -2233,7 +2238,7 @@ class TestRealitio(TestCase):
         if ERC20:
             bal_before_in_contract = self.rc0.functions.balanceOf(k0).call()
             self.assertEqual(bal_before_in_contract, 0, "nothing in the contract at the start")
-            bal_before = self.token0.functions.balanceOf(k0).call()
+            bal_before = self.l2token0.functions.balanceOf(k0).call()
             txid = self.rc0.functions.askQuestionWithMinBondERC20(
                 0,
                 "my question 2",
@@ -2244,7 +2249,7 @@ class TestRealitio(TestCase):
                 1000,
                 1100
             ).transact(self._txargs())
-            bal_after = self.token0.functions.balanceOf(k0).call()
+            bal_after = self.l2token0.functions.balanceOf(k0).call()
             rcpt = self.l2web3.eth.getTransactionReceipt(txid)
             self.assertEqual(bal_after, bal_before - 1100, "New question bounty is deducted")
             gas_used = rcpt['cumulativeGasUsed']
@@ -2386,7 +2391,7 @@ class TestRealitio(TestCase):
             return
 
         if ERC20:
-            start_arb_bal = self.token0.functions.balanceOf(t.a8).call()
+            start_arb_bal = self.l2token0.functions.balanceOf(t.a8).call()
         else:
             start_arb_bal = self.l2web3.eth.getBalance(t.a8)
 
@@ -2394,7 +2399,7 @@ class TestRealitio(TestCase):
         self.arb0.functions.withdrawToRegisteredWallet().transact(self._txargs(sender=k4))
 
         if ERC20:
-            end_arb_bal = self.token0.functions.balanceOf(t.a8).call()
+            end_arb_bal = self.l2token0.functions.balanceOf(t.a8).call()
         else:
             end_arb_bal = self.l2web3.eth.getBalance(t.a8)
 
@@ -2482,11 +2487,11 @@ class TestRealitio(TestCase):
         if ERC20:
             # withdraw anything we have in contract balance as it complicates the test
             self.rc0.functions.withdraw().transact(self._txargs())
-            bal_before = self.token0.functions.balanceOf(k0).call()
+            bal_before = self.l2token0.functions.balanceOf(k0).call()
             txid = self.rc0.functions.reopenQuestionERC20( 0, "my question", self.arb0.address, 30, 0, 1, 0, self.question_id, 123).transact(self._txargs(gas=300000))
             rcpt = self.l2web3.eth.getTransactionReceipt(txid)
             self.raiseOnZeroStatus(txid)
-            bal_after = self.token0.functions.balanceOf(k0).call()
+            bal_after = self.l2token0.functions.balanceOf(k0).call()
             self.assertEqual(bal_after, bal_before - 123, "New question bounty is deducted")
         else:
             bal_before = self.l2web3.eth.getBalance(k0)
