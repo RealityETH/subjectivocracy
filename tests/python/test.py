@@ -274,6 +274,7 @@ class TestRealitio(TestCase):
 
         # Make a token on L2
         k0 = self.l2web3.eth.accounts[0]
+
         self.l2token0 = self._contractFromBuildJSON(self.l2web3, 'ERC20Mint')
         self.l2token0.functions.mint(k0, 100000000000000).transact()
         self.assertEqual(self.l2token0.functions.balanceOf(k0).call(), 100000000000000)
@@ -326,6 +327,14 @@ class TestRealitio(TestCase):
 
 
         # self.l1realityeth = self._contractFromBuildJSON(self.l1web3, 'ForkableRealityETH_ERC20', None, None, ["0x00", self.l1token0])
+        self.l1token0 = self._contractFromBuildJSON(self.l1web3, 'ERC20Mint')
+        self.l1token0.functions.mint(k0, 800000000000000).transact()
+        self.assertEqual(self.l1token0.functions.balanceOf(k0).call(), 800000000000000)
+
+        self.l1realityeth = self._contractFromBuildJSON(self.l1web3, 'ForkableRealityETH_ERC20', None, None)
+        self.l1realityeth.functions.init(self.l1token0.address, "0x00").transact()
+        self.assertEqual(self.l1realityeth.functions.token().call(), self.l1token0.address)
+
 
         
 
