@@ -102,8 +102,10 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     address libForkableRealityETH;
     address libBridgeToL2;
 
-    function init(address payable _parentForkManager, address _realityETH, address _bridgeToL2, bool _has_governance_freeze, uint256 _parentSupply, address payable _libForkManager, address _libForkableRealityETH, address _libBridgeToL2) 
+    function init(address payable _parentForkManager, address _realityETH, address _bridgeToL2, bool _has_governance_freeze, uint256 _parentSupply, address payable _libForkManager, address _libForkableRealityETH, address _libBridgeToL2, address _initialRecipient, uint256 _initialSupply) 
     external {
+
+        require(address(libForkManager) == address(0), "init can only be run once");
 
         libForkManager = _libForkManager;
         libForkableRealityETH = _libForkableRealityETH;
@@ -122,7 +124,11 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         }
         parentSupply = _parentSupply;
         
-        if (_parentForkManager != address(0x0)) {
+        // Genesis
+        if (_parentForkManager == address(0x0)) {
+            totalSupply = _initialSupply;
+            balanceOf[_initialRecipient] = _initialSupply;
+        } else {
             forked_from_parent_ts = block.timestamp;
         }
 
@@ -193,7 +199,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         address payee = last_answer == result ? last_answerer : address(this);
         newRealityETH.submitAnswerByArbitrator(fork_question_id, result, payee);
 
-        newFm.init(payable(address(this)), address(newRealityETH), address(bridgeToL2), (numGovernanceFreezes > 0), supplyAtFork, libForkManager, libForkableRealityETH, libBridgeToL2);
+        newFm.init(payable(address(this)), address(newRealityETH), address(bridgeToL2), (numGovernanceFreezes > 0), supplyAtFork, libForkManager, libForkableRealityETH, libBridgeToL2, address(0), 0);
         newFm.mint(address(newRealityETH), migrate_funds);
 
         if (yes_or_no) {

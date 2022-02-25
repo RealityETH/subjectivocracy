@@ -26,7 +26,7 @@ from eth_tester import EthereumTester, PyEVMBackend
 
 
 # Contracts:
-# Arbitrator.bin  ERC20.bin  ForkManager.bin  ForkableRealityETH_ERC20.bin  RealityETH_ERC20-3.0.bin  TokenBridge.bin  WhitelistArbitrator.bin
+# Arbitrator.bin  ERC20.bin  ForkManager.bin  ForkableRealityETH_ERC20.bin  RealityETH_ERC20-3.0.bin  TokenBridge.bin  WhitelistArbitrator.bin BridgeToL2.bin
 
 # Command-line flag to skip tests we're not working on
 WORKING_ONLY = os.environ.get('WORKING_ONLY', False)
@@ -69,6 +69,11 @@ WAINDEX_MSG_HASH = 3
 WAINDEX_FINALIZE_TX = 4
 
 ANSWERED_TOO_SOON_VAL = "0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe"
+
+TEMPLATE_ID_ADD_ARBITRATOR = 2147483648;
+TEMPLATE_ID_REMOVE_ARBITRATOR = 2147483649;
+TEMPLATE_ID_BRIDGE_UPGRADE = 2147483650;
+QUESTION_DELIM = "\u241f";
 
 def calculate_answer_hash(answer, nonce):
     if answer[:2] == "0x":
@@ -173,8 +178,8 @@ class TestRealitio(TestCase):
 
     # Sometimes we seem to get a zero status receipt with no exception raised
     # Not sure if this is what's supposed to happen, but call this in the with block to make sure we get an exception 
-    def raiseOnZeroStatus(self, txid):
-        if self.l2web3.eth.getTransactionReceipt(txid)['status'] == 0:
+    def raiseOnZeroStatus(self, txid, w3):
+        if w3.eth.getTransactionReceipt(txid)['status'] == 0:
             #print(self.l2web3.eth.getTransactionReceipt(txid))
             raise TransactionFailed
 
@@ -205,7 +210,8 @@ class TestRealitio(TestCase):
         return standard_tx
 
     def _issueTokens(self, token, addr, issued, approved):
-        token.functions.mint(addr, issued).transact()
+        txid = token.functions.mint(addr, issued).transact()
+        self.raiseOnZeroStatus(txid)
         token.functions.approve(self.rc0.address, approved).transact(self._txargs(sender=addr))
 
     def _contractFromBuildJSON(self, web3, con_name, sender=None, startgas=DEPLOY_GAS, constructor_args=None):
@@ -268,9 +274,12 @@ class TestRealitio(TestCase):
         self.L2_ALICE = self.l2web3.eth.accounts[3]
         self.L2_BOB = self.l2web3.eth.accounts[4]
         self.L2_CHARLIE = self.l2web3.eth.accounts[5]
-
         # Dave will just have the l2-native ETH-equivalent he's born with
         self.L2_DAVE= self.l2web3.eth.accounts[6]
+
+        self.L1_CHARLIE = self.l1web3.eth.accounts[5]
+        self.FORKMANAGER_INITIAL_RECIPIENT = self.l1web3.eth.accounts[7]
+        self.FORKMANAGER_INITIAL_SUPPLY = 1000000000000000000
 
         # Make a token on L2
         k0 = self.l2web3.eth.accounts[0]
@@ -326,18 +335,26 @@ class TestRealitio(TestCase):
 
 
 
-        # self.l1realityeth = self._contractFromBuildJSON(self.l1web3, 'ForkableRealityETH_ERC20', None, None, ["0x00", self.l1token0])
-        self.l1token0 = self._contractFromBuildJSON(self.l1web3, 'ERC20Mint')
-        self.l1token0.functions.mint(k0, 800000000000000).transact()
-        self.assertEqual(self.l1token0.functions.balanceOf(k0).call(), 800000000000000)
+        #self.l1token0 = self._contractFromBuildJSON(self.l1web3, 'ForkManager')
+        # self.l1token0.functions.mint(k0, 800000000000000).transact()
+        # self.assertEqual(self.l1token0.functions.balanceOf(k0).call(), 800000000000000)
 
         self.l1realityeth = self._contractFromBuildJSON(self.l1web3, 'ForkableRealityETH_ERC20', None, None)
-        self.l1realityeth.functions.init(self.l1token0.address, "0x00").transact()
-        self.assertEqual(self.l1realityeth.functions.token().call(), self.l1token0.address)
+        # self.assertEqual(self.l1realityeth.functions.token().call(), self.l1token0.address)
 
 
-        
+        libForkableRealityETH = self._contractFromBuildJSON(self.l1web3, 'ForkableRealityETH_ERC20', None, None)
+        libBridgeToL2 = self._contractFromBuildJSON(self.l1web3, 'BridgeToL2', None, None)
+        libForkManager = self._contractFromBuildJSON(self.l1web3, 'ForkManager', None, None)
+        bridgeToL2 = self._contractFromBuildJSON(self.l1web3, 'BridgeToL2', None, None)
 
+        NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
+
+        self.forkmanager = self._contractFromBuildJSON(self.l1web3, 'ForkManager', None, None)
+        self.l1realityeth.functions.init(self.forkmanager.address, "0x00").transact()
+
+        # init(address payable _parentForkManager, address _realityETH, address _bridgeToL2, bool _has_governance_freeze, uint256 _parentSupply, address payable _libForkManager, address _libForkableRealityETH, address _libBridgeToL2)
+        self.forkmanager.functions.init(NULL_ADDRESS, self.l1realityeth.address, bridgeToL2.address, False, 10000, libForkManager.address, libForkableRealityETH.address, libBridgeToL2.address, self.FORKMANAGER_INITIAL_RECIPIENT, self.FORKMANAGER_INITIAL_SUPPLY).transact()
 
         return
 
@@ -353,24 +370,24 @@ class TestRealitio(TestCase):
         NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
 
         txid = self.l2realityeth.functions.askQuestion(0, "my question x", self.whitelist_arbitrator.address, 30, 0, 0).transact(self._txargs(sender=self.L2_ALICE))
-        self.raiseOnZeroStatus(txid)
+        self.raiseOnZeroStatus(txid, self.l2web3)
 
         self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_ARBITRATOR], self.whitelist_arbitrator.address)
 
         ### Report an answer (contested)
 
         txid = self.l2realityeth.functions.submitAnswerERC20(question_id, to_answer_for_contract(1), 0, 100).transact(self._txargs(sender=self.L2_BOB))
-        self.raiseOnZeroStatus(txid)
+        self.raiseOnZeroStatus(txid, self.l2web3)
 
 
         txid = self.l2realityeth.functions.submitAnswerERC20(question_id, to_answer_for_contract(0), 0, 200).transact(self._txargs(sender=self.L2_CHARLIE))
-        self.raiseOnZeroStatus(txid)
+        self.raiseOnZeroStatus(txid, self.l2web3)
 
         txid = self.l2realityeth.functions.submitAnswerERC20(question_id, to_answer_for_contract(1), 0, 400).transact(self._txargs(sender=self.L2_BOB))
-        self.raiseOnZeroStatus(txid)
+        self.raiseOnZeroStatus(txid, self.l2web3)
 
         txid = self.l2realityeth.functions.submitAnswerERC20(question_id, to_answer_for_contract(0), 0, 2000000).transact(self._txargs(sender=self.L2_CHARLIE))
-        self.raiseOnZeroStatus(txid)
+        self.raiseOnZeroStatus(txid, self.l2web3)
 
         ### Contest an answer
 
@@ -380,7 +397,7 @@ class TestRealitio(TestCase):
 
         self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], False)
         self.whitelist_arbitrator.functions.requestArbitration(question_id, 3000000).transact(self._txargs(sender=self.L2_BOB, val=self.dispute_fee))
-        self.raiseOnZeroStatus(txid)
+        self.raiseOnZeroStatus(txid, self.l2web3)
         self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], True)
 
         # We can now see the question on the WhitelistArbitrator waiting for someone to answer it, it shouldn't have been picked up yet
@@ -390,7 +407,7 @@ class TestRealitio(TestCase):
         arb1_dispute_fee = self.arb1.functions.getDisputeFee(question_id).call();
         self.assertNotEqual(arb1_dispute_fee, 0)
         txid = self.arb1.functions.requestArbitration(question_id, 0).transact(self._txargs(sender=self.L2_DAVE, val=arb1_dispute_fee));
-        self.raiseOnZeroStatus(txid)
+        self.raiseOnZeroStatus(txid, self.l2web3)
 
         qa = self.whitelist_arbitrator.functions.question_arbitrations(question_id).call()
         self.assertEqual(qa[WAINDEX_ARBITRATOR], self.arb1.address)
@@ -405,7 +422,7 @@ class TestRealitio(TestCase):
 
         # For now we'll do this as the default user, they should still own the contract
         txid = self.arb1.functions.submitAnswerByArbitrator(question_id, to_answer_for_contract(1), self.L2_DAVE).transact()
-        self.raiseOnZeroStatus(txid)
+        self.raiseOnZeroStatus(txid, self.l2web3)
 
         # We haven't called anything against the reality.eth contract yet, so it should still be pending arbitration
         self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], True)
@@ -415,7 +432,7 @@ class TestRealitio(TestCase):
         # Should fail because of challenge timeout
         with self.assertRaises(TransactionFailed):
             txid = self.whitelist_arbitrator.functions.completeArbitration(question_id, to_answer_for_contract(1), self.L2_DAVE).transact()
-            self.raiseOnZeroStatus(txid)
+            self.raiseOnZeroStatus(txid, self.l2web3)
 
         return question_id
 
@@ -431,7 +448,7 @@ class TestRealitio(TestCase):
         self._advance_clock(dispute_timeout+1)
 
         txid = self.whitelist_arbitrator.functions.completeArbitration(question_id, to_answer_for_contract(1), self.L2_DAVE).transact()
-        self.raiseOnZeroStatus(txid)
+        self.raiseOnZeroStatus(txid, self.l2web3)
 
         self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], False)
 
@@ -440,6 +457,23 @@ class TestRealitio(TestCase):
     def test_contested_arbitration(self):
 
         question_id = self.run_basic_cycle()
+
+        # question = self.whitelist_arbitrator.address + QUESTION_DELIM + self.arb1.address
+
+        txid = self.forkmanager.functions.beginRemoveArbitratorFromWhitelist(self.whitelist_arbitrator.address, self.arb1.address).transact()
+        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
+        ask_log = self.l1realityeth.events.LogNewQuestion().processReceipt(tx_receipt)
+        contest_question_id = encode_hex(ask_log[0]['args']['question_id'])
+
+        txid = self.forkmanager.functions.transfer(self.L1_CHARLIE, 2200000000).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        txid = self.forkmanager.functions.approve(self.l1realityeth.address, 2200000000).transact(self._txargs(sender=self.L1_CHARLIE))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        txid = self.l1realityeth.functions.submitAnswerERC20(contest_question_id, to_answer_for_contract(1), 0, 2000000).transact(self._txargs(sender=self.L1_CHARLIE))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+        return
 
 
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
