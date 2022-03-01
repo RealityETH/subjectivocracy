@@ -69,6 +69,7 @@ WAINDEX_MSG_HASH = 3
 WAINDEX_FINALIZE_TX = 4
 
 ANSWERED_TOO_SOON_VAL = "0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe"
+FORKMANAGER_SPECIAL_ADDRESS = "0x00000000000000000000000000000000f0f0F0F0"
 
 TEMPLATE_ID_ADD_ARBITRATOR = 2147483648;
 TEMPLATE_ID_REMOVE_ARBITRATOR = 2147483649;
@@ -302,15 +303,14 @@ class TestRealitio(TestCase):
 
 
         # Make an AMB contract on L2, we'll pretend it's connected to L1
-        self.AMB = self._contractFromBuildJSON(self.l2web3, 'AMB')
-
+        self.l2AMB = self._contractFromBuildJSON(self.l2web3, 'AMB')
 
         self.dispute_fee = 10000000000
 
 
         # Make a WhitelistArbitrator. 
         # We set the reality.eth instance and dispute fee in the constructor, unlike the plain Arbitrator. TODO: should we standardize this?
-        self.whitelist_arbitrator = self._contractFromBuildJSON(self.l2web3, 'WhitelistArbitrator', None, None, [self.l2realityeth.address, self.dispute_fee, self.AMB.address, [self.arb1.address, self.arb2.address]])
+        self.whitelist_arbitrator = self._contractFromBuildJSON(self.l2web3, 'WhitelistArbitrator', None, None, [self.l2realityeth.address, self.dispute_fee, self.l2AMB.address, [self.arb1.address, self.arb2.address]])
         self.assertEqual(self.whitelist_arbitrator.functions.realitio().call(), self.l2realityeth.address)
         self.assertTrue(self.whitelist_arbitrator.functions.arbitrators(self.arb1.address).call())
         self.assertTrue(self.whitelist_arbitrator.functions.arbitrators(self.arb2.address).call())
@@ -346,7 +346,7 @@ class TestRealitio(TestCase):
         libForkableRealityETH = self._contractFromBuildJSON(self.l1web3, 'ForkableRealityETH_ERC20', None, None)
         libBridgeToL2 = self._contractFromBuildJSON(self.l1web3, 'BridgeToL2', None, None)
         libForkManager = self._contractFromBuildJSON(self.l1web3, 'ForkManager', None, None)
-        bridgeToL2 = self._contractFromBuildJSON(self.l1web3, 'BridgeToL2', None, None)
+        self.bridgeToL2 = self._contractFromBuildJSON(self.l1web3, 'BridgeToL2', None, None)
 
         NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
 
@@ -354,7 +354,7 @@ class TestRealitio(TestCase):
         self.l1realityeth.functions.init(self.forkmanager.address, "0x00").transact()
 
         # init(address payable _parentForkManager, address _realityETH, address _bridgeToL2, bool _has_governance_freeze, uint256 _parentSupply, address payable _libForkManager, address _libForkableRealityETH, address _libBridgeToL2)
-        self.forkmanager.functions.init(NULL_ADDRESS, self.l1realityeth.address, bridgeToL2.address, False, 10000, libForkManager.address, libForkableRealityETH.address, libBridgeToL2.address, self.FORKMANAGER_INITIAL_RECIPIENT, self.FORKMANAGER_INITIAL_SUPPLY).transact()
+        self.forkmanager.functions.init(NULL_ADDRESS, self.l1realityeth.address, self.bridgeToL2.address, False, 10000, libForkManager.address, libForkableRealityETH.address, libBridgeToL2.address, self.FORKMANAGER_INITIAL_RECIPIENT, self.FORKMANAGER_INITIAL_SUPPLY).transact()
 
         return
 
@@ -463,16 +463,48 @@ class TestRealitio(TestCase):
         txid = self.forkmanager.functions.beginRemoveArbitratorFromWhitelist(self.whitelist_arbitrator.address, self.arb1.address).transact()
         tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
         ask_log = self.l1realityeth.events.LogNewQuestion().processReceipt(tx_receipt)
-        contest_question_id = encode_hex(ask_log[0]['args']['question_id'])
+        contest_question_id = "0x"+encode_hex(ask_log[0]['args']['question_id'])
 
-        txid = self.forkmanager.functions.transfer(self.L1_CHARLIE, 2200000000).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
+        # To be able to freeze an arbitrator we need to post at least 5% of supply
+        freeze_amount = int(self.FORKMANAGER_INITIAL_SUPPLY * 5 / 100)
+
+        txid = self.forkmanager.functions.transfer(self.L1_CHARLIE, freeze_amount).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
         self.raiseOnZeroStatus(txid, self.l1web3)
 
-        txid = self.forkmanager.functions.approve(self.l1realityeth.address, 2200000000).transact(self._txargs(sender=self.L1_CHARLIE))
+        txid = self.forkmanager.functions.approve(self.l1realityeth.address, freeze_amount).transact(self._txargs(sender=self.L1_CHARLIE))
         self.raiseOnZeroStatus(txid, self.l1web3)
 
-        txid = self.l1realityeth.functions.submitAnswerERC20(contest_question_id, to_answer_for_contract(1), 0, 2000000).transact(self._txargs(sender=self.L1_CHARLIE))
+        txid = self.l1realityeth.functions.submitAnswerERC20(contest_question_id, to_answer_for_contract(1), 0, freeze_amount).transact(self._txargs(sender=self.L1_CHARLIE))
         self.raiseOnZeroStatus(txid, self.l1web3)
+
+        txid = self.forkmanager.functions.freezeArbitratorOnWhitelist(contest_question_id).transact()
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
+        bridge_log = self.bridgeToL2.events.LogPassMessage().processReceipt(tx_receipt)
+        call_data = bridge_log[0]['args']['_data']
+
+        is_frozen = self.whitelist_arbitrator.functions.frozen_arbitrators(self.arb1.address).call()
+        self.assertFalse(is_frozen, "not frozen at start")
+
+
+        # The freezeArbitratorOnWhitelist call should have called the bridge with the code:
+        # bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(arbitrator_to_remove).freezeArbitrator.selector, arbitrator_to_remove);
+        # We'll imitate this by calling our dummy bridge ourselves
+        bridge_call_data = self.whitelist_arbitrator.encodeABI(fn_name="freezeArbitrator", args=[self.arb1.address])
+        txid = self.l2AMB.functions.passMessage(
+            FORKMANAGER_SPECIAL_ADDRESS,  #Rewritten from self.forkmanager.address
+            self.whitelist_arbitrator.address,
+            call_data,
+            5000000,
+            encode_hex("0x0"),
+            encode_hex("0x0")
+        ).transact()
+        self.raiseOnZeroStatus(txid, self.l2web3)
+
+        is_frozen = self.whitelist_arbitrator.functions.frozen_arbitrators(self.arb1.address).call()
+        self.assertTrue(is_frozen, "frozen at end")
+        
         return
 
 

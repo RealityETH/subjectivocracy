@@ -6,6 +6,8 @@ import './IAMB.sol';
 
 contract AMB is IAMB {
 
+    event LogPassMessage(address _contract, uint256 _gas, bytes _data);
+
     address sender;
     bytes32 sourceChainId;
     bytes32 public messageId;
@@ -15,7 +17,10 @@ contract AMB is IAMB {
         bytes memory _data,
         uint256 _gas
     ) external returns (bytes32) {
+        emit LogPassMessage(_contract, _gas, _data);
 
+        // For our dummy implementation we return the hash of the params as an ID. No idea if this is safe for however this is used.
+        return keccak256(abi.encodePacked(_contract, _gas, _data, block.number));
     }
 
     function maxGasPerTx() public view returns (uint256) {

@@ -6,6 +6,8 @@ import './IAMB.sol';
 
 contract BridgeToL2 is IAMB {
 
+    event LogPassMessage(address _contract, uint256 _gas, bytes _data);
+
     address parent;
 
     // Arbitrary special address that will identify the forkmanager
@@ -26,9 +28,9 @@ contract BridgeToL2 is IAMB {
     }
 
     function requireToPassMessage(
-        address, // _contract,
-        bytes memory, // _data,
-        uint256 // _gas
+        address _contract,
+        bytes memory _data,
+        uint256 _gas
     ) override external returns (bytes32) {
         address sender = msg.sender;
         if (sender == parent) {
@@ -36,8 +38,10 @@ contract BridgeToL2 is IAMB {
         }
         // Do standard message passing
 
-        // Guess this should be an ID?
-        return bytes32(0x0);
+        emit LogPassMessage(_contract, _gas, _data);
+ 
+        // For our dummy implementation we return the hash of the params as an ID. No idea if this is safe for however this is used.
+        return keccak256(abi.encodePacked(_contract, _gas, _data, block.number));
     }
 
 

@@ -216,7 +216,7 @@ require(question_arbitrations[question_id].bounty > 0, "Question must be in the 
     }
 
     function freezeArbitrator(address arbitrator) 
-        l1_forkmanager_only
+    //    l1_forkmanager_only
     public {
         require(arbitrators[arbitrator], "Arbitrator not whitelisted in the first place");
         require(!frozen_arbitrators[arbitrator], "Arbitrator already frozen");
