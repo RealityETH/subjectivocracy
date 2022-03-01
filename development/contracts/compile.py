@@ -10,7 +10,7 @@ import subprocess
 if len(sys.argv) < 2:
     print("Usage: ./compile.py <contract> [<source_file>], eg ./compile.py RealityETH_ERC20-3.0")
 
-VERSION=sys.argv[1]
+VERSION=sys.argv[1].split('.sol')[0]
 CONTRACT_NAME = None
 
 if len(sys.argv) >= 3:
