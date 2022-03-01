@@ -111,7 +111,7 @@ Next step:
                     contest_question_id = RealityETH.askQuestion("should we delist ArbitratorA?")
     Charlie L1  TokenX.approve(RealityETH, 2000000)
     Charlie L1  RealityETH.submitAnswer(contest_question_id, 1, 2000000)
-    Charlie L1  ForkManager.freezeArbitrator(contest_question_id)
+    Charlie L1  ForkManager.freezeArbitratorOnWhitelist(contest_question_id)
                     RealityETH.getBestAnswer(contest_question_id)
                     RealityETH.getBond(contest_question_id)
                     BridgeToL2.sendMessage("WhitelistArbitrator.freezeArbitrator(ArbitratorA)")
@@ -125,7 +125,7 @@ Next step:
 
 ### Cancel an arbitrator removal
 ```
-   Bob     L1  ForkManager.unfreezeArbitrator(contest_question_id)
+   Bob     L1  ForkManager.unfreezeArbitratorOnWhitelist(contest_question_id)
                     RealityETH.resultFor(contest_question_id)
                     BridgeToL2.sendMessage("WhitelistArbitrator.unFreezeArbitrator(ArbitratorA)")
 
