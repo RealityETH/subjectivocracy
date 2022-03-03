@@ -159,9 +159,8 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     // An arbitrator fork will create this for both forks.
     // A governance fork will use the specified contract for one of the options.
     // It can have its own setup logic if you want to change the RealityETH or bridge code.
-    function deployFork(bool yes_or_no, bytes32 last_answer, address last_answerer) 
+    function deployFork(bool yes_or_no, bytes32 last_history_hash, bytes32 last_answer, address last_answerer, uint256 last_bond) 
     external {
-
         bytes32 result;
         if (yes_or_no) {
             require(address(childForkManager1) == address(0), "Already migrated");
@@ -170,6 +169,10 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
             require(address(childForkManager2) == address(0), "Already migrated");
             result = bytes32(uint256(0));
         }
+
+        // TODO: Verify that last_answerer and last_answerer match the current history hash 
+        // bytes32 history_hash = realityETH.getHistoryHash(fork_question_id);
+        // require(history_hash == keccak256(abi.encodePacked(last_history_hash, last_answerer, last_bond, last_answerer, false)), "Wrong parameters supplied for last answer");
 
         require(fork_question_id != bytes32(uint256(0)), "Fork not initiated");
         require(block.timestamp < forkExpirationTS, "Too late to deploy a fork");
@@ -194,7 +197,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         newBridgeToL2.init();
 
         ForkableRealityETH_ERC20 newRealityETH = ForkableRealityETH_ERC20(_deployProxy(libForkableRealityETH));
-        newRealityETH.init(IERC20(newFm), fork_question_id);
+        newRealityETH.init(IERC20(newFm), address(realityETH), fork_question_id);
 
         address payee = last_answer == result ? last_answerer : address(this);
         newRealityETH.submitAnswerByArbitrator(fork_question_id, result, payee);
@@ -220,10 +223,11 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         require(isUnForked(), 'Already forked, call against the winning child');
 
         uint256 fork_cost = totalSupply * PERCENT_TO_FORK / 100;
-        require(balanceOf[msg.sender] > fork_cost, 'Not enough tokens');
+        require(balanceOf[msg.sender] >= fork_cost, 'Not enough tokens');
         balanceOf[msg.sender] = balanceOf[msg.sender] - fork_cost;
 
         realityETH.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
+
         fork_question_id = question_id;
 
         forkExpirationTS = block.timestamp + FORK_TIME_SECS;

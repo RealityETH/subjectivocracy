@@ -147,7 +147,7 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
         _;
     }
 
-    function init(IERC20 _token, bytes32 _question_id)
+    function init(IERC20 _token, address _parent_reality_eth, bytes32 _question_id)
     public {
         require(address(token) == address(0), "Can only be initialized once");
         createTemplate('{"title": "Should we add arbitrator %s to whitelist contract %s", "type": "bool"}');
@@ -155,7 +155,7 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
         createTemplate('{"title": "Should switch to ForkManager %s", "type": "bool"}');
         token = _token;
         if (_question_id != bytes32(0x0)) {
-            _importQuestion(_question_id);
+            _importQuestion(_parent_reality_eth, _question_id);
         }
     }
 
@@ -333,7 +333,6 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
         emit LogNotifyOfArbitrationRequest(question_id, requester);
     }
 
-
     /// @notice Submit the answer for a question, for use by the arbitrator.
     /// @dev Doesn't require (or allow) a bond.
     /// If the current final answer is correct, the account should be whoever submitted it.
@@ -342,16 +341,19 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     /// @param question_id The ID of the question
     /// @param answer The answer, encoded into bytes32
     /// @param answerer The account credited with this answer for the purpose of bond claims
-    function submitAnswerByArbitrator(bytes32 question_id, bytes32 answer, address answerer) 
+    function submitAnswerByArbitrator(bytes32 question_id, bytes32 answer, address answerer)
         onlyArbitrator(question_id)
         statePendingArbitration(question_id)
     public {
+
         require(answerer != NULL_ADDRESS, "answerer must be provided");
         emit LogFinalize(question_id, answer);
 
         questions[question_id].is_pending_arbitration = false;
         _addAnswerToHistory(question_id, answer, answerer, 0);
         _updateCurrentAnswerByArbitrator(question_id, answer);
+        questions[question_id].is_finalized = true;
+        emit LogFinalize(question_id, answer);
     }
 
     /// @notice Report whether the answer to the specified question is finalized
@@ -693,21 +695,22 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     /// The budget for this question should have been transferred when we did the fork.
     /// Other questions will to be created as if asked new, but this method preserves their old question_ids
     /// NB The question_id will no longer match the hash of the content, as the arbitrator has changed
-    /// @param question_id - The ID of the question to migrate.
-    function _importQuestion(bytes32 question_id) 
+    /// @param _parent - The address of the reality.eth we should import from
+    /// @param _question_id - The ID of the question to migrate.
+    function _importQuestion(address _parent, bytes32 _question_id) 
     internal {
-        IForkableRealityETH parent = IForkableRealityETH(msg.sender);
-        questions[question_id] = Question(
-            parent.getContentHash(question_id),	
-            address(token),
-            parent.getOpeningTS(question_id),	
-            parent.getTimeout(question_id),	
-            parent.getFinalizeTS(question_id),	
-            false,
-            parent.getCumulativeBonds(question_id),
-            parent.getBestAnswer(question_id),
-            parent.getHistoryHash(question_id),
-            parent.getBond(question_id),
+        IForkableRealityETH parent = IForkableRealityETH(_parent);
+        questions[_question_id] = Question(
+            parent.getContentHash(_question_id),	
+            msg.sender,
+            parent.getOpeningTS(_question_id),	
+            parent.getTimeout(_question_id),	
+            parent.getFinalizeTS(_question_id),	
+            true,
+            parent.getCumulativeBonds(_question_id),
+            parent.getBestAnswer(_question_id),
+            parent.getHistoryHash(_question_id),
+            parent.getBond(_question_id),
             false
         );
     }

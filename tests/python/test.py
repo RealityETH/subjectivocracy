@@ -184,15 +184,18 @@ class TestRealitio(TestCase):
             #print(self.l2web3.eth.getTransactionReceipt(txid))
             raise TransactionFailed
 
-    def _block_timestamp(self):
-        return self.l2web3.provider.ethereum_tester.get_block_by_number('pending')['timestamp']
+    def _block_timestamp(self, web3 = None):
+        if web3 is None:
+            web3 = self.l2web3
+        return web3.provider.ethereum_tester.get_block_by_number('pending')['timestamp']
 
-
-    def _advance_clock(self, secs):
-        ts = self._block_timestamp()
-        self.l2web3.provider.ethereum_tester.time_travel(ts+secs)
-        ts2 = self._block_timestamp()
-        self.l2web3.testing.mine()
+    def _advance_clock(self, secs, web3 = None):
+        if web3 is None:
+            web3 = self.l2web3
+        ts = self._block_timestamp(web3)
+        web3.provider.ethereum_tester.time_travel(ts+secs)
+        ts2 = self._block_timestamp(web3)
+        web3.testing.mine()
         self.assertNotEqual(ts, ts2)
 
     def _txargs(self, val=0, gas=None, sender=None):
@@ -278,7 +281,8 @@ class TestRealitio(TestCase):
         # Dave will just have the l2-native ETH-equivalent he's born with
         self.L2_DAVE= self.l2web3.eth.accounts[6]
 
-        self.L1_CHARLIE = self.l1web3.eth.accounts[5]
+        self.L1_BOB = self.L2_BOB
+        self.L1_CHARLIE = self.L2_CHARLIE
         self.FORKMANAGER_INITIAL_RECIPIENT = self.l1web3.eth.accounts[7]
         self.FORKMANAGER_INITIAL_SUPPLY = 1000000000000000000
 
@@ -295,7 +299,7 @@ class TestRealitio(TestCase):
         self.l2realityeth.functions.setToken(self.l2token0.address).transact()
 
 
-        # Make two competing arbitrators on L2, both will be added to the whitelist initially.
+        # Make two competing arbitrators on L2, both will be added to the whitelist nitially.
 
         self.arb1 = self._contractFromBuildJSON(self.l2web3, 'Arbitrator')
         self.arb2 = self._contractFromBuildJSON(self.l2web3, 'Arbitrator')
@@ -351,7 +355,7 @@ class TestRealitio(TestCase):
         NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
 
         self.forkmanager = self._contractFromBuildJSON(self.l1web3, 'ForkManager', None, None)
-        self.l1realityeth.functions.init(self.forkmanager.address, "0x00").transact()
+        self.l1realityeth.functions.init(self.forkmanager.address, NULL_ADDRESS, "0x00").transact()
 
         # init(address payable _parentForkManager, address _realityETH, address _bridgeToL2, bool _has_governance_freeze, uint256 _parentSupply, address payable _libForkManager, address _libForkableRealityETH, address _libBridgeToL2)
         self.forkmanager.functions.init(NULL_ADDRESS, self.l1realityeth.address, self.bridgeToL2.address, False, 10000, libForkManager.address, libForkableRealityETH.address, libBridgeToL2.address, self.FORKMANAGER_INITIAL_RECIPIENT, self.FORKMANAGER_INITIAL_SUPPLY).transact()
@@ -465,8 +469,8 @@ class TestRealitio(TestCase):
         ask_log = self.l1realityeth.events.LogNewQuestion().processReceipt(tx_receipt)
         contest_question_id = "0x"+encode_hex(ask_log[0]['args']['question_id'])
 
-        # To be able to freeze an arbitrator we need to post at least 5% of supply
-        freeze_amount = int(self.FORKMANAGER_INITIAL_SUPPLY * 5 / 100)
+        # To be able to freeze an arbitrator we need to post at least 1% of supply
+        freeze_amount = int(self.FORKMANAGER_INITIAL_SUPPLY * 1 / 100)
 
         txid = self.forkmanager.functions.transfer(self.L1_CHARLIE, freeze_amount).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
         self.raiseOnZeroStatus(txid, self.l1web3)
@@ -487,7 +491,6 @@ class TestRealitio(TestCase):
         is_frozen = self.whitelist_arbitrator.functions.frozen_arbitrators(self.arb1.address).call()
         self.assertFalse(is_frozen, "not frozen at start")
 
-
         # The freezeArbitratorOnWhitelist call should have called the bridge with the code:
         # bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(arbitrator_to_remove).freezeArbitrator.selector, arbitrator_to_remove);
         # We'll imitate this by calling our dummy bridge ourselves
@@ -504,7 +507,81 @@ class TestRealitio(TestCase):
 
         is_frozen = self.whitelist_arbitrator.functions.frozen_arbitrators(self.arb1.address).call()
         self.assertTrue(is_frozen, "frozen at end")
+
+
+        # TODO: Break this out into different functions and handle some of the other scenarios
+
+        # Bob to contest on L1
+
+        # To be able to fork an arbitrator we need to post at least 1% of supply
+        fork_amount = int(self.FORKMANAGER_INITIAL_SUPPLY * 5 / 100)
+
+        txid = self.forkmanager.functions.transfer(self.L1_BOB, fork_amount).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        txid = self.forkmanager.functions.approve(self.l1realityeth.address, fork_amount).transact(self._txargs(sender=self.L1_BOB))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+
+        self.assertTrue(self.forkmanager.functions.isUnForked().call())
+
+        self.forkmanager.functions.requestArbitrationByFork(contest_question_id, 0).transact(self._txargs(sender=self.L1_BOB))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        self.assertEqual(self.l1realityeth.functions.questions(contest_question_id).call()[QINDEX_IS_PENDING_ARBITRATION], True)
+        self.assertFalse(self.forkmanager.functions.isUnForked().call())
+
+        # TODO: First to_answer_for_contract should be previous history hash
+        txid = self.forkmanager.functions.deployFork(True, to_answer_for_contract(1), to_answer_for_contract(1), self.L1_CHARLIE, freeze_amount).transact(self._txargs(gas=6000000))
+        rcpt = self.l1web3.eth.getTransactionReceipt(txid)
+        # print(rcpt)
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        ts1 = self._block_timestamp(self.l1web3)
+        txid = self.forkmanager.functions.deployFork(False, to_answer_for_contract(1), to_answer_for_contract(1), self.L1_CHARLIE, freeze_amount).transact(self._txargs(gas=6000000))
+        rcpt = self.l1web3.eth.getTransactionReceipt(txid)
+        # print(rcpt)
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        child_fm1_addr = self.forkmanager.functions.childForkManager1().call()
+        child_fm2_addr = self.forkmanager.functions.childForkManager2().call()
+
+        child_fm1 = self.l1web3.eth.contract(child_fm1_addr, abi=self.forkmanager.abi)
+        child_fm2 = self.l1web3.eth.contract(child_fm2_addr, abi=self.forkmanager.abi)
         
+        self._advance_clock(60, self.l1web3)
+        ts2 = self._block_timestamp(self.l1web3)
+        self.assertNotEqual(ts1, ts2)
+
+
+        # print(self.forkmanager.abi)
+        realityeth1_addr = child_fm1.functions.realityETH().call()
+        realityeth1 = self.l1web3.eth.contract(realityeth1_addr, abi=self.l1realityeth.abi)
+
+        realityeth2_addr = child_fm2.functions.realityETH().call()
+        realityeth2 = self.l1web3.eth.contract(realityeth2_addr, abi=self.l1realityeth.abi)
+
+        q1 = realityeth1.functions.questions(contest_question_id).call()
+
+        finalization_ts = q1[QINDEX_FINALIZATION_TS]
+        self.assertTrue(ts2 > finalization_ts, "finalization timestamp has passed")
+        is_finalized = realityeth1.functions.isFinalized(contest_question_id).call()
+        self.assertTrue(is_finalized, "q1 finalized")
+
+        q2 = realityeth2.functions.questions(contest_question_id).call()
+        result1 = realityeth1.functions.resultFor(contest_question_id).call()
+        self.assertEqual(result1, to_answer_for_contract(1))
+        result2 = realityeth2.functions.resultFor(contest_question_id).call()
+        self.assertEqual(result2, to_answer_for_contract(0))
+
+        bal1 = child_fm1.functions.balanceOf(realityeth1_addr).call()
+        # Each reality.eth instance should have enough tokens
+        self.assertEqual(bal1, freeze_amount)
+
+        bal2 = child_fm2.functions.balanceOf(realityeth2_addr).call()
+        # Each reality.eth instance should have enough tokens
+        self.assertEqual(bal1, freeze_amount)
+
         return
 
 
