@@ -24,6 +24,7 @@ import time
 
 from eth_tester import EthereumTester, PyEVMBackend
 
+import copy
 
 # Contracts:
 # Arbitrator.bin  ERC20.bin  ForkManager.bin  ForkableRealityETH_ERC20.bin  RealityETH_ERC20-3.0.bin  TokenBridge.bin  WhitelistArbitrator.bin BridgeToL2.bin
@@ -472,7 +473,7 @@ class TestRealitio(TestCase):
         # To be able to freeze an arbitrator we need to post at least 1% of supply
         freeze_amount = int(self.FORKMANAGER_INITIAL_SUPPLY * 1 / 100)
 
-        txid = self.forkmanager.functions.transfer(self.L1_CHARLIE, freeze_amount).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
+        txid = self.forkmanager.functions.transfer(self.L1_CHARLIE, freeze_amount+12345).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
         self.raiseOnZeroStatus(txid, self.l1web3)
 
         txid = self.forkmanager.functions.approve(self.l1realityeth.address, freeze_amount).transact(self._txargs(sender=self.L1_CHARLIE))
@@ -516,7 +517,7 @@ class TestRealitio(TestCase):
         # To be able to fork an arbitrator we need to post at least 1% of supply
         fork_amount = int(self.FORKMANAGER_INITIAL_SUPPLY * 5 / 100)
 
-        txid = self.forkmanager.functions.transfer(self.L1_BOB, fork_amount).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
+        txid = self.forkmanager.functions.transfer(self.L1_BOB, fork_amount+54321).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
         self.raiseOnZeroStatus(txid, self.l1web3)
 
         txid = self.forkmanager.functions.approve(self.l1realityeth.address, fork_amount).transact(self._txargs(sender=self.L1_BOB))
@@ -581,6 +582,54 @@ class TestRealitio(TestCase):
         bal2 = child_fm2.functions.balanceOf(realityeth2_addr).call()
         # Each reality.eth instance should have enough tokens
         self.assertEqual(bal1, freeze_amount)
+
+        # TODO: Test the claiming process
+
+        # Everybody picks a fork
+        bob_bal = self.forkmanager.functions.balanceOf(self.L1_BOB).call()
+        self.assertEqual(bob_bal, 54321)
+        charlie_bal = self.forkmanager.functions.balanceOf(self.L1_CHARLIE).call()
+        self.assertEqual(charlie_bal, 12345)
+
+        self.forkmanager.functions.pickFork(True, 321).transact(self._txargs(sender=self.L1_BOB))
+        bob_bal_parent = self.forkmanager.functions.balanceOf(self.L1_BOB).call()
+        self.assertEqual(bob_bal_parent, 54000)
+        bob_bal_child = child_fm1.functions.balanceOf(self.L1_BOB).call()
+        self.assertEqual(bob_bal_child, 321)
+
+
+        self.forkmanager.functions.pickFork(False, 345).transact(self._txargs(sender=self.L1_CHARLIE))
+        charlie_bal_parent = self.forkmanager.functions.balanceOf(self.L1_CHARLIE).call()
+        self.assertEqual(bob_bal_parent, 54000)
+        charlie_bal_child = child_fm2.functions.balanceOf(self.L1_CHARLIE).call()
+        self.assertEqual(charlie_bal_child, 345)
+
+        self.assertEqual(self.forkmanager.functions.amountMigrated1().call(), 321)
+        self.assertEqual(self.forkmanager.functions.amountMigrated2().call(), 345)
+
+        #  uint256 constant FORK_TIME_SECS = 604800; // 1 week
+ 
+        # Should fail because of secs to fork
+        with self.assertRaises(TransactionFailed):
+            txid = self.forkmanager.functions.resolveFork().transact()
+            self.raiseOnZeroStatus(txid, self.l1web3)
+
+        self._advance_clock(604800, self.l1web3)
+
+        txid = self.forkmanager.functions.resolveFork().transact()
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        replaced_by_addr = self.forkmanager.functions.replacedByForkManager().call()
+        self.assertEqual(child_fm2_addr, replaced_by_addr)
+        
+        replaced_by_fm = self.l1web3.eth.contract(child_fm2_addr, abi=self.forkmanager.abi)
+        self.assertTrue(replaced_by_fm.functions.isWinner().call())
+        self.assertFalse(replaced_by_fm.functions.isLoser().call())
+
+        not_replaced_by = self.l1web3.eth.contract(child_fm1_addr, abi=self.forkmanager.abi)
+        self.assertFalse(not_replaced_by.functions.isWinner().call())
+        self.assertTrue(not_replaced_by.functions.isLoser().call())
+        
 
         return
 

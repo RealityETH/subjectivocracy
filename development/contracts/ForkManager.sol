@@ -254,7 +254,8 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     function resolveFork() 
     external {
-        require(isForkingResolved(), 'Not forking');
+        require(isForkingStarted(), 'Not forking');
+        require(!isForkingResolved(), 'Forking already resolved');
         require(block.timestamp > forkExpirationTS, 'Too soon');
         if (amountMigrated1 > amountMigrated2) {
             replacedByForkManager = childForkManager1;
@@ -288,7 +289,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
             // not yet resolved
             return false;
         }
-        return (address(parentReplacement) == address(this));
+        return (address(parentReplacement) != address(this));
     }
 
     function disputeFee(bytes32 question_id) 
@@ -506,9 +507,11 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         balanceOf[msg.sender] = balanceOf[msg.sender] - num;
         totalSupply = totalSupply - num;
         if (yes_or_no) {
+            amountMigrated1 = amountMigrated1 + num;
             require(address(childForkManager1) != address(0), "Call deployFork first");
             childForkManager1.mint(msg.sender, num);
         } else {
+            amountMigrated2 = amountMigrated2 + num;
             require(address(childForkManager2) != address(0), "Call deployFork first");
             childForkManager2.mint(msg.sender, num);
         }
