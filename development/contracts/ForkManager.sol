@@ -141,6 +141,13 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     }
 
+    // This could be done in init but it already has a lot of parameters
+    function importProposition(bytes32 question_id, PropositionType proposition_type, address whitelist_arbitrator, address arbitrator, address new_bridge) 
+    external {
+        require(address(libForkManager) == address(0), "Must be run before init");
+        propositions[question_id] = ArbitratorProposition(proposition_type, whitelist_arbitrator, arbitrator, new_bridge);
+    }
+
     // When forked, the ultimate totalSupply is not known until migration is complete, but we want to be able to freeze things.
     // Start with an approximation based on how many tokens the parent had.
     function effectiveTotalSupply()
@@ -208,8 +215,11 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         address payee = last_answer == result ? last_answerer : address(this);
         newRealityETH.submitAnswerByArbitrator(fork_question_id, result, payee);
 
+        newFm.importProposition(fork_question_id, propositions[fork_question_id].proposition_type, propositions[fork_question_id].whitelist_arbitrator, propositions[fork_question_id].arbitrator, propositions[fork_question_id].bridge);
+
         newFm.init(payable(address(this)), address(newRealityETH), address(bridgeToL2), (numGovernanceFreezes > 0), supplyAtFork, libForkManager, libForkableRealityETH, libBridgeToL2, address(0), 0);
         newFm.mint(address(newRealityETH), migrate_funds);
+
 
         // TODO: Do we need to migrate propositions here?
         //newFm.migrateProposition
@@ -436,6 +446,23 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         require(realityETH.resultFor(question_id) == bytes32(uint256(1)), "Proposition did not pass");
 
         bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).removeArbitrator.selector, arbitrator_to_remove);
+        bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
+
+        delete(propositions[question_id]);
+    }
+
+    function executeUnfreezeArbitratorOnWhitelist(bytes32 question_id) 
+    external {
+        require(propositions[question_id].proposition_type == PropositionType.REMOVE_ARBITRATOR, "Not a remove arbitrator proposition");
+
+        address whitelist_arbitrator = propositions[question_id].whitelist_arbitrator;
+        address arbitrator_to_remove = propositions[question_id].arbitrator;
+
+        require(whitelist_arbitrator != address(0x0), "Proposition not recognized");
+
+        require(realityETH.resultFor(question_id) == bytes32(uint256(0)), "Proposition passed");
+
+        bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).unfreezeArbitrator.selector, arbitrator_to_remove);
         bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
 
         delete(propositions[question_id]);

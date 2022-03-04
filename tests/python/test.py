@@ -442,7 +442,7 @@ class TestRealitio(TestCase):
         return question_id
 
 
-    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_uncontested_arbitration(self):
     
         question_id = self.run_basic_cycle()
@@ -458,8 +458,82 @@ class TestRealitio(TestCase):
         self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], False)
 
 
-    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_contested_arbitration(self):
+        return self._setup_contested_arbitration()
+
+    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    def test_post_fork_arbitrator_removal(self):
+        
+        (contest_question_id, child_fm1, child_fm2) = self._setup_contested_arbitration()
+        txid = child_fm1.functions.executeRemoveArbitratorFromWhitelist(contest_question_id).transact()
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
+        bridge_log = self.bridgeToL2.events.LogPassMessage().processReceipt(tx_receipt)
+        self.assertEqual(len(bridge_log), 1, "The bridge on L1 was called and logged an event")
+        call_data = bridge_log[0]['args']['_data']
+
+        self.assertTrue(self.whitelist_arbitrator.functions.arbitrators(self.arb1.address).call(), "starts off on list")
+        self.assertTrue(self.whitelist_arbitrator.functions.frozen_arbitrators(self.arb1.address).call(), "starts off frozen")
+
+        # The executeRemoveArbitratorFromWhitelist call should have called the bridge with the code:
+        # bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).removeArbitrator.selector, arbitrator_to_remove);
+        # bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
+        # We'll imitate this by calling our dummy bridge ourselves
+        txid = self.l2AMB.functions.passMessage(
+            FORKMANAGER_SPECIAL_ADDRESS,  #Rewritten from self.forkmanager.address
+            self.whitelist_arbitrator.address,
+            call_data,
+            5000000,
+            encode_hex("0x0"),
+            encode_hex("0x0")
+        ).transact()
+        self.raiseOnZeroStatus(txid, self.l2web3)
+
+        self.assertFalse(self.whitelist_arbitrator.functions.arbitrators(self.arb1.address).call(), "ends up not on list")
+        self.assertFalse(self.whitelist_arbitrator.functions.frozen_arbitrators(self.arb1.address).call(), "ends up not frozen")
+        #ooo 
+
+
+    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    def test_post_fork_arbitrator_unfreezing(self):
+        
+        (contest_question_id, child_fm1, child_fm2) = self._setup_contested_arbitration()
+        txid = child_fm2.functions.executeUnfreezeArbitratorOnWhitelist(contest_question_id).transact()
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
+        bridge_log = self.bridgeToL2.events.LogPassMessage().processReceipt(tx_receipt)
+        self.assertEqual(len(bridge_log), 1, "The bridge on L1 was called and logged an event")
+        call_data = bridge_log[0]['args']['_data']
+
+        self.assertTrue(self.whitelist_arbitrator.functions.arbitrators(self.arb1.address).call(), "starts off on list")
+        self.assertTrue(self.whitelist_arbitrator.functions.frozen_arbitrators(self.arb1.address).call(), "starts off frozen")
+
+        # The executeRemoveArbitratorFromWhitelist call should have called the bridge with the code:
+        # bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).removeArbitrator.selector, arbitrator_to_remove);
+        # bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
+        # We'll imitate this by calling our dummy bridge ourselves
+        txid = self.l2AMB.functions.passMessage(
+            FORKMANAGER_SPECIAL_ADDRESS,  #Rewritten from self.forkmanager.address
+            self.whitelist_arbitrator.address,
+            call_data,
+            5000000,
+            encode_hex("0x0"),
+            encode_hex("0x0")
+        ).transact()
+        self.raiseOnZeroStatus(txid, self.l2web3)
+
+        self.assertTrue(self.whitelist_arbitrator.functions.arbitrators(self.arb1.address).call(), "ends up still on list")
+        self.assertFalse(self.whitelist_arbitrator.functions.frozen_arbitrators(self.arb1.address).call(), "ends up not frozen")
+        #ooo 
+
+
+
+
+
+    def _setup_contested_arbitration(self):
 
         question_id = self.run_basic_cycle()
 
@@ -630,8 +704,7 @@ class TestRealitio(TestCase):
         self.assertFalse(not_replaced_by.functions.isWinner().call())
         self.assertTrue(not_replaced_by.functions.isLoser().call())
         
-
-        return
+        return (contest_question_id, child_fm1, child_fm2)
 
 
     @unittest.skipIf(WORKING_ONLY, "Not under construction")

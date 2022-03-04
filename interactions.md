@@ -137,7 +137,7 @@ Next step:
 
 ### Execute an arbitrator removal   
 ```
-    Charlie L1  ForkManager.executeArbitratorRemoval(contest_question_id) 
+    Charlie L1  ForkManager.executeRemoveArbitratorFromWhitelist(contest_question_id) 
                     RealityETH.resultFor(contest_question_id)
                     BridgeToL2.sendMessage("WhitelistArbitrator.removeArbitrator(ArbitratorA)")
 
