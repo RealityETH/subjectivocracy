@@ -34,6 +34,13 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     uint256 TEMPLATE_ID_REMOVE_ARBITRATOR = 2147483649;
     uint256 TEMPLATE_ID_BRIDGE_UPGRADE = 2147483650;
 
+    enum PropositionType {
+        NONE,
+        ADD_ARBITRATOR,
+        REMOVE_ARBITRATOR,
+        UPGRADE_BRIDGE
+    }
+
     // We act as the arbitrator for the ForkableRealityETH_ERC20 instance. We arbitrate by forking.
     // Our fee to arbitrate (ie fork) will be 5% of total supply.
     // Usually you'd do this as part of a reality.eth arbitration request which will fund you, although you don't have to.
@@ -88,12 +95,12 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     // Reality.eth questions for propositions we may be asked to rule on
     struct ArbitratorProposition{
-        address whitelist_arbitrator;    
-        address arbitrator;    
+        PropositionType proposition_type;
+        address whitelist_arbitrator;
+        address arbitrator;
+        address bridge;
     }
-    mapping(bytes32 => ArbitratorProposition) propositions_arbitrator_add;
-    mapping(bytes32 => ArbitratorProposition) propositions_arbitrator_remove;
-    mapping(bytes32 => address) propositions_bridge_upgrade;
+    mapping(bytes32 => ArbitratorProposition) propositions;
 
     // Libraries used when creating the child contracts in a fork
     // In theory we could query the current proxies for this information.
@@ -185,9 +192,8 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
         // If this is a bridge upgrade proposition, we use the specified bridge for the yes fork.
         // Otherwise we just clone the current one.
-        address upgrade_bridge = propositions_bridge_upgrade[fork_question_id];
-        if (yes_or_no && upgrade_bridge != address(0)) {
-            newBridgeToL2 = BridgeToL2(upgrade_bridge);
+        if (yes_or_no && propositions[fork_question_id].proposition_type == PropositionType.UPGRADE_BRIDGE) {
+            newBridgeToL2 = BridgeToL2(propositions[fork_question_id].bridge);
         } else {
             newBridgeToL2 = BridgeToL2(_deployProxy(libBridgeToL2));
         }
@@ -204,6 +210,9 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
         newFm.init(payable(address(this)), address(newRealityETH), address(bridgeToL2), (numGovernanceFreezes > 0), supplyAtFork, libForkManager, libForkableRealityETH, libBridgeToL2, address(0), 0);
         newFm.mint(address(newRealityETH), migrate_funds);
+
+        // TODO: Do we need to migrate propositions here?
+        //newFm.migrateProposition
 
         if (yes_or_no) {
             childForkManager1 = ForkManager(newFm);
@@ -310,21 +319,21 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     external {
         string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_add));
         bytes32 question_id = realityETH.askQuestion(TEMPLATE_ID_ADD_ARBITRATOR, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
-        propositions_arbitrator_add[question_id] = ArbitratorProposition(whitelist_arbitrator, arbitrator_to_add);
+        propositions[question_id] = ArbitratorProposition(PropositionType.ADD_ARBITRATOR, whitelist_arbitrator, arbitrator_to_add, address(0));
     }
 
     function beginRemoveArbitratorFromWhitelist(address whitelist_arbitrator, address arbitrator_to_remove) 
     external {
         string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_remove));
         bytes32 question_id = realityETH.askQuestion(TEMPLATE_ID_REMOVE_ARBITRATOR, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
-        propositions_arbitrator_remove[question_id] = ArbitratorProposition(whitelist_arbitrator, arbitrator_to_remove);
+        propositions[question_id] = ArbitratorProposition(PropositionType.REMOVE_ARBITRATOR, whitelist_arbitrator, arbitrator_to_remove, address(0));
     }
 
     function beginUpgradeBridge(address new_bridge) 
     external {
         string memory question = _toString(abi.encodePacked(new_bridge));
         bytes32 question_id = realityETH.askQuestion(TEMPLATE_ID_BRIDGE_UPGRADE, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
-        propositions_bridge_upgrade[question_id] = new_bridge;
+        propositions[question_id] = ArbitratorProposition(PropositionType.UPGRADE_BRIDGE, address(0), address(0), new_bridge);
     }
 
     // Verify that a question is still open with a minimum bond specified
@@ -339,7 +348,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     function clearFailedGovernanceProposal(bytes32 question_id) 
     external {
 
-        require(propositions_bridge_upgrade[question_id] != address(0x0), "Proposition not recognized");
+        require(propositions[question_id].proposition_type != PropositionType.NONE, "Proposition not found or wrong type");
         require(realityETH.resultFor(question_id) != bytes32(uint256(1)), "Proposition passed");
 
         if (governance_freeze_question_ids[question_id]) {
@@ -352,7 +361,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     function executeBridgeUpgrade(bytes32 question_id) 
     external {
 
-        address new_bridge = propositions_bridge_upgrade[question_id];
+        address new_bridge = propositions[question_id].bridge;
         require(new_bridge != address(0x0), "Proposition not recognized");
         require(realityETH.resultFor(question_id) == bytes32(uint256(1)), "Proposition did not pass");
 
@@ -361,7 +370,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
             delete(governance_freeze_question_ids[question_id]);
             numGovernanceFreezes--;
         }
-        delete(propositions_bridge_upgrade[question_id]);
+        delete(propositions[question_id]);
 
         bridgeToL2 = BridgeToL2(new_bridge);
     }
@@ -369,7 +378,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     function freezeBridges(bytes32 question_id) 
     external {
-        require(propositions_bridge_upgrade[question_id] != address(0), "Proposition not recognized");
+        require(propositions[question_id].proposition_type != PropositionType.NONE, "Proposition not recognized");
         require(!governance_freeze_question_ids[question_id], "Already frozen");
 
         uint256 required_bond = effectiveTotalSupply()/100 * PERCENT_TO_FREEZE;
@@ -381,8 +390,9 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     function executeAddArbitratorToWhitelist(bytes32 question_id) 
     external {
-        address whitelist_arbitrator = propositions_arbitrator_add[question_id].whitelist_arbitrator;
-        address arbitrator_to_add = propositions_arbitrator_add[question_id].arbitrator;
+        require(propositions[question_id].proposition_type == PropositionType.ADD_ARBITRATOR, "Not an add arbitrator proposition");
+        address whitelist_arbitrator = propositions[question_id].whitelist_arbitrator;
+        address arbitrator_to_add = propositions[question_id].arbitrator;
 
         require(whitelist_arbitrator != address(0x0), "Proposition not recognized");
 
@@ -391,7 +401,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).addArbitrator.selector, arbitrator_to_add);
         bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
 
-        delete(propositions_arbitrator_add[question_id]);
+        delete(propositions[question_id]);
     }
 
     // If you're about to pass a proposition but you don't want bad things to happen in the meantime
@@ -400,8 +410,10 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     function freezeArbitratorOnWhitelist(bytes32 question_id) 
     external {
 
-        address whitelist_arbitrator = propositions_arbitrator_remove[question_id].whitelist_arbitrator;
-        address arbitrator_to_remove = propositions_arbitrator_remove[question_id].arbitrator;
+        require(propositions[question_id].proposition_type == PropositionType.REMOVE_ARBITRATOR, "Not a remove arbitrator proposition");
+
+        address whitelist_arbitrator = propositions[question_id].whitelist_arbitrator;
+        address arbitrator_to_remove = propositions[question_id].arbitrator;
 
         require(whitelist_arbitrator != address(0x0), "Proposition not recognized");
 
@@ -414,8 +426,10 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     
     function executeRemoveArbitratorFromWhitelist(bytes32 question_id) 
     external {
-        address whitelist_arbitrator = propositions_arbitrator_remove[question_id].whitelist_arbitrator;
-        address arbitrator_to_remove = propositions_arbitrator_remove[question_id].arbitrator;
+        require(propositions[question_id].proposition_type == PropositionType.REMOVE_ARBITRATOR, "Not a remove arbitrator proposition");
+
+        address whitelist_arbitrator = propositions[question_id].whitelist_arbitrator;
+        address arbitrator_to_remove = propositions[question_id].arbitrator;
 
         require(whitelist_arbitrator != address(0x0), "Proposition not recognized");
 
@@ -424,7 +438,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).removeArbitrator.selector, arbitrator_to_remove);
         bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
 
-        delete(propositions_arbitrator_add[question_id]);
+        delete(propositions[question_id]);
     }
 
     function executeTokenSale(WhitelistArbitrator wa, bytes32 order_id, uint256 num_gov_tokens)
