@@ -442,7 +442,7 @@ class TestRealitio(TestCase):
         return question_id
 
 
-    @unittest.skipIf(WORKING_ONLY, "Not under construction")
+    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_uncontested_arbitration(self):
     
         question_id = self.run_basic_cycle()
@@ -458,7 +458,7 @@ class TestRealitio(TestCase):
         self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], False)
 
 
-    @unittest.skipIf(WORKING_ONLY, "Not under construction")
+    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_contested_arbitration(self):
         return self._setup_contested_arbitration()
 
@@ -493,10 +493,9 @@ class TestRealitio(TestCase):
 
         self.assertFalse(self.whitelist_arbitrator.functions.arbitrators(self.arb1.address).call(), "ends up not on list")
         self.assertFalse(self.whitelist_arbitrator.functions.frozen_arbitrators(self.arb1.address).call(), "ends up not frozen")
-        #ooo 
 
 
-    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_post_fork_arbitrator_unfreezing(self):
         
         (contest_question_id, child_fm1, child_fm2) = self._setup_contested_arbitration()
@@ -527,7 +526,159 @@ class TestRealitio(TestCase):
 
         self.assertTrue(self.whitelist_arbitrator.functions.arbitrators(self.arb1.address).call(), "ends up still on list")
         self.assertFalse(self.whitelist_arbitrator.functions.frozen_arbitrators(self.arb1.address).call(), "ends up not frozen")
-        #ooo 
+
+        # TODO: Test using the arbitrator which is now unfrozen
+
+
+    # TODO: Test the process of claiming from reality.eth on each branch
+
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
+    def test_setup_add_arbitrator(self):
+        self._setup_add_arbitrator() 
+
+    def _setup_add_arbitrator(self):
+
+        txid = self.forkmanager.functions.beginAddArbitratorToWhitelist(self.whitelist_arbitrator.address, self.arb3.address).transact()
+        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
+        ask_log = self.l1realityeth.events.LogNewQuestion().processReceipt(tx_receipt)
+        contest_question_id = "0x"+encode_hex(ask_log[0]['args']['question_id'])
+
+        txid = self.forkmanager.functions.transfer(self.L1_CHARLIE, 12345).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        txid = self.forkmanager.functions.approve(self.l1realityeth.address, 12345).transact(self._txargs(sender=self.L1_CHARLIE))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        txid = self.l1realityeth.functions.submitAnswerERC20(contest_question_id, to_answer_for_contract(1), 0, 12345).transact(self._txargs(sender=self.L1_CHARLIE))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        return contest_question_id
+
+
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
+    def test_contested_add_arbitrator(self):
+
+        contest_question_id = self._setup_add_arbitrator()
+
+        add_amount = 54321
+
+        # To be able to fork an arbitrator we need to post at least 1% of supply
+        fork_amount = int(self.FORKMANAGER_INITIAL_SUPPLY * 5 / 100)
+
+        txid = self.forkmanager.functions.transfer(self.L1_BOB, fork_amount+add_amount).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        txid = self.forkmanager.functions.approve(self.l1realityeth.address, fork_amount).transact(self._txargs(sender=self.L1_BOB))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        self.assertTrue(self.forkmanager.functions.isUnForked().call())
+
+        self.forkmanager.functions.requestArbitrationByFork(contest_question_id, 0).transact(self._txargs(sender=self.L1_BOB))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        self.assertEqual(self.l1realityeth.functions.questions(contest_question_id).call()[QINDEX_IS_PENDING_ARBITRATION], True)
+        self.assertFalse(self.forkmanager.functions.isUnForked().call())
+
+        # TODO: First to_answer_for_contract should be previous history hash
+        txid = self.forkmanager.functions.deployFork(True, decode_hex("0x0"), to_answer_for_contract(1), self.L1_CHARLIE, add_amount).transact(self._txargs(gas=6000000))
+        rcpt = self.l1web3.eth.getTransactionReceipt(txid)
+        # print(rcpt)
+        self.raiseOnZeroStatus(txid, self.l1web3)
+        return
+
+        ts1 = self._block_timestamp(self.l1web3)
+        txid = self.forkmanager.functions.deployFork(False, to_answer_for_contract(1), to_answer_for_contract(1), self.L1_CHARLIE, add_amount).transact(self._txargs(gas=6000000))
+        rcpt = self.l1web3.eth.getTransactionReceipt(txid)
+        # print(rcpt)
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        child_fm1_addr = self.forkmanager.functions.childForkManager1().call()
+        child_fm2_addr = self.forkmanager.functions.childForkManager2().call()
+
+        child_fm1 = self.l1web3.eth.contract(child_fm1_addr, abi=self.forkmanager.abi)
+        child_fm2 = self.l1web3.eth.contract(child_fm2_addr, abi=self.forkmanager.abi)
+        
+        self._advance_clock(60, self.l1web3)
+        ts2 = self._block_timestamp(self.l1web3)
+        self.assertNotEqual(ts1, ts2)
+
+
+        # print(self.forkmanager.abi)
+        realityeth1_addr = child_fm1.functions.realityETH().call()
+        realityeth1 = self.l1web3.eth.contract(realityeth1_addr, abi=self.l1realityeth.abi)
+
+        realityeth2_addr = child_fm2.functions.realityETH().call()
+        realityeth2 = self.l1web3.eth.contract(realityeth2_addr, abi=self.l1realityeth.abi)
+
+        q1 = realityeth1.functions.questions(contest_question_id).call()
+
+        finalization_ts = q1[QINDEX_FINALIZATION_TS]
+        self.assertTrue(ts2 > finalization_ts, "finalization timestamp has passed")
+        is_finalized = realityeth1.functions.isFinalized(contest_question_id).call()
+        self.assertTrue(is_finalized, "q1 finalized")
+
+        q2 = realityeth2.functions.questions(contest_question_id).call()
+        result1 = realityeth1.functions.resultFor(contest_question_id).call()
+        self.assertEqual(result1, to_answer_for_contract(1))
+        result2 = realityeth2.functions.resultFor(contest_question_id).call()
+        self.assertEqual(result2, to_answer_for_contract(0))
+
+        bal1 = child_fm1.functions.balanceOf(realityeth1_addr).call()
+        # Each reality.eth instance should have enough tokens
+        self.assertEqual(bal1, add_amount)
+
+        bal2 = child_fm2.functions.balanceOf(realityeth2_addr).call()
+        # Each reality.eth instance should have enough tokens
+        self.assertEqual(bal1, add_amount)
+
+        # TODO: Test the claiming process
+
+        # Everybody picks a fork
+        bob_bal = self.forkmanager.functions.balanceOf(self.L1_BOB).call()
+        self.assertEqual(bob_bal, 54321)
+        charlie_bal = self.forkmanager.functions.balanceOf(self.L1_CHARLIE).call()
+        self.assertEqual(charlie_bal, 12345)
+
+        self.forkmanager.functions.pickFork(True, 321).transact(self._txargs(sender=self.L1_BOB))
+        bob_bal_parent = self.forkmanager.functions.balanceOf(self.L1_BOB).call()
+        self.assertEqual(bob_bal_parent, 54000)
+        bob_bal_child = child_fm1.functions.balanceOf(self.L1_BOB).call()
+        self.assertEqual(bob_bal_child, 321)
+
+
+        self.forkmanager.functions.pickFork(False, 345).transact(self._txargs(sender=self.L1_CHARLIE))
+        charlie_bal_parent = self.forkmanager.functions.balanceOf(self.L1_CHARLIE).call()
+        self.assertEqual(bob_bal_parent, 54000)
+        charlie_bal_child = child_fm2.functions.balanceOf(self.L1_CHARLIE).call()
+        self.assertEqual(charlie_bal_child, 345)
+
+        self.assertEqual(self.forkmanager.functions.amountMigrated1().call(), 321)
+        self.assertEqual(self.forkmanager.functions.amountMigrated2().call(), 345)
+
+        #  uint256 constant FORK_TIME_SECS = 604800; // 1 week
+ 
+        # Should fail because of secs to fork
+        with self.assertRaises(TransactionFailed):
+            txid = self.forkmanager.functions.resolveFork().transact()
+            self.raiseOnZeroStatus(txid, self.l1web3)
+
+        self._advance_clock(604800, self.l1web3)
+
+        txid = self.forkmanager.functions.resolveFork().transact()
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        replaced_by_addr = self.forkmanager.functions.replacedByForkManager().call()
+        self.assertEqual(child_fm2_addr, replaced_by_addr)
+        
+        replaced_by_fm = self.l1web3.eth.contract(child_fm2_addr, abi=self.forkmanager.abi)
+        self.assertTrue(replaced_by_fm.functions.isWinner().call())
+        self.assertFalse(replaced_by_fm.functions.isLoser().call())
+
+        not_replaced_by = self.l1web3.eth.contract(child_fm1_addr, abi=self.forkmanager.abi)
+        self.assertFalse(not_replaced_by.functions.isWinner().call())
+        self.assertTrue(not_replaced_by.functions.isLoser().call())
+        
+        return (contest_question_id, child_fm1, child_fm2)
 
 
 
@@ -553,15 +704,38 @@ class TestRealitio(TestCase):
         txid = self.forkmanager.functions.approve(self.l1realityeth.address, freeze_amount).transact(self._txargs(sender=self.L1_CHARLIE))
         self.raiseOnZeroStatus(txid, self.l1web3)
 
+        contestq = self.l1realityeth.functions.questions(contest_question_id).call()
+        last_history_hash = contestq[QINDEX_HISTORY_HASH]
+
         txid = self.l1realityeth.functions.submitAnswerERC20(contest_question_id, to_answer_for_contract(1), 0, freeze_amount).transact(self._txargs(sender=self.L1_CHARLIE))
-        self.raiseOnZeroStatus(txid, self.l1web3)
+        #self.raiseOnZeroStatus(txid, self.l1web3)
+        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
+        bridge_log = self.l1realityeth.events.LogNewAnswer().processReceipt(tx_receipt)
+
+        last_bond = bridge_log[0]['args']['bond']
+        last_answerer = bridge_log[0]['args']['user']
+        last_answer = bridge_log[0]['args']['answer']
+
+        self.assertEqual(last_bond, freeze_amount, "expected last bond")
+        self.assertEqual(last_answer, to_answer_for_contract(1), "epected last answer")
+        self.assertEqual(last_answerer, self.L1_CHARLIE, "epected last answerer")
+
+        #contestq = self.l1realityeth.functions.questions(contest_question_id).call()
+        #print("hh after submit" + encode_hex(contestq[QINDEX_HISTORY_HASH]))
 
         txid = self.forkmanager.functions.freezeArbitratorOnWhitelist(contest_question_id).transact()
         self.raiseOnZeroStatus(txid, self.l1web3)
 
+        #contestq = self.l1realityeth.functions.questions(contest_question_id).call()
+        #print("hh after freeze (should be same as submit)")
+        #print(encode_hex(contestq[QINDEX_HISTORY_HASH]))
+
         tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
         bridge_log = self.bridgeToL2.events.LogPassMessage().processReceipt(tx_receipt)
         call_data = bridge_log[0]['args']['_data']
+
+
+
 
         is_frozen = self.whitelist_arbitrator.functions.frozen_arbitrators(self.arb1.address).call()
         self.assertFalse(is_frozen, "not frozen at start")
@@ -597,23 +771,47 @@ class TestRealitio(TestCase):
         txid = self.forkmanager.functions.approve(self.l1realityeth.address, fork_amount).transact(self._txargs(sender=self.L1_BOB))
         self.raiseOnZeroStatus(txid, self.l1web3)
 
+        contestq = self.l1realityeth.functions.questions(contest_question_id).call()
 
         self.assertTrue(self.forkmanager.functions.isUnForked().call())
+
+        expected_hh = "0x"+encode_hex(self.l1realityeth.functions.getHistoryHash(contest_question_id).call())
+        calculated_hh = calculate_history_hash(to_answer_for_contract(0), to_answer_for_contract(1), freeze_amount, self.L1_CHARLIE, False)
+        self.assertEqual(expected_hh, calculated_hh)
 
         self.forkmanager.functions.requestArbitrationByFork(contest_question_id, 0).transact(self._txargs(sender=self.L1_BOB))
         self.raiseOnZeroStatus(txid, self.l1web3)
 
+        expected_hh2 = "0x"+encode_hex(self.l1realityeth.functions.getHistoryHash(contest_question_id).call())
+        self.assertEqual(expected_hh, expected_hh2, "arbitration should not change the history hash")
+
+
         self.assertEqual(self.l1realityeth.functions.questions(contest_question_id).call()[QINDEX_IS_PENDING_ARBITRATION], True)
         self.assertFalse(self.forkmanager.functions.isUnForked().call())
 
-        # TODO: First to_answer_for_contract should be previous history hash
-        txid = self.forkmanager.functions.deployFork(True, to_answer_for_contract(1), to_answer_for_contract(1), self.L1_CHARLIE, freeze_amount).transact(self._txargs(gas=6000000))
+        self.assertEqual(self.l1realityeth.functions.getBond(contest_question_id).call(),self.l1realityeth.functions.getCumulativeBonds(contest_question_id).call(), "Cumulative bond should equal last bond as there was only one answer")
+        self.assertEqual(last_bond, self.l1realityeth.functions.getBond(contest_question_id).call(), "last bond is what we expect")
+
+
+        # Recreate the history hash and test it ourselves
+        expected_hh = "0x"+encode_hex(self.l1realityeth.functions.getHistoryHash(contest_question_id).call())
+        calculated_hh = calculate_history_hash(last_history_hash, last_answer, last_bond, last_answerer, False)
+        self.assertEqual(expected_hh, calculated_hh)
+
+        # First to_answer_for_contract should be previous history hash
+        # function deployFork(bool yes_or_no, bytes32 last_history_hash, bytes32 last_answer, address last_answerer, uint256 last_bond)
+        # txid = self.l1realityeth.functions.submitAnswerERC20(contest_question_id, to_answer_for_contract(1), 0, freeze_amount).transact(self._txargs(sender=self.L1_CHARLIE))
+        txid = self.forkmanager.functions.deployFork(True, to_answer_for_contract(0), to_answer_for_contract(1), self.L1_CHARLIE, freeze_amount).transact(self._txargs(gas=6000000))
         rcpt = self.l1web3.eth.getTransactionReceipt(txid)
         # print(rcpt)
         self.raiseOnZeroStatus(txid, self.l1web3)
 
+
+        #TRY: Let this time out instead of challenging it, and see if we can claim it
+
+
         ts1 = self._block_timestamp(self.l1web3)
-        txid = self.forkmanager.functions.deployFork(False, to_answer_for_contract(1), to_answer_for_contract(1), self.L1_CHARLIE, freeze_amount).transact(self._txargs(gas=6000000))
+        txid = self.forkmanager.functions.deployFork(False, last_history_hash, last_answer, last_answerer, last_bond).transact(self._txargs(gas=6000000))
         rcpt = self.l1web3.eth.getTransactionReceipt(txid)
         # print(rcpt)
         self.raiseOnZeroStatus(txid, self.l1web3)
@@ -705,6 +903,45 @@ class TestRealitio(TestCase):
         self.assertTrue(not_replaced_by.functions.isLoser().call())
         
         return (contest_question_id, child_fm1, child_fm2)
+
+
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
+    def test_post_fork_claims(self):
+
+        (contest_question_id, child_fm1, child_fm2) = self._setup_contested_arbitration()
+
+        # print(self.forkmanager.abi)
+        realityeth1_addr = child_fm1.functions.realityETH().call()
+        realityeth1 = self.l1web3.eth.contract(realityeth1_addr, abi=self.l1realityeth.abi)
+
+        realityeth2_addr = child_fm2.functions.realityETH().call()
+        realityeth2 = self.l1web3.eth.contract(realityeth2_addr, abi=self.l1realityeth.abi)
+
+        q1 = realityeth1.functions.questions(contest_question_id).call()
+
+        finalization_ts = q1[QINDEX_FINALIZATION_TS]
+        self.assertTrue(ts2 > finalization_ts, "finalization timestamp has passed")
+        is_finalized = realityeth1.functions.isFinalized(contest_question_id).call()
+        self.assertTrue(is_finalized, "q1 finalized")
+
+        return
+        q2 = realityeth2.functions.questions(contest_question_id).call()
+        result1 = realityeth1.functions.resultFor(contest_question_id).call()
+        self.assertEqual(result1, to_answer_for_contract(1))
+        result2 = realityeth2.functions.resultFor(contest_question_id).call()
+        self.assertEqual(result2, to_answer_for_contract(0))
+
+        bal1 = child_fm1.functions.balanceOf(realityeth1_addr).call()
+        # Each reality.eth instance should have enough tokens
+        self.assertEqual(bal1, freeze_amount)
+
+        bal2 = child_fm2.functions.balanceOf(realityeth2_addr).call()
+        # Each reality.eth instance should have enough tokens
+        self.assertEqual(bal1, freeze_amount)
+
+
+        
+
 
 
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
