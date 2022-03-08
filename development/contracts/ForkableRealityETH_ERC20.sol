@@ -326,9 +326,9 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
 
         is_frozen = true;
 
-        // Wipe the history hash to prevent refunds, as we already transferred the funds to the children.
-        // Leave the finalize_ts and best_answer alone, they don't matter as it'll never finalize now that we're frozen.
-        questions[question_id].history_hash = bytes32(0);
+        // We will never actually send the arbitration result to this contract, only to the forks.
+        // This means the funds submitted for this question are effectively frozen.
+        // They will instead be credited to the child questions in the forked tokens..
 
         emit LogNotifyOfArbitrationRequest(question_id, requester);
     }

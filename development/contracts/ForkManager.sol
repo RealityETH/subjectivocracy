@@ -184,9 +184,9 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
             result = bytes32(uint256(0));
         }
 
-        // TODO: Verify that last_answerer and last_answerer match the current history hash 
-        // bytes32 history_hash = realityETH.getHistoryHash(fork_question_id);
-        // require(history_hash == keccak256(abi.encodePacked(last_history_hash, last_answerer, last_bond, last_answerer, false)), "Wrong parameters supplied for last answer");
+        // Verify that last_answerer and last_answerer match the current history hash 
+        bytes32 history_hash = realityETH.getHistoryHash(fork_question_id);
+        require(history_hash == keccak256(abi.encodePacked(last_history_hash, last_answer, last_bond, last_answerer, false)), "Wrong parameters supplied for last answer");
 
         require(fork_question_id != bytes32(uint256(0)), "Fork not initiated");
         require(block.timestamp < forkExpirationTS, "Too late to deploy a fork");
