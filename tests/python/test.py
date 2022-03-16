@@ -460,12 +460,12 @@ class TestRealitio(TestCase):
 
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_contested_arbitration(self):
-        return self._setup_contested_arbitration()
+        self._setup_contested_arbitration()
 
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_post_fork_arbitrator_removal(self):
         
-        (contest_question_id, child_fm1, child_fm2) = self._setup_contested_arbitration()
+        (contest_question_id, answer_history, child_fm1, child_fm2) = self._setup_contested_arbitration()
         txid = child_fm1.functions.executeRemoveArbitratorFromWhitelist(contest_question_id).transact()
         self.raiseOnZeroStatus(txid, self.l1web3)
 
@@ -498,7 +498,7 @@ class TestRealitio(TestCase):
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_post_fork_arbitrator_unfreezing(self):
         
-        (contest_question_id, child_fm1, child_fm2) = self._setup_contested_arbitration()
+        (contest_question_id, answer_history, child_fm1, child_fm2) = self._setup_contested_arbitration()
         txid = child_fm2.functions.executeUnfreezeArbitratorOnWhitelist(contest_question_id).transact()
         self.raiseOnZeroStatus(txid, self.l1web3)
 
@@ -918,13 +918,15 @@ class TestRealitio(TestCase):
         self.assertFalse(not_replaced_by.functions.isWinner().call())
         self.assertTrue(not_replaced_by.functions.isLoser().call())
         
-        return (contest_question_id, child_fm1, child_fm2)
+        answer_history = "TODO"
+
+        return (contest_question_id, answer_history, child_fm1, child_fm2)
 
 
-    @unittest.skipIf(WORKING_ONLY, "Not under construction")
+    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_post_fork_claims(self):
 
-        (contest_question_id, child_fm1, child_fm2) = self._setup_contested_arbitration()
+        (contest_question_id, answer_history, child_fm1, child_fm2) = self._setup_contested_arbitration()
 
         # print(self.forkmanager.abi)
         realityeth1_addr = child_fm1.functions.realityETH().call()
@@ -944,7 +946,6 @@ class TestRealitio(TestCase):
         is_finalized = realityeth1.functions.isFinalized(contest_question_id).call()
         self.assertTrue(is_finalized, "q1 finalized")
 
-        return
         q2 = realityeth2.functions.questions(contest_question_id).call()
         result1 = realityeth1.functions.resultFor(contest_question_id).call()
         self.assertEqual(result1, to_answer_for_contract(1))
@@ -953,12 +954,10 @@ class TestRealitio(TestCase):
 
         bal1 = child_fm1.functions.balanceOf(realityeth1_addr).call()
         # Each reality.eth instance should have enough tokens
-        self.assertEqual(bal1, freeze_amount)
-
         bal2 = child_fm2.functions.balanceOf(realityeth2_addr).call()
         # Each reality.eth instance should have enough tokens
-        self.assertEqual(bal1, freeze_amount)
 
+        #self.assertTrue(False, "TODO: Implement the claim tests")
 
 
 
