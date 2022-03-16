@@ -538,6 +538,8 @@ class TestRealitio(TestCase):
 
     def _setup_add_arbitrator(self):
 
+        answer_history = []
+
         txid = self.forkmanager.functions.beginAddArbitratorToWhitelist(self.whitelist_arbitrator.address, self.arb3.address).transact()
         tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
         ask_log = self.l1realityeth.events.LogNewQuestion().processReceipt(tx_receipt)
@@ -562,13 +564,24 @@ class TestRealitio(TestCase):
         last_answerer = ans_log[0]['args']['user']
         last_answer = ans_log[0]['args']['answer']
 
-        return (contest_question_id, last_bond, last_answerer, last_answer, last_history_hash)
+        answer_history.append({
+            'bond': last_bond,
+            'answerer': last_answerer,
+            'answer': last_answer,
+            'previous_history_hash': last_history_hash,
+        })
+
+        return (contest_question_id, answer_history)
 
 
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_contested_add_arbitrator(self):
 
-        (contest_question_id, last_bond, last_answerer, last_answer, last_history_hash)  = self._setup_add_arbitrator()
+        (contest_question_id, answer_history)  = self._setup_add_arbitrator()
+        last_bond = answer_history[-1]['bond']
+        last_answerer = answer_history[-1]['answerer']
+        last_answer = answer_history[-1]['answer']
+        last_history_hash = answer_history[-1]['previous_history_hash']
 
         add_amount = last_bond
 
@@ -704,6 +717,8 @@ class TestRealitio(TestCase):
 
         question_id = self.run_basic_cycle()
 
+        answer_history = []
+
         # question = self.whitelist_arbitrator.address + QUESTION_DELIM + self.arb1.address
 
         txid = self.forkmanager.functions.beginRemoveArbitratorFromWhitelist(self.whitelist_arbitrator.address, self.arb1.address).transact()
@@ -731,6 +746,13 @@ class TestRealitio(TestCase):
         last_bond = bridge_log[0]['args']['bond']
         last_answerer = bridge_log[0]['args']['user']
         last_answer = bridge_log[0]['args']['answer']
+
+        answer_history.append({
+            'bond': last_bond,
+            'answerer': last_answerer,
+            'answer': last_answer,
+            'previous_history_hash': last_history_hash,
+        })
 
         self.assertEqual(last_bond, freeze_amount, "expected last bond")
         self.assertEqual(last_answer, to_answer_for_contract(1), "epected last answer")
@@ -817,7 +839,7 @@ class TestRealitio(TestCase):
         # First to_answer_for_contract should be previous history hash
         # function deployFork(bool yes_or_no, bytes32 last_history_hash, bytes32 last_answer, address last_answerer, uint256 last_bond)
         # txid = self.l1realityeth.functions.submitAnswerERC20(contest_question_id, to_answer_for_contract(1), 0, freeze_amount).transact(self._txargs(sender=self.L1_CHARLIE))
-        txid = self.forkmanager.functions.deployFork(True, to_answer_for_contract(0), to_answer_for_contract(1), self.L1_CHARLIE, freeze_amount).transact(self._txargs(gas=6000000))
+        txid = self.forkmanager.functions.deployFork(True, answer_history[-1]['previous_history_hash'], to_answer_for_contract(1), self.L1_CHARLIE, freeze_amount).transact(self._txargs(gas=6000000))
         rcpt = self.l1web3.eth.getTransactionReceipt(txid)
         # print(rcpt)
         self.raiseOnZeroStatus(txid, self.l1web3)
@@ -827,7 +849,7 @@ class TestRealitio(TestCase):
 
 
         ts1 = self._block_timestamp(self.l1web3)
-        txid = self.forkmanager.functions.deployFork(False, last_history_hash, last_answer, last_answerer, last_bond).transact(self._txargs(gas=6000000))
+        txid = self.forkmanager.functions.deployFork(False, answer_history[-1]['previous_history_hash'], last_answer, last_answerer, last_bond).transact(self._txargs(gas=6000000))
         rcpt = self.l1web3.eth.getTransactionReceipt(txid)
         # print(rcpt)
         self.raiseOnZeroStatus(txid, self.l1web3)
@@ -917,8 +939,6 @@ class TestRealitio(TestCase):
         not_replaced_by = self.l1web3.eth.contract(child_fm1_addr, abi=self.forkmanager.abi)
         self.assertFalse(not_replaced_by.functions.isWinner().call())
         self.assertTrue(not_replaced_by.functions.isLoser().call())
-        
-        answer_history = "TODO"
 
         return (contest_question_id, answer_history, child_fm1, child_fm2)
 
