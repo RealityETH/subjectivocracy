@@ -560,18 +560,22 @@ class TestRealitio(TestCase):
         tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
         ans_log = self.l1realityeth.events.LogNewAnswer().processReceipt(tx_receipt)
 
+        answer_history.append(self._log_to_answer_history(ans_log, last_history_hash))
+
+        return (contest_question_id, answer_history)
+
+    def _log_to_answer_history(self, ans_log, last_history_hash):
+
         last_bond = ans_log[0]['args']['bond']
         last_answerer = ans_log[0]['args']['user']
         last_answer = ans_log[0]['args']['answer']
 
-        answer_history.append({
+        return {
             'bond': last_bond,
             'answerer': last_answerer,
             'answer': last_answer,
             'previous_history_hash': last_history_hash,
-        })
-
-        return (contest_question_id, answer_history)
+        }
 
 
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
@@ -741,22 +745,18 @@ class TestRealitio(TestCase):
         txid = self.l1realityeth.functions.submitAnswerERC20(contest_question_id, to_answer_for_contract(1), 0, freeze_amount).transact(self._txargs(sender=self.L1_CHARLIE))
         #self.raiseOnZeroStatus(txid, self.l1web3)
         tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
-        bridge_log = self.l1realityeth.events.LogNewAnswer().processReceipt(tx_receipt)
+        answer_log = self.l1realityeth.events.LogNewAnswer().processReceipt(tx_receipt)
 
-        last_bond = bridge_log[0]['args']['bond']
-        last_answerer = bridge_log[0]['args']['user']
-        last_answer = bridge_log[0]['args']['answer']
+        history_item = self._log_to_answer_history(answer_log, last_history_hash)
+        last_bond = history_item['bond']
+        last_answer = history_item['answer']
+        last_answerer = history_item['answerer']
 
-        answer_history.append({
-            'bond': last_bond,
-            'answerer': last_answerer,
-            'answer': last_answer,
-            'previous_history_hash': last_history_hash,
-        })
+        answer_history.append(history_item)
 
-        self.assertEqual(last_bond, freeze_amount, "expected last bond")
-        self.assertEqual(last_answer, to_answer_for_contract(1), "epected last answer")
-        self.assertEqual(last_answerer, self.L1_CHARLIE, "epected last answerer")
+        self.assertEqual(answer_history[-1]['bond'], freeze_amount, "expected last bond")
+        self.assertEqual(answer_history[-1]['answer'], to_answer_for_contract(1), "epected last answer")
+        self.assertEqual(answer_history[-1]['answerer'], self.L1_CHARLIE, "epected last answerer")
 
         #contestq = self.l1realityeth.functions.questions(contest_question_id).call()
         #print("hh after submit" + encode_hex(contestq[QINDEX_HISTORY_HASH]))
