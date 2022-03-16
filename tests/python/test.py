@@ -465,7 +465,7 @@ class TestRealitio(TestCase):
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_post_fork_arbitrator_removal(self):
         
-        (contest_question_id, answer_history, child_fm1, child_fm2) = self._setup_contested_arbitration()
+        (contest_question_id, answer_history1, answer_history2, child_fm1, child_fm2) = self._setup_contested_arbitration()
         txid = child_fm1.functions.executeRemoveArbitratorFromWhitelist(contest_question_id).transact()
         self.raiseOnZeroStatus(txid, self.l1web3)
 
@@ -498,7 +498,7 @@ class TestRealitio(TestCase):
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_post_fork_arbitrator_unfreezing(self):
         
-        (contest_question_id, answer_history, child_fm1, child_fm2) = self._setup_contested_arbitration()
+        (contest_question_id, answer_history1, answer_history2, child_fm1, child_fm2) = self._setup_contested_arbitration()
         txid = child_fm2.functions.executeUnfreezeArbitratorOnWhitelist(contest_question_id).transact()
         self.raiseOnZeroStatus(txid, self.l1web3)
 
@@ -940,13 +940,18 @@ class TestRealitio(TestCase):
         self.assertFalse(not_replaced_by.functions.isWinner().call())
         self.assertTrue(not_replaced_by.functions.isLoser().call())
 
-        return (contest_question_id, answer_history, child_fm1, child_fm2)
+
+        # TODO: These should be different for different forks
+        answer_history1 = answer_history
+        answer_history2 = answer_history
+
+        return (contest_question_id, answer_history1, answer_history2, child_fm1, child_fm2)
 
 
     #@unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_post_fork_claims(self):
 
-        (contest_question_id, answer_history, child_fm1, child_fm2) = self._setup_contested_arbitration()
+        (contest_question_id, answer_history1, answer_history2, child_fm1, child_fm2) = self._setup_contested_arbitration()
 
         # print(self.forkmanager.abi)
         realityeth1_addr = child_fm1.functions.realityETH().call()
