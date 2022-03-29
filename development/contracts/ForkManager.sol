@@ -63,6 +63,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     // The reality.eth question over which we forked. This should be migrated so you can claim bonds on each fork.
     bytes32 fork_question_id;
+    address fork_request_user;
 
     // The timestamp when were born in a fork. 0 for the genesis ForkManager.
     uint256 forked_from_parent_ts = 0;
@@ -212,7 +213,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         ForkableRealityETH_ERC20 newRealityETH = ForkableRealityETH_ERC20(_deployProxy(libForkableRealityETH));
         newRealityETH.init(IERC20(newFm), address(realityETH), fork_question_id);
 
-        address payee = last_answer == result ? last_answerer : address(this);
+        address payee = last_answer == result ? last_answerer : fork_request_user;
         newRealityETH.submitAnswerByArbitrator(fork_question_id, result, payee);
 
         newFm.importProposition(fork_question_id, propositions[fork_question_id].proposition_type, propositions[fork_question_id].whitelist_arbitrator, propositions[fork_question_id].arbitrator, propositions[fork_question_id].bridge);
@@ -247,6 +248,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
         realityETH.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
 
+        fork_request_user = msg.sender;
         fork_question_id = question_id;
 
         forkExpirationTS = block.timestamp + FORK_TIME_SECS;

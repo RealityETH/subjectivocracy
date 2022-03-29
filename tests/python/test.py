@@ -1028,9 +1028,54 @@ class TestRealitio(TestCase):
         # Each reality.eth instance should have enough tokens
 
         #self.assertTrue(False, "TODO: Implement the claim tests")
+        self.assertEqual(len(answer_history1), 2, "Should have 2 entries in answer_history1, for the answer fand for the arbitration")
 
 
+        h_arr1 = [answer_history1[1]['previous_history_hash'], answer_history1[0]['previous_history_hash']]
+        bond_arr1 = [answer_history1[1]['bond'], answer_history1[0]['bond']]
+        anser_arr1 = [answer_history1[1]['answerer'], answer_history1[0]['answerer']]
+        ans_arr1 = [answer_history1[1]['answer'], answer_history1[0]['answer']]
 
+        # Pass one of the arrays in the wrong order to prove it fails
+        bond_arr_wrong1 = [answer_history1[0]['bond'], answer_history1[1]['bond']]
+
+        h_arr2 = [answer_history2[1]['previous_history_hash'], answer_history2[0]['previous_history_hash']]
+        bond_arr2 = [answer_history2[1]['bond'], answer_history2[0]['bond']]
+        anser_arr2 = [answer_history2[1]['answerer'], answer_history2[0]['answerer']]
+        ans_arr2 = [answer_history2[1]['answer'], answer_history2[0]['answer']]
+
+        # Pass one of the arrays in the wrong order to prove it fails
+        bond_arr_wrong2 = [answer_history2[0]['bond'], answer_history2[1]['bond']]
+
+        # print(self.l2web3.eth.accounts)
+        self.assertEqual(answer_history1[-2]['answerer'], self.L1_CHARLIE, "charlie gave the first answer for realityeth 1")
+        self.assertEqual(answer_history2[-2]['answerer'], self.L1_CHARLIE, "charlie gave the first answer for realityeth 2")
+        self.assertEqual(answer_history1[-1]['answerer'], self.L1_CHARLIE, "charlie is credited with the answer for realityeth1")
+        self.assertEqual(answer_history2[-1]['answerer'], self.L1_BOB, "bob is credited with the answer for realityeth2")
+
+        with self.assertRaises(TransactionFailed):
+            txid = realityeth2.functions.claimWinnings(contest_question_id, h_arr2, anser_arr2, bond_arr_wrong2, ans_arr2).transact(self._txargs(sender=self.L1_CHARLIE))
+            self.raiseOnZeroStatus(txid, self.l1web3)
+
+        #charlie_before_bal = realityeth2.functions.balanceOf(self.L1_CHARLIE).call()
+        #self.assertEqual(charlie_before_bal, 0, "Charlie has no balance on the forked reality.eth until claim")
+        #txid = realityeth2.functions.claimWinnings(contest_question_id, h_arr2, anser_arr2, bond_arr2, ans_arr2).transact(self._txargs(sender=self.L1_CHARLIE))
+        #self.raiseOnZeroStatus(txid, self.l1web3)
+        #charlie_after_bal = realityeth2.functions.balanceOf(self.L1_CHARLIE).call()
+        #self.assertNotEqual(charlie_after_bal, 0, "Charlie has a balance on the forked reality.eth after claim")
+
+        charlie_before_bal = realityeth1.functions.balanceOf(self.L1_CHARLIE).call()
+        self.assertEqual(charlie_before_bal, 0, "Charlie has no balance on the forked reality.eth until claim")
+        txid = realityeth1.functions.claimWinnings(contest_question_id, h_arr1, anser_arr1, bond_arr1, ans_arr1).transact(self._txargs(sender=self.L1_CHARLIE))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+        charlie_after_bal = realityeth1.functions.balanceOf(self.L1_CHARLIE).call()
+        self.assertNotEqual(charlie_after_bal, 0, "Charlie has a balance on the forked reality.eth after claim")
+
+        txid = realityeth1.functions.withdraw().transact(self._txargs(sender=self.L1_CHARLIE))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        self.assertEqual(realityeth1.functions.balanceOf(self.L1_CHARLIE).call(), 0, "After withdraw charlie no longer has tokens in the reality.eth contract")
+        self.assertEqual(charlie_after_bal, child_fm1.functions.balanceOf(self.L1_CHARLIE).call(), "The balance charlie had on the reaity.eth1 is now in forkmanager1")
         
 class OldThing:
 
