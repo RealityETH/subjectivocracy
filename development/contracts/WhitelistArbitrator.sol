@@ -152,7 +152,7 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
     external {
 
         require(arbitrators[msg.sender], "Arbitrator must be on the whitelist");
-require(question_arbitrations[question_id].bounty > 0, "Question must be in the arbitration queue");
+        require(question_arbitrations[question_id].bounty > 0, "Question must be in the arbitration queue");
 
         // The only time you can pick up a question that's already being arbitrated is if it's been removed from the whitelist
         if (question_arbitrations[question_id].arbitrator != address(0)) {
@@ -225,7 +225,7 @@ require(question_arbitrations[question_id].bounty > 0, "Question must be in the 
 
     function unfreezeArbitrator(address arbitrator) 
     l1_forkmanager_only
-public {
+    public {
         require(arbitrators[arbitrator], "Arbitrator not whitelisted in the first place");
         require(frozen_arbitrators[arbitrator], "Arbitrator not already frozen");
         frozen_arbitrators[arbitrator] = false;
