@@ -63,14 +63,14 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     // The reality.eth question over which we forked. This should be migrated so you can claim bonds on each fork.
     bytes32 fork_question_id;
     // The user who paid for a fork. They should be credited as the right answerer on the fork that went the way they said it should.
-    address fork_request_user;
+    address forkRequestUser;
 
     // The timestamp when were born in a fork. 0 for the genesis ForkManager.
-    uint256 forked_from_parent_ts = 0;
+    uint256 forkedFromParentTs = 0;
 
     // Governance questions will be cleared when we fork, if you still care about them you can ask them again.
     // However, if we forked over arbitration but had some unresolved governance questions, we stay frozen initially to give people time to recreate them
-    uint256 initial_governance_freeze_timeout;
+    uint256 initialGovernanceFreezeTimeout;
 
     // If we fork we will produce two children
     ForkManager public childForkManager1;
@@ -128,7 +128,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         bridgeToL2 = BridgeToL2(_bridgeToL2);
 
         if (_has_governance_freeze) {
-            initial_governance_freeze_timeout = block.timestamp + POST_FORK_FREEZE_TIMEOUT;
+            initialGovernanceFreezeTimeout = block.timestamp + POST_FORK_FREEZE_TIMEOUT;
         }
         parentSupply = _parentSupply;
         
@@ -137,7 +137,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
             totalSupply = _initialSupply;
             balanceOf[_initialRecipient] = _initialSupply;
         } else {
-            forked_from_parent_ts = block.timestamp;
+            forkedFromParentTs = block.timestamp;
         }
 
     }
@@ -155,7 +155,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     // During that period, substitute an approximation for how many tokens the parent had.
     function effectiveTotalSupply()
     internal view returns (uint256) {
-        if (forked_from_parent_ts == 0 || (block.timestamp - forked_from_parent_ts > FORK_TIME_SECS)) {
+        if (forkedFromParentTs == 0 || (block.timestamp - forkedFromParentTs > FORK_TIME_SECS)) {
             return totalSupply;
         } else {
             uint256 halfParent = parentSupply / 2;
@@ -217,7 +217,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         ForkableRealityETH_ERC20 newRealityETH = ForkableRealityETH_ERC20(_deployProxy(libForkableRealityETH));
         newRealityETH.init(IERC20(newFm), address(realityETH), fork_question_id);
 
-        address payee = last_answer == result ? last_answerer : fork_request_user;
+        address payee = last_answer == result ? last_answerer : forkRequestUser;
         newRealityETH.submitAnswerByArbitrator(fork_question_id, result, payee);
 
         newFm.importProposition(fork_question_id, propositions[fork_question_id].proposition_type, propositions[fork_question_id].whitelist_arbitrator, propositions[fork_question_id].arbitrator, propositions[fork_question_id].bridge);
@@ -249,7 +249,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
         realityETH.notifyOfArbitrationRequest(question_id, msg.sender, max_previous);
 
-        fork_request_user = msg.sender;
+        forkRequestUser = msg.sender;
         fork_question_id = question_id;
 
         forkExpirationTS = block.timestamp + FORK_TIME_SECS;
@@ -529,7 +529,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         }
 
         // If there was something frozen when we forked over something else, maintain the freeze until people have had time to recreate it
-        if (initial_governance_freeze_timeout > 0 && block.timestamp < initial_governance_freeze_timeout) {
+        if (initialGovernanceFreezeTimeout > 0 && block.timestamp < initialGovernanceFreezeTimeout) {
             return addrs;
         }
 
