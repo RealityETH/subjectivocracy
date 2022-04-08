@@ -12,15 +12,13 @@ import './BridgeToL2.sol';
 
 contract ForkManager is Arbitrator, IERC20, ERC20 {
 
-    //uint256 public totalSupply;
-
     // The way we access L2
     BridgeToL2 public bridgeToL2;
 
     // If we fork, our parent will be able to tell us to mint funds
     ForkManager public parentForkManager;
 
-    // We use a special Reality.eth instance for governance and arbitration whitelist management
+    // We use a special non-standard Reality.eth instance for governance and arbitration whitelist management
     ForkableRealityETH_ERC20 public realityETH;
 
     // When we try to add or remove an arbitrator or upgrade the bridge, use this timeout for the reality.eth question
@@ -29,6 +27,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     // The standard reality.eth delimiter for questions with multiple arguments
     string constant QUESTION_DELIM = "\u241f";
    
+    // Each each type of proposition we handle has its own template.
     // These are created by ForkableRealityETH_ERC20 in its constructor
     uint256 TEMPLATE_ID_ADD_ARBITRATOR = 2147483648;
     uint256 TEMPLATE_ID_REMOVE_ARBITRATOR = 2147483649;
@@ -63,6 +62,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     // The reality.eth question over which we forked. This should be migrated so you can claim bonds on each fork.
     bytes32 fork_question_id;
+    // The user who paid for a fork. They should be credited as the right answerer on the fork that went the way they said it should.
     address fork_request_user;
 
     // The timestamp when were born in a fork. 0 for the genesis ForkManager.
@@ -76,10 +76,10 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     ForkManager public childForkManager1;
     ForkManager public childForkManager2;
 
-    // Once the fork is resolved you can set the winner
+    // Once the fork is resolved you can set the winner to one of the childForkManagers
     ForkManager public replacedByForkManager;
 
-    // Having deployed each fork, you can move funds into it
+    // Having deployed each fork, you can move funds into it. Keep track so we know who "won".
     uint256 public amountMigrated1;
     uint256 public amountMigrated2;
 
@@ -103,9 +103,9 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     }
     mapping(bytes32 => ArbitratorProposition) propositions;
 
-    // Libraries used when creating the child contracts in a fork
-    // In theory we could query the current proxies for this information.
-    // In practice we'd have to either use ContractProbe which looks complex or modify the generic proxy contract to be able to return its library address
+    // Libraries used when creating the child contracts in a fork.
+    // In theory we could query the current proxies for this information rather than tracking it here.
+    // In practice it seems hairy (either use ContractProbe which looks complex or modify the generic proxy contract to be able to return its library address)
     address payable libForkManager;
     address libForkableRealityETH;
     address libBridgeToL2;
@@ -142,15 +142,17 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     }
 
-    // This could be done in init but it already has a lot of parameters
+    // Import the proposition we forked over from the parent ForkManager to ourselves.
+    // (This could be done in init but it already has a lot of parameters.)
     function importProposition(bytes32 question_id, PropositionType proposition_type, address whitelist_arbitrator, address arbitrator, address new_bridge) 
     external {
         require(address(libForkManager) == address(0), "Must be run before init");
         propositions[question_id] = ArbitratorProposition(proposition_type, whitelist_arbitrator, arbitrator, new_bridge);
     }
 
-    // When forked, the ultimate totalSupply is not known until migration is complete, but we want to be able to freeze things.
-    // Start with an approximation based on how many tokens the parent had.
+    // Usually we use totalSupply to tell us how many tokens you should need to freeze bridges.
+    // But when we just forked, the ultimate totalSupply won't be not known until migration is complete.
+    // During that period, substitute an approximation for how many tokens the parent had.
     function effectiveTotalSupply()
     internal view returns (uint256) {
         if (forked_from_parent_ts == 0 || (block.timestamp - forked_from_parent_ts > FORK_TIME_SECS)) {
@@ -161,6 +163,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         }
     }
 
+    // Our tokens are minted either on initial genesis deployment, on choice of a fork, or on import of the proposition over which we forked.
     function mint(address _to, uint256 _amount) 
     external {
         require(msg.sender == address(parentForkManager), "Only our parent can mint tokens");
@@ -171,6 +174,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     // Function to clone ourselves.
     // This in turn clones the realityETH instance and the bridge.
+    // TODO: It should also clone the L1 rollup contract.
     // An arbitrator fork will create this for both forks.
     // A governance fork will use the specified contract for one of the options.
     // It can have its own setup logic if you want to change the RealityETH or bridge code.
@@ -218,12 +222,8 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
         newFm.importProposition(fork_question_id, propositions[fork_question_id].proposition_type, propositions[fork_question_id].whitelist_arbitrator, propositions[fork_question_id].arbitrator, propositions[fork_question_id].bridge);
 
-        newFm.init(payable(address(this)), address(newRealityETH), address(bridgeToL2), (numGovernanceFreezes > 0), supplyAtFork, libForkManager, libForkableRealityETH, libBridgeToL2, address(0), 0);
+        newFm.init(payable(address(this)), address(newRealityETH), address(newBridgeToL2), (numGovernanceFreezes > 0), supplyAtFork, libForkManager, libForkableRealityETH, libBridgeToL2, address(0), 0);
         newFm.mint(address(newRealityETH), migrate_funds);
-
-
-        // TODO: Do we need to migrate propositions here?
-        //newFm.migrateProposition
 
         if (yes_or_no) {
             childForkManager1 = ForkManager(newFm);
@@ -242,6 +242,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         require(question_id != bytes32(uint256(0)), "Question ID is empty");
         require(isUnForked(), 'Already forked, call against the winning child');
 
+        // TODO: Should we be using effectiveTotalSupply here instead of totalSupply???
         uint256 fork_cost = totalSupply * PERCENT_TO_FORK / 100;
         require(balanceOf[msg.sender] >= fork_cost, 'Not enough tokens');
         balanceOf[msg.sender] = balanceOf[msg.sender] - fork_cost;
@@ -263,6 +264,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         return (forkExpirationTS == 0);
     }
 
+    // TODO: Rename as this gives us started-but-unresolved, in plain English that's a subset of started
     function isForkingStarted() 
     public view returns (bool) {
         return (forkExpirationTS > 0 && address(replacedByForkManager) == address(0x0));
@@ -324,7 +326,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     // For time-sensitive operations, we also freeze any interested parties, so
     // 1) Create question
-    // 2) Prove bond posted, freeze
+    // 2) Prove sufficient bond posted, freeze
     // 3) Complete operation or Undo freeze
 
     function beginAddArbitratorToWhitelist(address whitelist_arbitrator, address arbitrator_to_add) 
@@ -369,7 +371,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         }
     }
 
-    // If you've sent a proposition to reality.eth and it passed without needing arbitration, you can complete it by passing the details in here
+    // If you've sent a proposition to reality.eth and it passed without needing arbitration-by-fork, you can complete it by passing the details in here
     function executeBridgeUpgrade(bytes32 question_id) 
     external {
 
@@ -387,6 +389,8 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         bridgeToL2 = BridgeToL2(new_bridge);
     }
 
+    // TODO: Check if bridge freezing should only happen over governance propositions.
+    // If so, all these functions should check they're looking at a PropositionType.UPGRADE_BRIDGE
 
     function freezeBridges(bytes32 question_id) 
     external {
@@ -470,6 +474,10 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         delete(propositions[question_id]);
     }
 
+    // The WhitelistArbitrator is earning us money in fees.
+    // However these are in a different token to the ForkManager's token.
+    // This will burn some ForkManager tokens, giving the burner the right to get some of that token.
+    // The order_id is an order they already made from an auction on the L2 system giving them the right buy at a set price.
     function executeTokenSale(WhitelistArbitrator wa, bytes32 order_id, uint256 num_gov_tokens)
     external {
         require(balanceOf[msg.sender] >= num_gov_tokens, "Not enough tokens");
