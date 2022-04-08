@@ -22,16 +22,16 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     ForkableRealityETH_ERC20 public realityETH;
 
     // When we try to add or remove an arbitrator or upgrade the bridge, use this timeout for the reality.eth question
-    uint32 constant REALITY_ETH_TIMEOUT = 604800; // 1 week
+    uint32 constant public REALITY_ETH_TIMEOUT = 604800; // 1 week
 
     // The standard reality.eth delimiter for questions with multiple arguments
-    string constant QUESTION_DELIM = "\u241f";
+    string constant public QUESTION_DELIM = "\u241f";
    
     // Each each type of proposition we handle has its own template.
     // These are created by ForkableRealityETH_ERC20 in its constructor
-    uint256 TEMPLATE_ID_ADD_ARBITRATOR = 2147483648;
-    uint256 TEMPLATE_ID_REMOVE_ARBITRATOR = 2147483649;
-    uint256 TEMPLATE_ID_BRIDGE_UPGRADE = 2147483650;
+    uint256 constant public TEMPLATE_ID_ADD_ARBITRATOR = 2147483648;
+    uint256 constant public TEMPLATE_ID_REMOVE_ARBITRATOR = 2147483649;
+    uint256 constant public TEMPLATE_ID_BRIDGE_UPGRADE = 2147483650;
 
     enum PropositionType {
         NONE,
@@ -43,18 +43,18 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     // We act as the arbitrator for the ForkableRealityETH_ERC20 instance. We arbitrate by forking.
     // Our fee to arbitrate (ie fork) will be 5% of total supply.
     // Usually you'd do this as part of a reality.eth arbitration request which will fund you, although you don't have to.
-    uint256 constant PERCENT_TO_FORK = 5;
+    uint256 constant public PERCENT_TO_FORK = 5;
 
     // 1% of total supply can freeze the bridges while we ask a governance question
-    uint256 constant PERCENT_TO_FREEZE = 1;
+    uint256 constant public PERCENT_TO_FREEZE = 1;
 
     // In a fork, give people 1 week to pick a side. After that, we will declare one side the "winner".
-    uint256 constant FORK_TIME_SECS = 604800; // 1 week
+    uint256 constant public FORK_TIME_SECS = 604800; // 1 week
 
     // If we fork over one question, but bridges are already frozen over another, we reset any outstanding questions on child forks and you have to ask them again.
     // However we keep the bridges frozen to give you time to recreate the question over which you froze the bridges.
     // After this time, if nobody recreated them, they will be automatically unfrozen
-    uint256 constant POST_FORK_FREEZE_TIMEOUT = 604800;
+    uint256 constant public POST_FORK_FREEZE_TIMEOUT = 604800;
 
     // A list of questions that have been used to freeze governance
     mapping(bytes32 => bool) governance_freeze_question_ids;
