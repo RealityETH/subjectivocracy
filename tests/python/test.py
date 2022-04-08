@@ -990,6 +990,10 @@ class TestRealitio(TestCase):
         self.assertTrue(not_replaced_by.functions.isLoser().call())
 
 
+        fm1_bridge = child_fm1.functions.bridgeToL2().call()
+        fm2_bridge = child_fm2.functions.bridgeToL2().call()
+        self.assertNotEqual(fm1_bridge, fm2_bridge, "The forkmanagers should have their own separate bridges")
+
         return (contest_question_id, answer_history1, answer_history2, child_fm1, child_fm2)
 
 
@@ -1057,13 +1061,6 @@ class TestRealitio(TestCase):
             txid = realityeth2.functions.claimWinnings(contest_question_id, h_arr2, anser_arr2, bond_arr_wrong2, ans_arr2).transact(self._txargs(sender=self.L1_CHARLIE))
             self.raiseOnZeroStatus(txid, self.l1web3)
 
-        #charlie_before_bal = realityeth2.functions.balanceOf(self.L1_CHARLIE).call()
-        #self.assertEqual(charlie_before_bal, 0, "Charlie has no balance on the forked reality.eth until claim")
-        #txid = realityeth2.functions.claimWinnings(contest_question_id, h_arr2, anser_arr2, bond_arr2, ans_arr2).transact(self._txargs(sender=self.L1_CHARLIE))
-        #self.raiseOnZeroStatus(txid, self.l1web3)
-        #charlie_after_bal = realityeth2.functions.balanceOf(self.L1_CHARLIE).call()
-        #self.assertNotEqual(charlie_after_bal, 0, "Charlie has a balance on the forked reality.eth after claim")
-
         charlie_before_bal = realityeth1.functions.balanceOf(self.L1_CHARLIE).call()
         self.assertEqual(charlie_before_bal, 0, "Charlie has no balance on the forked reality.eth until claim")
         txid = realityeth1.functions.claimWinnings(contest_question_id, h_arr1, anser_arr1, bond_arr1, ans_arr1).transact(self._txargs(sender=self.L1_CHARLIE))
@@ -1076,6 +1073,9 @@ class TestRealitio(TestCase):
 
         self.assertEqual(realityeth1.functions.balanceOf(self.L1_CHARLIE).call(), 0, "After withdraw charlie no longer has tokens in the reality.eth contract")
         self.assertEqual(charlie_after_bal, child_fm1.functions.balanceOf(self.L1_CHARLIE).call(), "The balance charlie had on the reaity.eth1 is now in forkmanager1")
+
+
+
         
 class OldThing:
 
