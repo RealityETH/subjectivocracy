@@ -333,6 +333,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     external {
         string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_add));
         bytes32 question_id = realityETH.askQuestion(TEMPLATE_ID_ADD_ARBITRATOR, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
+        require(propositions[question_id].proposition_type == PropositionType.NONE, "Proposition already exists");
         propositions[question_id] = ArbitratorProposition(PropositionType.ADD_ARBITRATOR, whitelist_arbitrator, arbitrator_to_add, address(0));
     }
 
@@ -340,6 +341,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     external {
         string memory question = _toString(abi.encodePacked(whitelist_arbitrator, QUESTION_DELIM, arbitrator_to_remove));
         bytes32 question_id = realityETH.askQuestion(TEMPLATE_ID_REMOVE_ARBITRATOR, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
+        require(propositions[question_id].proposition_type == PropositionType.NONE, "Proposition already exists");
         propositions[question_id] = ArbitratorProposition(PropositionType.REMOVE_ARBITRATOR, whitelist_arbitrator, arbitrator_to_remove, address(0));
     }
 
@@ -347,6 +349,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     external {
         string memory question = _toString(abi.encodePacked(new_bridge));
         bytes32 question_id = realityETH.askQuestion(TEMPLATE_ID_BRIDGE_UPGRADE, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0);
+        require(propositions[question_id].proposition_type == PropositionType.NONE, "Proposition already exists");
         propositions[question_id] = ArbitratorProposition(PropositionType.UPGRADE_BRIDGE, address(0), address(0), new_bridge);
     }
 
@@ -363,6 +366,8 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     external {
 
         require(propositions[question_id].proposition_type != PropositionType.NONE, "Proposition not found or wrong type");
+        require(propositions[question_id].proposition_type == PropositionType.UPGRADE_BRIDGE, "Not a bridge upgrade proposition");
+
         require(realityETH.resultFor(question_id) != bytes32(uint256(1)), "Proposition passed");
 
         if (governance_freeze_question_ids[question_id]) {
@@ -374,6 +379,9 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     // If you've sent a proposition to reality.eth and it passed without needing arbitration-by-fork, you can complete it by passing the details in here
     function executeBridgeUpgrade(bytes32 question_id) 
     external {
+
+        require(propositions[question_id].proposition_type != PropositionType.NONE, "Proposition not recognized");
+        require(propositions[question_id].proposition_type == PropositionType.UPGRADE_BRIDGE, "Not a bridge upgrade proposition");
 
         address new_bridge = propositions[question_id].bridge;
         require(new_bridge != address(0x0), "Proposition not recognized");
@@ -389,12 +397,10 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         bridgeToL2 = BridgeToL2(new_bridge);
     }
 
-    // TODO: Check if bridge freezing should only happen over governance propositions.
-    // If so, all these functions should check they're looking at a PropositionType.UPGRADE_BRIDGE
-
     function freezeBridges(bytes32 question_id) 
     external {
         require(propositions[question_id].proposition_type != PropositionType.NONE, "Proposition not recognized");
+        require(propositions[question_id].proposition_type == PropositionType.UPGRADE_BRIDGE, "Not a bridge upgrade proposition");
         require(!governance_freeze_question_ids[question_id], "Already frozen");
 
         uint256 required_bond = effectiveTotalSupply()/100 * PERCENT_TO_FREEZE;
@@ -406,6 +412,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     function executeAddArbitratorToWhitelist(bytes32 question_id) 
     external {
+        require(propositions[question_id].proposition_type != PropositionType.NONE, "Proposition not recognized");
         require(propositions[question_id].proposition_type == PropositionType.ADD_ARBITRATOR, "Not an add arbitrator proposition");
         address whitelist_arbitrator = propositions[question_id].whitelist_arbitrator;
         address arbitrator_to_add = propositions[question_id].arbitrator;
@@ -426,6 +433,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     function freezeArbitratorOnWhitelist(bytes32 question_id) 
     external {
 
+        require(propositions[question_id].proposition_type != PropositionType.NONE, "Proposition not recognized");
         require(propositions[question_id].proposition_type == PropositionType.REMOVE_ARBITRATOR, "Not a remove arbitrator proposition");
 
         address whitelist_arbitrator = propositions[question_id].whitelist_arbitrator;
@@ -442,6 +450,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     
     function executeRemoveArbitratorFromWhitelist(bytes32 question_id) 
     external {
+        require(propositions[question_id].proposition_type != PropositionType.NONE, "Proposition not recognized");
         require(propositions[question_id].proposition_type == PropositionType.REMOVE_ARBITRATOR, "Not a remove arbitrator proposition");
 
         address whitelist_arbitrator = propositions[question_id].whitelist_arbitrator;
@@ -478,6 +487,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     // However these are in a different token to the ForkManager's token.
     // This will burn some ForkManager tokens, giving the burner the right to get some of that token.
     // The order_id is an order they already made from an auction on the L2 system giving them the right buy at a set price.
+    // If the order_id doesn't exist on L2 you'll lose the burned tokens but not get anything in return, bad luck.
     function executeTokenSale(WhitelistArbitrator wa, bytes32 order_id, uint256 num_gov_tokens)
     external {
         require(balanceOf[msg.sender] >= num_gov_tokens, "Not enough tokens");
