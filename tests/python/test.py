@@ -1077,7 +1077,7 @@ class TestRealitio(TestCase):
     #@unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_uncontested_bridge_upgrade(self):
 
-        (upgrade_question_id, answer_history) = self._setup_bridge_upgrade()
+        (upgrade_question_id, answer_history, new_bridge_created) = self._setup_bridge_upgrade()
 
         # We can't execute the bridge upgrade until the timeout
         with self.assertRaises(TransactionFailed):
@@ -1101,9 +1101,16 @@ class TestRealitio(TestCase):
         result1 = self.l1realityeth.functions.resultFor(upgrade_question_id).call()
         self.assertEqual(result1, to_answer_for_contract(1))
 
-        return
+        old_bridge = self.forkmanager.functions.bridgeToL2().call()
+
         txid = self.forkmanager.functions.executeBridgeUpgrade(upgrade_question_id).transact()
         self.raiseOnZeroStatus(txid, self.l1web3)
+
+        new_bridge = self.forkmanager.functions.bridgeToL2().call()
+        self.assertNotEqual(old_bridge, new_bridge)
+
+        self.assertEqual(new_bridge_created.address, new_bridge)
+
 
 
 
@@ -1145,7 +1152,7 @@ class TestRealitio(TestCase):
         answer_history.append(self._log_to_answer_history(ans_log, last_history_hash))
         # self.assertNotEqual(last_history_hash, ans_log['history_hash'])
 
-        return (upgrade_question_id, answer_history)
+        return (upgrade_question_id, answer_history, newBridgeToL2)
 
 
         
