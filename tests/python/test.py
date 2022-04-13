@@ -1112,6 +1112,51 @@ class TestRealitio(TestCase):
         self.assertEqual(new_bridge_created.address, new_bridge)
 
 
+    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    def test_failed_bridge_upgrade(self):
+
+        (upgrade_question_id, answer_history, new_bridge_created) = self._setup_bridge_upgrade()
+
+        txid = self.forkmanager.functions.transfer(self.L1_BOB, 12345*2).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        txid = self.forkmanager.functions.approve(self.l1realityeth.address, 12345*2).transact(self._txargs(sender=self.L1_BOB))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        txid = self.l1realityeth.functions.submitAnswerERC20(upgrade_question_id, to_answer_for_contract(0), 0, 12345*2).transact(self._txargs(sender=self.L1_BOB))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        timeout = self.forkmanager.functions.REALITY_ETH_TIMEOUT().call()
+        self.assertEqual(604800, timeout)
+
+        ts1 = self._block_timestamp(self.l1web3)
+        self._advance_clock(604800+10, self.l1web3)
+        ts2 = self._block_timestamp(self.l1web3)
+        self.assertTrue(ts2 >= ts1+604800+10, "Clock did not advance as expected")
+
+        self.l1realityeth.functions.finalize(upgrade_question_id).transact()
+        result1 = self.l1realityeth.functions.resultFor(upgrade_question_id).call()
+        self.assertEqual(result1, to_answer_for_contract(0))
+
+        old_bridge = self.forkmanager.functions.bridgeToL2().call()
+
+        # Bridge upgrade should fail because the reality.eth question resulted in 0
+        with self.assertRaises(TransactionFailed):
+            txid = self.forkmanager.functions.executeBridgeUpgrade(upgrade_question_id).transact()
+            self.raiseOnZeroStatus(txid, self.l1web3)
+
+        new_bridge = self.forkmanager.functions.bridgeToL2().call()
+        self.assertEqual(old_bridge, new_bridge, "Bridge should not change if the reality.eth question results in 0")
+
+        self.assertNotEqual(new_bridge_created.address, new_bridge)
+
+
+
+
+
+
+ 
+
 
 
 
