@@ -1074,6 +1074,78 @@ class TestRealitio(TestCase):
         self.assertEqual(realityeth1.functions.balanceOf(self.L1_CHARLIE).call(), 0, "After withdraw charlie no longer has tokens in the reality.eth contract")
         self.assertEqual(charlie_after_bal, child_fm1.functions.balanceOf(self.L1_CHARLIE).call(), "The balance charlie had on the reaity.eth1 is now in forkmanager1")
 
+    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    def test_uncontested_bridge_upgrade(self):
+
+        (upgrade_question_id, answer_history) = self._setup_bridge_upgrade()
+
+        # We can't execute the bridge upgrade until the timeout
+        with self.assertRaises(TransactionFailed):
+            txid = self.forkmanager.functions.executeBridgeUpgrade(upgrade_question_id).transact()
+            self.raiseOnZeroStatus(txid, self.l1web3)
+
+        timeout = self.forkmanager.functions.REALITY_ETH_TIMEOUT().call()
+        self.assertEqual(604800, timeout)
+
+        ts1 = self._block_timestamp(self.l1web3)
+        self._advance_clock(604800+10, self.l1web3)
+        ts2 = self._block_timestamp(self.l1web3)
+        self.assertTrue(ts2 >= ts1+604800+10, "Clock did not advance as expected")
+
+        self.assertEqual(timeout, self.l1realityeth.functions.getTimeout(upgrade_question_id).call(), "Timeout reported by reality.eth not what we expect")
+
+        history_hash = self.l1realityeth.functions.getHistoryHash(upgrade_question_id).call()
+        self.assertNotEqual(history_hash, answer_history[-1]['previous_history_hash'])
+
+        self.l1realityeth.functions.finalize(upgrade_question_id).transact()
+        result1 = self.l1realityeth.functions.resultFor(upgrade_question_id).call()
+        self.assertEqual(result1, to_answer_for_contract(1))
+
+        return
+        txid = self.forkmanager.functions.executeBridgeUpgrade(upgrade_question_id).transact()
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+
+
+
+    # Do the bridge upgrade up to the point before we execute it
+    # We can then test the execution path and the contest path separately
+    def _setup_bridge_upgrade(self):
+
+        newBridgeToL2 = self._contractFromBuildJSON(self.l1web3, 'BridgeToL2', None, None)
+        txid = self.forkmanager.functions.beginUpgradeBridge(newBridgeToL2.address).transact()
+        self.raiseOnZeroStatus(txid, self.l1web3)
+        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
+
+        ask_log = self.l1realityeth.events.LogNewQuestion().processReceipt(tx_receipt)
+        upgrade_question_id = "0x"+encode_hex(ask_log[0]['args']['question_id'])
+
+        upgradeq = self.l1realityeth.functions.questions(upgrade_question_id).call()
+        last_history_hash = upgradeq[QINDEX_HISTORY_HASH]
+
+        # We can't execute the bridge upgrade yet because there's no answer set
+        with self.assertRaises(TransactionFailed):
+            txid = self.forkmanager.functions.executeBridgeUpgrade(upgrade_question_id).transact()
+            self.raiseOnZeroStatus(txid, self.l1web3)
+
+        answer_history = []
+
+        txid = self.forkmanager.functions.transfer(self.L1_CHARLIE, 12345).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        txid = self.forkmanager.functions.approve(self.l1realityeth.address, 12345).transact(self._txargs(sender=self.L1_CHARLIE))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        txid = self.l1realityeth.functions.submitAnswerERC20(upgrade_question_id, to_answer_for_contract(1), 0, 12345).transact(self._txargs(sender=self.L1_CHARLIE))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
+        ans_log = self.l1realityeth.events.LogNewAnswer().processReceipt(tx_receipt)
+
+        answer_history.append(self._log_to_answer_history(ans_log, last_history_hash))
+        # self.assertNotEqual(last_history_hash, ans_log['history_hash'])
+
+        return (upgrade_question_id, answer_history)
 
 
         

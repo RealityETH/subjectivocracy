@@ -124,6 +124,20 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
         _;
     }
 
+    // State in the forkable version where the question can no longer be answered, but is not yet marked finalized.
+    // Traditional reality.eth doesn't have this state as things just finalize automatically as soon as they're ready.
+    modifier stateAwaitingFinalization(bytes32 question_id) {
+        require(!questions[question_id].is_finalized, "Already finalized");
+
+        uint32 finalize_ts = questions[question_id].finalize_ts;
+
+        // The same checks as the traditional isFinalized()
+        require(!questions[question_id].is_pending_arbitration, "Pending arbitration, cannot finalize yet");
+        require(finalize_ts > UNANSWERED, "Not answered, cannot finalize");
+        require(finalize_ts <= uint32(block.timestamp), "Finalization time has not yet arrived");
+        _;
+    }
+
     modifier stateFinalized(bytes32 question_id) {
         require(isFinalized(question_id), "question must be finalized");
         _;
@@ -381,7 +395,7 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     /// @dev This isn't done in the unforkable version, there we just finalize by time. 
     /// @param question_id The ID of the question
     function finalize(bytes32 question_id) 
-        stateOpen(question_id)
+        stateAwaitingFinalization(question_id)
     external {
         require(canBeFinalized(question_id), "Cannot be finalized yet");
         questions[question_id].is_finalized = true;
