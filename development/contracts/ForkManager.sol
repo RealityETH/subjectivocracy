@@ -397,13 +397,18 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         bridgeToL2 = BridgeToL2(new_bridge);
     }
 
+    function numTokensRequiredToFreezeBridges()
+    public returns (uint256) {
+        return effectiveTotalSupply()/100 * PERCENT_TO_FREEZE;
+    }
+
     function freezeBridges(bytes32 question_id) 
     external {
         require(propositions[question_id].proposition_type != PropositionType.NONE, "Proposition not recognized");
         require(propositions[question_id].proposition_type == PropositionType.UPGRADE_BRIDGE, "Not a bridge upgrade proposition");
         require(!governance_freeze_question_ids[question_id], "Already frozen");
 
-        uint256 required_bond = effectiveTotalSupply()/100 * PERCENT_TO_FREEZE;
+        uint256 required_bond = numTokensRequiredToFreezeBridges();
         _verifyMinimumBondPosted(question_id, required_bond);
         governance_freeze_question_ids[question_id] = true;
 
@@ -427,6 +432,11 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         delete(propositions[question_id]);
     }
 
+    function numTokensRequiredToFreezeArbitratorOnWhitelist() 
+    public returns (uint256) {
+        return effectiveTotalSupply()/100 * PERCENT_TO_FREEZE;
+    }
+
     // If you're about to pass a proposition but you don't want bad things to happen in the meantime
     // ...you can freeze stuff by proving that you sent a reasonable bond.
     // TODO: Should we check the current answer to make sure the bond is for the remove answer not the keep answer?
@@ -441,7 +451,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
         require(whitelist_arbitrator != address(0x0), "Proposition not recognized");
 
-        uint256 required_bond = effectiveTotalSupply()/100 * PERCENT_TO_FREEZE;
+        uint256 required_bond = numTokensRequiredToFreezeArbitratorOnWhitelist();
         _verifyMinimumBondPosted(question_id, required_bond);
 
         bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(arbitrator_to_remove).freezeArbitrator.selector, arbitrator_to_remove);

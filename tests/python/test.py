@@ -464,7 +464,7 @@ class TestRealitio(TestCase):
     def test_contested_arbitration(self):
         self._setup_contested_arbitration()
 
-    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_post_fork_arbitrator_removal(self):
         
         (contest_question_id, answer_history1, answer_history2, child_fm1, child_fm2) = self._setup_contested_arbitration()
@@ -1074,7 +1074,7 @@ class TestRealitio(TestCase):
         self.assertEqual(realityeth1.functions.balanceOf(self.L1_CHARLIE).call(), 0, "After withdraw charlie no longer has tokens in the reality.eth contract")
         self.assertEqual(charlie_after_bal, child_fm1.functions.balanceOf(self.L1_CHARLIE).call(), "The balance charlie had on the reaity.eth1 is now in forkmanager1")
 
-    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_uncontested_bridge_upgrade(self):
 
         (upgrade_question_id, answer_history, new_bridge_created) = self._setup_bridge_upgrade()
@@ -1112,7 +1112,65 @@ class TestRealitio(TestCase):
         self.assertEqual(new_bridge_created.address, new_bridge)
 
 
+
     #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    def test_uncontested_bridge_upgrade_with_freeze(self):
+
+        (upgrade_question_id, answer_history, new_bridge_created) = self._setup_bridge_upgrade()
+
+        # We can't execute the bridge upgrade until the timeout
+        with self.assertRaises(TransactionFailed):
+            txid = self.forkmanager.functions.executeBridgeUpgrade(upgrade_question_id).transact()
+            self.raiseOnZeroStatus(txid, self.l1web3)
+
+        timeout = self.forkmanager.functions.REALITY_ETH_TIMEOUT().call()
+        self.assertEqual(604800, timeout)
+
+
+        amount_to_freeze = self.forkmanager.functions.numTokensRequiredToFreezeBridges().call()
+        self.assertTrue(amount_to_freeze > 1, "weird not to need any tokens to freeze bridges")
+        return
+        #uint256 required_bond = effectiveTotalSupply()/100 * PERCENT_TO_FREEZE;
+
+
+
+        # We can't execute the bridge upgrade until the bond is high enough
+        with self.assertRaises(TransactionFailed):
+            txid = self.forkmanager.functions.freezeBridges(upgrade_question_id).transact()
+            self.raiseOnZeroStatus(txid, self.l1web3)
+ 
+        return
+
+
+        ts1 = self._block_timestamp(self.l1web3)
+        self._advance_clock(604800+10, self.l1web3)
+        ts2 = self._block_timestamp(self.l1web3)
+        self.assertTrue(ts2 >= ts1+604800+10, "Clock did not advance as expected")
+
+        self.assertEqual(timeout, self.l1realityeth.functions.getTimeout(upgrade_question_id).call(), "Timeout reported by reality.eth not what we expect")
+
+        history_hash = self.l1realityeth.functions.getHistoryHash(upgrade_question_id).call()
+        self.assertNotEqual(history_hash, answer_history[-1]['previous_history_hash'])
+
+        self.l1realityeth.functions.finalize(upgrade_question_id).transact()
+        result1 = self.l1realityeth.functions.resultFor(upgrade_question_id).call()
+        self.assertEqual(result1, to_answer_for_contract(1))
+
+        old_bridge = self.forkmanager.functions.bridgeToL2().call()
+
+        txid = self.forkmanager.functions.executeBridgeUpgrade(upgrade_question_id).transact()
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        new_bridge = self.forkmanager.functions.bridgeToL2().call()
+        self.assertNotEqual(old_bridge, new_bridge)
+
+        self.assertEqual(new_bridge_created.address, new_bridge)
+
+
+
+
+
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_failed_bridge_upgrade(self):
 
         (upgrade_question_id, answer_history, new_bridge_created) = self._setup_bridge_upgrade()
@@ -1149,6 +1207,9 @@ class TestRealitio(TestCase):
         self.assertEqual(old_bridge, new_bridge, "Bridge should not change if the reality.eth question results in 0")
 
         self.assertNotEqual(new_bridge_created.address, new_bridge)
+
+
+    
 
 
 
