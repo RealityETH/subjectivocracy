@@ -1115,13 +1115,15 @@ class TestRealitio(TestCase):
     #@unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_contested_bridge_upgrade_with_freeze_and_unfreeze(self):
 
+        NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
+
         required_bridges = self.forkmanager.functions.requiredBridges().call()
-        #self.assertEqual(len(requiredBridges), 1, "In the normal unfrozen unforked state there should be 1 bridge")
+        self.assertNotEqual(required_bridges[0], NULL_ADDRESS, "In the normal unfrozen unforked state there should be 1 bridge")
+        self.assertEqual(required_bridges[1], NULL_ADDRESS, "In the normal unfrozen unforked state there should be only 1 bridge")
 
         (upgrade_question_id, answer_history, new_bridge_created) = self._setup_bridge_upgrade_up_to_freeze()
 
-
-        # TODO: What happens now the bridges are frozen, what does that actually do
+        # TODO: Test how TokenBridge consumes this data
 
         bond_after_freeze = self.l1realityeth.functions.getBond(upgrade_question_id).call() * 2
         self.assertTrue(bond_after_freeze > 0, "zero bond after freeze")
@@ -1143,10 +1145,32 @@ class TestRealitio(TestCase):
         ts2 = self._block_timestamp(self.l1web3)
         self.assertTrue(ts2 >= ts1+604800+10, "Clock did not advance as expected")
 
+        # Bridge upgrade should fail as the question is still open
+        with self.assertRaises(TransactionFailed):
+            txid = self.forkmanager.functions.executeBridgeUpgrade(upgrade_question_id).transact()
+            self.raiseOnZeroStatus(txid, self.l1web3)
+
+        self.l1realityeth.functions.finalize(upgrade_question_id).transact()
+
         # Bridge upgrade should fail as the question came out as 0
         with self.assertRaises(TransactionFailed):
             txid = self.forkmanager.functions.executeBridgeUpgrade(upgrade_question_id).transact()
             self.raiseOnZeroStatus(txid, self.l1web3)
+
+        required_bridges = self.forkmanager.functions.requiredBridges().call()
+        self.assertEqual(required_bridges[0], NULL_ADDRESS, "Bridges should be frozen, so none are acceptable")
+        self.assertEqual(required_bridges[1], NULL_ADDRESS, "Bridges should be frozen, so none are acceptable")
+
+        # Since the proposition failed, we can clear it and go back to normal
+        txid = self.forkmanager.functions.clearFailedGovernanceProposal(upgrade_question_id).transact()
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        required_bridges = self.forkmanager.functions.requiredBridges().call()
+        self.assertNotEqual(required_bridges[0], NULL_ADDRESS, "In the normal unfrozen unforked state there should be 1 bridge")
+        self.assertEqual(required_bridges[1], NULL_ADDRESS, "In the normal unfrozen unforked state there should be only 1 bridge")
+
+
+
 
 
     #@unittest.skipIf(WORKING_ONLY, "Not under construction")
