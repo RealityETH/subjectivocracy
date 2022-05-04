@@ -72,22 +72,21 @@ contract TokenBridge {
 
         require(_bridge != address(0x0));
 
-        address[] memory required_bridges = forkmanager.requiredBridges();
+        address required_bridge1;
+        address required_bridge2;
+        (required_bridge1, required_bridge2) = forkmanager.requiredBridges();
 
-        if (required_bridges.length < 1) {
+        if (required_bridge1 == address(0)) {
 
             // Frozen or replaced
             // Need to either wait or call updateForkManager
             return false;
 
-        } else if (required_bridges.length == 1) {
+        } else if (required_bridge2 == address(0)) {
 
             // Normal status with one bridge
-            if (_bridge == required_bridges[0]) {
-                return _processPayment(_to, _amount);
-            } else {
-                return false;
-            }
+            require(_bridge == required_bridge1, "Requested bridge not allowed");
+            return _processPayment(_to, _amount);
 
         } else {
 
@@ -96,17 +95,15 @@ contract TokenBridge {
             // Whichever bridge this message is coming from, see if we already got another message from the other one
             address otherBridge;
             bool found = false;
-            if (msg.sender == required_bridges[0]) {
-                otherBridge = required_bridges[1];
+            if (msg.sender == required_bridge1) {
+                otherBridge = required_bridge2;
                 found = true;
-            } else if (msg.sender == required_bridges[1]) {
-                otherBridge = required_bridges[0];
+            } else if (msg.sender == required_bridge2) {
+                otherBridge = required_bridge1;
                 found = true;
             }
 
-            if (!found) {
-                return false;
-            }
+            require(found, "Specified bridge not allowed");
 
             // If we've got the message from both, remove the queued one and go ahead
             bytes32 messageID = keccak256(abi.encodePacked(_to, _amount, otherBridge)); 
@@ -117,6 +114,7 @@ contract TokenBridge {
             _processPayment(_to, _amount);
             queuedMessages[messageID] = queuedMessages[messageID] - 1;
             return true;
+
         }
 
     }

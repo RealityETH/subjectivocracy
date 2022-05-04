@@ -355,6 +355,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     // Verify that a question is still open with a minimum bond specified
     // This can be used to freeze operations pending the outcome of a governance question
+    // TODO: An earlier bond should also be enough if you don't call this right away
     function _verifyMinimumBondPosted(bytes32 question_id, uint256 minimum_bond) 
     internal {
         require(!realityETH.isFinalized(question_id), "Question is already finalized, execute instead");
@@ -537,36 +538,29 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     // This will return the bridges that should be used to manage assets
     function requiredBridges() 
-    external returns (address[] memory) {
+    external returns (address bridge1, address bridge2) {
 
-        address[] memory addrs;
-
-        // If something is frozen pending a governance decision, return an empty array.
+        // If something is frozen pending a governance decision, return zeros
         // This should be interpreted to mean no bridge can be trusted and transfers should stop.
 
         if (numGovernanceFreezes > 0) {
-            return addrs;
+            return (address(0), address(0));
         }
 
         // If there was something frozen when we forked over something else, maintain the freeze until people have had time to recreate it
         if (initialGovernanceFreezeTimeout > 0 && block.timestamp < initialGovernanceFreezeTimeout) {
-            return addrs;
+            return (address(0), address(0));
         }
 
-        // If there's an unresolved fork, we need the consent of both child bridges before performing an operation
-        if (isForkingStarted()) {
-            if (isForkingResolved()) {
-                return addrs;
-            } else {
-                // NB These may be empty if uninitialized
-                addrs[0] = address(childForkManager1.bridgeToL2());
-                addrs[1] = address(childForkManager2.bridgeToL2());
-            }
+        if (!isForkingStarted()) {
+            return (address(bridgeToL2), address(0));
+        }
+
+        if (isForkingResolved()) {
+            return (address(0), address(0));
         } else {
-            addrs[0] = address(bridgeToL2);
+            return(address(childForkManager1.bridgeToL2()), address(childForkManager2.bridgeToL2()));
         }
-
-        return addrs;
 
     }
 
