@@ -251,7 +251,7 @@ It's its own transaction on the forkable version because forking for one questio
 
 ### Clear a failed urgent governance proposal
 ```
-   Bob     L1  ForkManager.clearFailedBridgeProposal(contest_question_id)
+   Bob     L1  ForkManager.clearFailedGovernanceProposal(contest_question_id)
                     RealityETH.resultFor(contest_question_id)
                     # Update self to say the previous bridge is back in action
 ```
