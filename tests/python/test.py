@@ -1112,45 +1112,57 @@ class TestRealitio(TestCase):
         self.assertEqual(new_bridge_created.address, new_bridge)
 
 
-
     #@unittest.skipIf(WORKING_ONLY, "Not under construction")
-    def test_uncontested_bridge_upgrade_with_freeze(self):
+    def test_contested_bridge_upgrade_with_freeze_and_unfreeze(self):
 
-        (upgrade_question_id, answer_history, new_bridge_created) = self._setup_bridge_upgrade()
+        required_bridges = self.forkmanager.functions.requiredBridges().call()
+        #self.assertEqual(len(requiredBridges), 1, "In the normal unfrozen unforked state there should be 1 bridge")
 
-        # We can't execute the bridge upgrade until the timeout
-        with self.assertRaises(TransactionFailed):
-            txid = self.forkmanager.functions.executeBridgeUpgrade(upgrade_question_id).transact()
-            self.raiseOnZeroStatus(txid, self.l1web3)
+        (upgrade_question_id, answer_history, new_bridge_created) = self._setup_bridge_upgrade_up_to_freeze()
+
+
+        # TODO: What happens now the bridges are frozen, what does that actually do
+
+        bond_after_freeze = self.l1realityeth.functions.getBond(upgrade_question_id).call() * 2
+        self.assertTrue(bond_after_freeze > 0, "zero bond after freeze")
+
+        txid = self.forkmanager.functions.transfer(self.L1_CHARLIE, bond_after_freeze).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        txid = self.forkmanager.functions.approve(self.l1realityeth.address, bond_after_freeze).transact(self._txargs(sender=self.L1_CHARLIE))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        txid = self.l1realityeth.functions.submitAnswerERC20(upgrade_question_id, to_answer_for_contract(0), 0, bond_after_freeze).transact(self._txargs(sender=self.L1_CHARLIE))
+        self.raiseOnZeroStatus(txid, self.l1web3)
 
         timeout = self.forkmanager.functions.REALITY_ETH_TIMEOUT().call()
         self.assertEqual(604800, timeout)
 
-
-        amount_to_freeze = self.forkmanager.functions.numTokensRequiredToFreezeBridges().call()
-        self.assertTrue(amount_to_freeze > 1, "weird not to need any tokens to freeze bridges")
-        return
-        #uint256 required_bond = effectiveTotalSupply()/100 * PERCENT_TO_FREEZE;
-
-
-
-        # We can't execute the bridge upgrade until the bond is high enough
-        with self.assertRaises(TransactionFailed):
-            txid = self.forkmanager.functions.freezeBridges(upgrade_question_id).transact()
-            self.raiseOnZeroStatus(txid, self.l1web3)
- 
-        return
-
-
         ts1 = self._block_timestamp(self.l1web3)
-        self._advance_clock(604800+10, self.l1web3)
+        self._advance_clock(timeout+10, self.l1web3)
         ts2 = self._block_timestamp(self.l1web3)
         self.assertTrue(ts2 >= ts1+604800+10, "Clock did not advance as expected")
 
-        self.assertEqual(timeout, self.l1realityeth.functions.getTimeout(upgrade_question_id).call(), "Timeout reported by reality.eth not what we expect")
+        # Bridge upgrade should fail as the question came out as 0
+        with self.assertRaises(TransactionFailed):
+            txid = self.forkmanager.functions.executeBridgeUpgrade(upgrade_question_id).transact()
+            self.raiseOnZeroStatus(txid, self.l1web3)
 
-        history_hash = self.l1realityeth.functions.getHistoryHash(upgrade_question_id).call()
-        self.assertNotEqual(history_hash, answer_history[-1]['previous_history_hash'])
+
+    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    def test_uncontested_bridge_upgrade_with_freeze(self):
+
+        (upgrade_question_id, answer_history, new_bridge_created) = self._setup_bridge_upgrade_up_to_freeze()
+
+        timeout = self.forkmanager.functions.REALITY_ETH_TIMEOUT().call()
+        self.assertEqual(604800, timeout)
+
+        ts1 = self._block_timestamp(self.l1web3)
+        self._advance_clock(timeout+10, self.l1web3)
+        ts2 = self._block_timestamp(self.l1web3)
+        self.assertTrue(ts2 >= ts1+604800+10, "Clock did not advance as expected")
+
+        # TODO: Check the bridge is frozen somehow
 
         self.l1realityeth.functions.finalize(upgrade_question_id).transact()
         result1 = self.l1realityeth.functions.resultFor(upgrade_question_id).call()
@@ -1165,6 +1177,52 @@ class TestRealitio(TestCase):
         self.assertNotEqual(old_bridge, new_bridge)
 
         self.assertEqual(new_bridge_created.address, new_bridge)
+
+
+
+
+
+
+    def _setup_bridge_upgrade_up_to_freeze(self):
+
+        (upgrade_question_id, answer_history, new_bridge_created) = self._setup_bridge_upgrade()
+
+        # We can't execute the bridge upgrade until the timeout
+        with self.assertRaises(TransactionFailed):
+            txid = self.forkmanager.functions.executeBridgeUpgrade(upgrade_question_id).transact()
+            self.raiseOnZeroStatus(txid, self.l1web3)
+
+        timeout = self.forkmanager.functions.REALITY_ETH_TIMEOUT().call()
+        self.assertEqual(604800, timeout)
+
+
+        amount_to_freeze = self.forkmanager.functions.numTokensRequiredToFreezeBridges().call()
+        self.assertTrue(amount_to_freeze > 1, "weird not to need any tokens to freeze bridges")
+
+        self.assertTrue(amount_to_freeze > 12345, "amount to freeze better be more than we put in the original bond or the next tests we do will go wrong")
+
+        # We can't execute the bridge upgrade until the bond is high enough
+        with self.assertRaises(TransactionFailed):
+            txid = self.forkmanager.functions.freezeBridges(upgrade_question_id).transact()
+            self.raiseOnZeroStatus(txid, self.l1web3)
+
+        # TODO: We should really be sending a proof that a high enough bond was submitted for the answer in question, not just any answer
+ 
+        txid = self.forkmanager.functions.transfer(self.L1_BOB, amount_to_freeze).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        txid = self.forkmanager.functions.approve(self.l1realityeth.address, amount_to_freeze).transact(self._txargs(sender=self.L1_BOB))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        txid = self.l1realityeth.functions.submitAnswerERC20(upgrade_question_id, to_answer_for_contract(1), 0, amount_to_freeze).transact(self._txargs(sender=self.L1_BOB))
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        txid = self.forkmanager.functions.freezeBridges(upgrade_question_id).transact()
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        # TODO: Add this answer to answer_history
+
+        return (upgrade_question_id, answer_history, new_bridge_created) 
 
 
 
