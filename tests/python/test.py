@@ -1113,7 +1113,7 @@ class TestRealitio(TestCase):
 
 
 
-    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_successful_bridge_upgrade_with_freeze_and_unfreeze(self):
 
         NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
@@ -1167,7 +1167,7 @@ class TestRealitio(TestCase):
         self.assertEqual(new_bridge_created.address, required_bridges[0], "The new bridge is now required")
 
 
-    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_failed_bridge_upgrade_with_freeze_and_unfreeze(self):
 
         NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
@@ -1228,7 +1228,7 @@ class TestRealitio(TestCase):
         self.assertEqual(required_bridges[0], original_bridge, "The original bridge should be the only required one")
 
 
-    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_uncontested_bridge_upgrade_with_freeze(self):
 
         (upgrade_question_id, answer_history, new_bridge_created) = self._setup_bridge_upgrade_up_to_freeze()
