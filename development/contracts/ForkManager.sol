@@ -212,14 +212,13 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
             bridgeLibForThisDeployment = libBridgeToL2;
         }
 
+        // The new bridge should let us call these without error, even if it doesn't need them.
         BridgeToL2 newBridgeToL2 = BridgeToL2(_deployProxy(bridgeLibForThisDeployment));
+        newBridgeToL2.setParent(address(this));
+        newBridgeToL2.init();
 
         ForkableRealityETH_ERC20 newRealityETH = ForkableRealityETH_ERC20(_deployProxy(libForkableRealityETH));
         newRealityETH.init(IERC20(newFm), address(realityETH), fork_question_id);
-
-        // The new bridge should let us call these without error, even if it doesn't need them.
-        newBridgeToL2.setParent(address(newRealityETH));
-        newBridgeToL2.init();
 
         address payee = last_answer == result ? last_answerer : forkRequestUser;
         newRealityETH.submitAnswerByArbitrator(fork_question_id, result, payee);
