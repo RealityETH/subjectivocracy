@@ -200,17 +200,20 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
         ForkManager newFm = ForkManager(payable(_deployProxy(libForkManager)));
 
-        BridgeToL2 newBridgeToL2;
+        address bridgeLibForThisDeployment;
+
 
         // If this is a bridge upgrade proposition, we use the specified bridge for the yes fork.
-        // Otherwise we just clone the current one.
-        if (yes_or_no && propositions[fork_question_id].proposition_type == PropositionType.UPGRADE_BRIDGE) {
-            newBridgeToL2 = BridgeToL2(propositions[fork_question_id].bridge);
+        // Otherwise we just clone the one used by the current ForkManager.
+        bool upgrade_bridge = (yes_or_no && (propositions[fork_question_id].proposition_type == PropositionType.UPGRADE_BRIDGE));
+        if (upgrade_bridge) {
+            bridgeLibForThisDeployment = propositions[fork_question_id].bridge;
         } else {
-            newBridgeToL2 = BridgeToL2(_deployProxy(libBridgeToL2));
+            bridgeLibForThisDeployment = libBridgeToL2;
         }
 
-        // If it's a new bridge should let us call these without error
+        // The new bridge should let us call these without error, even if it doesn't need them.
+        BridgeToL2 newBridgeToL2 = BridgeToL2(_deployProxy(bridgeLibForThisDeployment));
         newBridgeToL2.setParent(address(this));
         newBridgeToL2.init();
 
