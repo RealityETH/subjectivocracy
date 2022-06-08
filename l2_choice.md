@@ -47,10 +47,12 @@ NB Mainnet contracts are quite expensive to deploy - expect around 30 million ga
 
 In theory the system should ultimately support model A, however it has a delay for bridged assets as with D. In practice it may need to be handled as Model C or D until matured.
 
+The interaction between reversals of the optimistic system and forks of the system seems potentially quite complicated.
 
-### ZKSync (future release with more contract support)
 
-We can run a custom version of the ZKSync ledger. On-chain contracts seem to be reasonably inexpensive.
+### ZKSync 2
+
+We can run a custom version of the ZKSync 2 ledger. On-chain contracts seem to be reasonably inexpensive.
 
 In principle the architecture can support anyone performing validation, and should be usable without the need to upgrade. In this state we could turn off governance and only handle oracles. (Model A)
 
