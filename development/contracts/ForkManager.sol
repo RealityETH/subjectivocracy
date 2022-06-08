@@ -217,6 +217,12 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         newBridgeToL2.setParent(address(this));
         newBridgeToL2.init();
 
+        /* VARIATION:
+        // We might not want to hack the BridgeToL2 to know about its parent forkmanager
+        // In that case, have a single proxy shared by all forkmanagers to manage the mapping newBridgeToL2 => this
+        // ...then proxy all calls to the bridge through that.
+        */
+
         ForkableRealityETH_ERC20 newRealityETH = ForkableRealityETH_ERC20(_deployProxy(libForkableRealityETH));
         newRealityETH.init(IERC20(newFm), address(realityETH), fork_question_id);
 
