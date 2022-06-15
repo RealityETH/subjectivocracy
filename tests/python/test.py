@@ -30,7 +30,7 @@ import copy
 # Arbitrator.bin  ERC20.bin  ForkManager.bin  ForkableRealityETH_ERC20.bin  RealityETH_ERC20-3.0.bin  TokenBridge.bin  WhitelistArbitrator.bin BridgeToL2.bin
 
 # Command-line flag to skip tests we're not working on
-WORKING_ONLY = os.environ.get('WORKING_ONLY', False)
+WORKING_ONLY = (int(os.environ.get('WORKING_ONLY', 0)) == 1)
 REALITYETH_CONTRACT = 'RealityETH_ERC20-3.0'
 
 bits = REALITYETH_CONTRACT.split('-')
