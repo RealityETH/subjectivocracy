@@ -23,3 +23,65 @@ Fake transactions sent to bridge
  Day 5 governance freeze
  Day 10 proposition passes
  
+
+
+
+On fork, how does each fork know which forkmanager it has to listen to?
+
+ bridge on l1 side knows forkmanager address
+ bridge on l1 side can switch forkmanager address for special address
+ could have a never-changing proxy address to represent all forkmanagers ??
+
+
+ deployment of a network includes an l1 contract, presumably in its setup params
+  - need to check how this works with the actual implementation
+
+ or it has a chainid or something
+  -> l1 handles which chainid should be routed to which, ie when we make a new forkmanager we assign a chainid
+
+ or it must know its l1 bridge address (for priority queue etc)
+ every priority queue is different 
+
+ next step:
+  - check what the deployment for a zksync setup looks like, see if it sets something like chainid or l2bridge
+  - 
+
+
+ Have a single BridgeProxy contract on L1.
+ After deploying a new bridge, you must immediately tell the BridgeProxy what ForkManager it will belong to.
+  ISSUE: Do we know that at this point?
+ OR: tell it the parent ForkManager, that guy can tell it the child
+
+
+
+ or
+  proxy on l1 side
+
+
+
+
+ISSUE:
+
+ When doing a new bridge deployment, you make the bridge first then ask the ForkManager to call setParent on it
+ However how do you stop just anyone from calling setParent against it with a different parent?
+
+ Options
+  Make a contract factory rather than specifying the contract
+  That way we can call it to mine the contract and be sure we'll be the first to call it
+
+  setParent with the current parent, make a method to updateParent to some child (?)
+
+ 
+ Alternative flow
+
+  The bridge doesn't know its parent.
+  Instead we have a single proxy which knows the parent of each bridge.
+  The bridge knows the address of the proxy. It calls it to say, "who is my parent?"
+
+
+
+ 
+ 
+
+Passing messages to L2 needs ergsLimit. Can we use a constant for this or does it somehow need to vary? Also do we need L2 gas for this, if so how do we make sure it's funded?
+
