@@ -8,12 +8,29 @@ import './ERC20.sol';
 import './ForkableRealityETH_ERC20.sol';
 import './Arbitrator.sol';
 import './WhitelistArbitrator.sol';
-import './BridgeToL2.sol';
+// import './BridgeToL2.sol';
+import './ZKBridgeToL2.sol';
+
+
+/*
+    enum OpTree {
+        Full,
+        Rollup
+    }
+
+    enum QueueType {
+        Deque,
+        HeapBuffer,
+        Heap
+    }
+*/
+
+
 
 contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     // The way we access L2
-    BridgeToL2 public bridgeToL2;
+    ZKBridgeToL2 public bridgeToL2;
 
     // If we fork, our parent will be able to tell us to mint funds
     ForkManager public parentForkManager;
@@ -125,7 +142,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         parentForkManager = ForkManager(_parentForkManager); // 0x0 for genesis
 
         realityETH = ForkableRealityETH_ERC20(_realityETH);
-        bridgeToL2 = BridgeToL2(_bridgeToL2);
+        bridgeToL2 = ZKBridgeToL2(_bridgeToL2);
 
         if (_has_governance_freeze) {
             initialGovernanceFreezeTimeout = block.timestamp + POST_FORK_FREEZE_TIMEOUT;
@@ -213,7 +230,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         }
 
         // The new bridge should let us call these without error, even if it doesn't need them.
-        BridgeToL2 newBridgeToL2 = BridgeToL2(_deployProxy(bridgeLibForThisDeployment));
+        ZKBridgeToL2 newBridgeToL2 = ZKBridgeToL2(_deployProxy(bridgeLibForThisDeployment));
         newBridgeToL2.setParent(address(this));
         newBridgeToL2.init();
 
@@ -404,7 +421,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         }
         delete(propositions[question_id]);
 
-        bridgeToL2 = BridgeToL2(new_bridge);
+        bridgeToL2 = ZKBridgeToL2(new_bridge);
     }
 
     function numTokensRequiredToFreezeBridges()
@@ -437,7 +454,8 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         require(realityETH.resultFor(question_id) == bytes32(uint256(1)), "Proposition did not pass");
 
         bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).addArbitrator.selector, arbitrator_to_add);
-        bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
+        bridgeToL2.requestExecute(whitelist_arbitrator, data, 0, Operations.QueueType.Deque, Operations.OpTree.Rollup);
+
 
         delete(propositions[question_id]);
     }
@@ -465,7 +483,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         _verifyMinimumBondPosted(question_id, required_bond);
 
         bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(arbitrator_to_remove).freezeArbitrator.selector, arbitrator_to_remove);
-        bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
+        bridgeToL2.requestExecute(whitelist_arbitrator, data, 0, Operations.QueueType.Deque, Operations.OpTree.Rollup);
     }
     
     function executeRemoveArbitratorFromWhitelist(bytes32 question_id) 
@@ -481,7 +499,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         require(realityETH.resultFor(question_id) == bytes32(uint256(1)), "Proposition did not pass");
 
         bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).removeArbitrator.selector, arbitrator_to_remove);
-        bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
+        bridgeToL2.requestExecute(whitelist_arbitrator, data, 0, Operations.QueueType.Deque, Operations.OpTree.Rollup);
 
         delete(propositions[question_id]);
     }
@@ -498,7 +516,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         require(realityETH.resultFor(question_id) == bytes32(uint256(0)), "Proposition passed");
 
         bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).unfreezeArbitrator.selector, arbitrator_to_remove);
-        bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
+        bridgeToL2.requestExecute(whitelist_arbitrator, data, 0, Operations.QueueType.Deque, Operations.OpTree.Rollup);
 
         delete(propositions[question_id]);
     }
@@ -513,7 +531,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         require(balanceOf[msg.sender] >= num_gov_tokens, "Not enough tokens");
         balanceOf[msg.sender] = balanceOf[msg.sender] - num_gov_tokens;
         bytes memory data = abi.encodeWithSelector(wa.executeTokenSale.selector, order_id, num_gov_tokens);
-        bridgeToL2.requireToPassMessage(address(wa), data, 0);
+        bridgeToL2.requestExecute(address(wa), data, 0, Operations.QueueType.Deque, Operations.OpTree.Rollup);
     }
 
     function _toString(bytes memory data) 

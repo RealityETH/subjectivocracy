@@ -349,9 +349,9 @@ class TestRealitio(TestCase):
 
 
         libForkableRealityETH = self._contractFromBuildJSON(self.l1web3, 'ForkableRealityETH_ERC20', None, None)
-        libBridgeToL2 = self._contractFromBuildJSON(self.l1web3, 'BridgeToL2', None, None)
+        libBridgeToL2 = self._contractFromBuildJSON(self.l1web3, 'ZKBridgeToL2', None, None)
         libForkManager = self._contractFromBuildJSON(self.l1web3, 'ForkManager', None, None)
-        self.bridgeToL2 = self._contractFromBuildJSON(self.l1web3, 'BridgeToL2', None, None)
+        self.bridgeToL2 = self._contractFromBuildJSON(self.l1web3, 'ZKBridgeToL2', None, None)
 
         NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
 
@@ -460,7 +460,7 @@ class TestRealitio(TestCase):
         self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], False)
 
 
-    @unittest.skipIf(WORKING_ONLY, "Not under construction")
+    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_contested_arbitration(self):
         self._setup_contested_arbitration()
 
