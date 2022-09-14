@@ -87,6 +87,7 @@ The system is implemented in the following contracts (and their dependencies suc
 * [WhitelistArbitrator.sol](development/contracts/WhitelistArbitrator.sol) is an arbitration contract based on a whitelist managed by the ForkManager.
 * [TokenBridge.sol](development/contracts/TokenBridge.sol) is an example of how a token on Layer 1 would follow the direction of the ForkManager in locking assets to be credited on Layer 2 and unlocking them based on messages from the appropriate Layer 2 bridge. Untrusted bridges may instead require a [DelayedTokenBridge.sol](development/contracts/DelayedTokenBridge.sol).
 
+Tests for the above are in [tests/python/test.py](tests/python/test.py).
 
 ## Next steps
 
