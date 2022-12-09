@@ -1,0 +1,8 @@
+TODOs to check with zksync or other implementation:
+ 
+ - Can PriorityQueue carry over entries between blocks? If not, we have to read from the previous queue. If so, is there a limit to how much you can queue?
+ - How is chain_id handled? Doesn't seem to be in the L1 contract code, in which case could operators replay a tx sent to another chain?
+ - Does the following work:
+    - Stop contracts, get genesis block hash
+    - Deploy new version with former genesis block hash
+    - Start posting to the new version
