@@ -285,7 +285,7 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
 
     function _numUnreservedTokens() 
     internal view returns (uint256) {
-        token.balanceOf(address(this)) - reserved_tokens;
+        return token.balanceOf(address(this)) - reserved_tokens;
     }
 
     function reserveTokens(uint256 num, uint256 price, uint256 nonce)
