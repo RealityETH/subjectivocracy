@@ -172,6 +172,23 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
         emit LogNotifyOfArbitrationRequest(question_id, requester);
     }
 
+    /// @notice Clear the arbitrator setting of an arbitrator that has been delisted
+    /// @param question_id The question in question
+    /// @dev Starts the clock ticking to allow us to cancelUnhandledArbitrationRequest
+    /// @dev Not otherwise needed, if another arbitrator shows up they can just take the job from the delisted arbitrator
+    function clearRequestFromRemovedArbitrator(bytes32 question_id)
+    external {
+        address old_arbitrator = question_arbitrations[question_id].arbitrator;
+        require(old_arbitrator != address(0), "No arbitrator to remove");
+        require(arbitrators[msg.sender], "Arbitrator must be on the whitelist");
+
+        question_arbitrations[question_id].arbitrator = address(0);
+        question_arbitrations[question_id].msg_hash = 0x0;
+        question_arbitrations[question_id].finalize_ts = 0;
+
+        question_arbitrations[question_id].last_action_ts = block.timestamp;
+    }
+
     /// @notice Cancel the request for arbitration
     /// @param question_id The question in question
     /// @dev This is only done if nobody takes the request off the queue, probably because the fee is too low
