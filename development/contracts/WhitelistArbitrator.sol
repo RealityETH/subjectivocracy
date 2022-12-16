@@ -39,6 +39,7 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
 
     IAMB bridge;
     uint256 constant public ARB_DISPUTE_TIMEOUT = 86400;
+    uint256 constant public QUESTION_UNHANDLED_TIMEOUT = 86400;
 
     uint256 constant public TOKEN_RESERVATION_BIDDING_PERIOD= 86400; // After you make a bid, people have 1 day to outbid you
     uint256 constant public TOKEN_RESERVATION_CLAIM_TIMEOUT = 864000; // After a bid is accepted, you have 9 days to complete it or you can lose your deposit
@@ -84,6 +85,7 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
         uint256 bounty;
         bytes32 msg_hash;
         uint256 finalize_ts;
+        uint256 last_action_ts;
     }
 
     mapping (bytes32 => ArbitrationRequest) public question_arbitrations;
@@ -135,6 +137,7 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
         // They can claim the bounty when they get an answer
         // If the arbitrator is removed in the meantime, they'll lose the money they spent on arbitration
         question_arbitrations[question_id].bounty = msg.value;
+        question_arbitrations[question_id].last_action_ts= block.timestamp;
 
         return true;
 
@@ -167,6 +170,23 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
         question_arbitrations[question_id].arbitrator = msg.sender;
 
         emit LogNotifyOfArbitrationRequest(question_id, requester);
+    }
+
+    /// @notice Cancel the request for arbitration
+    /// @param question_id The question in question
+    /// @dev This is only done if nobody takes the request off the queue, probably because the fee is too low
+    function cancelUnhandledArbitrationRequest(bytes32 question_id)
+    external {
+        uint256 last_action_ts = question_arbitrations[question_id].last_action_ts;
+        require(last_action_ts > 0, "Question not found");
+
+        require(question_arbitrations[question_id].arbitrator == address(0), "Question already accepted by an arbitrator");
+        require(block.timestamp - last_action_ts > QUESTION_UNHANDLED_TIMEOUT, "You can only cancel questions that no arbitrator has accepted in a reasonable time");
+
+        // Refund the arbitration bounty
+        delete question_arbitrations[question_id];
+        balanceOf[question_arbitrations[question_id].payer] = balanceOf[question_arbitrations[question_id].payer] + question_arbitrations[question_id].bounty;
+        realityETH.cancelArbitration(question_id);
     }
 
     // The arbitrator submits the answer to us, instead of to realityETH
