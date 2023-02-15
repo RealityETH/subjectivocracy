@@ -136,6 +136,7 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
         // They will have to pay the arbitration fee upfront
         // They can claim the bounty when they get an answer
         // If the arbitrator is removed in the meantime, they'll lose the money they spent on arbitration
+        question_arbitrations[question_id].payer= msg.sender;
         question_arbitrations[question_id].bounty = msg.value;
         question_arbitrations[question_id].last_action_ts= block.timestamp;
 
@@ -201,8 +202,8 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
         require(block.timestamp - last_action_ts > QUESTION_UNHANDLED_TIMEOUT, "You can only cancel questions that no arbitrator has accepted in a reasonable time");
 
         // Refund the arbitration bounty
-        delete question_arbitrations[question_id];
         balanceOf[question_arbitrations[question_id].payer] = balanceOf[question_arbitrations[question_id].payer] + question_arbitrations[question_id].bounty;
+        delete question_arbitrations[question_id];
         realityETH.cancelArbitration(question_id);
     }
 

@@ -248,6 +248,7 @@ class TestRealitio(TestCase):
         addr = web3.eth.getTransactionReceipt(tx_hash).get('contractAddress')
         return web3.eth.contract(addr, abi=contract_if)
 
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def testS(self):
         return
 
@@ -460,9 +461,107 @@ class TestRealitio(TestCase):
         self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], False)
 
 
-    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_contested_arbitration(self):
         self._setup_contested_arbitration()
+
+    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    def test_clear_unhandled_arbitration(self):
+
+        question_id = calculate_question_id(self.l2realityeth.address, 0, "my question x", self.whitelist_arbitrator.address, 30, 0, 0, self.L2_ALICE, 0)
+
+        NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
+
+        txid = self.l2realityeth.functions.askQuestion(0, "my question x", self.whitelist_arbitrator.address, 30, 0, 0).transact(self._txargs(sender=self.L2_ALICE))
+        self.raiseOnZeroStatus(txid, self.l2web3)
+
+        self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_ARBITRATOR], self.whitelist_arbitrator.address)
+
+        ### Report an answer (contested)
+
+        txid = self.l2realityeth.functions.submitAnswerERC20(question_id, to_answer_for_contract(1), 0, 100).transact(self._txargs(sender=self.L2_BOB))
+        self.raiseOnZeroStatus(txid, self.l2web3)
+
+
+        txid = self.l2realityeth.functions.submitAnswerERC20(question_id, to_answer_for_contract(0), 0, 200).transact(self._txargs(sender=self.L2_CHARLIE))
+        self.raiseOnZeroStatus(txid, self.l2web3)
+
+        txid = self.l2realityeth.functions.submitAnswerERC20(question_id, to_answer_for_contract(1), 0, 400).transact(self._txargs(sender=self.L2_BOB))
+        self.raiseOnZeroStatus(txid, self.l2web3)
+
+        txid = self.l2realityeth.functions.submitAnswerERC20(question_id, to_answer_for_contract(0), 0, 2000000).transact(self._txargs(sender=self.L2_CHARLIE))
+        self.raiseOnZeroStatus(txid, self.l2web3)
+
+        bob_bal_before_request = self.l2web3.eth.getBalance(self.L2_BOB)
+        # self.whitelist_arbitrator.functions.balanceOf(self.L1_BOB).call()
+
+        self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], False)
+        self.whitelist_arbitrator.functions.requestArbitration(question_id, 3000000).transact(self._txargs(sender=self.L2_BOB, val=self.dispute_fee))
+        self.raiseOnZeroStatus(txid, self.l2web3)
+        self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], True)
+
+        request_arb_gas = 127537
+
+        bob_bal_after_request = self.l2web3.eth.getBalance(self.L2_BOB)
+        self.assertEqual(bob_bal_before_request - bob_bal_after_request , self.dispute_fee + request_arb_gas)
+
+        # We can now see the question on the WhitelistArbitrator waiting for someone to answer it, it shouldn't have been picked up yet
+        qa = self.whitelist_arbitrator.functions.question_arbitrations(question_id).call()
+        self.assertEqual(qa[WAINDEX_ARBITRATOR], NULL_ADDRESS)
+
+        handle_timeout = self.whitelist_arbitrator.functions.QUESTION_UNHANDLED_TIMEOUT().call()
+        self.assertEqual(handle_timeout, 86400);
+
+        # Bob should have no balance in the arbitrator contract
+        bob_bal_in_contract = self.whitelist_arbitrator.functions.balanceOf(self.L2_BOB).call()
+        self.assertEqual(bob_bal_in_contract, 0)
+
+        # The whitelist arbitrator should list Bob as the payer, and the amount he paid as the bounty
+        #balanceOf[question_arbitrations[question_id].payer] = balanceOf[question_arbitrations[question_id].payer] + question_arbitrations[question_id].bounty;
+        arb_rec = self.whitelist_arbitrator.functions.question_arbitrations(question_id).call()
+        #address arbitrator;
+        #address payer;
+        #uint256 bounty;
+        #bytes32 msg_hash;
+        #uint256 finalize_ts;
+        #uint256 last_action_ts;
+
+        # no arbitrator yet
+        self.assertEqual(arb_rec[0], NULL_ADDRESS)
+        self.assertEqual(arb_rec[1], self.L2_BOB)
+        self.assertEqual(arb_rec[2], self.dispute_fee)
+
+        # Should fail if the timeout is not yet passed
+        with self.assertRaises(TransactionFailed):
+            txid = self.whitelist_arbitrator.functions.cancelUnhandledArbitrationRequest(question_id).transact(self._txargs())
+            self.raiseOnZeroStatus(txid, self.l2web3)
+
+        self._advance_clock(handle_timeout+1)
+
+        # Should succeed now
+        txid = self.whitelist_arbitrator.functions.cancelUnhandledArbitrationRequest(question_id).transact(self._txargs())
+        self.raiseOnZeroStatus(txid, self.l2web3)
+
+        self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], False)
+
+        arb_rec2 = self.whitelist_arbitrator.functions.question_arbitrations(question_id).call()
+        self.assertEqual(arb_rec2[0], NULL_ADDRESS)
+        self.assertEqual(arb_rec2[1], NULL_ADDRESS)
+        self.assertEqual(arb_rec2[2], 0)
+
+        # Bob should now have his dispute fee back in the contract
+        bob_bal_in_contract2 = self.whitelist_arbitrator.functions.balanceOf(self.L2_BOB).call()
+        self.assertEqual(bob_bal_in_contract2, self.dispute_fee)
+
+        return
+        txid = self.whitelist_arbitrator.functions.withdraw().transact(self._txargs(sender=self.L2_BOB))
+        self.raiseOnZeroStatus(txid, self.l2web3)
+        bob_bal_in_contract3 = self.whitelist_arbitrator.functions.balanceOf(self.L2_BOB).call()
+        self.assertEqual(bob_bal_in_contract3, 0)
+
+
+
+
 
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_post_fork_arbitrator_removal(self):
