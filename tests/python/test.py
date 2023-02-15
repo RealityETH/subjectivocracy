@@ -553,11 +553,17 @@ class TestRealitio(TestCase):
         bob_bal_in_contract2 = self.whitelist_arbitrator.functions.balanceOf(self.L2_BOB).call()
         self.assertEqual(bob_bal_in_contract2, self.dispute_fee)
 
-        return
+        bob_bal_before_withdraw = self.l2web3.eth.getBalance(self.L2_BOB)
+
         txid = self.whitelist_arbitrator.functions.withdraw().transact(self._txargs(sender=self.L2_BOB))
         self.raiseOnZeroStatus(txid, self.l2web3)
         bob_bal_in_contract3 = self.whitelist_arbitrator.functions.balanceOf(self.L2_BOB).call()
         self.assertEqual(bob_bal_in_contract3, 0)
+
+        bob_bal_after_withdraw = self.l2web3.eth.getBalance(self.L2_BOB)
+        bal_change = bob_bal_after_withdraw - bob_bal_before_withdraw
+        self.assertGreater(self.dispute_fee, bal_change)
+        self.assertLess(self.dispute_fee, bal_change + 40000) # gas should be under 40000
 
 
 
