@@ -500,7 +500,7 @@ class TestRealitio(TestCase):
         self.raiseOnZeroStatus(txid, self.l2web3)
         self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], True)
 
-        request_arb_gas = 127537
+        request_arb_gas = 127470
 
         bob_bal_after_request = self.l2web3.eth.getBalance(self.L2_BOB)
         self.assertEqual(bob_bal_before_request - bob_bal_after_request , self.dispute_fee + request_arb_gas)

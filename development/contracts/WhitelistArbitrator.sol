@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.10;
 
-import './BalanceHolder_ERC20.sol';
+import './BalanceHolder.sol';
 
 import './RealityETH_ERC20-3.0.sol';
 
@@ -16,9 +16,9 @@ It manages a whitelist of arbitrators, and makes sure questions can be sent to a
 When called on to arbitrate, it pays someone to send out the arbitration job to an arbitrator on the whitelist.
 Arbitrators can be disputed on L1.
 To Reality.eth it looks like a normal arbitrator, implementing the Arbitrator interface.
-To the normal Arbitrator contracts that do its arbitration jobs, it looks like Reality.eth.
+To the normal Arbitrator contracts that does its arbitration jobs, it looks like Reality.eth.
 */
-contract WhitelistArbitrator is BalanceHolder_ERC20 {
+contract WhitelistArbitrator is BalanceHolder {
 
     // From RealityETH_ERC20
     struct Question {
@@ -286,7 +286,7 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
 
     function _numUnreservedTokens() 
     internal view returns (uint256) {
-        return token.balanceOf(address(this)) - reserved_tokens;
+        return address(this).balance - reserved_tokens;
     }
 
     function reserveTokens(uint256 num, uint256 price, uint256 nonce)
@@ -297,7 +297,7 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
         require(_numUnreservedTokens() > num, "Not enough tokens unreserved");
 
         uint256 deposit = num * price / TOKEN_RESERVATION_DEPOSIT;
-        require(token.transferFrom(msg.sender, address(this), deposit), "Deposit transfer failed");
+        payable(msg.sender).transfer(deposit);
 
         token_reservations[resid] = TokenReservation(
             msg.sender, 
@@ -320,7 +320,7 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
 
         uint256 deposit_return = num * token_reservations[resid].price / TOKEN_RESERVATION_DEPOSIT;
 
-        require(token.transfer(token_reservations[resid].reserver, deposit_return), "Deposit return failed");
+        payable(token_reservations[resid].reserver).transfer(deposit_return);
         reserved_tokens = reserved_tokens - num;
 
         if (num == token_reservations[resid].num) {
@@ -351,7 +351,7 @@ contract WhitelistArbitrator is BalanceHolder_ERC20 {
         uint256 cost = price * num;
         require(gov_tokens_paid >= cost, "Insufficient gov tokens sent");
         reserved_tokens = reserved_tokens - num;
-        token.transfer(token_reservations[resid].reserver, num);
+        payable(token_reservations[resid].reserver).transfer(num);
 
         delete(token_reservations[resid]); 
     }
