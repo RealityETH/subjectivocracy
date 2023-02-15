@@ -136,9 +136,9 @@ contract WhitelistArbitrator is BalanceHolder {
         // They will have to pay the arbitration fee upfront
         // They can claim the bounty when they get an answer
         // If the arbitrator is removed in the meantime, they'll lose the money they spent on arbitration
-        question_arbitrations[question_id].payer= msg.sender;
+        question_arbitrations[question_id].payer = msg.sender;
         question_arbitrations[question_id].bounty = msg.value;
-        question_arbitrations[question_id].last_action_ts= block.timestamp;
+        question_arbitrations[question_id].last_action_ts = block.timestamp;
 
         return true;
 
