@@ -181,7 +181,7 @@ contract WhitelistArbitrator is BalanceHolder {
     external {
         address old_arbitrator = question_arbitrations[question_id].arbitrator;
         require(old_arbitrator != address(0), "No arbitrator to remove");
-        require(arbitrators[msg.sender], "Arbitrator must be on the whitelist");
+        require(!arbitrators[old_arbitrator], "Arbitrator must no longer be on the whitelist");
 
         question_arbitrations[question_id].arbitrator = address(0);
         question_arbitrations[question_id].msg_hash = 0x0;

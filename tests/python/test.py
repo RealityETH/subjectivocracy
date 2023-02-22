@@ -368,16 +368,16 @@ class TestRealitio(TestCase):
     def run_basic_cycle(self):
         self._setup_basic_cycle()
 
-    def _setup_basic_cycle(self):
+    def _setup_basic_cycle(self, question_text = "my question x"):
 
         ### Make a crowdfund            
         ### [Just asking the question that'll settle the crowdfund, crowdfund contract part skipped]
 
-        question_id = calculate_question_id(self.l2realityeth.address, 0, "my question x", self.whitelist_arbitrator.address, 30, 0, 0, self.L2_ALICE, 0)
+        question_id = calculate_question_id(self.l2realityeth.address, 0, question_text, self.whitelist_arbitrator.address, 30, 0, 0, self.L2_ALICE, 0)
 
         NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
 
-        txid = self.l2realityeth.functions.askQuestion(0, "my question x", self.whitelist_arbitrator.address, 30, 0, 0).transact(self._txargs(sender=self.L2_ALICE))
+        txid = self.l2realityeth.functions.askQuestion(0, question_text, self.whitelist_arbitrator.address, 30, 0, 0).transact(self._txargs(sender=self.L2_ALICE))
         self.raiseOnZeroStatus(txid, self.l2web3)
 
         self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_ARBITRATOR], self.whitelist_arbitrator.address)
@@ -461,11 +461,142 @@ class TestRealitio(TestCase):
         self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], False)
 
 
-    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_contested_arbitration(self):
         self._setup_contested_arbitration_with_fork()
 
-    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
+    def test_clear_questions_after_arbitrator_removed(self):
+        q2id = self._setup_clear_questions_after_arbitrator_removed()
+
+        handle_timeout = self.whitelist_arbitrator.functions.QUESTION_UNHANDLED_TIMEOUT().call()
+
+        # Should fail if the timeout is not yet passed
+        with self.assertRaises(TransactionFailed):
+            txid = self.whitelist_arbitrator.functions.cancelUnhandledArbitrationRequest(q2id).transact(self._txargs())
+            self.raiseOnZeroStatus(txid, self.l2web3)
+
+        self._advance_clock(handle_timeout+1)
+
+        # Should succeed now
+        txid = self.whitelist_arbitrator.functions.cancelUnhandledArbitrationRequest(q2id).transact(self._txargs())
+        self.raiseOnZeroStatus(txid, self.l2web3)
+
+
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
+    def test_reassign_question_after_arbitrator_removed(self):
+        q2id = self._setup_clear_questions_after_arbitrator_removed()
+
+        # Now we should be able to either answer with a different arbitrator, or wait for the timeout and cancel the arbitration request.
+        #txid = self.whitelist_arbitrator.functions.cancelUnhandledArbitrationRequest(q2id).transact(self._txargs())
+        #self.raiseOnZeroStatus(txid, self.l2web3)
+
+        # arb1 should be gone but arb2 should still be there so they can take the question
+        self.assertFalse(self.whitelist_arbitrator.functions.arbitrators(self.arb1.address).call())
+        self.assertTrue(self.whitelist_arbitrator.functions.arbitrators(self.arb2.address).call())
+
+        # TODO: Check what the flow is for taking a job and make sure we're testing it correctly
+        # arb0 cannot accept jobs any more
+        # arb2 can accept this job
+
+        fee = self.arb2.functions.getDisputeFee(decode_hex("0x00")).call()
+        txid = self.arb2.functions.requestArbitration(q2id, 0).transact(self._txargs(val=fee))
+        self.raiseOnZeroStatus(txid, self.l2web3)
+
+
+    def _setup_clear_questions_after_arbitrator_removed(self):
+        # Add an extra question and bring it up to arbitration
+        q2id = self._setup_basic_cycle("my question y")
+
+        is_pending_arb = self.l2realityeth.functions.isPendingArbitration(q2id).call()
+        self.assertTrue(is_pending_arb)
+
+        # arbitrator should now have accepted the task, but not yet completed it
+        qa_rec = self.whitelist_arbitrator.functions.question_arbitrations(q2id).call()
+        qa_bounty = qa_rec[2]
+        self.assertGreater(qa_bounty, 0)
+
+        # Should fail as it's being handled
+        with self.assertRaises(TransactionFailed):
+            txid = self.whitelist_arbitrator.functions.cancelUnhandledArbitrationRequest(q2id).transact(self._txargs())
+            self.raiseOnZeroStatus(txid, self.l2web3)
+
+        # Should fail as the arbitrator is still listed
+        with self.assertRaises(TransactionFailed):
+            txid = self.whitelist_arbitrator.functions.clearRequestFromRemovedArbitrator(q2id).transact(self._txargs())
+            self.raiseOnZeroStatus(txid, self.l2web3)
+
+        # Now remove the arbitrator over a different question without a fork
+        (question_id, contest_question_id, freeze_amount, last_bond, last_history_hash, last_answer, last_answerer, answer_history, new_history_hash) = self._setup_contested_arbitration()
+
+        # Let the thing timeout so we can remove the arbitrator without a challenge
+        reality_eth_timeout = self.forkmanager.functions.REALITY_ETH_TIMEOUT().call()
+        self.assertEqual(reality_eth_timeout, 604800);
+
+        contest_q = self.l1realityeth.functions.questions(contest_question_id).call()
+        best_answer = self.l1realityeth.functions.getBestAnswer(contest_question_id).call()
+        self.assertEqual(from_answer_for_contract(best_answer), 1)
+
+        arb_pending = self.l1realityeth.functions.isPendingArbitration(contest_question_id).call()
+        self.assertFalse(arb_pending)
+
+        timeout = self.l1realityeth.functions.getTimeout(contest_question_id).call()
+        ts1 = self._block_timestamp(self.l1web3)
+        self._advance_clock(timeout+1, self.l1web3)
+        ts2 = self._block_timestamp(self.l1web3)
+        self.assertNotEqual(ts1, ts2)
+
+        finalize_ts = self.l1realityeth.functions.getFinalizeTS(contest_question_id).call()
+        self.assertLess(ts1, finalize_ts)
+        self.assertGreater(ts2, finalize_ts)
+
+        # The ForkableRealityETH_ERC20 needs you to call finalize, unlike the normal one which finalizes automatically based on time
+        self.l1realityeth.functions.finalize(contest_question_id).transact()
+
+        is_finalized = self.l1realityeth.functions.isFinalized(contest_question_id).call()
+        self.assertTrue(is_finalized)
+
+        txid = self.forkmanager.functions.executeRemoveArbitratorFromWhitelist(contest_question_id).transact()
+        self.raiseOnZeroStatus(txid, self.l1web3)
+
+        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
+        bridge_log = self.bridgeToL2.events.LogPassMessage().processReceipt(tx_receipt)
+        self.assertEqual(len(bridge_log), 1, "The bridge on L1 was called and logged an event")
+        call_data = bridge_log[0]['args']['_data']
+
+        self.assertTrue(self.whitelist_arbitrator.functions.arbitrators(self.arb1.address).call(), "starts off on list")
+        self.assertTrue(self.whitelist_arbitrator.functions.frozen_arbitrators(self.arb1.address).call(), "starts off frozen")
+
+        # The executeRemoveArbitratorFromWhitelist call should have called the bridge with the code:
+        # bytes memory data = abi.encodeWithSelector(WhitelistArbitrator(whitelist_arbitrator).removeArbitrator.selector, arbitrator_to_remove);
+        # bridgeToL2.requireToPassMessage(whitelist_arbitrator, data, 0);
+        # We'll imitate this by calling our dummy bridge ourselves
+        txid = self.l2AMB.functions.passMessage(
+            FORKMANAGER_SPECIAL_ADDRESS,  #Rewritten from self.forkmanager.address
+            self.whitelist_arbitrator.address,
+            call_data,
+            5000000,
+            encode_hex("0x0"),
+            encode_hex("0x0")
+        ).transact()
+        self.raiseOnZeroStatus(txid, self.l2web3)
+
+        self.assertFalse(self.whitelist_arbitrator.functions.arbitrators(self.arb1.address).call(), "no longer on list")
+
+        # Now we should be able to call clearRequestFromRemovedArbitrator to clear the original question
+        txid = self.whitelist_arbitrator.functions.clearRequestFromRemovedArbitrator(q2id).transact(self._txargs())
+        self.raiseOnZeroStatus(txid, self.l2web3)
+
+
+        return q2id
+
+
+
+
+
+    
+
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_clear_unhandled_arbitration(self):
 
         question_id = calculate_question_id(self.l2realityeth.address, 0, "my question x", self.whitelist_arbitrator.address, 30, 0, 0, self.L2_ALICE, 0)
