@@ -49,10 +49,15 @@ In theory the system should ultimately support model A, however it has a delay f
 
 The interaction between reversals of the optimistic system and forks of the system seems potentially quite complicated.
 
+Issue: The state stored in the optimistic contract needs to be cloned or made read-only and copied
+ - only call forking against valid state? avoids need to duplicate anything to do with state verification
+ - make on-chain contract append-only, copy calls its storage to read it. Keeps track of what it's read based on either variables or storage slots.
+ - maybe we can validate up to the point of the fork, then freeze, and build the next blocks on top
 
-### ZKSync 2
 
-We can run a custom version of the ZKSync 2 ledger. On-chain contracts seem to be reasonably inexpensive.
+### ZKSync Era
+
+We can run a custom version of ZKSync Era. On-chain contracts seem to be reasonably inexpensive.
 
 In principle the architecture can support anyone performing validation, and should be usable without the need to upgrade. In this state we could turn off governance and only handle oracles. (Model A)
 
@@ -61,4 +66,10 @@ The current version of ZKSync, which deals mainly with payments, seems to have a
 If it can support anyone performing validation, but still needs governance, we can do governance with a reality.eth instance on L2. (Model B).
 
 Currently it appears to use validator whitelists, so the best we can do is Model C, or potentially Model D until it matures.
+
+Issue: There may be some similar issues to optimism with copying state
+  - priorityRequests - seems like a queue so we should be able to just freeze the queue and require it to be imported
+     -> need to check this doesn't produce dos as this potentially has to be exhausted before making new blocks
+  - storedBlockHashes - seems to be append-only, should be able to adjust reading from this to read its own history, if it even needs to be there
+
 
