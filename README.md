@@ -1,7 +1,5 @@
 
-# The Borg
-
-### Branching Oracle-enshrined Rollup Governance 
+# Branching Subjectivocratic Oracle-enshrined Rollup Governance 
 
 ### Edmund Edgar, 2021-03-16
 
