@@ -5,28 +5,34 @@ I live in a town called Mashiko in Japan where I keep goats and I maintain reali
 I'm going to talk not so much about reality.eth but about the bigger thing we're building which will, I think at a fundamental level solve the oracle problem.
 And solve a lot of our governance problems.
 
-Or rather the oracle problem was solved by Paul Storcz in [check date] but it's a practical implementation of the solution to the oracle problem.
+[cut: Or rather the oracle problem was solved by Paul Storcz in [check date] but it's a practical implementation of the solution to the oracle problem.]
 
-. But before I do I want to go back to fundamentals and talk about how stuff is secured in cryptoeconomics.
+
+But before I do I want to go back to fundamentals and talk about how stuff is secured in cryptoeconomics.
 
 
 Fundamentally there are three types of security in crypto-economics. I'll skip old-school stuff like reputation that isn't really crypto-economic.
 If you've got a DAO or something that's trying to decide stuff, any kind of judgement you want to make or information you want to supply, you're usually doing something like this:
 
 security models
- 1. coin voting                     DPoS, lots of DAOs
+ 1. coin voting                     A lot of DAOs, also DPoS systems kind of do this
  2. fork choice / stake-and-choose  Bitcoin, Ethereum consensus, Kleros voting
  3. subjectivocracy                 Ethereum backstop, Bitcoin backstop but they get mad at you for saying this.
 
 [ Add Vitalik's piece on Subjectivocracy ]
 
 
-Now Vitalik's been saying a lot about how bad coin voting is. One fundamental problem is it's very cheap to bribe.
+Now Vitalik's been saying a lot about how bad coin voting is. One fundamental problem is each voter is not really accountable for their vote. And that makes it very cheap to bribe.
 
 Imagine a very cheap bribery attack. 
-Let's say we've got $100 and 100 tokenholders. I make a proposal that you're going to give me the $100. And I offer you 1 cent to vote for it.
+Let's say we've got $100 and 100 tokenholders. I make a proposal that the DAO is going to give me the $100. And I offer you 1 cent to vote for it.
 
-It's actually in your interests to take the bribe. Because your individual vote isn't going to make the difference.
+It's actually in your interests to take the bribe. Because your individual vote isn't going to make the difference. 
+
+        Everyone else 
+        O     | X
+You O   $0.01 | $1.01
+    X   $0    | $1
 
 And this problem gets worse the more decentralized you are, because your vote is less likely to decide the outcome.
 
@@ -34,17 +40,17 @@ There's even a version that costs you nothing.
  [ Link Warren Buffett attack ]
 
 
+
 In some cases it's even worse because the token value is a fraction of the assets managed.
+So if you take something like Maker or ENS you've got a lot of very valuable assets managed in the form of ETH and USDC collateral, but you have a smaller value of tokens managing it.
 
-bribery cost
-is a fraction of token value
-
+bribery cost is a fraction of token value
 token value is a fraction of assets managed
 
-And this will get worse over time!
+And this will get worse over time! Because early on a protocol starts with not a lot of assets locked and a purely speculative token value, then as it matures the amount of work it's doing increases and the length of its remaining future gradually decreases.
 
+By the way I have ENS from the airdrop and I'm holding my tokens in the anticipation that the governance will fail. Because ENS isn't supposed to pay back the token holders.
 
-With ENS I'm holding my tokens in the anticipation that the governance will fail.
 
 
 2. fork choice / stake-and-choose / schelling game
@@ -72,6 +78,9 @@ And these things can be bought because in cryto-economics any tradeable countabl
  The fact that there's forking involved doesn't make a system subjectivocracy. What makes a subjectivocracy is that you're free from the tyranny of The Count.
 
 
+ETH / ETC 
+
+
  The recent example where this property came up was, what happens if the big staking pools, like Coinbase and Kraken and those guys, get leant on to censor blocks in the Ethereum chain. So this wasn't just about not including transactions in blocks, it's about seeing a block that you'd normally build on or attest to and going, "I didn't see that, I'm going to attest to one that has what I prefer in it".
  
  And the solution if this happens is what some people call Social Slashing. We'll just make a version of ethereum with their stake deleted.
@@ -85,6 +94,9 @@ So where do we see subjectivocracy right now?
  - Base protocol governance
 
  - If you've got a token that only governs itself. And we often have this implicitly.
+
+   So this is something that would happen with Kleros, for example, that if you were to mount a big bribery attack on Kleros then you would probably find that somebody would make a new version of Kleros and everyone who took the bribe would have their tokens deleted.
+
    ...but the strength of web3 comes from composibility, and weird things happen when you fork a token on its own
 
  - base layer governance, sometimes quite obtuse protocol rules
