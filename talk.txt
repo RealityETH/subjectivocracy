@@ -1,0 +1,155 @@
+Hi I'm Edmund Edgar. 
+
+I live in a town called Mashiko in Japan where I keep goats and I maintain reality.eth which is a tool for turning small problems into big problems.
+
+I'm going to talk not so much about reality.eth but about the bigger thing we're building which will, I think at a fundamental level solve the oracle problem.
+And solve a lot of our governance problems.
+
+Or rather the oracle problem was solved by Paul Storcz in [check date] but it's a practical implementation of the solution to the oracle problem.
+
+. But before I do I want to go back to fundamentals and talk about how stuff is secured in cryptoeconomics.
+
+
+Fundamentally there are three types of security in crypto-economics. I'll skip old-school stuff like reputation that isn't really crypto-economic.
+If you've got a DAO or something that's trying to decide stuff, any kind of judgement you want to make or information you want to supply, you're usually doing something like this:
+
+security models
+ 1. coin voting                     DPoS, lots of DAOs
+ 2. fork choice / stake-and-choose  Bitcoin, Ethereum consensus, Kleros voting
+ 3. subjectivocracy                 Ethereum backstop, Bitcoin backstop but they get mad at you for saying this.
+
+[ Add Vitalik's piece on Subjectivocracy ]
+
+
+Now Vitalik's been saying a lot about how bad coin voting is. One fundamental problem is it's very cheap to bribe.
+
+Imagine a very cheap bribery attack. 
+Let's say we've got $100 and 100 tokenholders. I make a proposal that you're going to give me the $100. And I offer you 1 cent to vote for it.
+
+It's actually in your interests to take the bribe. Because your individual vote isn't going to make the difference.
+
+And this problem gets worse the more decentralized you are, because your vote is less likely to decide the outcome.
+
+There's even a version that costs you nothing.
+ [ Link Warren Buffett attack ]
+
+
+In some cases it's even worse because the token value is a fraction of the assets managed.
+
+bribery cost
+is a fraction of token value
+
+token value is a fraction of assets managed
+
+And this will get worse over time!
+
+
+With ENS I'm holding my tokens in the anticipation that the governance will fail.
+
+
+2. fork choice / stake-and-choose / schelling game
+
+Corrupted with collaboration, coercion, cartels 
+
+[Count]
+Both involve counting
+Both have an economic security bound
+And these things can be bought because in cryto-economics any tradeable countable thing can be bought
+
+
+ 
+3. subjectivocracy
+
+  Ugly word, Vitalik's fault
+  Great backstop for (2).
+  Not based on counting things
+  More than one winner
+
+ Subjectivocracy is where you have forking of a system like you often do with fork-choice. But participants choose which one they want to use regardless of how everybody else's vote went.
+
+ What characterizes subjectivocracy is that you're free from the tyranny of The Count.
+ There's nothing that can be counted or outvoted that will prevent you from using what you think is the correct system. 
+ The fact that there's forking involved doesn't make a system subjectivocracy. What makes a subjectivocracy is that you're free from the tyranny of The Count.
+
+
+ The recent example where this property came up was, what happens if the big staking pools, like Coinbase and Kraken and those guys, get leant on to censor blocks in the Ethereum chain. So this wasn't just about not including transactions in blocks, it's about seeing a block that you'd normally build on or attest to and going, "I didn't see that, I'm going to attest to one that has what I prefer in it".
+ 
+ And the solution if this happens is what some people call Social Slashing. We'll just make a version of ethereum with their stake deleted.
+ And the censoring validators can carry on running their fork if they want to and we'll run our fork and people can use whichever fork they want.
+
+ So the thing about this is that it works even if the attackers have the majority of stake. In fact, the more stake they have the better it works, because removing their tokens from circulation makes the remaining ones more valuable.
+
+
+So where do we see subjectivocracy right now?
+
+ - Base protocol governance
+
+ - If you've got a token that only governs itself. And we often have this implicitly.
+   ...but the strength of web3 comes from composibility, and weird things happen when you fork a token on its own
+
+ - base layer governance, sometimes quite obtuse protocol rules
+
+   [ token ] - [ your token ] - [ your name ] 
+
+ ...but we only use this for governing protocol rules
+
+The example that came up recently is: What happens if the big staking pools start to censor blocks? 
+
+
+Escapes the tyranny of The Count
+
+
+
+The problem we have is: How do we govern judgements about the world, and how do we handle judgements about governance.
+For the rest of this talk I'm going to talk about these as equivalent problems. 
+So for an honest oracle the question of "Is it raining in Berlin" is kind of the same as the question "Should we say it's raining in Berlin".
+If we can solve the governance problem we pretty much know how to build secure oracles. Some cases may have issues if they need to send data very fast, but that aside.
+
+
+
+1 and 2 are basically economic and if participation is tradeable they can be bought. They're based on counting stuff. You can use money to affect whatever we count.
+And what's bad about this is that the security of a lot of the systems we've built tend to get worse as time goes on. When a project starts out it probably has a high token price in the expectation of what it's going to do in the future, but not much value locked up in it. But as it matures it's likely to have more value locked and not necessarily a higher token price.
+
+Another way of saying this is that a young project is very focussed on pleasing its users. And a mature project is very focussed on extracting value from it's users. 
+
+
+3 is not really economic. There are some economic things you can say about the result of doing this. You can say things like "we split into 2 tokens and this one has the highest market cap". But it's fundamentally a social question. You can throw money at a market to create a high market cap but that doesn't really affect the rest of us.
+
+It has no economic security bound.
+
+
+What you want is to be able to run your code on a ledger where if there's a dispute, we can fork everybody else as well.
+We can't fork Ethereum.
+
+
+Now what you may be thinking is, OK, it's great that my contract can fork the entire ledger we're standing on. But that means that all the other contracts can also fork the ledger we're standing on. So every day we're going to have 1000s of forks.
+
+
+And that brings me to reality.eth
+
+Reality.eth is a tool for turning small problems into big problems.
+
+The way it's currently used is: 
+Let's say you're Shapeshift DAO and you want to know the 
+
+ DAO asks a question
+ Anybody can say "yes" with a bond
+ Anybody else can say "no" with a bigger bond
+ Anybody can say "yes" with a yet bigger bond
+ You end up with a big pool of money
+   You then go back to a system of 1, 2 or 3. The most common is Kleros, which is kind of (2). There's an element of (3) about it but it's mainly (2).
+   Some people use coin voting systems
+   Nobody's done this but you could put like a traditional old-school arbitrator here and go to a literal court
+
+You can escalate from a very trivial question. You could have far more at stake in bonds than was originally at stake in the question. 
+So we can do things that are very expensive to secure even for a contract that isn't doing much value.
+
+
+On a subjectivocratic ledger with reality.eth we can make a high costs to fork.
+
+
+
+TODOs: 
+ - Find a nice example of (2)
+ - Find an icon for subjectivocracy/society as opposed to The Count
+ - Find a graphic of defi legos
