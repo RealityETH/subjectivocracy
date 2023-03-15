@@ -55,16 +55,51 @@ By the way I have ENS from the airdrop and I'm holding my tokens in the anticipa
 
 2. fork choice / stake-and-choose / schelling game
 
-Corrupted with collaboration, coercion, cartels 
+Work well for systems where the agreement is the point
+Kind of work for getting to truth. But potentialy corrupted with collaboration, coercion, cartels 
+
+51% attack if successful punishes the honest miners
+
+Cost and level of difficulty is often significant.
+Difficult for small projects to get security this way.
+
 
 [Count]
 Both involve counting
+Both both inherently majoritarian
 Both have an economic security bound
-And these things can be bought because in cryto-economics any tradeable countable thing can be bought
-
+And these things can be bought because in crypto-economics any tradeable countable thing can be bought
 
  
 3. subjectivocracy
+
+But there's a third method of getting to truth in a crypto-economic system and that's what Vitalik called subjectivocracy.
+
+The recent example where this property came up was, what happens if the big staking pools, like Coinbase and Kraken and those guys, get leant on to censor blocks in the Ethereum chain. So this wasn't just about not including transactions in blocks, it's about seeing a block that you'd normally build on or attest to and going, "I didn't see that, I'm going to attest to one that has what I prefer in it".
+
+And the solution if this happens is what some people call Social Slashing. We'll just make a version of ethereum with their stake deleted.
+And the censoring validators can carry on running their fork if they want to and we'll run our fork and people can use whichever fork they want.
+
+So the thing about this is that it works even if the attackers have the majority of stake. In fact, the more stake they have the better it works, because removing their tokens from circulation makes the remaining ones more valuable.
+
+The reason this works is because the blockchain isn't real. The blockchain is just something we made up. The blockchain is just our model for a common understanding of the world.
+
+And it's possible here by the way to have more than one winner. We could do this fork and there would be an OFAC ethereum and a Free Ethereum and maybe some of the users would use OFAC Ethereum and who knows, maybe OFAC Ethereum would have a higher market cap than Free Ethereum. But our assets are still represented to us on what to us is an honest ledger.
+
+
+But the examples you see of this are generally examples at the base layer. 
+
+If you're making your own protocol and you want it to have this subjectivocratic security then there are some things you can do. If you've got a token and all it represents is itself, then it's always possible to just deploy a new version of the token with different properties and encourage people to use that instead of the old one. But the problem with doing that is that you lose composibility. Because you don't just need to update your users' understanding of which contract represents the Flower DAO, you also have to update any other contract that talks to Flower DAO. So it's not enough to fork Flower DAO, you need to fork all the other contracts that talks to it as well.
+
+So what we really want to do is for Flower DAO to be able to cause the entire ledger it's on to fork in two so we're not just going to have 2 versions of Flower DAO, we're going to have two versions of everything else. Now, we can't fork Ethereum to do that but what we can do is make a new ledger and anything that needs this property can live on top of the new ledger. The great thing is that it's getting easier to make a new ledger. For instance we don't need to make an entire decentralized set of validators because we can use a L2.
+
+
+Now what you may be thinking is, if we can fork the ledger for the governance of Flower DAO then we can fork it for everything else. So it's going to be forking all the time and that'll be uunwieldy. Well this is where reality.eth comes in. You remember earlier I said that reality.eth is a tool for turning small problems into big problems. 
+
+
+
+
+
 
   Ugly word, Vitalik's fault
   Great backstop for (2).
@@ -79,15 +114,6 @@ And these things can be bought because in cryto-economics any tradeable countabl
 
 
 ETH / ETC 
-
-
- The recent example where this property came up was, what happens if the big staking pools, like Coinbase and Kraken and those guys, get leant on to censor blocks in the Ethereum chain. So this wasn't just about not including transactions in blocks, it's about seeing a block that you'd normally build on or attest to and going, "I didn't see that, I'm going to attest to one that has what I prefer in it".
- 
- And the solution if this happens is what some people call Social Slashing. We'll just make a version of ethereum with their stake deleted.
- And the censoring validators can carry on running their fork if they want to and we'll run our fork and people can use whichever fork they want.
-
- So the thing about this is that it works even if the attackers have the majority of stake. In fact, the more stake they have the better it works, because removing their tokens from circulation makes the remaining ones more valuable.
-
 
 So where do we see subjectivocracy right now?
 
