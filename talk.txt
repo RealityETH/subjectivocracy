@@ -10,9 +10,12 @@ And solve a lot of our governance problems.
 
 But before I do I want to go back to fundamentals and talk about how stuff is secured in cryptoeconomics.
 
+Let's imagine we've got a contract on Ethereum or somewhere. Let's call it Flower DAO and its job is to plant flowers.
+And let's say it needs some kind of human input. Maybe it needs data. Say, it wants to pay people to plant flowers and it needs to know if it was done so it knows whether to pay them.
+Or maybe it needs more general governance. Maybe people bring it projects for things it could spend money on and it needs to be able to decide which project would actually advance the cause of flowers and which one would just make some guy rich. How can we build this contract?
 
-Fundamentally there are three types of security in crypto-economics. I'll skip old-school stuff like reputation that isn't really crypto-economic.
-If you've got a DAO or something that's trying to decide stuff, any kind of judgement you want to make or information you want to supply, you're usually doing something like this:
+There are 3 basic patterns. I'll skip old-school stuff like reputation that isn't really crypto-economic.
+
 
 security models
  1. coin voting                     A lot of DAOs, also DPoS systems kind of do this
@@ -24,24 +27,34 @@ security models
 
 Now Vitalik's been saying a lot about how bad coin voting is. One fundamental problem is each voter is not really accountable for their vote. And that makes it very cheap to bribe.
 
+[cut]
+
 Imagine a very cheap bribery attack. 
 Let's say we've got $100 and 100 tokenholders. I make a proposal that the DAO is going to give me the $100. And I offer you 1 cent to vote for it.
 
 It's actually in your interests to take the bribe. Because your individual vote isn't going to make the difference. 
 
+[cut]
         Everyone else 
         O     | X
 You O   $0.01 | $1.01
     X   $0    | $1
 
-And this problem gets worse the more decentralized you are, because your vote is less likely to decide the outcome.
+[/cut]
+
+And this problem gets worse the more decentralized you are, because your vote is less likely to decide the outcome and you have less at stake.
+
+[cut]
 
 There's even a version that costs you nothing.
  [ Link Warren Buffett attack ]
 
-
+ [/cut]
 
 In some cases it's even worse because the token value is a fraction of the assets managed.
+
+So maybe Flower DAO has Flower tokens worth $100 and ETH worth $200.
+
 So if you take something like Maker or ENS you've got a lot of very valuable assets managed in the form of ETH and USDC collateral, but you have a smaller value of tokens managing it.
 
 bribery cost is a fraction of token value
@@ -52,8 +65,21 @@ And this will get worse over time! Because early on a protocol starts with not a
 By the way I have ENS from the airdrop and I'm holding my tokens in the anticipation that the governance will fail. Because ENS isn't supposed to pay back the token holders.
 
 
+2. schelling game
 
-2. fork choice / stake-and-choose / schelling game
+What we do here is you vote on stuff but after you vote you get rewarded or penalized based on how your vote aligns with other participants. And a lot of well-designed systems have this feature.
+
+There's some of this for instance in Kleros. It's also the core of a lot of L1 protocols like Bitcoin or Ethereum.
+
+So for instance in Bitcoin you have to choose a block to mine on top of. It cost you money to get to mine that block and if you choose a shorter chain rather than the longest one then everyone else 
+
+          2a --- 3a --- 4a
+--- 1 --- 
+          2b
+
+But you know, we could do something similar with our Flower DAO. We could reward people who agreed with the consensus and punish people who disagree with the consensus. 
+
+Now, famously, these systems can be attacked. In Bitcoin if you have 51% of the participants deciding they're going to start mining on top of 2b then you'll end up with the longest chain on top of 2b. And instead of penalizing the dishonest people you're going to penalize the honest people who mined 3a and 4a. So there are various ways you can actually capsize the incentive mechanism so that the rules that are supposed to be keeping it upright actually helps keep it upside-down.
 
 Work well for systems where the agreement is the point
 Kind of work for getting to truth. But potentialy corrupted with collaboration, coercion, cartels 
@@ -70,8 +96,42 @@ Both both inherently majoritarian
 Both have an economic security bound
 And these things can be bought because in crypto-economics any tradeable countable thing can be bought
 
+And people have been fretting about this a bit lately with Ethereum because we had a system where we thought maybe 51% or some large proportion of the stake will be controlled by companies in the same North American country.
+We said what if they get told they're not allowed to build on blocks with Tornado Cash transactions in them. 
+
+
+[cut]
+Corrupted with collaboration, coercion, cartels 
+[/cut]
+
+
+Fundamentally what these systems have in common is that they're using economic security. Or even more generally, they're based on counting stuff.
+And in cryto-economics anything that can be traded and counted can be bought.
+
+
+So why are Bitcoin and Ethereum still here? Well behind the schelling games there's a third kind of security and that's what Vitalik calls "subjectivocracy"
+https://blog.ethereum.org/2015/02/14/subjectivity-exploitability-tradeoff
+
+And this takes advantage of the fact that blockchains aren't real. Blockchains are just something we made up. The information on a blockchain is in our heads.
+
+
+
+Where this came up recently was that we were worried about hwat happens if the big staking pools, like Coinbase and Kraken and those guys, get leant on to censor blocks in the Ethereum chain. So this wasn't just about not including transactions in blocks, it's about seeing a block that you'd normally build on or attest to and going, "I didn't see that, I'm going to attest to one that has what I prefer in it".
  
-3. subjectivocracy
+And the solution if this happens is what some people call Social Slashing. We'll just make a version of ethereum with their stake deleted.
+And the censoring validators can carry on running their fork if they want to and we'll run our fork and people can use whichever fork they want.
+
+So the thing about this is that it works even if the attackers have the majority of stake. In fact, the more stake they have the better it works, because removing their tokens from circulation makes the remaining ones more valuable.
+
+
+
+
+Subjectivocracy is where you have forking of a system like you often do with fork-choice. But participants choose which one they want to use regardless of how everybody else's vote went.
+
+So for instance there was an attack on the ETC chain, they had a PoW chain without a lot of hashpower and people would spend a bit of money and roll it back. And they did this a few times and the ETC gguys for a while said, "well we have to follow the rules of our schelling game" because they thought their system worked like number (2). Then they stopped and everyone just said, "you know what, we all know which is the real chain, we all saw it happening, so I'm not following the attack branch any more" and there was no longer any point in spending money to attack it.
+
+Now, we don't want to have to do this regularly. It's kind of a pain that we all have to pay attention and decide which version we want to use. But we can do it if we need to. And the fact that we can do it if we need to makes it less likely that we'll need to. Because controlling 51% of Ethereum stake just wouldn't give you the ability to control which transactions went into Ethereum.
+
 
 But there's a third method of getting to truth in a crypto-economic system and that's what Vitalik called subjectivocracy.
 
@@ -106,14 +166,42 @@ Now what you may be thinking is, if we can fork the ledger for the governance of
   Not based on counting things
   More than one winner
 
- Subjectivocracy is where you have forking of a system like you often do with fork-choice. But participants choose which one they want to use regardless of how everybody else's vote went.
+
+
 
  What characterizes subjectivocracy is that you're free from the tyranny of The Count.
  There's nothing that can be counted or outvoted that will prevent you from using what you think is the correct system. 
  The fact that there's forking involved doesn't make a system subjectivocracy. What makes a subjectivocracy is that you're free from the tyranny of The Count.
 
 
+<<<<<<< HEAD
 ETH / ETC 
+
+=======
+So why can't Flower DAO do subjectivocracy?  In a sense it can if all it's doing is managing its own assets. 
+So let's imagine there's a flower token and the flower token is in the flower dao contract. If somebody attacks the flower DAO contract
+
+But the problem is that what makes Ethereum valuable is that it's composible. Flower DAO doesn't exist on its own. It's connected to a bunch of other contracts.
+ 
+  Maybe it's got some other tokens so if we make a new FlowerDAO then we don't have those tokens
+
+  Maybe the flower dao tokens are in a bunch of other contracts. Some of those it'll work OK, maybe if it's a multisig or an EOA maybe it's ok. But other contracts might just not know what to do with a load of stuff that suddenly shows up in its balance.
+
+  So what we really want to do is to fork not just Flower DAO but Flower DAO and all the other contracts that are connected to Flower DAO. In other words we want Flower DAO fork the entire ledger.
+
+
+
+So if you're wondering why we have subjectivocracy securing all these base layer protocols very well and very robustly.
+But it hasn't been practical for contracts.
+Because it's hard to do at the level of an individual contract
+
+
+
+
+
+
+ETH / ETC 
+
 
 So where do we see subjectivocracy right now?
 
@@ -163,12 +251,13 @@ We can't fork Ethereum.
 Now what you may be thinking is, OK, it's great that my contract can fork the entire ledger we're standing on. But that means that all the other contracts can also fork the ledger we're standing on. So every day we're going to have 1000s of forks.
 
 
+
 And that brings me to reality.eth
 
 Reality.eth is a tool for turning small problems into big problems.
 
 The way it's currently used is: 
-Let's say you're Shapeshift DAO and you want to know the 
+Let's say you're Shapeshift DAO and you want to know the outcome of a snapshot vote.
 
  DAO asks a question
  Anybody can say "yes" with a bond
@@ -178,6 +267,10 @@ Let's say you're Shapeshift DAO and you want to know the
    You then go back to a system of 1, 2 or 3. The most common is Kleros, which is kind of (2). There's an element of (3) about it but it's mainly (2).
    Some people use coin voting systems
    Nobody's done this but you could put like a traditional old-school arbitrator here and go to a literal court
+
+
+Forking ability
+
 
 You can escalate from a very trivial question. You could have far more at stake in bonds than was originally at stake in the question. 
 So we can do things that are very expensive to secure even for a contract that isn't doing much value.
