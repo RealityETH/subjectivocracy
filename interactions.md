@@ -189,17 +189,36 @@ Next step:
                 # Clones RealityETH
                 # Copies contested question to child RealityETH
                 # Tells child ForkManager to credit funds for contested question to new RealityETH
+
+    Dave    L1  ForkManager.createMarket()
+                # Once addresses for both are known, creates a two-sided batch auction ending at the planned activation date
+                # Transfers the arbitration fee to it for incentivization
+
+    Bob     L1  Take a position on the market
+                ForkManager.bid(16, 
+                # Sends bid to auction long with 1234 tokens
+                    Auction.bid(0xbob, 16, 1234)
+
+    Dave    L1  ForkManager.activateFork()
+                # Freezes tokens on itself, balance can be read but they can no longer be moved
+                # Reads the final price off the market and uses them for any future "winning fork" queries.
+
+    Bob     L1 Auction.redeem(0xbob)
+                # Transfers tokens to 0xbob address in ForkManager 
+```
 ```
 
 Next step:
 * Wait for the fork date, then anyone can [Execute an arbitrator removal](#execute-an-arbitrator-removal) on one chain and [Cancel an arbitrator removal](#cancel-an-arbitrator-removal) on the other.
 
 
-### Move your governance tokens onto your preferred fork
+### Migrate your governance tokens
 ```
-    Bob    L1   ForkManager.pickFork(address fork, uint256 tokens)
-                    # burns own tokens
-                    # fork.mint(msg.sender, tokens)
+    Bob    L1   ChildForkManager.importTokens(address any_address)
+                    # checks executeFork is done
+                    # copies tokens from the ForkManager to the child contract
+                    # marks that account as copied so we don't do it again
+                    # mint(address, tokens)
 ```
 
 

@@ -1,8 +1,85 @@
 TODOs to check with zksync or other implementation:
  
  - Can PriorityQueue carry over entries between blocks? If not, we have to read from the previous queue. If so, is there a limit to how much you can queue?
+  -> Make a forkable queue
+   - should pass tests of existing queue
+    -> Work out how to run tests of zksync eg existing PriorityQueue implementation
+
+   - Run test for existing contract in docker
+   - Hack the contract in docker
+   - Write our own tests in python to perfect the forkable contract
+
+
+
  - How is chain_id handled? Doesn't seem to be in the L1 contract code, in which case could operators replay a tx sent to another chain?
+  ? In genesis block
+
+
  - Does the following work:
     - Stop contracts, get genesis block hash
     - Deploy new version with former genesis block hash
     - Start posting to the new version
+ 
+ - How long will upstream be using validator whitelists? May be good to add a dedicated governance type for adding/removing validators to this whitelist.
+
+Check structure of cloning the state. Is it necessary to keep doing regenesis or is it technically possible to start a new l2 ledger with a previous state?
+
+Is there a block explorer, is it free software, what does a block explorer look like on a technical level ie can you run one with just rpc?
+
+
+Check which contracts have to be copied on fork and how much gas they use
+ - Looks like Verifier.sol is just a library and can be reused
+
+
+? Have account abstraction so maybe we could fork the gas token and do replay that way ?
+
+
+
+Basic test
+
+ - Box1: 
+     Spin up a zksync era instance using ./start.sh
+     Send it some transactions
+     Get the final state root as of block X
+ 
+ - Box2:
+     Copy over the l2 database from Box1
+     Make a new deployment of the L1 contracts, starting with the state root from earlier instead of the original genesis root
+
+ - Box1: 
+     Send some more transactions
+ - Box2: 
+     Send some more transactions
+
+ Desired outcome: We should now have 2 running zksync systems, which forked at Block X and ran independently of each other from there on
+
+ * In our test they were on different blockchains, but it would be the same if they were on the same blockchain at different addresses. To prove this, reconfigure to talk to a single Geth instance instead of each docker setup having its own instance.
+    
+
+Cloning test
+
+ - As above, but the new L2 contracts were created using a generic proxy based on the old L2 contracts, or on libraries used by the old L2 contracts 
+
+
+Chain ID
+ 
+ In my dreams:
+
+  - Chain ID is a parameter in the L1 contract  
+  - We can force-change the Chain ID when forking by sending some message to the L1 contract
+
+ In reality probably:
+
+  - The chain ID is part of the database
+  - If we change the database we can no longer do the "Cloning Test" part, so 
+     - we can't trustlessly change the Chain ID of a running instance
+     - we can't prove that the version we cloned uses the same contracts as the original version.
+
+ -> check 
+
+ 
+
+
+
+Differences to commit chain
+ 
