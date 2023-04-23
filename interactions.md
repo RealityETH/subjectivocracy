@@ -28,7 +28,7 @@ For simplicity some contract parameters are omitted. Details of the mechanism fo
 
 ### Make a crowdfund            
 ```
-    Alice   L2  question_id = RealityETH.askQuestion(recipient=Bob, arbitrator=WhitelistArbitrator)
+    Alice   L2  question_id = RealityETH.askQuestion(recipient=Bob, arbitrator=AllowlistArbitrator)
     Alice   L2  TokenA.approve(Crowdfunder, 1234)
     Alice   L2  Crowdfunder.createCrowdFund(question_id, 1234)
                     TokenA.transferFrom(Alice, self, 1234)
@@ -75,8 +75,8 @@ Next step:
 
 ### Contest an answer
 ```
-    Bob     L2  NativeTokenA.approve(WhitelistArbitrator, 1000000) 
-    Bob     L2  WhitelistArbitrator.requestArbitration(question_id)
+    Bob     L2  NativeTokenA.approve(AllowlistArbitrator, 1000000) 
+    Bob     L2  AllowlistArbitrator.requestArbitration(question_id)
                     NativeTokenA.transferFrom(Bob, self, 1000000)
 ```
 
@@ -85,10 +85,10 @@ Next step:
     Dave    L2  NativeTokenA.approve(ArbitratorA, 500000) 
     Dave    L2  ArbitratorA.requestArbitration(question_id)
                     NativeTokenA.transferFrom(Dave, self, 500000) # TODO: Maybe not needed because this is the native token?
-                    WhitelistArbitrator.notifyOfArbitrationRequest(question_id, Dave)
+                    AllowlistArbitrator.notifyOfArbitrationRequest(question_id, Dave)
 
     Arby    L2  ArbitratorA.submitAnswerByArbitrator(question_id, 1, Dave)
-                    WhitelistArbitrator.submitAnswerByArbitrator(question_id, 1, Bob)
+                    AllowlistArbitrator.submitAnswerByArbitrator(question_id, 1, Bob)
 ```
 Next step:
 * Uncontested arbitration after 1 week? [Execute an arbitration](#execute-an-arbitration)
@@ -96,7 +96,7 @@ Next step:
 
 ### Execute an arbitration         
 ```
-    Dave    L2  WhitelistArbitrator.executeArbitration(question_id)
+    Dave    L2  AllowlistArbitrator.executeArbitration(question_id)
                     NativeTokenA.transfer(Dave, 1000000)
                     RealityETH.submitAnswerByArbitrator(question_id, 1, Bob)
 ```
@@ -106,16 +106,16 @@ Next step:
                                                 
 ### Contest an arbitration          
 ```
-    Charlie L1  ForkManager.beginRemoveArbitratorFromWhitelist(address whitelist_arbitrator, address arbitrator_to_remove) 
+    Charlie L1  ForkManager.beginRemoveArbitratorFromAllowlist(address whitelist_arbitrator, address arbitrator_to_remove) 
                     contest_question_id = RealityETH.askQuestion("should we delist ArbitratorA?")
     Charlie L1  TokenX.approve(RealityETH, 2000000)
     Charlie L1  RealityETH.submitAnswer(contest_question_id, 1, 2000000)
-    Charlie L1  ForkManager.freezeArbitratorOnWhitelist(contest_question_id)
+    Charlie L1  ForkManager.freezeArbitratorOnAllowlist(contest_question_id)
                     RealityETH.getBestAnswer(contest_question_id)
                     RealityETH.getBond(contest_question_id)
-                    BridgeToL2.sendMessage("WhitelistArbitrator.freezeArbitrator(ArbitratorA)")
+                    BridgeToL2.sendMessage("AllowlistArbitrator.freezeArbitrator(ArbitratorA)")
     [bot]   L2  BridgeFromL1.processQueue() # or similar
-                    WhitelistArbitrator.freezeArbitrator(ArbitratorA)
+                    AllowlistArbitrator.freezeArbitrator(ArbitratorA)
 ```
 Next step:
 * Delist question finalizes as 1? [Execute an arbitrator removal](#execute-an-arbitrator-removal)
@@ -124,32 +124,32 @@ Next step:
 
 ### Cancel an arbitrator removal
 ```
-   Bob     L1  ForkManager.unfreezeArbitratorOnWhitelist(contest_question_id)
+   Bob     L1  ForkManager.unfreezeArbitratorOnAllowlist(contest_question_id)
                     RealityETH.resultFor(contest_question_id)
-                    BridgeToL2.sendMessage("WhitelistArbitrator.unFreezeArbitrator(ArbitratorA)")
+                    BridgeToL2.sendMessage("AllowlistArbitrator.unFreezeArbitrator(ArbitratorA)")
 
    [bot]   L2  BridgeFromL1.processQueue() # or similar
-                    WhitelistArbitrator.unFreezeArbitrator(ArbitratorA)
+                    AllowlistArbitrator.unFreezeArbitrator(ArbitratorA)
 ```
 Next step: 
 * [Redeem an arbitration](#redeem-an-arbitration)
 
 ### Execute an arbitrator removal   
 ```
-    Charlie L1  ForkManager.executeRemoveArbitratorFromWhitelist(contest_question_id) 
+    Charlie L1  ForkManager.executeRemoveArbitratorFromAllowlist(contest_question_id) 
                     RealityETH.resultFor(contest_question_id)
-                    BridgeToL2.sendMessage("WhitelistArbitrator.removeArbitrator(ArbitratorA)")
+                    BridgeToL2.sendMessage("AllowlistArbitrator.removeArbitrator(ArbitratorA)")
 
     [bot]   L2  BridgeFromL1.processQueue() # or similar
-                    WhitelistArbitrator.removeArbitrator(ArbitratorA)
+                    AllowlistArbitrator.removeArbitrator(ArbitratorA)
 ```
 Next step:
 * [Handle an arbitration](#handle-an-arbitration) to arbitrate the question again with a different arbitrator
 
 ### Propose an arbitrator addition
 ```
-    Charlie L1  ForkManager.beginAddArbitratorToWhitelist(whitelist_arbitrator, ArbitratorA) 
-                    contest_question_id = RealityETH.askQuestion("should we add ArbitratorA to WhitelistArbitrator?")
+    Charlie L1  ForkManager.beginAddArbitratorToAllowlist(whitelist_arbitrator, ArbitratorA) 
+                    contest_question_id = RealityETH.askQuestion("should we add ArbitratorA to AllowlistArbitrator?")
     Charlie L1  TokenX.approve(RealityETH, 2000000)
     Charlie L1  RealityETH.submitAnswer(contest_question_id, 1, 2000000)
 ```
@@ -163,10 +163,10 @@ Next step:
     Charlie L1  RealityETH.finalizeQuestion(add_question_id)
     Charlie L1  ForkManager.executeArbitratorAddition(add_question_id) 
                     RealityETH.resultFor(add_question_id)
-                    BridgeToL2.sendMessage("WhitelistArbitrator.addArbitrator(ArbitratorA)")
+                    BridgeToL2.sendMessage("AllowlistArbitrator.addArbitrator(ArbitratorA)")
 
     [bot]   L2  BridgeFromL1.processQueue() # or similar
-                    WhitelistArbitrator.addArbitrator(ArbitratorA)
+                    AllowlistArbitrator.addArbitrator(ArbitratorA)
 ```
 
 ### Challenge an L2 arbitration or governance result
@@ -267,7 +267,7 @@ Next step:
 
 ### Outbid a low reservation
 ```
-    Frank   L2  WhitelistArbitrator.outBidReservation(num, price, nonce, resid)
+    Frank   L2  AllowlistArbitrator.outBidReservation(num, price, nonce, resid)
                     # Replace a bid
 ```
 
