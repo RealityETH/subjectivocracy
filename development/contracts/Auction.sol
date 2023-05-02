@@ -7,6 +7,8 @@ contract Auction {
     uint256 constant MAX_SLOTS = 100;
     uint256 public bid_id;
 
+    uint256 bonus;
+
     address forkmanager;
 
     struct Bid {
@@ -64,6 +66,16 @@ contract Auction {
         require(msg.sender == forkmanager);
         is_fork_done = true; 
     }
+
+    function addBonus() 
+        beforeFork
+    external
+    payable
+    {
+        require(msg.sender == forkmanager);
+        bonus = msg.value;
+    }
+
 
     function bid(address owner, uint8 _bid) 
         beforeFork
