@@ -138,7 +138,7 @@ contract Auction_ERC20 {
 
     function winner() 
         afterForkAfterCalculation
-    external returns (bool) {
+    external view returns (bool) {
         return (final_price * 2 > MAX_SLOTS);
     }
 
