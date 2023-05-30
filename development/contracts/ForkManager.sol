@@ -99,10 +99,6 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     // Once the fork is resolved you can set the winner to one of the childForkManagers
     ForkManager public replacedByForkManager;
 
-    // Having deployed each fork, you can move funds into it. Keep track so we know who "won".
-    uint256 public amountMigrated1;
-    uint256 public amountMigrated2;
-
     // The total supply of the parent when our fork was born.
     // We use this as a freeze threshold when it's too early to use our own supply because people are still migrating funds.
     uint256 public parentSupply;
@@ -112,7 +108,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     uint256 supplyAtFork;
 
     // The deadline for moving funds, when we will decide which fork won.
-    uint256 forkExpirationTS = 0;
+    uint256 forkTS = 0;
 
     // Reality.eth questions for propositions we may be asked to rule on
     struct ArbitratorProposition{
@@ -214,7 +210,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         require(history_hash == keccak256(abi.encodePacked(last_history_hash, last_answer, last_bond, last_answerer, false)), "Wrong parameters supplied for last answer");
 
         require(fork_question_id != bytes32(uint256(0)), "Fork not initiated");
-        require(block.timestamp < forkExpirationTS, "Too late to deploy a fork");
+        require(block.timestamp < forkTS, "Too late to deploy a fork");
 
         uint256 migrate_funds = realityETH.getCumulativeBonds(fork_question_id);
 
@@ -281,10 +277,11 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         forkRequestUser = msg.sender;
         fork_question_id = question_id;
 
-        forkExpirationTS = block.timestamp + FORK_TIME_SECS;
+        forkTS = block.timestamp + FORK_TIME_SECS;
         supplyAtFork = totalSupply;
 
         auction = new Auction_ERC20();
+        auction.init(fork_cost, forkTS);
 
         // Anybody can now call deployFork() for each fork
 
@@ -292,13 +289,13 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     function isUnForked() 
     public view returns (bool) {
-        return (forkExpirationTS == 0);
+        return (forkTS == 0);
     }
 
     // TODO: Rename as this gives us started-but-unresolved, in plain English that's a subset of started
-    function isForkingStarted() 
+    function isForkingScheduled() 
     public view returns (bool) {
-        return (forkExpirationTS > 0 && address(replacedByForkManager) == address(0x0));
+        return (forkTS > 0 && address(replacedByForkManager) == address(0x0));
     }
 
     function isForkingResolved() 
@@ -308,10 +305,11 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     function resolveFork() 
     external {
-        require(isForkingStarted(), 'Not forking');
+        require(isForkingScheduled(), 'Not planning to fork');
         require(!isForkingResolved(), 'Forking already resolved');
-        require(block.timestamp > forkExpirationTS, 'Too soon');
-        if (amountMigrated1 > amountMigrated2) {
+        require(block.timestamp > forkTS, 'Too soon');
+        auction.calculatePrice();
+        if (auction.winner()) {
             replacedByForkManager = childForkManager1;
         } else {
             replacedByForkManager = childForkManager2;
@@ -584,7 +582,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
             return (address(0), address(0));
         }
 
-        if (!isForkingStarted()) {
+        if (!isForkingScheduled()) {
             return (address(bridgeToL2), address(0));
         }
 
@@ -596,22 +594,27 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     }
 
-    function pickFork(bool yes_or_no, uint256 num) 
+    // Migrate tokens to the children after a fork
+    // If you like you can ignore either of the forks and just burn your tokens
+    // You would only do this if it will use more gas than it's worth, or is the result of a malicious upgrade.
+    function migrateToChildren(uint256 num, bool ignore_yes, bool ignore_no) 
     external {
-        require(isForkingStarted(), "Not forking");
-        require(!isForkingResolved(), "Too late");
+        require(isForkingResolved(), "Not forking");
+
         require(balanceOf[msg.sender] > num, "Not enough funds");
         balanceOf[msg.sender] = balanceOf[msg.sender] - num;
         totalSupply = totalSupply - num;
-        if (yes_or_no) {
-            amountMigrated1 = amountMigrated1 + num;
+
+        if (!ignore_yes) {
             require(address(childForkManager1) != address(0), "Call deployFork first");
             childForkManager1.mint(msg.sender, num);
-        } else {
-            amountMigrated2 = amountMigrated2 + num;
-            require(address(childForkManager2) != address(0), "Call deployFork first");
-            childForkManager2.mint(msg.sender, num);
         }
+
+        if (!ignore_no) {
+            require(address(childForkManager1) != address(0), "Call deployFork first");
+            childForkManager1.mint(msg.sender, num);
+        }
+
     }
 
     function bid(uint8 _bid, uint256 _amount) 

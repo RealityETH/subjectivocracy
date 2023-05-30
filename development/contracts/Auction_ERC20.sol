@@ -18,6 +18,7 @@ contract Auction_ERC20 {
     uint256 public bid_id;
 
     uint256 bonus;
+    uint256 fork_ts;
 
     address forkmanager;
 
@@ -30,9 +31,9 @@ contract Auction_ERC20 {
     mapping(uint8 => uint256) public cumulative_bids;
     mapping(uint256 => Bid) public bids;
 
-    bool is_fork_done;
     bool is_calculation_done;
-    uint8 final_price;
+    uint8 public final_price;
+    uint256 public bonus_ratio;
 
     event LogBid(
         uint256 bid_id,
@@ -50,40 +51,29 @@ contract Auction_ERC20 {
     );
 
     modifier beforeFork() {
-        require(!is_fork_done);
+        require(block.timestamp < fork_ts);
         _;
     }
 
     modifier afterForkBeforeCalculation() {
-        require(is_fork_done);
+        require(block.timestamp >= fork_ts);
         require(!is_calculation_done);
         _;
     }
 
     modifier afterForkAfterCalculation() {
-        require(is_fork_done);
+        require(block.timestamp >= fork_ts);
         require(is_calculation_done);
         _;
     }
 
-    constructor() {
+    // ForkManager should call this on deployment and credit this contract with the bonus amount
+    function init(uint256 _bonus, uint256 _fork_ts) 
+    external {
+        require(forkmanager == address(0), "Already initialized");
         forkmanager = msg.sender;
-    }
-
-    function markForkDone() 
-    external
-    {
-        require(msg.sender == forkmanager);
-        is_fork_done = true; 
-    }
-
-    // ForkManager should call this and credit this contract with the bonus amount
-    function addBonus(uint256 val) 
-        beforeFork
-    external
-    {
-        require(msg.sender == forkmanager);
-        bonus = val;
+        bonus = _bonus;
+        fork_ts = _fork_ts;
     }
 
     // ForkManager should lock the tokens before calling this
@@ -134,6 +124,7 @@ contract Auction_ERC20 {
         afterForkBeforeCalculation
     {
         uint256 ttl = totalTokens();
+        bonus_ratio = ttl / bonus; // eg bonus is 100, total is 2000, you get an extra 1/20
         uint256 so_far = 0;
         uint8 i = 0;
         for(i=0; i<MAX_SLOTS; i++) {
@@ -143,6 +134,12 @@ contract Auction_ERC20 {
                 return;
             }
         }
+    }
+
+    function winner() 
+        afterForkAfterCalculation
+    external returns (bool) {
+        return (final_price * 2 > MAX_SLOTS);
     }
 
     // Call settleAuction(bid) against the ForkManager
@@ -165,6 +162,7 @@ contract Auction_ERC20 {
             due = bid_amount * MAX_SLOTS / (MAX_SLOTS - final_price);
             yes_or_no = false;
         }
+        due = due + (due / bonus_ratio);
         delete(bids[_bid_id]);
         return (payee, yes_or_no, due);
     }
