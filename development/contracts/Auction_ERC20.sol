@@ -71,7 +71,7 @@ contract Auction_ERC20 {
     }
 
     function markForkDone() 
-    public
+    external
     {
         require(msg.sender == forkmanager);
         is_fork_done = true; 
@@ -86,20 +86,20 @@ contract Auction_ERC20 {
         bonus = val;
     }
 
-    // TODO: Should we call this against the ForkManager?
+    // ForkManager should lock the tokens before calling this
     function bid(address owner, uint8 _bid, uint256 _amount) 
         beforeFork
-    public
-    payable
+    external
     {
+        require(msg.sender == forkmanager, "Call via the forkmanager");
+
         require(_bid <= MAX_SLOTS);
         require(owner != address(0), "Owner not set");
+
         bid_id = bid_id + 1;
         bids[bid_id] = Bid(owner, _bid, _amount);
         emit LogBid(bid_id, owner, _bid, _amount);
         cumulative_bids[_bid] = cumulative_bids[_bid] + _amount;
-
-        //require(forkmanager.transferFrom(msg.sender, this, _amount), "Transfer failed");
     }
 
     function changeBid(uint256 _bid_id, uint8 new_bid)
@@ -150,20 +150,23 @@ contract Auction_ERC20 {
     // Usually this would be called by whoever made the bid, but anyone is allowed to call it.
     function clearAndReturnPayout(uint256 _bid_id) public
         afterForkAfterCalculation
-    returns (address, uint256)
+    returns (address, bool, uint256)
     {
         require(forkmanager == msg.sender, "Payout should be called against forkmanager");
         require(bids[_bid_id].owner != address(0), "Bid not found");
         uint256 bid_amount = bids[_bid_id].bid;
         uint256 due;
         address payee = bids[_bid_id].owner;
+        bool yes_or_no;
         if (bid_amount > final_price) {
             due = bid_amount * MAX_SLOTS / final_price;
+            yes_or_no = true;
         } else {
             due = bid_amount * MAX_SLOTS / (MAX_SLOTS - final_price);
+            yes_or_no = false;
         }
         delete(bids[_bid_id]);
-        return (payee, due);
+        return (payee, yes_or_no, due);
     }
 
 }

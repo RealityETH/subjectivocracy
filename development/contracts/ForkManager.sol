@@ -8,6 +8,7 @@ import './ERC20.sol';
 import './ForkableRealityETH_ERC20.sol';
 import './Arbitrator.sol';
 import './WhitelistArbitrator.sol';
+import './Auction_ERC20.sol';
 // import './BridgeToL2.sol';
 import './ZKBridgeToL2.sol';
 
@@ -92,6 +93,8 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     // If we fork we will produce two children
     ForkManager public childForkManager1;
     ForkManager public childForkManager2;
+
+    Auction_ERC20 public auction;
 
     // Once the fork is resolved you can set the winner to one of the childForkManagers
     ForkManager public replacedByForkManager;
@@ -280,6 +283,8 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
         forkExpirationTS = block.timestamp + FORK_TIME_SECS;
         supplyAtFork = totalSupply;
+
+        auction = new Auction_ERC20();
 
         // Anybody can now call deployFork() for each fork
 
@@ -606,6 +611,27 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
             amountMigrated2 = amountMigrated2 + num;
             require(address(childForkManager2) != address(0), "Call deployFork first");
             childForkManager2.mint(msg.sender, num);
+        }
+    }
+
+    function bid(uint8 _bid, uint256 _amount) 
+    external {
+        require(address(auction) != address(0), "Auction not under way");
+        require(balanceOf[msg.sender] >= _amount, "Balance lower than bid amount"); 
+        balanceOf[msg.sender] = balanceOf[msg.sender] - _amount;
+        auction.bid(msg.sender, _bid, _amount);
+    }
+
+    function settleBid(uint256 bid_id) 
+    external {
+        require(address(auction) != address(0), "Auction not under way");
+        (address payee, bool yes_or_no, uint256 due) = auction.clearAndReturnPayout(bid_id);
+        if (yes_or_no) {
+            require(address(childForkManager1) != address(0), "Call deployFork first");
+            childForkManager1.mint(payee, due);
+        } else {
+            require(address(childForkManager2) != address(0), "Call deployFork first");
+            childForkManager2.mint(payee, due);
         }
     }
 
