@@ -959,36 +959,24 @@ class TestRealitio(TestCase):
 
         # TODO: Test the claiming process
 
-        # Everybody picks a fork
         bob_bal = self.forkmanager.functions.balanceOf(self.L1_BOB).call()
         self.assertEqual(bob_bal, bob_extra_bal)
         charlie_bal = self.forkmanager.functions.balanceOf(self.L1_CHARLIE).call()
         self.assertEqual(charlie_bal, charlie_extra_bal)
 
-        self.forkmanager.functions.pickFork(True, 321).transact(self._txargs(sender=self.L1_BOB))
-        bob_bal_parent = self.forkmanager.functions.balanceOf(self.L1_BOB).call()
-        self.assertEqual(bob_bal_parent, bob_extra_bal - 321)
-        bob_bal_child = child_fm1.functions.balanceOf(self.L1_BOB).call()
-        self.assertEqual(bob_bal_child, 321)
+        bob_bal = self.forkmanager.functions.balanceOf(self.L1_BOB).call()
+        self.assertEqual(bob_bal, 7654)
+        charlie_bal = self.forkmanager.functions.balanceOf(self.L1_CHARLIE).call()
+        self.assertEqual(charlie_bal, 938493)
 
-        # You can put some of your tokens on each fork if you like
-        self.forkmanager.functions.pickFork(False, 20).transact(self._txargs(sender=self.L1_BOB))
+        self.forkmanager.functions.bid(40, 321).transact(self._txargs(sender=self.L1_BOB))
         bob_bal_parent = self.forkmanager.functions.balanceOf(self.L1_BOB).call()
-        self.assertEqual(bob_bal_parent, bob_extra_bal - 321 - 20)
-        bob_bal_child2 = child_fm2.functions.balanceOf(self.L1_BOB).call()
-        self.assertEqual(bob_bal_child2, 20)
+        self.assertEqual(bob_bal_parent, 7333)
 
-        self.forkmanager.functions.pickFork(False, 345).transact(self._txargs(sender=self.L1_CHARLIE))
+        self.forkmanager.functions.bid(20, 345).transact(self._txargs(sender=self.L1_CHARLIE))
         charlie_bal_parent = self.forkmanager.functions.balanceOf(self.L1_CHARLIE).call()
-        charlie_bal_child = child_fm2.functions.balanceOf(self.L1_CHARLIE).call()
-        self.assertEqual(charlie_bal_child, 345)
-        self.assertEqual(charlie_bal_parent, charlie_extra_bal - 345)
+        self.assertEqual(charlie_bal_parent, 938148)
 
-        self.assertEqual(self.forkmanager.functions.amountMigrated1().call(), 321)
-        self.assertEqual(self.forkmanager.functions.amountMigrated2().call(), 345+20)
-
-        #  uint256 constant FORK_TIME_SECS = 604800; // 1 week
- 
         # Should fail because of secs to fork
         with self.assertRaises(TransactionFailed):
             txid = self.forkmanager.functions.resolveFork().transact()
@@ -996,7 +984,7 @@ class TestRealitio(TestCase):
 
         self._advance_clock(604800, self.l1web3)
 
-        txid = self.forkmanager.functions.resolveFork().transact()
+        txid = self.forkmanager.functions.resolveFork().transact(self._txargs(gas=3000000))
         self.raiseOnZeroStatus(txid, self.l1web3)
 
         replaced_by_addr = self.forkmanager.functions.replacedByForkManager().call()
@@ -1269,7 +1257,7 @@ class TestRealitio(TestCase):
         return (contest_question_id, answer_history1, answer_history2, child_fm1, child_fm2)
 
 
-    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_post_fork_claims(self):
 
         (contest_question_id, answer_history1, answer_history2, child_fm1, child_fm2) = self._setup_contested_arbitration_with_fork()
