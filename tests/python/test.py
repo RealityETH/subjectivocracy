@@ -461,6 +461,41 @@ class TestRealitio(TestCase):
         self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], False)
 
 
+
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
+    def test_contested_token_migration(self):
+        self._setup_contested_arbitration_with_fork()
+        self.assertTrue(self.forkmanager.functions.isForkingResolved())
+
+        bob_bal_parent = self.forkmanager.functions.balanceOf(self.L1_BOB).call()
+        self.assertEqual(bob_bal_parent, 54000)
+
+        self.forkmanager.functions.migrateToChildren(4000, False, False).transact(self._txargs(sender=self.L1_BOB))
+
+        bob_bal_parent = self.forkmanager.functions.balanceOf(self.L1_BOB).call()
+        self.assertEqual(bob_bal_parent, 50000)
+
+        child_fm1_addr = self.forkmanager.functions.childForkManager1().call()
+        child_fm2_addr = self.forkmanager.functions.childForkManager2().call()
+
+        child_fm1 = self.l1web3.eth.contract(child_fm1_addr, abi=self.forkmanager.abi)
+        child_fm2 = self.l1web3.eth.contract(child_fm2_addr, abi=self.forkmanager.abi)
+        
+        bob_bal_fm1 = child_fm1.functions.balanceOf(self.L1_BOB).call()
+        self.assertEqual(bob_bal_fm1, 4000)
+
+        bob_bal_fm2 = child_fm1.functions.balanceOf(self.L1_BOB).call()
+        self.assertEqual(bob_bal_fm2, 4000)
+
+        self.forkmanager.functions.migrateToChildren(1000, False, True).transact(self._txargs(sender=self.L1_BOB))
+        self.assertEqual(child_fm1.functions.balanceOf(self.L1_BOB).call(), 5000)
+        self.assertEqual(child_fm2.functions.balanceOf(self.L1_BOB).call(), 4000)
+
+        self.forkmanager.functions.migrateToChildren(500, True, False).transact(self._txargs(sender=self.L1_BOB))
+        self.assertEqual(child_fm1.functions.balanceOf(self.L1_BOB).call(), 5000)
+        self.assertEqual(child_fm2.functions.balanceOf(self.L1_BOB).call(), 4500)
+
+
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_contested_arbitration(self):
         self._setup_contested_arbitration_with_fork()
