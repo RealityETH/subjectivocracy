@@ -283,7 +283,8 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         auction = new Auction_ERC20();
         auction.init(fork_cost, forkTS);
 
-        // Anybody can now call deployFork() for each fork
+        // As of the forkTS, anybody will be able to call deployFork
+        // TODO: Can we deploy these ahead of the scheduled time and only initialize them when we're ready?
 
     }
 
@@ -307,7 +308,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     external {
         require(isForkingScheduled(), 'Not planning to fork');
         require(!isForkingResolved(), 'Forking already resolved');
-        require(block.timestamp > forkTS, 'Too soon');
+        require(block.timestamp >= forkTS, 'Too soon');
         auction.calculatePrice();
         if (auction.winner()) {
             replacedByForkManager = childForkManager1;

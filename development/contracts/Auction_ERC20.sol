@@ -31,7 +31,7 @@ contract Auction_ERC20 {
     mapping(uint8 => uint256) public cumulative_bids;
     mapping(uint256 => Bid) public bids;
 
-    bool is_calculation_done;
+    bool public is_calculation_done;
     uint8 public final_price;
     uint256 public bonus_ratio;
 
@@ -51,19 +51,23 @@ contract Auction_ERC20 {
     );
 
     modifier beforeFork() {
-        require(block.timestamp < fork_ts);
+        require(block.timestamp < fork_ts, "must be before fork");
+        _;
+    }
+
+    modifier onlyForkManager() {
+        require(msg.sender == forkmanager, "Call via the forkmanager");
         _;
     }
 
     modifier afterForkBeforeCalculation() {
-        require(block.timestamp >= fork_ts);
-        require(!is_calculation_done);
+        require(block.timestamp >= fork_ts, "must be after fork");
+        require(!is_calculation_done, "price calculation already done");
         _;
     }
 
     modifier afterForkAfterCalculation() {
-        require(block.timestamp >= fork_ts);
-        require(is_calculation_done);
+        require(is_calculation_done, "must be after price calculation");
         _;
     }
 
@@ -78,10 +82,10 @@ contract Auction_ERC20 {
 
     // ForkManager should lock the tokens before calling this
     function bid(address owner, uint8 _bid, uint256 _amount) 
+        onlyForkManager
         beforeFork
     external
     {
-        require(msg.sender == forkmanager, "Call via the forkmanager");
 
         require(_bid <= MAX_SLOTS);
         require(owner != address(0), "Owner not set");
@@ -96,7 +100,7 @@ contract Auction_ERC20 {
         beforeFork 
     public
     {
-        require(new_bid <= MAX_SLOTS);
+        require(new_bid <= MAX_SLOTS, "bid higher than MAX_SLOTS");
         address owner = bids[_bid_id].owner;
         require(owner == msg.sender, "You can only change your own bid");
         uint256 val = bids[_bid_id].value;
@@ -124,14 +128,30 @@ contract Auction_ERC20 {
         afterForkBeforeCalculation
     {
         uint256 ttl = totalTokens();
-        bonus_ratio = ttl / bonus; // eg bonus is 100, total is 2000, you get an extra 1/20
+
+        // eg bonus is 100, total is 2000, you get an extra 1/20
+        bonus_ratio = ttl / bonus; 
+
         uint256 so_far = 0;
         uint8 i = 0;
-        for(i=0; i<MAX_SLOTS; i++) {
+
+        /* 
+        Example of price calculation with 200 tokens
+        10/90: 10 - cumulative 10, multipler 100/10=10,  uses 100 tokens
+        20/80: 10 - cumulative 20, multipler 100/20= 5,  uses 100 tokens
+        30/70: 40 - cumulative 60, multipler 100/30=3.3, uses 200 tokens, done
+        60/40: 30 
+        80/20: 10
+        */
+
+        so_far = cumulative_bids[0];
+        for(i=1; i<=MAX_SLOTS; i++) {
             so_far = so_far + cumulative_bids[i];
-            if ( (so_far * i / MAX_SLOTS) > ttl ) {
+            uint256 tokens_needed = (so_far * MAX_SLOTS / i);
+            if ( tokens_needed >= ttl ) {
                 final_price = i; // TODO: Should this be halfway through the last slot?
-                return;
+                is_calculation_done = true;
+                break;
             }
         }
     }
@@ -146,10 +166,10 @@ contract Auction_ERC20 {
     // This will read the amount that needs to be paid out, clear it so it isn't paid twice, and mint the tokens in the appropriate token.
     // Usually this would be called by whoever made the bid, but anyone is allowed to call it.
     function clearAndReturnPayout(uint256 _bid_id) public
+        onlyForkManager
         afterForkAfterCalculation
     returns (address, bool, uint256)
     {
-        require(forkmanager == msg.sender, "Payout should be called against forkmanager");
         require(bids[_bid_id].owner != address(0), "Bid not found");
         uint256 bid_amount = bids[_bid_id].bid;
         uint256 due;

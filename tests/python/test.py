@@ -890,7 +890,7 @@ class TestRealitio(TestCase):
 
         self.assertTrue(self.forkmanager.functions.isUnForked().call())
 
-        self.forkmanager.functions.requestArbitrationByFork(contest_question_id, 0).transact(self._txargs(sender=self.L1_BOB))
+        txid = self.forkmanager.functions.requestArbitrationByFork(contest_question_id, 0).transact(self._txargs(sender=self.L1_BOB, gas=3000000))
         self.raiseOnZeroStatus(txid, self.l1web3)
 
         bob_bal = self.forkmanager.functions.balanceOf(self.L1_BOB).call()
@@ -1120,7 +1120,7 @@ class TestRealitio(TestCase):
         calculated_hh = calculate_history_hash(to_answer_for_contract(0), to_answer_for_contract(1), freeze_amount, self.L1_CHARLIE, False)
         self.assertEqual(expected_hh, calculated_hh)
 
-        self.forkmanager.functions.requestArbitrationByFork(contest_question_id, 0).transact(self._txargs(sender=self.L1_BOB))
+        txid = self.forkmanager.functions.requestArbitrationByFork(contest_question_id, 0).transact(self._txargs(gas=3000000, sender=self.L1_BOB))
         self.raiseOnZeroStatus(txid, self.l1web3)
 
         expected_hh2 = "0x"+encode_hex(self.l1realityeth.functions.getHistoryHash(contest_question_id).call())
@@ -1218,6 +1218,12 @@ class TestRealitio(TestCase):
         # Each reality.eth instance should have enough tokens
         self.assertEqual(bal1, freeze_amount)
 
+        NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
+        # The forkmanager should have deployed an auction contract
+        auction = self.forkmanager.functions.auction().call()
+        self.assertNotEqual(auction, NULL_ADDRESS)
+
+
         # TODO: Test the claiming process
 
         # Everybody picks a fork
@@ -1226,24 +1232,14 @@ class TestRealitio(TestCase):
         charlie_bal = self.forkmanager.functions.balanceOf(self.L1_CHARLIE).call()
         self.assertEqual(charlie_bal, 12345)
 
-        self.forkmanager.functions.pickFork(True, 321).transact(self._txargs(sender=self.L1_BOB))
+        self.forkmanager.functions.bid(40, 321).transact(self._txargs(sender=self.L1_BOB))
         bob_bal_parent = self.forkmanager.functions.balanceOf(self.L1_BOB).call()
         self.assertEqual(bob_bal_parent, 54000)
-        bob_bal_child = child_fm1.functions.balanceOf(self.L1_BOB).call()
-        self.assertEqual(bob_bal_child, 321)
 
-
-        self.forkmanager.functions.pickFork(False, 345).transact(self._txargs(sender=self.L1_CHARLIE))
+        self.forkmanager.functions.bid(20, 345).transact(self._txargs(sender=self.L1_CHARLIE))
         charlie_bal_parent = self.forkmanager.functions.balanceOf(self.L1_CHARLIE).call()
-        self.assertEqual(bob_bal_parent, 54000)
-        charlie_bal_child = child_fm2.functions.balanceOf(self.L1_CHARLIE).call()
-        self.assertEqual(charlie_bal_child, 345)
+        self.assertEqual(charlie_bal_parent, 12000)
 
-        self.assertEqual(self.forkmanager.functions.amountMigrated1().call(), 321)
-        self.assertEqual(self.forkmanager.functions.amountMigrated2().call(), 345)
-
-        #  uint256 constant FORK_TIME_SECS = 604800; // 1 week
- 
         # Should fail because of secs to fork
         with self.assertRaises(TransactionFailed):
             txid = self.forkmanager.functions.resolveFork().transact()
@@ -1251,7 +1247,7 @@ class TestRealitio(TestCase):
 
         self._advance_clock(604800, self.l1web3)
 
-        txid = self.forkmanager.functions.resolveFork().transact()
+        txid = self.forkmanager.functions.resolveFork().transact(self._txargs(gas=3000000))
         self.raiseOnZeroStatus(txid, self.l1web3)
 
         replaced_by_addr = self.forkmanager.functions.replacedByForkManager().call()
@@ -1273,7 +1269,7 @@ class TestRealitio(TestCase):
         return (contest_question_id, answer_history1, answer_history2, child_fm1, child_fm2)
 
 
-    @unittest.skipIf(WORKING_ONLY, "Not under construction")
+    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_post_fork_claims(self):
 
         (contest_question_id, answer_history1, answer_history2, child_fm1, child_fm2) = self._setup_contested_arbitration_with_fork()
