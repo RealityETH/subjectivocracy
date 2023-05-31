@@ -181,6 +181,7 @@ contract Auction_ERC20 {
     // Call settleAuction(bid, yes_or_no) against the ForkManager
     // This will read the amount that needs to be paid out, clear it so it isn't paid twice, and mint the tokens in the appropriate token.
     // Usually this would be called by whoever made the bid, but anyone is allowed to call it.
+    // There's usually only one option for yes_or_no that won't revert, unless you bid exactly at the settlement price in which case you may be able to choose.
     function clearAndReturnPayout(uint256 _bid_id, bool yes_or_no) public
         onlyForkManager
         afterForkAfterCalculation
