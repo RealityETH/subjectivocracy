@@ -209,7 +209,7 @@ contract Auction_ERC20 {
             require(will_pay > 0, "No tokens to claim");
             if (will_pay < due) {
                 // Reduce the remaining bid amount by the proportion of the amount we were unable to fill on the requested side
-                bids[_bid_id].value = bid_amount * will_pay / due;
+                bids[_bid_id].value = bid_amount - (bid_amount * will_pay / due);
             } else {
                 delete(bids[_bid_id]);
             }
