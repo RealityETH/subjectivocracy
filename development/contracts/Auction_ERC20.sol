@@ -153,13 +153,12 @@ contract Auction_ERC20 {
             so_far = so_far + cumulative_bids[i];
             uint256 tokens_needed = (so_far * MAX_SLOTS / i);
             if ( tokens_needed >= ttl ) {
-                final_price = i; // TODO: Should this be halfway through the last slot?
+                final_price = i;
                 is_calculation_done = true;
 
                 /*
                 eg we split 60/40 but then the 60 side had 50 tokens, satisfying them all required 210 tokens and there are only 200
-                what we do is assign the excess (10) to the no side
-                 
+                If that happens, assign the excess (10) to the no side and let people claim from whichever side they prefer until there are none left
                 */
 
                 uint256 excess = tokens_needed - ttl;
