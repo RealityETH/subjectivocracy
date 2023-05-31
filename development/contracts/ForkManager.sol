@@ -612,8 +612,8 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         }
 
         if (!ignore_no) {
-            require(address(childForkManager1) != address(0), "Call deployFork first");
-            childForkManager1.mint(msg.sender, num);
+            require(address(childForkManager2) != address(0), "Call deployFork first");
+            childForkManager2.mint(msg.sender, num);
         }
 
     }
