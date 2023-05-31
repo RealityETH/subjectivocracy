@@ -626,10 +626,10 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         auction.bid(msg.sender, _bid, _amount);
     }
 
-    function settleBid(uint256 bid_id) 
+    function settleBid(uint256 bid_id, bool yes_or_no) 
     external {
         require(address(auction) != address(0), "Auction not under way");
-        (address payee, bool yes_or_no, uint256 due) = auction.clearAndReturnPayout(bid_id);
+        (address payee, uint256 due) = auction.clearAndReturnPayout(bid_id, yes_or_no);
         if (yes_or_no) {
             require(address(childForkManager1) != address(0), "Call deployFork first");
             childForkManager1.mint(payee, due);

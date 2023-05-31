@@ -35,6 +35,10 @@ contract Auction_ERC20 {
     uint8 public final_price;
     uint256 public bonus_ratio;
 
+    // If you bid exactly on the price at which we settled, you can claim whichever your prefer on a first-come-first-serve basis.
+    uint256 public tied_yes_tokens_remain;
+    uint256 public tied_no_tokens_remain;
+
     event LogBid(
         uint256 bid_id,
         address payee,
@@ -139,8 +143,8 @@ contract Auction_ERC20 {
         Example of price calculation with 200 tokens
         10/90: 10 - cumulative 10, multipler 100/10=10,  uses 100 tokens
         20/80: 10 - cumulative 20, multipler 100/20= 5,  uses 100 tokens
-        30/70: 40 - cumulative 60, multipler 100/30=3.3, uses 200 tokens, done
-        60/40: 30 
+        30/70: 50 - cumulative 70, multipler 100/30=3.3, uses 233 tokens, done
+        60/40: 20 
         80/20: 10
         */
 
@@ -151,6 +155,19 @@ contract Auction_ERC20 {
             if ( tokens_needed >= ttl ) {
                 final_price = i; // TODO: Should this be halfway through the last slot?
                 is_calculation_done = true;
+
+                /*
+                eg we split 60/40 but then the 60 side had 50 tokens, satisfying them all required 210 tokens and there are only 200
+                what we do is assign the excess (10) to the no side
+                 
+                */
+
+                uint256 excess = tokens_needed - ttl;
+                uint256 tokens_needed_for_this_bid = (cumulative_bids[i] * MAX_SLOTS / i);
+
+                tied_no_tokens_remain = excess;
+                tied_yes_tokens_remain = tokens_needed_for_this_bid - excess;
+                
                 break;
             }
         }
@@ -165,26 +182,54 @@ contract Auction_ERC20 {
     // Call settleAuction(bid) against the ForkManager
     // This will read the amount that needs to be paid out, clear it so it isn't paid twice, and mint the tokens in the appropriate token.
     // Usually this would be called by whoever made the bid, but anyone is allowed to call it.
-    function clearAndReturnPayout(uint256 _bid_id) public
+    function clearAndReturnPayout(uint256 _bid_id, bool yes_or_no) public
         onlyForkManager
         afterForkAfterCalculation
-    returns (address, bool, uint256)
+    returns (address, uint256)
     {
         require(bids[_bid_id].owner != address(0), "Bid not found");
         uint256 bid_amount = bids[_bid_id].bid;
         uint256 due;
         address payee = bids[_bid_id].owner;
-        bool yes_or_no;
-        if (bid_amount > final_price) {
+
+        if (yes_or_no) {
             due = bid_amount * MAX_SLOTS / final_price;
-            yes_or_no = true;
         } else {
             due = bid_amount * MAX_SLOTS / (MAX_SLOTS - final_price);
-            yes_or_no = false;
         }
+
+        if (bid_amount == final_price) {
+            // If it's a tie, we can only allocate as much as remains available.
+
+            uint256 will_pay = due;
+            if (yes_or_no && due > tied_yes_tokens_remain) {
+                will_pay = tied_yes_tokens_remain;
+            } else if (!yes_or_no && due > tied_no_tokens_remain) {
+                will_pay = tied_no_tokens_remain;
+            }
+            require(will_pay > 0, "No tokens to claim");
+            if (will_pay < due) {
+                // Reduce the remaining bid amount by the proportion of the amount we were unable to fill on the requested side
+                bids[_bid_id].value = bid_amount * will_pay / due;
+            } else {
+                delete(bids[_bid_id]);
+            }
+
+            if (yes_or_no) {
+                tied_yes_tokens_remain = tied_yes_tokens_remain - will_pay;
+            } else {
+                tied_no_tokens_remain = tied_no_tokens_remain - will_pay;
+            }
+
+            due = will_pay;
+
+        } else {
+            require( (bid_amount > final_price) == yes_or_no, "You can only get yes if you bid same or higher, no same or lower");
+            delete(bids[_bid_id]);
+        }
+
         due = due + (due / bonus_ratio);
-        delete(bids[_bid_id]);
-        return (payee, yes_or_no, due);
+        return (payee, due);
     }
 
 }
