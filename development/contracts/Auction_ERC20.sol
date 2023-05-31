@@ -178,7 +178,7 @@ contract Auction_ERC20 {
         return (final_price * 2 > MAX_SLOTS);
     }
 
-    // Call settleAuction(bid) against the ForkManager
+    // Call settleAuction(bid, yes_or_no) against the ForkManager
     // This will read the amount that needs to be paid out, clear it so it isn't paid twice, and mint the tokens in the appropriate token.
     // Usually this would be called by whoever made the bid, but anyone is allowed to call it.
     function clearAndReturnPayout(uint256 _bid_id, bool yes_or_no) public

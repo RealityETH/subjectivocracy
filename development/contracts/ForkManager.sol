@@ -196,6 +196,9 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     // It can have its own setup logic if you want to change the RealityETH or bridge code.
     function deployFork(bool yes_or_no, bytes32 last_history_hash, bytes32 last_answer, address last_answerer, uint256 last_bond) 
     external {
+
+        require(block.timestamp >= forkTS, "Too soon to fork");
+
         bytes32 result;
         if (yes_or_no) {
             require(address(childForkManager1) == address(0), "Already migrated");
@@ -210,7 +213,6 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         require(history_hash == keccak256(abi.encodePacked(last_history_hash, last_answer, last_bond, last_answerer, false)), "Wrong parameters supplied for last answer");
 
         require(fork_question_id != bytes32(uint256(0)), "Fork not initiated");
-        require(block.timestamp < forkTS, "Too late to deploy a fork");
 
         uint256 migrate_funds = realityETH.getCumulativeBonds(fork_question_id);
 
