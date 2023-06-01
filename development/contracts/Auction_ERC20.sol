@@ -14,48 +14,50 @@ pragma solidity ^0.8.10;
 
 contract Auction_ERC20 {
 
+    // Each slot represents a bid price for the ratio of A:B, price is 1:1 to 100:1
     uint256 constant MAX_SLOTS = 100;
-    uint256 public bid_id;
+    uint256 public bidCounter;
 
-    uint256 bonus;
-    uint256 fork_ts;
-
-    address forkmanager;
+    uint256 public bonus;
+    uint256 public forkTimestamp;
+    address public forkmanager;
 
     struct Bid {
         address owner;
-        uint8 bid;
-        uint256 value;
+        uint8 bid; // bid price, 1:1 to 100:1 ratio of fork prices
+        uint88 amount;
     }
 
-    mapping(uint8 => uint256) public cumulative_bids;
+    // maps the bid_price to the cumulative amount of tokens bid at that price
+    mapping(uint8 => uint256) public cumulativeBids;
+    // maps the bidCounter to the bid
     mapping(uint256 => Bid) public bids;
 
-    bool public is_calculation_done;
-    uint8 public final_price;
-    uint256 public bonus_ratio;
+    bool public isCalculationDone;
+    uint8 public finalPrice;
+    uint256 public bonusRatio;
 
-    // If you bid exactly on the price at which we settled, you can claim whichever your prefer on a first-come-first-serve basis.
-    uint256 public tied_yes_tokens_remain;
-    uint256 public tied_no_tokens_remain;
+    // If you bid exactly on the price at which we setotalBidsed, you can claim whichever your prefer on a first-come-first-serve basis.
+    uint256 public tiedYesTokensRemain;
+    uint256 public tiedNoTokensRemain;
 
     event LogBid(
-        uint256 bid_id,
+        uint256 bidCounter,
         address payee,
         uint8 bid,
         uint256 value
     );
 
     event LogChangeBid(
-        uint256 bid_id,
+        uint256 bidCounter,
         address payee,
-        uint8 old_bid,
-        uint8 new_bid,
+        uint8 oldBid,
+        uint8 newBid,
         uint256 value
     );
 
     modifier beforeFork() {
-        require(block.timestamp < fork_ts, "must be before fork");
+        require(block.timestamp < forkTimestamp, "must be before fork");
         _;
     }
 
@@ -65,79 +67,73 @@ contract Auction_ERC20 {
     }
 
     modifier afterForkBeforeCalculation() {
-        require(block.timestamp >= fork_ts, "must be after fork");
-        require(!is_calculation_done, "price calculation already done");
+        require(block.timestamp >= forkTimestamp, "must be after fork");
+        require(!isCalculationDone, "price calculation already done");
         _;
     }
 
     modifier afterForkAfterCalculation() {
-        require(is_calculation_done, "must be after price calculation");
+        require(isCalculationDone, "must be after price calculation");
         _;
     }
 
     // ForkManager should call this on deployment and credit this contract with the bonus amount
-    function init(uint256 _bonus, uint256 _fork_ts) 
+    // Todo: maybe this should be a constructor?
+    function init(uint256 _bonus, uint256 _forkTimestamp) 
     external {
         require(forkmanager == address(0), "Already initialized");
         forkmanager = msg.sender;
         bonus = _bonus;
-        fork_ts = _fork_ts;
+        forkTimestamp = _forkTimestamp;
     }
 
     // ForkManager should lock the tokens before calling this
-    function bid(address owner, uint8 _bid, uint256 _amount) 
-        onlyForkManager
+    function bid(address owner, uint8 _bid, uint88 _amount) 
         beforeFork
     external
     {
-
         require(_bid <= MAX_SLOTS);
         require(owner != address(0), "Owner not set");
 
-        bid_id = bid_id + 1;
-        bids[bid_id] = Bid(owner, _bid, _amount);
-        emit LogBid(bid_id, owner, _bid, _amount);
-        cumulative_bids[_bid] = cumulative_bids[_bid] + _amount;
+        bidCounter = bidCounter + 1;
+        bids[bidCounter] = Bid(owner, _bid, _amount);
+        cumulativeBids[_bid] = cumulativeBids[_bid] + _amount;
+        emit LogBid(bidCounter, owner, _bid, _amount);
     }
 
-    function changeBid(uint256 _bid_id, uint8 new_bid)
+    function changeBid(uint256 _bidCounter, uint8 newBid)
         beforeFork 
     public
     {
-        require(new_bid <= MAX_SLOTS, "bid higher than MAX_SLOTS");
-        address owner = bids[_bid_id].owner;
+        require(newBid <= MAX_SLOTS, "bid higher than MAX_SLOTS");
+        address owner = bids[_bidCounter].owner;
         require(owner == msg.sender, "You can only change your own bid");
-        uint256 val = bids[_bid_id].value;
-        uint8 old_bid = bids[_bid_id].bid;
-        bids[bid_id].bid = new_bid;
-        cumulative_bids[old_bid] = cumulative_bids[old_bid] - val;
-        cumulative_bids[new_bid] = cumulative_bids[new_bid] + val;
-        emit LogChangeBid(bid_id, owner, old_bid, new_bid, val);
+        uint256 value = bids[_bidCounter].amount;
+        uint8 oldBid = bids[_bidCounter].bid;
+        bids[bidCounter].bid = newBid;
+        cumulativeBids[oldBid] = cumulativeBids[oldBid] - value;
+        cumulativeBids[newBid] = cumulativeBids[newBid] + value;
+        emit LogChangeBid(bidCounter, owner, oldBid, newBid, value);
     }
 
-    function totalTokens() 
+    function getTotalBids() 
     view 
     public
-    returns (uint256)
+    returns (uint256 total)
     {
-        uint8 i;
-        uint256 ttl = 0;
-        for(i=0; i<=MAX_SLOTS; i++) {
-            ttl = ttl + cumulative_bids[i];
+        for(uint8 i=0; i<=MAX_SLOTS; i++) {
+            total = total + cumulativeBids[i];
         }
-        return ttl;
     }
 
     function calculatePrice() public
         afterForkBeforeCalculation
     {
-        uint256 ttl = totalTokens();
+        uint256 totalBids = getTotalBids();
 
         // eg bonus is 100, total is 2000, you get an extra 1/20
-        bonus_ratio = ttl / bonus; 
-
-        uint256 so_far = 0;
-        uint8 i = 0;
+        bonusRatio = totalBids / bonus; 
+        uint256 sumBids = 0;
 
         /* 
         Example of price calculation with 200 tokens
@@ -148,87 +144,89 @@ contract Auction_ERC20 {
         80/20: 10
         */
 
-        so_far = cumulative_bids[0];
-        for(i=1; i<=MAX_SLOTS; i++) {
-            so_far = so_far + cumulative_bids[i];
-            uint256 tokens_needed = (so_far * MAX_SLOTS / i);
-            if ( tokens_needed >= ttl ) {
-                final_price = i;
-                is_calculation_done = true;
+        sumBids = cumulativeBids[0];
+        for(uint8 i=1; i<=MAX_SLOTS; i++) {
+            sumBids = sumBids + cumulativeBids[i];
+            uint256 tokensNeeded = (sumBids * MAX_SLOTS / i);
+            if ( tokensNeeded >= totalBids ) {
+                finalPrice = i;
+                isCalculationDone = true;
 
                 /*
                 eg we split 60/40 but then the 60 side had 50 tokens, satisfying them all required 210 tokens and there are only 200
                 If that happens, assign the excess (10) to the no side and let people claim from whichever side they prefer until there are none left
                 */
 
-                uint256 excess = tokens_needed - ttl;
-                uint256 tokens_needed_for_this_bid = (cumulative_bids[i] * MAX_SLOTS / i);
+                uint256 excess = tokensNeeded - totalBids;
+                uint256 tokensNeededForThisBidPrice = (cumulativeBids[i] * MAX_SLOTS / i);
 
-                tied_no_tokens_remain = excess;
-                tied_yes_tokens_remain = tokens_needed_for_this_bid - excess;
+                tiedNoTokensRemain = excess;
+                tiedYesTokensRemain = tokensNeededForThisBidPrice - excess;
                 
                 break;
             }
         }
     }
 
+    // todo: deal with the case where the price is 50% and both are winners?
+    // maybe a function called: IsMajorityWinner() might more appropriated
     function winner() 
         afterForkAfterCalculation
     external view returns (bool) {
-        return (final_price * 2 > MAX_SLOTS);
+        return (finalPrice * 2 > MAX_SLOTS);
     }
 
-    // Call settleAuction(bid, yes_or_no) against the ForkManager
+    // Call settleAuction(bid, yesOrNo) against the ForkManager
     // This will read the amount that needs to be paid out, clear it so it isn't paid twice, and mint the tokens in the appropriate token.
     // Usually this would be called by whoever made the bid, but anyone is allowed to call it.
-    // There's usually only one option for yes_or_no that won't revert, unless you bid exactly at the settlement price in which case you may be able to choose.
-    function clearAndReturnPayout(uint256 _bid_id, bool yes_or_no) public
+    // There's usually only one option for yesOrNo that won't revert, unless you bid exactly at the setotalBidsement price in which case you may be able to choose.
+    function clearAndReturnPayout(uint256 _bidCounter, bool yesOrNo) public
         onlyForkManager
         afterForkAfterCalculation
     returns (address, uint256)
     {
-        require(bids[_bid_id].owner != address(0), "Bid not found");
-        uint256 bid_amount = bids[_bid_id].bid;
+        require(bids[_bidCounter].owner != address(0), "Bid not found");
+        uint256 bidAmount = bids[_bidCounter].bid;
         uint256 due;
-        address payee = bids[_bid_id].owner;
+        address payee = bids[_bidCounter].owner;
 
-        if (yes_or_no) {
-            due = bid_amount * MAX_SLOTS / final_price;
+        if (yesOrNo) {
+            due = bidAmount * MAX_SLOTS / finalPrice;
         } else {
-            due = bid_amount * MAX_SLOTS / (MAX_SLOTS - final_price);
+            due = bidAmount * MAX_SLOTS / (MAX_SLOTS - finalPrice);
         }
 
-        if (bid_amount == final_price) {
+        if (bidAmount == finalPrice) {
             // If it's a tie, we can only allocate as much as remains available.
 
-            uint256 will_pay = due;
-            if (yes_or_no && due > tied_yes_tokens_remain) {
-                will_pay = tied_yes_tokens_remain;
-            } else if (!yes_or_no && due > tied_no_tokens_remain) {
-                will_pay = tied_no_tokens_remain;
+            uint256 willPay = due;
+            if (yesOrNo && due > tiedYesTokensRemain) {
+                willPay = tiedYesTokensRemain;
+            } else if (!yesOrNo && due > tiedNoTokensRemain) {
+                willPay = tiedNoTokensRemain;
             }
-            require(will_pay > 0, "No tokens to claim");
-            if (will_pay < due) {
+            require(willPay > 0, "No tokens to claim");
+            if (willPay < due) {
                 // Reduce the remaining bid amount by the proportion of the amount we were unable to fill on the requested side
-                bids[_bid_id].value = bid_amount - (bid_amount * will_pay / due);
+                bids[_bidCounter].amount = uint88(bidAmount - (bidAmount * willPay / due));
             } else {
-                delete(bids[_bid_id]);
+                delete(bids[_bidCounter]);
             }
 
-            if (yes_or_no) {
-                tied_yes_tokens_remain = tied_yes_tokens_remain - will_pay;
+            if (yesOrNo) {
+                tiedYesTokensRemain = tiedYesTokensRemain - willPay;
             } else {
-                tied_no_tokens_remain = tied_no_tokens_remain - will_pay;
+                tiedNoTokensRemain = tiedNoTokensRemain - willPay;
             }
 
-            due = will_pay;
+            due = willPay;
 
         } else {
-            require( (bid_amount > final_price) == yes_or_no, "You can only get yes if you bid same or higher, no same or lower");
-            delete(bids[_bid_id]);
+            require( (bidAmount > finalPrice) == yesOrNo, "You can only get yes if you bid same or higher, no same or lower");
+            delete(bids[_bidCounter]);
         }
 
-        due = due + (due / bonus_ratio);
+        due = due + (due / bonusRatio);
         return (payee, due);
     }
 
