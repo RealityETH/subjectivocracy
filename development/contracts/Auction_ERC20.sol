@@ -14,8 +14,8 @@ pragma solidity ^0.8.10;
 
 contract Auction_ERC20 {
 
-    // Each slot represents a bid price for the ratio of A:B, price is 1:1 to 100:1
-    uint256 constant MAX_SLOTS = 100;
+    // Each slot represents a bid price for the ratio of fork token prices, price is 0:100,1:99,...100:0
+    uint256 constant MAX_SLOTS = 101;
     uint256 public bidCounter;
 
     uint256 public bonus;
@@ -24,11 +24,11 @@ contract Auction_ERC20 {
 
     struct Bid {
         address owner;
-        uint8 bid; // bid price, 1:1 to 100:1 ratio of fork prices
+        uint8 bid; // bid price, 0:100,1:99 to 100:0 ratio of fork prices
         uint88 amount;
     }
 
-    // maps the bid_price to the cumulative amount of tokens bid at that price
+    // maps the bidPrice to the cumulative amount of tokens bid at that price
     mapping(uint8 => uint256) public cumulativeBids;
     // maps the bidCounter to the bid
     mapping(uint256 => Bid) public bids;
@@ -37,7 +37,7 @@ contract Auction_ERC20 {
     uint8 public finalPrice;
     uint256 public bonusRatio;
 
-    // If you bid exactly on the price at which we setotalBidsed, you can claim whichever your prefer on a first-come-first-serve basis.
+    // If you bid exactly on the price at which we settled, you can claim whichever your prefer on a first-come-first-serve basis.
     uint256 public tiedYesTokensRemain;
     uint256 public tiedNoTokensRemain;
 
