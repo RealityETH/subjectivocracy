@@ -23,9 +23,11 @@ contract Auction_ERC20 {
     address forkmanager;
 
     struct Bid {
+        uint256 value;
         address owner;
         uint8 bid;
-        uint256 value;
+        bool yes_paid; // _paid flags are only used for the tied bid which needs to pay out both sides
+        bool no_paid;
     }
 
     mapping(uint8 => uint256) public cumulative_bids;
@@ -35,9 +37,8 @@ contract Auction_ERC20 {
     uint8 public final_price;
     uint256 public bonus_ratio;
 
-    // If you bid exactly on the price at which we settled, you can claim whichever your prefer on a first-come-first-serve basis.
-    uint256 public tied_yes_tokens_remain;
-    uint256 public tied_no_tokens_remain;
+    uint256 public tied_tokens;
+    uint256 public tied_yes_tokens;
 
     event LogBid(
         uint256 bid_id,
@@ -95,7 +96,7 @@ contract Auction_ERC20 {
         require(owner != address(0), "Owner not set");
 
         bid_id = bid_id + 1;
-        bids[bid_id] = Bid(owner, _bid, _amount);
+        bids[bid_id] = Bid(_amount, owner, _bid, false, false);
         emit LogBid(bid_id, owner, _bid, _amount);
         cumulative_bids[_bid] = cumulative_bids[_bid] + _amount;
     }
@@ -158,14 +159,13 @@ contract Auction_ERC20 {
 
                 /*
                 eg we split 60/40 but then the 60 side had 50 tokens, satisfying them all required 210 tokens and there are only 200
-                If that happens, assign the excess (10) to the no side and let people claim from whichever side they prefer until there are none left
+                If that happens, assign the excess (10) to the no side you are considered to have bid for both sides in proportion
                 */
 
                 uint256 excess = tokens_needed - ttl;
                 uint256 tokens_needed_for_this_bid = (cumulative_bids[i] * MAX_SLOTS / i);
-
-                tied_no_tokens_remain = excess;
-                tied_yes_tokens_remain = tokens_needed_for_this_bid - excess;
+                tied_yes_tokens = tokens_needed_for_this_bid - excess;
+                tied_tokens = cumulative_bids[i];
                 
                 break;
             }
@@ -192,40 +192,42 @@ contract Auction_ERC20 {
         uint256 due;
         address payee = bids[_bid_id].owner;
 
-        if (yes_or_no) {
-            due = bid_amount * MAX_SLOTS / final_price;
-        } else {
-            due = bid_amount * MAX_SLOTS / (MAX_SLOTS - final_price);
-        }
-
         if (bid_amount == final_price) {
+
             // If it's a tie, we can only allocate as much as remains available.
 
-            uint256 will_pay = due;
-            if (yes_or_no && due > tied_yes_tokens_remain) {
-                will_pay = tied_yes_tokens_remain;
-            } else if (!yes_or_no && due > tied_no_tokens_remain) {
-                will_pay = tied_no_tokens_remain;
-            }
-            require(will_pay > 0, "No tokens to claim");
-            if (will_pay < due) {
-                // Reduce the remaining bid amount by the proportion of the amount we were unable to fill on the requested side
-                bids[_bid_id].value = bid_amount - (bid_amount * will_pay / due);
-            } else {
-                delete(bids[_bid_id]);
+            if (yes_or_no && bids[_bid_id].yes_paid || !yes_or_no && bids[_bid_id].no_paid) {
+                revert("already paid out");
             }
 
+            // Reduce the remaining bid amount by the proportion of the amount we were unable to fill on the requested side
             if (yes_or_no) {
-                tied_yes_tokens_remain = tied_yes_tokens_remain - will_pay;
+                bid_amount = tied_yes_tokens * bid_amount / tied_tokens;
             } else {
-                tied_no_tokens_remain = tied_no_tokens_remain - will_pay;
+                bid_amount = (tied_tokens - tied_yes_tokens) * bid_amount / tied_tokens;
             }
 
-            due = will_pay;
+            // If we already paid the other side, we can delete
+            // Otherwise mark that we paid the side we did
+            if (bids[_bid_id].yes_paid || bids[_bid_id].no_paid) {
+                delete(bids[_bid_id]);
+            } else {
+                if (yes_or_no) {
+                    bids[_bid_id].yes_paid = true;
+                } else {
+                    bids[_bid_id].no_paid = true;
+                }
+            }
 
         } else {
             require( (bid_amount > final_price) == yes_or_no, "You can only get yes if you bid same or higher, no same or lower");
             delete(bids[_bid_id]);
+        }
+
+        if (yes_or_no) {
+            due = bid_amount * MAX_SLOTS / final_price;
+        } else {
+            due = bid_amount * MAX_SLOTS / (MAX_SLOTS - final_price);
         }
 
         due = due + (due / bonus_ratio);
