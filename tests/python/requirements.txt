@@ -46,7 +46,7 @@ pyrsistent==0.18.0
 pysha3==1.0.2
 PyYAML==5.4.1
 repoze.lru==0.7
-requests==2.26.0
+requests==2.31.0
 rlp==2.0.1
 scrypt==0.8.18
 semantic-version==2.8.5
