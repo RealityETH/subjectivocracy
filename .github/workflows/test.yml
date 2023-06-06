@@ -59,4 +59,3 @@ jobs:
             ${{ matrix.os }}-yarn-
       - run: yarn --frozen-lockfile
       - run: yarn lint
-
