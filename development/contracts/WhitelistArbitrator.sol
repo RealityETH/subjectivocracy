@@ -136,7 +136,6 @@ contract WhitelistArbitrator is BalanceHolder {
             arbitration_fee > 0,
             "The arbitrator must have set a non-zero fee for the question"
         );
-
         require(msg.value >= arbitration_fee);
 
         realityETH.notifyOfArbitrationRequest(
