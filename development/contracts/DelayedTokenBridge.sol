@@ -63,12 +63,12 @@ contract DelayedTokenBridge {
         return token.transfer(_to, _amount);
     }
 
-    function _isMessageOldEnough(uint256 _ts) 
+    function _isMessageOldEnough(uint256 _ts) view
     internal returns (bool) {
         return (block.timestamp >= _ts + DELAY_SECS);
     }
 
-    function _handleMessage(address _to, uint256 _amount, address _bridge, uint256 _received_at_ts, uint256 _other_message_received_at_ts) 
+    function _handleMessage(address _to, uint256 _amount, address _bridge, uint256 , uint256 _other_message_received_at_ts) 
     internal returns (bool) {
 
         require(_bridge != address(0x0));
