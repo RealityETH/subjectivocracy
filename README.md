@@ -96,3 +96,20 @@ Tests for the above are in [tests/python/test.py](tests/python/test.py).
 
 * [Discord](https://discord.gg/8ETpnUH)
 * [ethresear.ch](https://ethresear.ch/t/branching-oracle-enshrined-rollup-governance/9552)
+
+## Foundry setup
+
+install dependencies:
+```
+yarn
+```
+
+compile contracts:
+```
+forge build
+```
+
+run tests:
+```
+forge test
+```
