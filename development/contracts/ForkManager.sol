@@ -287,7 +287,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
         // As of the forkTS, anybody will be able to call deployFork
         // TODO: Can we deploy these ahead of the scheduled time and only initialize them when we're ready?
-
+        return true;
     }
 
     function isUnForked() 
@@ -347,7 +347,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         return (address(parentReplacement) != address(this));
     }
 
-    function disputeFee(bytes32 question_id) 
+    function disputeFee(bytes32) 
     public view returns (uint256) {
         return PERCENT_TO_FORK * effectiveTotalSupply() / 100;
     }
@@ -389,7 +389,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     // This can be used to freeze operations pending the outcome of a governance question
     // TODO: An earlier bond should also be enough if you don't call this right away
     function _verifyMinimumBondPosted(bytes32 question_id, uint256 minimum_bond) 
-    internal {
+    internal view {
         require(!realityETH.isFinalized(question_id), "Question is already finalized, execute instead");
         require(realityETH.getBestAnswer(question_id) == bytes32(uint256(1)), "Current answer is not 1");
         require(realityETH.getBond(question_id) >= minimum_bond, "Bond not high enough");
@@ -431,7 +431,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     }
 
     function numTokensRequiredToFreezeBridges()
-    public returns (uint256) {
+    public view returns (uint256) {
         return effectiveTotalSupply()/100 * PERCENT_TO_FREEZE;
     }
 
@@ -467,7 +467,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
     }
 
     function numTokensRequiredToFreezeArbitratorOnWhitelist() 
-    public returns (uint256) {
+    public view returns (uint256) {
         return effectiveTotalSupply()/100 * PERCENT_TO_FREEZE;
     }
 
@@ -571,7 +571,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     // This will return the bridges that should be used to manage assets
     function requiredBridges() 
-    external returns (address bridge1, address bridge2) {
+    external view returns (address bridge1, address bridge2) {
 
         // If something is frozen pending a governance decision, return zeros
         // This should be interpreted to mean no bridge can be trusted and transfers should stop.

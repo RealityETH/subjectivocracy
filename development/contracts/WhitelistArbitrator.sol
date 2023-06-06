@@ -108,9 +108,8 @@ contract WhitelistArbitrator is BalanceHolder {
     }
 	
     /// @notice Return the dispute fee for the specified question. 0 indicates that we won't arbitrate it.
-    /// @param question_id The question in question
     /// @dev Uses a general default, but can be over-ridden on a question-by-question basis.
-    function getDisputeFee(bytes32 question_id)
+    function getDisputeFee()
     public view returns (uint256) {
         return dispute_fee;
     }
@@ -123,7 +122,7 @@ contract WhitelistArbitrator is BalanceHolder {
     function requestArbitration(bytes32 question_id, uint256 max_previous)
     external payable returns (bool) {
 
-        uint256 arbitration_fee = getDisputeFee(question_id);
+        uint256 arbitration_fee = getDisputeFee();
         require(arbitration_fee > 0, "The arbitrator must have set a non-zero fee for the question");
 
         require(msg.value >= arbitration_fee); 
@@ -151,8 +150,7 @@ contract WhitelistArbitrator is BalanceHolder {
     /// @dev The arbitrator contract is trusted to only call this if they've been paid, and tell us who paid them.
     /// @param question_id The ID of the question
     /// @param requester The account that requested arbitration
-    /// @param max_previous Only here for API compatibility
-    function notifyOfArbitrationRequest(bytes32 question_id, address requester, uint256 max_previous)
+    function notifyOfArbitrationRequest(bytes32 question_id, address requester, uint256 )
     external {
 
         require(arbitrators[msg.sender], "Arbitrator must be on the whitelist");
