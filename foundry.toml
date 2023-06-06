@@ -1,0 +1,14 @@
+[profile.default]
+src = "development/contracts"
+out = "out"
+libs = ["node_modules", "lib"]
+optimizer = true
+optimizer_runs = 1000000
+
+[rpc_endpoints]
+env = "${NODE_URL}"
+mainnet = "https://mainnet.infura.io/v3/${INFURA_KEY}"
+rinkeby = "https://rinkeby.infura.io/v3/${INFURA_KEY}"
+goerli = "https://goerli.infura.io/v3/${INFURA_KEY}"
+gnosischain = "https://rpc.gnosischain.com"
+# See more config options https://github.com/foundry-rs/foundry/tree/master/config
