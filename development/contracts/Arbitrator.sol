@@ -13,7 +13,7 @@ contract Arbitrator is Owned, IArbitrator {
 
     mapping(bytes32 => uint256) public arbitration_bounties;
 
-    uint256 dispute_fee;
+    uint256 public dispute_fee;
     mapping(bytes32 => uint256) custom_dispute_fees;
 
     string public metadata;
