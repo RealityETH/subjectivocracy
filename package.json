@@ -1,0 +1,21 @@
+{
+  "name": "subjectivocracy",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:RealityETH/subjectivocracy.git",
+  "author": "josojo <josojo@hotmail.de>",
+  "license": "MIT",
+  "scripts": {
+    "fmt": "prettier 'development/contracts/**/*.sol' -w && prettier 'test/**/*.sol' -w",
+    "lint": "solhint 'development/contracts/**/*.sol' 'test/**/*.sol'"
+  },
+  "dependencies": {
+    "forge": "^2.3.0"
+  },
+  "devDependencies": {
+    "prettier": "^2.7.1",
+    "prettier-plugin-solidity": "^1.0.0-beta.24",
+    "solhint": "^3.3.7",
+    "solhint-plugin-prettier": "^0.0.5"
+  }
+}
