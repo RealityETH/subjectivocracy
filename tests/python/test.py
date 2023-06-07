@@ -309,7 +309,7 @@ class TestRealitio(TestCase):
         # Make an AMB contract on L2, we'll pretend it's connected to L1
         self.l2AMB = self._contractFromBuildJSON(self.l2web3, 'AMB')
 
-        self.dispute_fee = 10000000000
+        self.dispute_fee = 100000000000000000
 
 
         # Make a WhitelistArbitrator. 
@@ -709,7 +709,7 @@ class TestRealitio(TestCase):
 
     
 
-    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_clear_unhandled_arbitration(self):
 
         question_id = calculate_question_id(self.l2realityeth.address, 0, "my question x", self.whitelist_arbitrator.address, 30, 0, 0, self.L2_ALICE, 0)
@@ -799,15 +799,29 @@ class TestRealitio(TestCase):
 
         bob_bal_before_withdraw = self.l2web3.eth.get_balance(self.L2_BOB)
 
-        txid = self.whitelist_arbitrator.functions.withdraw().transact(self._txargs(sender=self.L2_BOB))
+        txid = self.whitelist_arbitrator.functions.withdraw().transact(self._txargs(sender=self.L2_BOB, gas=40000))
         self.raiseOnZeroStatus(txid, self.l2web3)
+
+        tx_receipt = self.l2web3.eth.get_transaction_receipt(txid)
+        gas_used = tx_receipt['cumulativeGasUsed']
+        gas_price = tx_receipt['effectiveGasPrice']
+        spent_on_gas = gas_price * gas_used
+        self.assertGreater(self.dispute_fee, spent_on_gas)
+        withdraw_log = self.whitelist_arbitrator.events.LogWithdraw().process_receipt(tx_receipt)
+        self.assertEqual(len(withdraw_log), 1, "The whitelist arbitrator on L2 was called and logged an event")
+        self.assertEqual(withdraw_log[0]['args']['user'], self.L2_BOB)
+        self.assertEqual(withdraw_log[0]['args']['amount'], self.dispute_fee)
+
         bob_bal_in_contract3 = self.whitelist_arbitrator.functions.balanceOf(self.L2_BOB).call()
         self.assertEqual(bob_bal_in_contract3, 0)
 
         bob_bal_after_withdraw = self.l2web3.eth.get_balance(self.L2_BOB)
+        self.assertGreater(bob_bal_after_withdraw, bob_bal_before_withdraw)
+
         bal_change = bob_bal_after_withdraw - bob_bal_before_withdraw
+
         self.assertGreater(self.dispute_fee, bal_change)
-        self.assertLess(self.dispute_fee, bal_change + 40000) # gas should be under 40000
+        self.assertEqual(bal_change, self.dispute_fee - spent_on_gas)
 
 
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
