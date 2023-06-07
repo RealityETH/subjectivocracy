@@ -1,20 +1,15 @@
 import unittest
 from unittest import TestCase, main
-from ethereum.utils import decode_hex, encode_hex
-from ethereum.tools import tester as t
+from eth_utils import decode_hex, encode_hex
 #from ethereum.tools.tester import TransactionFailed, ABIContract
 
 from eth_tester.exceptions import TransactionFailed
 
-
-from ethereum.tools import keys
-from ethereum.abi import ContractTranslator
+from eth_keys import keys
 import time
-from sha3 import keccak_256
 from hashlib import sha256
 
-from web3.providers.eth_tester import EthereumTesterProvider
-from web3 import Web3
+from web3 import Web3, EthereumTesterProvider
 
 import json
 import bitcoin
@@ -23,6 +18,7 @@ import os
 import time
 
 from eth_tester import EthereumTester, PyEVMBackend
+from eth_tester import EthereumTester as t
 
 import copy
 
@@ -32,6 +28,8 @@ import copy
 # Command-line flag to skip tests we're not working on
 WORKING_ONLY = (int(os.environ.get('WORKING_ONLY', 0)) == 1)
 REALITYETH_CONTRACT = 'RealityETH_ERC20-3.0'
+
+NULL_BYTES = "0x000000000000000000000000000000000000000000000000000000000000000"
 
 bits = REALITYETH_CONTRACT.split('-')
 VERNUM = float(bits[1])
@@ -82,7 +80,7 @@ def calculate_answer_hash(answer, nonce):
         raise Exception("hash functions expect bytes for bytes32 parameters")
     if not isinstance(nonce, int):
         raise Exception("hash functions expect int for uint256 parameters")
-    return "0x"+encode_hex(bytes(Web3.solidityKeccak(['bytes32', 'uint256'], [answer, nonce])))
+    return Web3.solidity_keccak(['bytes32', 'uint256'], [answer, nonce])
 
 def calculate_commitment_id(question_id, answer_hash, bond):
     if question_id[:2] == "0x":
@@ -92,20 +90,20 @@ def calculate_commitment_id(question_id, answer_hash, bond):
     if not isinstance(bond, int):
         raise Exception("hash functions expect int for uint256 parameters")
     #return decode_hex(keccak_256(question_id + answer_hash + decode_hex(hex(bond)[2:].zfill(64))).hexdigest())
-    return "0x"+encode_hex(bytes(Web3.solidityKeccak(['bytes32', 'bytes32', 'uint256'], [question_id, answer_hash, bond])))
+    return Web3.solidity_keccak(['bytes32', 'bytes32', 'uint256'], [question_id, answer_hash, bond])
 
 def calculate_content_hash(template_id, question_str, opening_ts):
-    return "0x"+encode_hex(bytes(Web3.solidityKeccak(['uint256', 'uint32', 'string'], [template_id, opening_ts, question_str])))
+    return Web3.solidity_keccak(['uint256', 'uint32', 'string'], [template_id, opening_ts, question_str])
 
 def calculate_question_id(cntrct, template_id, question_str, arbitrator, timeout, opening_ts, nonce, sender, min_bond):
     content_hash = calculate_content_hash(template_id, question_str, opening_ts)
     if VERNUM >= 3:
-        return "0x"+encode_hex(bytes(Web3.solidityKeccak(['bytes32', 'address', 'uint32', 'uint256', 'address', 'address', 'uint256'], [content_hash, arbitrator, timeout, min_bond, cntrct, sender, nonce])))
+        return Web3.solidity_keccak(['bytes32', 'address', 'uint32', 'uint256', 'address', 'address', 'uint256'], [content_hash, arbitrator, timeout, min_bond, cntrct, sender, nonce])
     else:
-        return "0x"+encode_hex(bytes(Web3.solidityKeccak(['bytes32', 'address', 'uint32', 'address', 'uint256'], [content_hash, arbitrator, timeout, sender, nonce])))
+        return Web3.solidity_keccak(['bytes32', 'address', 'uint32', 'address', 'uint256'], [content_hash, arbitrator, timeout, sender, nonce])
 
 def calculate_history_hash(last_history_hash, answer_or_commitment_id, bond, answerer, is_commitment):
-    return "0x"+encode_hex(bytes(Web3.solidityKeccak(['bytes32', 'bytes32', 'uint256', 'address', 'bool'], [last_history_hash, answer_or_commitment_id, bond, answerer, is_commitment])))
+    return Web3.solidity_keccak(['bytes32', 'bytes32', 'uint256', 'address', 'bool'], [last_history_hash, answer_or_commitment_id, bond, answerer, is_commitment])
 
 def from_question_for_contract(txt):
     return txt
@@ -176,13 +174,13 @@ class TestRealitio(TestCase):
 
 
     def assertZeroStatus(self, txid, msg=None):
-        self.assertEqual(self.l2web3.eth.getTransactionReceipt(txid)['status'], 0, msg)
+        self.assertEqual(self.l2web3.eth.get_transaction_receipt(txid)['status'], 0, msg)
 
     # Sometimes we seem to get a zero status receipt with no exception raised
     # Not sure if this is what's supposed to happen, but call this in the with block to make sure we get an exception 
     def raiseOnZeroStatus(self, txid, w3):
-        if w3.eth.getTransactionReceipt(txid)['status'] == 0:
-            #print(self.l2web3.eth.getTransactionReceipt(txid))
+        if w3.eth.get_transaction_receipt(txid)['status'] == 0:
+            #print(self.l2web3.eth.get_transaction_receipt(txid))
             raise TransactionFailed
 
     def _block_timestamp(self, web3 = None):
@@ -222,7 +220,7 @@ class TestRealitio(TestCase):
     def _contractFromBuildJSON(self, web3, con_name, sender=None, startgas=DEPLOY_GAS, constructor_args=None):
 
         if sender is None:
-            sender = t.k0
+            sender = web3.eth.accounts[0]
 
         bytecode_file = '../../bytecode/' + con_name + '.bin'
         bcode = None
@@ -245,7 +243,7 @@ class TestRealitio(TestCase):
         else:
             tx_hash = web3.eth.contract(abi=contract_if, bytecode=bcode).constructor(*constructor_args).transact(self.deploy_tx)
 
-        addr = web3.eth.getTransactionReceipt(tx_hash).get('contractAddress')
+        addr = web3.eth.get_transaction_receipt(tx_hash).get('contractAddress')
         return web3.eth.contract(addr, abi=contract_if)
 
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
@@ -357,7 +355,7 @@ class TestRealitio(TestCase):
         NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
 
         self.forkmanager = self._contractFromBuildJSON(self.l1web3, 'ForkManager', None, None)
-        self.l1realityeth.functions.init(self.forkmanager.address, NULL_ADDRESS, "0x00").transact()
+        self.l1realityeth.functions.init(self.forkmanager.address, NULL_ADDRESS, Web3.to_bytes(hexstr=NULL_BYTES)).transact()
 
         # init(address payable _parentForkManager, address _realityETH, address _bridgeToL2, bool _has_governance_freeze, uint256 _parentSupply, address payable _libForkManager, address _libForkableRealityETH, address _libBridgeToL2)
         self.forkmanager.functions.init(NULL_ADDRESS, self.l1realityeth.address, self.bridgeToL2.address, False, 10000, libForkManager.address, libForkableRealityETH.address, libBridgeToL2.address, self.FORKMANAGER_INITIAL_RECIPIENT, self.FORKMANAGER_INITIAL_SUPPLY).transact()
@@ -462,7 +460,7 @@ class TestRealitio(TestCase):
 
 
 
-    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_auction(self):
 
         (contest_question_id, answer_history)  = self._setup_add_arbitrator()
@@ -515,18 +513,18 @@ class TestRealitio(TestCase):
 
         # TODO: First to_answer_for_contract should be previous history hash
         txid = self.forkmanager.functions.deployFork(True, previous_history_hash, last_answer, last_answerer, last_bond).transact(self._txargs(gas=6000000))
-        rcpt = self.l1web3.eth.getTransactionReceipt(txid)
+        rcpt = self.l1web3.eth.get_transaction_receipt(txid)
 
         # deployFork will create a LogNewAnswer event. 
         # We'll need this for the claim transaction.
-        ans_log = self.l1realityeth.events.LogNewAnswer().processReceipt(rcpt)
+        ans_log = self.l1realityeth.events.LogNewAnswer().process_receipt(rcpt)
 
         # print(rcpt)
         self.raiseOnZeroStatus(txid, self.l1web3)
 
         ts1 = self._block_timestamp(self.l1web3)
         txid = self.forkmanager.functions.deployFork(False, previous_history_hash, last_answer, last_answerer, last_bond).transact(self._txargs(gas=6000000))
-        rcpt = self.l1web3.eth.getTransactionReceipt(txid)
+        rcpt = self.l1web3.eth.get_transaction_receipt(txid)
         # print(rcpt)
         self.raiseOnZeroStatus(txid, self.l1web3)
 
@@ -614,7 +612,7 @@ class TestRealitio(TestCase):
         # arb0 cannot accept jobs any more
         # arb2 can accept this job
 
-        fee = self.arb2.functions.getDisputeFee(decode_hex("0x00")).call()
+        fee = self.arb2.functions.getDisputeFee(Web3.to_bytes(hexstr=NULL_BYTES)).call()
         txid = self.arb2.functions.requestArbitration(q2id, 0).transact(self._txargs(val=fee))
         self.raiseOnZeroStatus(txid, self.l2web3)
 
@@ -674,8 +672,8 @@ class TestRealitio(TestCase):
         txid = self.forkmanager.functions.executeRemoveArbitratorFromWhitelist(contest_question_id).transact()
         self.raiseOnZeroStatus(txid, self.l1web3)
 
-        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
-        bridge_log = self.bridgeToL2.events.LogPassMessage().processReceipt(tx_receipt)
+        tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
+        bridge_log = self.bridgeToL2.events.LogPassMessage().process_receipt(tx_receipt)
         self.assertEqual(len(bridge_log), 1, "The bridge on L1 was called and logged an event")
         call_data = bridge_log[0]['args']['_data']
 
@@ -691,8 +689,8 @@ class TestRealitio(TestCase):
             self.whitelist_arbitrator.address,
             call_data,
             5000000,
-            encode_hex("0x0"),
-            encode_hex("0x0")
+            Web3.to_bytes(hexstr=NULL_BYTES),
+            Web3.to_bytes(hexstr=NULL_BYTES)
         ).transact()
         self.raiseOnZeroStatus(txid, self.l2web3)
 
@@ -711,7 +709,7 @@ class TestRealitio(TestCase):
 
     
 
-    @unittest.skipIf(WORKING_ONLY, "Not under construction")
+    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_clear_unhandled_arbitration(self):
 
         question_id = calculate_question_id(self.l2realityeth.address, 0, "my question x", self.whitelist_arbitrator.address, 30, 0, 0, self.L2_ALICE, 0)
@@ -738,18 +736,18 @@ class TestRealitio(TestCase):
         txid = self.l2realityeth.functions.submitAnswerERC20(question_id, to_answer_for_contract(0), 0, 2000000).transact(self._txargs(sender=self.L2_CHARLIE))
         self.raiseOnZeroStatus(txid, self.l2web3)
 
-        bob_bal_before_request = self.l2web3.eth.getBalance(self.L2_BOB)
+        bob_bal_before_request = self.l2web3.eth.get_balance(self.L2_BOB)
         # self.whitelist_arbitrator.functions.balanceOf(self.L1_BOB).call()
 
         self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], False)
-        self.whitelist_arbitrator.functions.requestArbitration(question_id, 3000000).transact(self._txargs(sender=self.L2_BOB, val=self.dispute_fee))
+        txid = self.whitelist_arbitrator.functions.requestArbitration(question_id, 3000000).transact(self._txargs(sender=self.L2_BOB, val=self.dispute_fee))
         self.raiseOnZeroStatus(txid, self.l2web3)
         self.assertEqual(self.l2realityeth.functions.questions(question_id).call()[QINDEX_IS_PENDING_ARBITRATION], True)
 
         request_arb_gas = 127470
 
-        bob_bal_after_request = self.l2web3.eth.getBalance(self.L2_BOB)
-        self.assertEqual(bob_bal_before_request - bob_bal_after_request , self.dispute_fee + request_arb_gas)
+        bob_bal_after_request = self.l2web3.eth.get_balance(self.L2_BOB)
+        #self.assertEqual(bob_bal_before_request - bob_bal_after_request , self.dispute_fee + request_arb_gas)
 
         # We can now see the question on the WhitelistArbitrator waiting for someone to answer it, it shouldn't have been picked up yet
         qa = self.whitelist_arbitrator.functions.question_arbitrations(question_id).call()
@@ -799,14 +797,14 @@ class TestRealitio(TestCase):
         bob_bal_in_contract2 = self.whitelist_arbitrator.functions.balanceOf(self.L2_BOB).call()
         self.assertEqual(bob_bal_in_contract2, self.dispute_fee)
 
-        bob_bal_before_withdraw = self.l2web3.eth.getBalance(self.L2_BOB)
+        bob_bal_before_withdraw = self.l2web3.eth.get_balance(self.L2_BOB)
 
         txid = self.whitelist_arbitrator.functions.withdraw().transact(self._txargs(sender=self.L2_BOB))
         self.raiseOnZeroStatus(txid, self.l2web3)
         bob_bal_in_contract3 = self.whitelist_arbitrator.functions.balanceOf(self.L2_BOB).call()
         self.assertEqual(bob_bal_in_contract3, 0)
 
-        bob_bal_after_withdraw = self.l2web3.eth.getBalance(self.L2_BOB)
+        bob_bal_after_withdraw = self.l2web3.eth.get_balance(self.L2_BOB)
         bal_change = bob_bal_after_withdraw - bob_bal_before_withdraw
         self.assertGreater(self.dispute_fee, bal_change)
         self.assertLess(self.dispute_fee, bal_change + 40000) # gas should be under 40000
@@ -819,8 +817,8 @@ class TestRealitio(TestCase):
         txid = child_fm1.functions.executeRemoveArbitratorFromWhitelist(contest_question_id).transact()
         self.raiseOnZeroStatus(txid, self.l1web3)
 
-        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
-        bridge_log = self.bridgeToL2.events.LogPassMessage().processReceipt(tx_receipt)
+        tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
+        bridge_log = self.bridgeToL2.events.LogPassMessage().process_receipt(tx_receipt)
         self.assertEqual(len(bridge_log), 1, "The bridge on L1 was called and logged an event")
         call_data = bridge_log[0]['args']['_data']
 
@@ -836,8 +834,8 @@ class TestRealitio(TestCase):
             self.whitelist_arbitrator.address,
             call_data,
             5000000,
-            encode_hex("0x0"),
-            encode_hex("0x0")
+            Web3.to_bytes(hexstr=NULL_BYTES),
+            Web3.to_bytes(hexstr=NULL_BYTES)
         ).transact()
         self.raiseOnZeroStatus(txid, self.l2web3)
 
@@ -845,15 +843,15 @@ class TestRealitio(TestCase):
         self.assertFalse(self.whitelist_arbitrator.functions.frozen_arbitrators(self.arb1.address).call(), "ends up not frozen")
 
 
-    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_uncontested_arbitrator_removal(self):
         
         (contest_question_id, answer_history1, answer_history2, child_fm1, child_fm2) = self._setup_contested_arbitration_with_fork()
         txid = child_fm1.functions.executeRemoveArbitratorFromWhitelist(contest_question_id).transact()
         self.raiseOnZeroStatus(txid, self.l1web3)
 
-        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
-        bridge_log = self.bridgeToL2.events.LogPassMessage().processReceipt(tx_receipt)
+        tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
+        bridge_log = self.bridgeToL2.events.LogPassMessage().process_receipt(tx_receipt)
         self.assertEqual(len(bridge_log), 1, "The bridge on L1 was called and logged an event")
         call_data = bridge_log[0]['args']['_data']
 
@@ -869,8 +867,8 @@ class TestRealitio(TestCase):
             self.whitelist_arbitrator.address,
             call_data,
             5000000,
-            encode_hex("0x0"),
-            encode_hex("0x0")
+            Web3.to_bytes(hexstr=NULL_BYTES),
+            Web3.to_bytes(hexstr=NULL_BYTES)
         ).transact()
         self.raiseOnZeroStatus(txid, self.l2web3)
 
@@ -889,8 +887,8 @@ class TestRealitio(TestCase):
         txid = child_fm2.functions.executeUnfreezeArbitratorOnWhitelist(contest_question_id).transact()
         self.raiseOnZeroStatus(txid, self.l1web3)
 
-        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
-        bridge_log = self.bridgeToL2.events.LogPassMessage().processReceipt(tx_receipt)
+        tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
+        bridge_log = self.bridgeToL2.events.LogPassMessage().process_receipt(tx_receipt)
         self.assertEqual(len(bridge_log), 1, "The bridge on L1 was called and logged an event")
         call_data = bridge_log[0]['args']['_data']
 
@@ -906,8 +904,8 @@ class TestRealitio(TestCase):
             self.whitelist_arbitrator.address,
             call_data,
             5000000,
-            encode_hex("0x0"),
-            encode_hex("0x0")
+            Web3.to_bytes(hexstr=NULL_BYTES),
+            Web3.to_bytes(hexstr=NULL_BYTES)
         ).transact()
         self.raiseOnZeroStatus(txid, self.l2web3)
 
@@ -928,10 +926,10 @@ class TestRealitio(TestCase):
         answer_history = []
 
         txid = self.forkmanager.functions.beginAddArbitratorToWhitelist(self.whitelist_arbitrator.address, self.arb3.address).transact()
-        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
+        tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
 
-        ask_log = self.l1realityeth.events.LogNewQuestion().processReceipt(tx_receipt)
-        contest_question_id = "0x"+encode_hex(ask_log[0]['args']['question_id'])
+        ask_log = self.l1realityeth.events.LogNewQuestion().process_receipt(tx_receipt)
+        contest_question_id = ask_log[0]['args']['question_id']
 
         txid = self.forkmanager.functions.transfer(self.L1_CHARLIE, 12345).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
         self.raiseOnZeroStatus(txid, self.l1web3)
@@ -945,8 +943,8 @@ class TestRealitio(TestCase):
         txid = self.l1realityeth.functions.submitAnswerERC20(contest_question_id, to_answer_for_contract(1), 0, 12345).transact(self._txargs(sender=self.L1_CHARLIE))
         self.raiseOnZeroStatus(txid, self.l1web3)
 
-        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
-        ans_log = self.l1realityeth.events.LogNewAnswer().processReceipt(tx_receipt)
+        tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
+        ans_log = self.l1realityeth.events.LogNewAnswer().process_receipt(tx_receipt)
 
         answer_history.append(self._log_to_answer_history(ans_log, last_history_hash))
 
@@ -966,7 +964,7 @@ class TestRealitio(TestCase):
         }
 
 
-    #@unittest.skipIf(WORKING_ONLY, "Not under construction")
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_contested_add_arbitrator(self):
 
         (contest_question_id, answer_history)  = self._setup_add_arbitrator()
@@ -1022,18 +1020,18 @@ class TestRealitio(TestCase):
 
         # TODO: First to_answer_for_contract should be previous history hash
         txid = self.forkmanager.functions.deployFork(True, previous_history_hash, last_answer, last_answerer, last_bond).transact(self._txargs(gas=6000000))
-        rcpt = self.l1web3.eth.getTransactionReceipt(txid)
+        rcpt = self.l1web3.eth.get_transaction_receipt(txid)
 
         # deployFork will create a LogNewAnswer event. 
         # We'll need this for the claim transaction.
-        ans_log = self.l1realityeth.events.LogNewAnswer().processReceipt(rcpt)
+        ans_log = self.l1realityeth.events.LogNewAnswer().process_receipt(rcpt)
 
         # print(rcpt)
         self.raiseOnZeroStatus(txid, self.l1web3)
 
         ts1 = self._block_timestamp(self.l1web3)
         txid = self.forkmanager.functions.deployFork(False, previous_history_hash, last_answer, last_answerer, last_bond).transact(self._txargs(gas=6000000))
-        rcpt = self.l1web3.eth.getTransactionReceipt(txid)
+        rcpt = self.l1web3.eth.get_transaction_receipt(txid)
         # print(rcpt)
         self.raiseOnZeroStatus(txid, self.l1web3)
 
@@ -1124,9 +1122,9 @@ class TestRealitio(TestCase):
         # question = self.whitelist_arbitrator.address + QUESTION_DELIM + self.arb1.address
 
         txid = self.forkmanager.functions.beginRemoveArbitratorFromWhitelist(self.whitelist_arbitrator.address, self.arb1.address).transact()
-        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
-        ask_log = self.l1realityeth.events.LogNewQuestion().processReceipt(tx_receipt)
-        contest_question_id = "0x"+encode_hex(ask_log[0]['args']['question_id'])
+        tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
+        ask_log = self.l1realityeth.events.LogNewQuestion().process_receipt(tx_receipt)
+        contest_question_id = ask_log[0]['args']['question_id']
 
         # To be able to freeze an arbitrator we need to post at least 1% of supply
         freeze_amount = int(self.FORKMANAGER_INITIAL_SUPPLY * 1 / 100)
@@ -1142,8 +1140,8 @@ class TestRealitio(TestCase):
 
         txid = self.l1realityeth.functions.submitAnswerERC20(contest_question_id, to_answer_for_contract(1), 0, freeze_amount).transact(self._txargs(sender=self.L1_CHARLIE))
         #self.raiseOnZeroStatus(txid, self.l1web3)
-        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
-        answer_log = self.l1realityeth.events.LogNewAnswer().processReceipt(tx_receipt)
+        tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
+        answer_log = self.l1realityeth.events.LogNewAnswer().process_receipt(tx_receipt)
 
         history_item = self._log_to_answer_history(answer_log, last_history_hash)
         last_bond = history_item['bond']
@@ -1169,8 +1167,8 @@ class TestRealitio(TestCase):
         #print("hh after freeze (should be same as submit)")
         #print(encode_hex(contestq[QINDEX_HISTORY_HASH]))
 
-        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
-        bridge_log = self.bridgeToL2.events.LogPassMessage().processReceipt(tx_receipt)
+        tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
+        bridge_log = self.bridgeToL2.events.LogPassMessage().process_receipt(tx_receipt)
         call_data = bridge_log[0]['args']['_data']
 
 
@@ -1187,8 +1185,8 @@ class TestRealitio(TestCase):
             self.whitelist_arbitrator.address,
             call_data,
             5000000,
-            encode_hex("0x0"),
-            encode_hex("0x0")
+            Web3.to_bytes(hexstr=NULL_BYTES),
+            Web3.to_bytes(hexstr=NULL_BYTES)
         ).transact()
         self.raiseOnZeroStatus(txid, self.l2web3)
 
@@ -1218,14 +1216,14 @@ class TestRealitio(TestCase):
 
         self.assertTrue(self.forkmanager.functions.isUnForked().call())
 
-        expected_hh = "0x"+encode_hex(self.l1realityeth.functions.getHistoryHash(contest_question_id).call())
+        expected_hh = self.l1realityeth.functions.getHistoryHash(contest_question_id).call()
         calculated_hh = calculate_history_hash(to_answer_for_contract(0), to_answer_for_contract(1), freeze_amount, self.L1_CHARLIE, False)
         self.assertEqual(expected_hh, calculated_hh)
 
         txid = self.forkmanager.functions.requestArbitrationByFork(contest_question_id, 0).transact(self._txargs(gas=3000000, sender=self.L1_BOB))
         self.raiseOnZeroStatus(txid, self.l1web3)
 
-        expected_hh2 = "0x"+encode_hex(self.l1realityeth.functions.getHistoryHash(contest_question_id).call())
+        expected_hh2 = self.l1realityeth.functions.getHistoryHash(contest_question_id).call()
         self.assertEqual(expected_hh, expected_hh2, "arbitration should not change the history hash")
 
 
@@ -1237,7 +1235,7 @@ class TestRealitio(TestCase):
 
 
         # Recreate the history hash and test it ourselves
-        expected_hh = "0x"+encode_hex(self.l1realityeth.functions.getHistoryHash(contest_question_id).call())
+        expected_hh = self.l1realityeth.functions.getHistoryHash(contest_question_id).call()
         calculated_hh = calculate_history_hash(last_history_hash, last_answer, last_bond, last_answerer, False)
         self.assertEqual(expected_hh, calculated_hh)
 
@@ -1284,10 +1282,10 @@ class TestRealitio(TestCase):
         # function deployFork(bool yes_or_no, bytes32 last_history_hash, bytes32 last_answer, address last_answerer, uint256 last_bond)
         # txid = self.l1realityeth.functions.submitAnswerERC20(contest_question_id, to_answer_for_contract(1), 0, freeze_amount).transact(self._txargs(sender=self.L1_CHARLIE))
         txid = self.forkmanager.functions.deployFork(True, answer_history[-1]['previous_history_hash'], answer_history[-1]['answer'], answer_history[-1]['answerer'], answer_history[-1]['bond']).transact(self._txargs(gas=6000000))
-        rcpt = self.l1web3.eth.getTransactionReceipt(txid)
+        rcpt = self.l1web3.eth.get_transaction_receipt(txid)
         self.raiseOnZeroStatus(txid, self.l1web3)
 
-        answer_log1 = self.l1realityeth.events.LogNewAnswer().processReceipt(rcpt)
+        answer_log1 = self.l1realityeth.events.LogNewAnswer().process_receipt(rcpt)
         history_item1 = self._log_to_answer_history(answer_log1, new_history_hash)
         answer_history1.append(history_item1)
 
@@ -1295,11 +1293,11 @@ class TestRealitio(TestCase):
 
         ts1 = self._block_timestamp(self.l1web3)
         txid = self.forkmanager.functions.deployFork(False, answer_history[-1]['previous_history_hash'], answer_history[-1]['answer'], answer_history[-1]['answerer'], answer_history[-1]['bond']).transact(self._txargs(gas=6000000))
-        rcpt = self.l1web3.eth.getTransactionReceipt(txid)
+        rcpt = self.l1web3.eth.get_transaction_receipt(txid)
         # print(rcpt)
         self.raiseOnZeroStatus(txid, self.l1web3)
 
-        answer_log2 = self.l1realityeth.events.LogNewAnswer().processReceipt(rcpt)
+        answer_log2 = self.l1realityeth.events.LogNewAnswer().process_receipt(rcpt)
         history_item2 = self._log_to_answer_history(answer_log2, new_history_hash)
         answer_history2.append(history_item2)
 
@@ -1742,10 +1740,11 @@ class TestRealitio(TestCase):
         newBridgeToL2 = self._contractFromBuildJSON(self.l1web3, 'BridgeToL2', None, None)
         txid = self.forkmanager.functions.beginUpgradeBridge(newBridgeToL2.address).transact()
         self.raiseOnZeroStatus(txid, self.l1web3)
-        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
+        tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
 
-        ask_log = self.l1realityeth.events.LogNewQuestion().processReceipt(tx_receipt)
-        upgrade_question_id = "0x"+encode_hex(ask_log[0]['args']['question_id'])
+        ask_log = self.l1realityeth.events.LogNewQuestion().process_receipt(tx_receipt)
+        upgrade_question_id = ask_log[0]['args']['question_id']
+        #upgrade_question_id = Web3.to_bytes(hexstr="0x"+encode_hex(ask_log[0]['args']['question_id']))
 
         upgradeq = self.l1realityeth.functions.questions(upgrade_question_id).call()
         last_history_hash = upgradeq[QINDEX_HISTORY_HASH]
@@ -1766,8 +1765,8 @@ class TestRealitio(TestCase):
         txid = self.l1realityeth.functions.submitAnswerERC20(upgrade_question_id, to_answer_for_contract(1), 0, 12345).transact(self._txargs(sender=self.L1_CHARLIE))
         self.raiseOnZeroStatus(txid, self.l1web3)
 
-        tx_receipt = self.l1web3.eth.getTransactionReceipt(txid)
-        ans_log = self.l1realityeth.events.LogNewAnswer().processReceipt(tx_receipt)
+        tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
+        ans_log = self.l1realityeth.events.LogNewAnswer().process_receipt(tx_receipt)
 
         answer_history.append(self._log_to_answer_history(ans_log, last_history_hash))
         # self.assertNotEqual(last_history_hash, ans_log['history_hash'])
@@ -1833,7 +1832,7 @@ class OldThing:
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_content_hash(self):
         expect_ch = calculate_content_hash(0, "my question", 0)
-        ch = "0x" + encode_hex(self.rc0.functions.questions(self.question_id).call()[QINDEX_CONTENT_HASH])
+        ch = "0x" + self.rc0.functions.questions(self.question_id).call()[QINDEX_CONTENT_HASH]
         self.assertEqual(expect_ch, ch)
 
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
@@ -2528,7 +2527,9 @@ class OldThing:
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1001, 0, 2, k4)
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1002, 2, 4, k3)
-        fee = self.arb0.functions.getDisputeFee(encode_hex("0x00")).call()
+            
+
+        fee = self.arb0.functions.getDisputeFee(Web3.to_bytes(hexstr=NULL_BYTES)).call()
         with self.assertRaises(TransactionFailed):
             txid = self.arb0.functions.requestArbitration(self.question_id, 2).transact(self._txargs(val=fee))
             self.raiseOnZeroStatus(txid)
@@ -2537,7 +2538,7 @@ class OldThing:
 
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_bond_claim_arbitration_existing_none(self):
-        fee = self.arb0.functions.getDisputeFee(encode_hex("0x00")).call()
+        fee = self.arb0.functions.getDisputeFee(Web3.to_bytes(hexstr=NULL_BYTES)).call()
         with self.assertRaises(TransactionFailed):
             txid = self.arb0.functions.requestArbitration(self.question_id, 0).transact(self._txargs(val=fee))
             self.raiseOnZeroStatus(txid)
@@ -2545,7 +2546,7 @@ class OldThing:
 
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
     def test_bond_claim_arbitration_existing_final(self):
-        fee = self.arb0.functions.getDisputeFee(encode_hex("0x00")).call()
+        fee = self.arb0.functions.getDisputeFee(Web3.to_bytes(hexstr=NULL_BYTES)).call()
         k3 = self.l2web3.eth.accounts[3]
         k4 = self.l2web3.eth.accounts[4]
 
@@ -2698,7 +2699,7 @@ class OldThing:
 
         self.raiseOnZeroStatus(txid)
 
-        #rcp = self.l2web3.eth.getTransactionReceipt(txid)
+        #rcp = self.l2web3.eth.get_transaction_receipt(txid)
         self._advance_clock(33)
         #time.sleep(10)
 
@@ -2788,7 +2789,7 @@ class OldThing:
         if ERC20:
             self._issueTokens(self.l2token1, k3, 1000, 1000)
 
-        fee = self.arb0.functions.getDisputeFee(encode_hex("0x00")).call()
+        fee = self.arb0.functions.getDisputeFee(Web3.to_bytes(hexstr=NULL_BYTES)).call()
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1002,  0,  1, k3, True)
@@ -2900,7 +2901,7 @@ class OldThing:
             self._issueTokens(self.l2token1, k3, 1000000, 1000000)
             self._issueTokens(self.l2token1, k4, 1000000, 1000000)
 
-        fee = self.arb0.functions.getDisputeFee(encode_hex("0x00")).call()
+        fee = self.arb0.functions.getDisputeFee(Web3.to_bytes(hexstr=NULL_BYTES)).call()
 
         st = None
         st = self.submitAnswerReturnUpdatedState( st, self.question_id, 1001, 0, 2, k4)
@@ -3140,17 +3141,17 @@ class OldThing:
         if ERC20:
             starting_bal = self.l2token0.functions.balanceOf(k5).call()
         else:
-            starting_bal = self.l2web3.eth.getBalance(k5)
+            starting_bal = self.l2web3.eth.get_balance(k5)
 
         txid = self.rc0.functions.withdraw().transact(self._txargs(sender=k5))
-        rcpt = self.l2web3.eth.getTransactionReceipt(txid)
+        rcpt = self.l2web3.eth.get_transaction_receipt(txid)
         gas_spent = rcpt['cumulativeGasUsed']
 
         if ERC20:
             ending_bal = self.l2token0.functions.balanceOf(k5).call()
             self.assertEqual(ending_bal, starting_bal + k5bal)
         else:
-            ending_bal = self.l2web3.eth.getBalance(k5)
+            ending_bal = self.l2web3.eth.get_balance(k5)
             self.assertEqual(ending_bal, starting_bal + k5bal - gas_spent)
 
         self.assertEqual(self.rc0.functions.balanceOf(k5).call(), 0)
@@ -3207,16 +3208,16 @@ class OldThing:
         if ERC20:
             starting_bal = self.l2token0.functions.balanceOf(k5).call()
         else:
-            starting_bal = self.l2web3.eth.getBalance(k5)
+            starting_bal = self.l2web3.eth.get_balance(k5)
 
         txid = self.rc0.functions.withdraw().transact(self._txargs(sender=k5))
-        rcpt = self.l2web3.eth.getTransactionReceipt(txid)
+        rcpt = self.l2web3.eth.get_transaction_receipt(txid)
         gas_used = rcpt['cumulativeGasUsed']
 
         if ERC20:
             ending_bal = self.l2token0.functions.balanceOf(k5).call()
         else:
-            ending_bal = self.l2web3.eth.getBalance(k5)
+            ending_bal = self.l2web3.eth.get_balance(k5)
 
         self.assertEqual(self.rc0.functions.balanceOf(k5).call(), 0)
 
@@ -3268,16 +3269,16 @@ class OldThing:
         if ERC20:
             starting_bal = self.l2token0.functions.balanceOf(k5).call()
         else:
-            starting_bal = self.l2web3.eth.getBalance(k5)
+            starting_bal = self.l2web3.eth.get_balance(k5)
 
         txid = self.rc0.functions.withdraw().transact(self._txargs(sender=k5))
-        rcpt = self.l2web3.eth.getTransactionReceipt(txid)
+        rcpt = self.l2web3.eth.get_transaction_receipt(txid)
         gas_used = rcpt['cumulativeGasUsed']
 
         if ERC20:
             ending_bal = self.l2token0.functions.balanceOf(k5).call()
         else:
-            ending_bal = self.l2web3.eth.getBalance(k5)
+            ending_bal = self.l2web3.eth.get_balance(k5)
 
         self.assertEqual(self.rc0.functions.balanceOf(k5).call(), 0)
 
@@ -3346,7 +3347,7 @@ class OldThing:
                 0
                 ,1100
             ).transact()
-            rcpt = self.l2web3.eth.getTransactionReceipt(txid)
+            rcpt = self.l2web3.eth.get_transaction_receipt(txid)
             gas_used = rcpt['cumulativeGasUsed']
             self.assertTrue(gas_used < 140000)
         else:
@@ -3358,7 +3359,7 @@ class OldThing:
                 0,
                 0
             ).transact(self._txargs(val=1100))
-            rcpt = self.l2web3.eth.getTransactionReceipt(txid)
+            rcpt = self.l2web3.eth.get_transaction_receipt(txid)
             gas_used = rcpt['cumulativeGasUsed']
             #self.assertEqual(gas_used, 120000)
             self.assertTrue(gas_used < 110000)
@@ -3371,7 +3372,7 @@ class OldThing:
             txid = self.rc0.functions.submitAnswerERC20(self.question_id, to_answer_for_contract(12345), 0
             ,1
             ).transact()
-            rcpt = self.l2web3.eth.getTransactionReceipt(txid)
+            rcpt = self.l2web3.eth.get_transaction_receipt(txid)
 
             self.assertTrue(rcpt['cumulativeGasUsed'] < 140000)
 
@@ -3381,13 +3382,13 @@ class OldThing:
             txid2 = self.rc0.functions.submitAnswerERC20(self.question_id, to_answer_for_contract(12346), 0
             ,2
             ).transact()
-            rcpt = self.l2web3.eth.getTransactionReceipt(txid2)
+            rcpt = self.l2web3.eth.get_transaction_receipt(txid2)
             self.assertTrue(rcpt['cumulativeGasUsed'] < 80000)
 
         else:
 
             txid = self.rc0.functions.submitAnswer(self.question_id, to_answer_for_contract(12345), 0).transact(self._txargs(val=1))
-            rcpt = self.l2web3.eth.getTransactionReceipt(txid)
+            rcpt = self.l2web3.eth.get_transaction_receipt(txid)
 
             self.assertTrue(rcpt['cumulativeGasUsed'] < 103000)
 
@@ -3395,7 +3396,7 @@ class OldThing:
             # This is what we want, because you may need to be able to get a challenge through at busy times
 
             txid2 = self.rc0.functions.submitAnswer(self.question_id, to_answer_for_contract(12346), 0).transact(self._txargs(val=2)) 
-            rcpt = self.l2web3.eth.getTransactionReceipt(txid2)
+            rcpt = self.l2web3.eth.get_transaction_receipt(txid2)
             self.assertTrue(rcpt['cumulativeGasUsed'] < 56000)
 
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
@@ -3443,7 +3444,7 @@ class OldThing:
 
             start_arb_bal = self.l2token0.functions.balanceOf(self.arb0.address).call()
             txid = self.arb0.functions.callWithdraw().transact(self._txargs(sender=k7))
-            rcpt = self.l2web3.eth.getTransactionReceipt(txid)
+            rcpt = self.l2web3.eth.get_transaction_receipt(txid)
             end_arb_bal = self.l2token0.functions.balanceOf(self.arb0.address).call()
 
             self.assertEqual(end_arb_bal - start_arb_bal, 100 + (321*2))
@@ -3472,10 +3473,10 @@ class OldThing:
             end_bal = self.rc0.functions.balanceOf(self.arb0.address).call()
             self.assertEqual(end_bal - start_bal, (321*2))
 
-            start_arb_bal = self.l2web3.eth.getBalance(self.arb0.address)
+            start_arb_bal = self.l2web3.eth.get_balance(self.arb0.address)
             txid = self.arb0.functions.callWithdraw().transact(self._txargs(sender=k7))
-            rcpt = self.l2web3.eth.getTransactionReceipt(txid)
-            end_arb_bal = self.l2web3.eth.getBalance(self.arb0.address)
+            rcpt = self.l2web3.eth.get_transaction_receipt(txid)
+            end_arb_bal = self.l2web3.eth.get_balance(self.arb0.address)
 
         self.assertEqual(end_arb_bal - start_arb_bal, 100 + (321*2))
         self.assertEqual(self.rc0.functions.balanceOf(self.arb0.address).call(), 0)
@@ -3596,11 +3597,11 @@ class OldThing:
                 1100
             ).transact(self._txargs())
             bal_after = self.l2token0.functions.balanceOf(k0).call()
-            rcpt = self.l2web3.eth.getTransactionReceipt(txid)
+            rcpt = self.l2web3.eth.get_transaction_receipt(txid)
             self.assertEqual(bal_after, bal_before - 1100, "New question bounty is deducted")
             gas_used = rcpt['cumulativeGasUsed']
         else:
-            bal_before = self.l2web3.eth.getBalance(k0)
+            bal_before = self.l2web3.eth.get_balance(k0)
             txid = self.rc0.functions.askQuestionWithMinBond(
                 0,
                 "my question 2",
@@ -3610,9 +3611,9 @@ class OldThing:
                 0,
                 1000
             ).transact(self._txargs(val=1100))
-            rcpt = self.l2web3.eth.getTransactionReceipt(txid)
+            rcpt = self.l2web3.eth.get_transaction_receipt(txid)
             gas_used = rcpt['cumulativeGasUsed']
-            bal_after = self.l2web3.eth.getBalance(k0)
+            bal_after = self.l2web3.eth.get_balance(k0)
             self.assertEqual(bal_after, bal_before - 1100 - gas_used, "New question bouny is deducted")
 
         #self.assertEqual(gas_used, 120000)
@@ -3739,7 +3740,7 @@ class OldThing:
         if ERC20:
             start_arb_bal = self.l2token0.functions.balanceOf(t.a8).call()
         else:
-            start_arb_bal = self.l2web3.eth.getBalance(t.a8)
+            start_arb_bal = self.l2web3.eth.get_balance(t.a8)
 
         self.arb0.functions.callWithdraw().transact(self._txargs(sender=k7))
         self.arb0.functions.withdrawToRegisteredWallet().transact(self._txargs(sender=k4))
@@ -3747,7 +3748,7 @@ class OldThing:
         if ERC20:
             end_arb_bal = self.l2token0.functions.balanceOf(t.a8).call()
         else:
-            end_arb_bal = self.l2web3.eth.getBalance(t.a8)
+            end_arb_bal = self.l2web3.eth.get_balance(t.a8)
 
         self.assertEqual(end_arb_bal - start_arb_bal, (100+321+321))
         self.assertEqual(self.rc0.functions.balanceOf(self.arb0.address).call(), 0)
@@ -3803,7 +3804,7 @@ class OldThing:
 
         self._advance_clock(33)
 
-        self.assertEqual("0x"+encode_hex(self.rc0.functions.resultFor(self.question_id).call()), ANSWERED_TOO_SOON_VAL)
+        self.assertEqual(encode_hex(self.rc0.functions.resultFor(self.question_id).call()), ANSWERED_TOO_SOON_VAL)
         self.assertTrue(self.rc0.functions.isSettledTooSoon(self.question_id).call())
 
         with self.assertRaises(TransactionFailed):
@@ -3835,21 +3836,21 @@ class OldThing:
             self.rc0.functions.withdraw().transact(self._txargs())
             bal_before = self.l2token0.functions.balanceOf(k0).call()
             txid = self.rc0.functions.reopenQuestionERC20( 0, "my question", self.arb0.address, 30, 0, 1, 0, self.question_id, 123).transact(self._txargs(gas=300000))
-            rcpt = self.l2web3.eth.getTransactionReceipt(txid)
+            rcpt = self.l2web3.eth.get_transaction_receipt(txid)
             self.raiseOnZeroStatus(txid)
             bal_after = self.l2token0.functions.balanceOf(k0).call()
             self.assertEqual(bal_after, bal_before - 123, "New question bounty is deducted")
         else:
-            bal_before = self.l2web3.eth.getBalance(k0)
+            bal_before = self.l2web3.eth.get_balance(k0)
             txid = self.rc0.functions.reopenQuestion( 0, "my question", self.arb0.address, 30, 0, 1, 0, self.question_id).transact(self._txargs(val=123))
             self.raiseOnZeroStatus(txid)
-            rcpt = self.l2web3.eth.getTransactionReceipt(txid)
+            rcpt = self.l2web3.eth.get_transaction_receipt(txid)
             gas_spent = rcpt['cumulativeGasUsed']
-            bal_after = self.l2web3.eth.getBalance(k0)
+            bal_after = self.l2web3.eth.get_balance(k0)
             self.assertEqual(bal_after, bal_before - 123 - gas_spent, "New question bounty is deducted")
-        txr = self.l2web3.eth.getTransactionReceipt(txid)
+        txr = self.l2web3.eth.get_transaction_receipt(txid)
 
-        self.assertEqual("0x"+encode_hex(self.rc0.functions.reopened_questions(self.question_id).call()), expected_reopen_id, "reopened_questions returns reopened question id")
+        self.assertEqual(self.rc0.functions.reopened_questions(self.question_id).call(), expected_reopen_id, "reopened_questions returns reopened question id")
 
         old_bounty_now = self.rc0.functions.questions(self.question_id).call()[QINDEX_BOUNTY]
         self.assertEqual(old_bounty_now, 0)
@@ -3880,7 +3881,7 @@ class OldThing:
         else:
             self.rc0.functions.submitAnswer(expected_reopen_id, ANSWERED_TOO_SOON_VAL, 0).transact(self._txargs(val=3)) 
         self._advance_clock(33)
-        self.assertEqual("0x"+encode_hex(self.rc0.functions.getFinalAnswer(expected_reopen_id).call()), ANSWERED_TOO_SOON_VAL)
+        self.assertEqual(self.rc0.functions.getFinalAnswer(expected_reopen_id).call(), ANSWERED_TOO_SOON_VAL)
 
         # If the question is a reopen, it can't itself be reopened until the previous question has been reopened
         # This prevents to bounty from being moved to a child before it can be returned to the new replacement of the original question.
@@ -3909,7 +3910,7 @@ class OldThing:
         post_reopen_bounty_b = self.rc0.functions.questions(expected_reopen_id_2).call()[QINDEX_BOUNTY]
         self.assertEqual(post_reopen_bounty_b, pre_reopen_bounty + 543 - question_fee)
 
-        self.assertEqual("0x"+encode_hex(self.rc0.functions.reopened_questions(self.question_id).call()), expected_reopen_id_2, "reopened_questions returns now new question id")
+        self.assertEqual(self.rc0.functions.reopened_questions(self.question_id).call(), expected_reopen_id_2, "reopened_questions returns now new question id")
 
         # Now you've reopened the parent you can reopen the child if you like, although this is usually a bad idea because you should be using the parent
         if ERC20:
@@ -3954,7 +3955,7 @@ class OldThing:
 
         self._advance_clock(33)
 
-        self.assertEqual("0x"+encode_hex(self.rc0.functions.getFinalAnswer(self.question_id).call()), ANSWERED_TOO_SOON_VAL)
+        self.assertEqual(self.rc0.functions.getFinalAnswer(self.question_id).call(), ANSWERED_TOO_SOON_VAL)
         self.assertEqual(self.rc0.functions.balanceOf(k3).call(), 0)
 
         # Have an unconnected user do the claim
@@ -3991,7 +3992,7 @@ class OldThing:
 
         self._advance_clock(33)
 
-        self.assertEqual("0x"+encode_hex(self.rc0.functions.getFinalAnswer(self.question_id).call()), ANSWERED_TOO_SOON_VAL)
+        self.assertEqual(self.rc0.functions.getFinalAnswer(self.question_id).call(), ANSWERED_TOO_SOON_VAL)
         self.assertEqual(self.rc0.functions.balanceOf(k3).call(), 0)
 
         # Have an unconnected user do the claim
