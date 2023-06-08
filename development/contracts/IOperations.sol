@@ -3,7 +3,6 @@
 pragma solidity ^0.8.10;
 
 library Operations {
-
     enum OpTree {
         Full,
         Rollup
@@ -14,5 +13,4 @@ library Operations {
         HeapBuffer,
         Heap
     }
-
 }

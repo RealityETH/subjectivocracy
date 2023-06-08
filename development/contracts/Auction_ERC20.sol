@@ -13,7 +13,6 @@ eg if you say the value of A:B splits 80:20, you will receive at least either 5 
 pragma solidity ^0.8.10;
 
 contract Auction_ERC20 {
-
     uint256 constant MAX_SLOTS = 100;
     uint256 public bid_id;
 
@@ -39,12 +38,7 @@ contract Auction_ERC20 {
     uint256 public tied_yes_tokens_remain;
     uint256 public tied_no_tokens_remain;
 
-    event LogBid(
-        uint256 bid_id,
-        address payee,
-        uint8 bid,
-        uint256 value
-    );
+    event LogBid(uint256 bid_id, address payee, uint8 bid, uint256 value);
 
     event LogChangeBid(
         uint256 bid_id,
@@ -76,8 +70,7 @@ contract Auction_ERC20 {
     }
 
     // ForkManager should call this on deployment and credit this contract with the bonus amount
-    function init(uint256 _bonus, uint256 _fork_ts) 
-    external {
+    function init(uint256 _bonus, uint256 _fork_ts) external {
         require(forkmanager == address(0), "Already initialized");
         forkmanager = msg.sender;
         bonus = _bonus;
@@ -85,12 +78,11 @@ contract Auction_ERC20 {
     }
 
     // ForkManager should lock the tokens before calling this
-    function bid(address owner, uint8 _bid, uint256 _amount) 
-        onlyForkManager
-        beforeFork
-    external
-    {
-
+    function bid(
+        address owner,
+        uint8 _bid,
+        uint256 _amount
+    ) external onlyForkManager beforeFork {
         require(_bid <= MAX_SLOTS);
         require(owner != address(0), "Owner not set");
 
@@ -100,10 +92,7 @@ contract Auction_ERC20 {
         cumulative_bids[_bid] = cumulative_bids[_bid] + _amount;
     }
 
-    function changeBid(uint256 _bid_id, uint8 new_bid)
-        beforeFork 
-    public
-    {
+    function changeBid(uint256 _bid_id, uint8 new_bid) public beforeFork {
         require(new_bid <= MAX_SLOTS, "bid higher than MAX_SLOTS");
         address owner = bids[_bid_id].owner;
         require(owner == msg.sender, "You can only change your own bid");
@@ -115,26 +104,20 @@ contract Auction_ERC20 {
         emit LogChangeBid(bid_id, owner, old_bid, new_bid, val);
     }
 
-    function totalTokens() 
-    view 
-    public
-    returns (uint256)
-    {
+    function totalTokens() public view returns (uint256) {
         uint8 i;
         uint256 ttl = 0;
-        for(i=0; i<=MAX_SLOTS; i++) {
+        for (i = 0; i <= MAX_SLOTS; i++) {
             ttl = ttl + cumulative_bids[i];
         }
         return ttl;
     }
 
-    function calculatePrice() public
-        afterForkBeforeCalculation
-    {
+    function calculatePrice() public afterForkBeforeCalculation {
         uint256 ttl = totalTokens();
 
         // eg bonus is 100, total is 2000, you get an extra 1/20
-        bonus_ratio = ttl / bonus; 
+        bonus_ratio = ttl / bonus;
 
         uint256 so_far = 0;
         uint8 i = 0;
@@ -149,10 +132,10 @@ contract Auction_ERC20 {
         */
 
         so_far = cumulative_bids[0];
-        for(i=1; i<=MAX_SLOTS; i++) {
+        for (i = 1; i <= MAX_SLOTS; i++) {
             so_far = so_far + cumulative_bids[i];
-            uint256 tokens_needed = (so_far * MAX_SLOTS / i);
-            if ( tokens_needed >= ttl ) {
+            uint256 tokens_needed = ((so_far * MAX_SLOTS) / i);
+            if (tokens_needed >= ttl) {
                 final_price = i;
                 is_calculation_done = true;
 
@@ -162,19 +145,18 @@ contract Auction_ERC20 {
                 */
 
                 uint256 excess = tokens_needed - ttl;
-                uint256 tokens_needed_for_this_bid = (cumulative_bids[i] * MAX_SLOTS / i);
+                uint256 tokens_needed_for_this_bid = ((cumulative_bids[i] *
+                    MAX_SLOTS) / i);
 
                 tied_no_tokens_remain = excess;
                 tied_yes_tokens_remain = tokens_needed_for_this_bid - excess;
-                
+
                 break;
             }
         }
     }
 
-    function winner() 
-        afterForkAfterCalculation
-    external view returns (bool) {
+    function winner() external view afterForkAfterCalculation returns (bool) {
         return (final_price * 2 > MAX_SLOTS);
     }
 
@@ -182,10 +164,14 @@ contract Auction_ERC20 {
     // This will read the amount that needs to be paid out, clear it so it isn't paid twice, and mint the tokens in the appropriate token.
     // Usually this would be called by whoever made the bid, but anyone is allowed to call it.
     // There's usually only one option for yes_or_no that won't revert, unless you bid exactly at the settlement price in which case you may be able to choose.
-    function clearAndReturnPayout(uint256 _bid_id, bool yes_or_no) public
+    function clearAndReturnPayout(
+        uint256 _bid_id,
+        bool yes_or_no
+    )
+        public
         onlyForkManager
         afterForkAfterCalculation
-    returns (address, uint256)
+        returns (address, uint256)
     {
         require(bids[_bid_id].owner != address(0), "Bid not found");
         uint256 bid_amount = bids[_bid_id].bid;
@@ -193,9 +179,9 @@ contract Auction_ERC20 {
         address payee = bids[_bid_id].owner;
 
         if (yes_or_no) {
-            due = bid_amount * MAX_SLOTS / final_price;
+            due = (bid_amount * MAX_SLOTS) / final_price;
         } else {
-            due = bid_amount * MAX_SLOTS / (MAX_SLOTS - final_price);
+            due = (bid_amount * MAX_SLOTS) / (MAX_SLOTS - final_price);
         }
 
         if (bid_amount == final_price) {
@@ -210,9 +196,11 @@ contract Auction_ERC20 {
             require(will_pay > 0, "No tokens to claim");
             if (will_pay < due) {
                 // Reduce the remaining bid amount by the proportion of the amount we were unable to fill on the requested side
-                bids[_bid_id].value = bid_amount - (bid_amount * will_pay / due);
+                bids[_bid_id].value =
+                    bid_amount -
+                    ((bid_amount * will_pay) / due);
             } else {
-                delete(bids[_bid_id]);
+                delete (bids[_bid_id]);
             }
 
             if (yes_or_no) {
@@ -222,14 +210,15 @@ contract Auction_ERC20 {
             }
 
             due = will_pay;
-
         } else {
-            require( (bid_amount > final_price) == yes_or_no, "You can only get yes if you bid same or higher, no same or lower");
-            delete(bids[_bid_id]);
+            require(
+                (bid_amount > final_price) == yes_or_no,
+                "You can only get yes if you bid same or higher, no same or lower"
+            );
+            delete (bids[_bid_id]);
         }
 
         due = due + (due / bonus_ratio);
         return (payee, due);
     }
-
 }
