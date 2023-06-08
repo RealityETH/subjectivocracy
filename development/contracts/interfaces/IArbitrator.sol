@@ -3,7 +3,7 @@
 pragma solidity ^0.8.10;
 
 import "./IRealityETH.sol";
-import "./IERC20.sol";
+import "openzeppelin/token/ERC20/IERC20.sol";
 import "./IOwned.sol";
 
 interface IArbitrator {

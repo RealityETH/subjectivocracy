@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.10;
 
-import "./IAMB.sol";
+import "./interfaces/IAMB.sol";
 
 contract AMB is IAMB {
     event LogPassMessage(address _contract, uint256 _gas, bytes _data);

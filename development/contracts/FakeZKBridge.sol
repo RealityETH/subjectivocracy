@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.10;
 
-import "./IZKBridge.sol";
+import "./interfaces/IZKBridge.sol";
 
 contract FakeZKBridge {
     function requestExecute(
