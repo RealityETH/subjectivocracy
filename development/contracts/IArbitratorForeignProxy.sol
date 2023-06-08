@@ -2,11 +2,12 @@
 
 pragma solidity ^0.8.10;
 
-import './IArbitrator.sol';
-import './IERC20.sol';
-import './IOwned.sol';
+import "./IArbitrator.sol";
+import "./IERC20.sol";
+import "./IOwned.sol";
 
 interface IArbitratorForeignProxy {
-  function foreignProxy() external returns (address);
-  function foreignChainId() external returns (uint256);
+    function foreignProxy() external returns (address);
+
+    function foreignChainId() external returns (uint256);
 }
