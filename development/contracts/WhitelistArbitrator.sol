@@ -36,7 +36,7 @@ contract WhitelistArbitrator is BalanceHolder {
 
     mapping(bytes32 => Question) public questions;
 
-    IAMB bridge;
+    IAMB public bridge;
     uint256 public constant ARB_DISPUTE_TIMEOUT = 86400;
     uint256 public constant QUESTION_UNHANDLED_TIMEOUT = 86400;
 
