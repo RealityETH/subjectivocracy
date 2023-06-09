@@ -117,13 +117,8 @@ contract WhitelistArbitrator is BalanceHolder {
 
     /// @notice Return the dispute fee for the specified question. 0 indicates that we won't arbitrate it.
     /// @dev Uses a general default, but can be over-ridden on a question-by-question basis.
-<<<<<<< HEAD
-    function getDisputeFee(bytes32)
-    public view returns (uint256) {
+    function getDisputeFee(bytes32) public view returns (uint256) {
         // Todo: make it depend on the question
-=======
-    function getDisputeFee() public view returns (uint256) {
->>>>>>> 3de110d (adding linting and formatting for contracts)
         return dispute_fee;
     }
 
@@ -132,23 +127,15 @@ contract WhitelistArbitrator is BalanceHolder {
     /// Will trigger an error if the notification fails, eg because the question has already been finalized
     /// @param question_id The question in question
     /// @param max_previous If specified, reverts if a bond higher than this was submitted after you sent your transaction.
-<<<<<<< HEAD
-    function requestArbitration(bytes32 question_id, uint256 max_previous)
-    external payable returns (bool) {
-
-        uint256 arbitration_fee = getDisputeFee(question_id);
-        require(arbitration_fee > 0, "The arbitrator must have set a non-zero fee for the question");
-=======
     function requestArbitration(
         bytes32 question_id,
         uint256 max_previous
     ) external payable returns (bool) {
-        uint256 arbitration_fee = getDisputeFee();
+        uint256 arbitration_fee = getDisputeFee(question_id);
         require(
             arbitration_fee > 0,
             "The arbitrator must have set a non-zero fee for the question"
         );
->>>>>>> 3de110d (adding linting and formatting for contracts)
 
         require(msg.value >= arbitration_fee);
 
