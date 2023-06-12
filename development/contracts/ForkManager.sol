@@ -664,7 +664,6 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         returns (uint256)
     {
         return (effectiveTotalSupply() / 100) * PERCENT_TO_FREEZE;
-
     }
 
     // If you're about to pass a proposition but you don't want bad things to happen in the meantime

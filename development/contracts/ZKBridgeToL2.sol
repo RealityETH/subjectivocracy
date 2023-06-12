@@ -32,7 +32,6 @@ contract ZKBridgeToL2 {
         uint256 _ergsLimit,
         Operations.QueueType,
         Operations.OpTree
-
     ) external payable {
         address sender = msg.sender;
         if (sender == parent) {
