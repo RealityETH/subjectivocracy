@@ -34,8 +34,8 @@ contract ZKBridgeToL2 {
         address _contractAddressL2,
         bytes memory _calldata,
         uint256 _ergsLimit,
-        Operations.QueueType _queueType,
-        Operations.OpTree _opTree
+        Operations.QueueType ,
+        Operations.OpTree 
     ) external payable {
 
         address sender = msg.sender;
