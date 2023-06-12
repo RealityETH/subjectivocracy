@@ -6,9 +6,9 @@ import "./BalanceHolder.sol";
 
 import "./RealityETH_ERC20-3.0.sol";
 
-import "./IArbitrator.sol";
-import "./IAMB.sol";
-import "./IERC20.sol";
+import "./interfaces/IArbitrator.sol";
+import "./interfaces/IAMB.sol";
+import "openzeppelin/token/ERC20/IERC20.sol";
 
 /*
 This contract sits between a Reality.eth instance and an Arbitrator.
@@ -136,7 +136,6 @@ contract WhitelistArbitrator is BalanceHolder {
             arbitration_fee > 0,
             "The arbitrator must have set a non-zero fee for the question"
         );
-
         require(msg.value >= arbitration_fee);
 
         realityETH.notifyOfArbitrationRequest(

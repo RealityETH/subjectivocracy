@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.10;
 
-import "./IERC20.sol";
+import "openzeppelin/token/ERC20/IERC20.sol";
 
 interface IBalanceHolder_ERC20 {
     function withdraw() external;
