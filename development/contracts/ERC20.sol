@@ -2,12 +2,11 @@
 
 pragma solidity ^0.8.10;
 
-import './IERC20.sol';
+import "./IERC20.sol";
 
 contract ERC20 is IERC20 {
-
-    string public constant name = 'Test';
-    string public constant symbol = 'TST';
+    string public constant name = "Test";
+    string public constant symbol = "TST";
     uint8 public constant decimals = 18;
 
     uint256 public totalSupply;
@@ -35,7 +34,11 @@ contract ERC20 is IERC20 {
         return true;
     }
 
-    function transferFrom(address from, address to, uint256 value) external returns (bool) {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 value
+    ) external returns (bool) {
         if (allowance[from][msg.sender] != type(uint256).max) {
             allowance[from][msg.sender] = allowance[from][msg.sender] - value;
         }
@@ -43,4 +46,3 @@ contract ERC20 is IERC20 {
         return true;
     }
 }
-
