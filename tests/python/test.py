@@ -959,10 +959,8 @@ class TestRealitio(TestCase):
         txid = self.forkmanager.functions.beginAddArbitratorToWhitelist(self.whitelist_arbitrator.address, self.arb3.address).transact()
         self.raiseOnZeroStatus(txid, self.l1web3)
         tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
-        print(tx_receipt)
 
         ask_log = self.l1realityeth.events.LogNewQuestion().process_receipt(tx_receipt)
-        print(ask_log)
         contest_question_id = ask_log[0]['args']['question_id']
 
         txid = self.forkmanager.functions.transfer(self.L1_CHARLIE, 12345).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
