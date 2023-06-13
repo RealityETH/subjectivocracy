@@ -2,9 +2,10 @@
 
 pragma solidity ^0.8.10;
 
-import "./IAMB.sol";
+import './IAMB.sol';
 
 contract AMB is IAMB {
+
     event LogPassMessage(address _contract, uint256 _gas, bytes _data);
 
     address sender;
@@ -19,11 +20,12 @@ contract AMB is IAMB {
         emit LogPassMessage(_contract, _gas, _data);
 
         // For our dummy implementation we return the hash of the params as an ID. No idea if this is safe for however this is used.
-        return
-            keccak256(abi.encodePacked(_contract, _gas, _data, block.number));
+        return keccak256(abi.encodePacked(_contract, _gas, _data, block.number));
     }
 
-    function maxGasPerTx() public view returns (uint256) {}
+    function maxGasPerTx() public view returns (uint256) {
+
+    }
 
     function messageSender() public view returns (address) {
         return sender;
@@ -37,14 +39,14 @@ contract AMB is IAMB {
     // https://github.com/poanetwork/tokenbridge-contracts/blob/c9377114f7bcf04cd12a30d9eca0a63362dcaedc/contracts/upgradeable_contracts/arbitrary_message/MessageProcessor.sol#L211
 
     /**
-     * @dev Makes a call to the message executor.
-     * @param _sender sender address on the other side.
-     * @param _contract address of an executor contract.
-     * @param _data calldata for a call to executor.
-     * @param _gas gas limit for a call to executor. 2^32 - 1, if caller will pass all available gas for the execution.
-     * @param _messageId id of the processed message.
-     * @param _sourceChainId source chain id is of the received message.
-     */
+    * @dev Makes a call to the message executor.
+    * @param _sender sender address on the other side.
+    * @param _contract address of an executor contract.
+    * @param _data calldata for a call to executor.
+    * @param _gas gas limit for a call to executor. 2^32 - 1, if caller will pass all available gas for the execution.
+    * @param _messageId id of the processed message.
+    * @param _sourceChainId source chain id is of the received message.
+    */
     function passMessage(
         address _sender,
         address _contract,
@@ -77,4 +79,5 @@ contract AMB is IAMB {
         sourceChainId = 0;
         return status;
     }
+
 }

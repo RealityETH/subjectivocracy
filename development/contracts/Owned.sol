@@ -9,12 +9,14 @@ contract Owned {
         owner = msg.sender;
     }
 
-    modifier onlyOwner() {
+    modifier onlyOwner {
         require(msg.sender == owner);
         _;
     }
 
-    function transferOwnership(address newOwner) external onlyOwner {
+    function transferOwnership(address newOwner) 
+        onlyOwner 
+    external {
         owner = newOwner;
     }
 }

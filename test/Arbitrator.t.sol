@@ -13,6 +13,7 @@ contract ArbitratorTest is Test {
     IRealityETH internal realityMock =
         IRealityETH(0x1234567890123456789012345678901234567891);
 
+
     function setUp() public {
         arb = new Arbitrator();
         arb.setRealitio(address(realityMock));
