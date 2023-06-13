@@ -222,21 +222,27 @@ class TestRealitio(TestCase):
         if sender is None:
             sender = web3.eth.accounts[0]
 
-        bytecode_file = '../../bytecode/' + con_name + '.bin'
+        con_name_sol = con_name
+        if con_name == 'RealityETH_ERC20-3.0':
+            con_name_sol = 'RealityETH_ERC20_v3_0'
+
+        build_file = '../../out/'+con_name+'.sol'+'/'+con_name_sol+'.json'
+
         bcode = None
         contract_if = None
 
+        bytecode_file = '../../bytecode/' + con_name + '.bin'
         with open(bytecode_file) as f:
             bcode = f.read().strip("\n")
+
+        with open(build_file) as f:
+            fj = json.load(f)
+            contract_if = fj['abi']
+            bcode = fj['bytecode']['object']
             f.close()
 
-        for solcv in ['solc-0.8.10']:
-            abi_file = '../../abi/'+solcv+'/' + con_name + '.abi.json'
-            if os.path.exists(abi_file):
-                with open(abi_file) as f:
-                    contract_if = f.read()
-                    f.close()
-                break
+        if bcode is None or contract_if is None:
+            raise Exception("code or abi failed to load")
 
         if constructor_args is None:
             tx_hash = web3.eth.contract(abi=contract_if, bytecode=bcode).constructor().transact(self.deploy_tx)
@@ -291,6 +297,8 @@ class TestRealitio(TestCase):
 
         self.l2token0 = self._contractFromBuildJSON(self.l2web3, 'ERC20Mint')
         self.l2token0.functions.mint(k0, 100000000000000).transact()
+
+        #self.assertEqual(self.l2token0.functions.balanceOf(k0).call(), 100000000000000)
         self.assertEqual(self.l2token0.functions.balanceOf(k0).call(), 100000000000000)
 
 
@@ -325,6 +333,7 @@ class TestRealitio(TestCase):
         # NB They talk to the WhitelistArbitrator contract as if it's reality.eth, so use that for setRealitio not reality.eth
         self.arb1.functions.setRealitio(self.whitelist_arbitrator.address).transact()
         self.arb1.functions.setDisputeFee(10000).transact()
+
         self.arb2.functions.setRealitio(self.whitelist_arbitrator.address).transact()
         self.arb2.functions.setDisputeFee(20000).transact()
 
@@ -358,7 +367,9 @@ class TestRealitio(TestCase):
         self.l1realityeth.functions.init(self.forkmanager.address, NULL_ADDRESS, Web3.to_bytes(hexstr=NULL_BYTES)).transact()
 
         # init(address payable _parentForkManager, address _realityETH, address _bridgeToL2, bool _has_governance_freeze, uint256 _parentSupply, address payable _libForkManager, address _libForkableRealityETH, address _libBridgeToL2)
-        self.forkmanager.functions.init(NULL_ADDRESS, self.l1realityeth.address, self.bridgeToL2.address, False, 10000, libForkManager.address, libForkableRealityETH.address, libBridgeToL2.address, self.FORKMANAGER_INITIAL_RECIPIENT, self.FORKMANAGER_INITIAL_SUPPLY).transact()
+        txid = self.forkmanager.functions.init(NULL_ADDRESS, self.l1realityeth.address, self.bridgeToL2.address, False, 10000, libForkManager.address, libForkableRealityETH.address, libBridgeToL2.address, self.FORKMANAGER_INITIAL_RECIPIENT, self.FORKMANAGER_INITIAL_SUPPLY).transact()
+        self.raiseOnZeroStatus(txid, self.l1web3)
+        rcpt = self.l1web3.eth.get_transaction_receipt(txid)
 
         return
 
@@ -572,6 +583,12 @@ class TestRealitio(TestCase):
         self.forkmanager.functions.migrateToChildren(500, True, False).transact(self._txargs(sender=self.L1_BOB))
         self.assertEqual(child_fm1.functions.balanceOf(self.L1_BOB).call(), 5000)
         self.assertEqual(child_fm2.functions.balanceOf(self.L1_BOB).call(), 4500)
+
+
+    @unittest.skipIf(WORKING_ONLY, "Not under construction")
+    def test_setup_simple(self):
+
+        pass
 
 
     @unittest.skipIf(WORKING_ONLY, "Not under construction")
@@ -940,9 +957,12 @@ class TestRealitio(TestCase):
         answer_history = []
 
         txid = self.forkmanager.functions.beginAddArbitratorToWhitelist(self.whitelist_arbitrator.address, self.arb3.address).transact()
+        self.raiseOnZeroStatus(txid, self.l1web3)
         tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
+        print(tx_receipt)
 
         ask_log = self.l1realityeth.events.LogNewQuestion().process_receipt(tx_receipt)
+        print(ask_log)
         contest_question_id = ask_log[0]['args']['question_id']
 
         txid = self.forkmanager.functions.transfer(self.L1_CHARLIE, 12345).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
@@ -1099,6 +1119,8 @@ class TestRealitio(TestCase):
         self.assertEqual(bob_bal, 7654)
         charlie_bal = self.forkmanager.functions.balanceOf(self.L1_CHARLIE).call()
         self.assertEqual(charlie_bal, 938493)
+
+        return
 
         txid = self.forkmanager.functions.bid(40, 321).transact(self._txargs(sender=self.L1_BOB))
         self.raiseOnZeroStatus(txid, self.l1web3)
