@@ -2,8 +2,8 @@ pragma solidity ^0.8.10;
 import "forge-std/Test.sol";
 import "../development/contracts/Arbitrator.sol";
 
-import "../development/contracts/interfaces/IRealityETH.sol";
-import "openzeppelin/token/ERC20/IERC20.sol";
+import "../development/contracts/IRealityETH.sol";
+import "../development/contracts/IERC20.sol";
 
 contract ArbitratorTest is Test {
     Arbitrator arb;

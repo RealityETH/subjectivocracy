@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.10;
 
-import "openzeppelin/token/ERC20/IERC20.sol";
-import "./interfaces/IERC20Mint.sol";
+import "./IERC20.sol";
+import "./IERC20Mint.sol";
 import "./ForkManager.sol";
 
 contract TokenBridge {

@@ -4,7 +4,7 @@ pragma solidity ^0.8.10;
 
 import './BalanceHolder_ERC20.sol';
 
-import "./interfaces/IForkableRealityETH.sol";
+import './IForkableRealityETH.sol';
 
 contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
 

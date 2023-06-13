@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.10;
 
-import "./interfaces/IAMB.sol";
+import "./IAMB.sol";
 
 contract BridgeToL2 is IAMB {
     event LogPassMessage(address _contract, uint256 _gas, bytes _data);

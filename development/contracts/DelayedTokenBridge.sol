@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.10;
 
-import "./interfaces/IERC20Mint.sol";
+import "./IERC20Mint.sol";
 import "./ForkManager.sol";
 
 contract DelayedTokenBridge {
