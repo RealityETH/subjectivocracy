@@ -24,7 +24,7 @@ contract Auction_ERC20 {
     struct Bid {
         address owner;
         uint8 bid; // bid price, 0:100,1:99 to 100:0 ratio of fork prices
-        uint88 amount;
+        uint256 amount;
     }
 
     // maps the bidPrice to the cumulative amount of tokens bid at that price
@@ -87,7 +87,7 @@ contract Auction_ERC20 {
     }
 
     // ForkManager should lock the tokens before calling this
-    function bid(address owner, uint8 _bid, uint88 _amount) 
+    function bid(address owner, uint8 _bid, uint256 _amount) 
         beforeFork
     external
     {
