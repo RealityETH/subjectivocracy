@@ -13,8 +13,8 @@ eg if you say the value of A:B splits 80:20, you will receive at least either 5 
 pragma solidity ^0.8.17;
 
 contract Auction_ERC20 {
-    // Each slot represents a bid price for the ratio of fork token prices, price is 0:100,1:99,...100:0
-    uint256 constant MAX_SLOTS = 101;
+    // todo: rething the name: actually there are 101 slots
+    uint256 constant MAX_SLOTS = 100;
     uint256 public bidCounter;
 
     uint256 public bonus;
@@ -108,7 +108,7 @@ contract Auction_ERC20 {
     }
 
     function getTotalBids() public view returns (uint256 total) {
-        for (uint8 i = 0; i < MAX_SLOTS; i++) {
+        for (uint8 i = 0; i <= MAX_SLOTS; i++) {
             total = total + cumulativeBids[i];
         }
     }
@@ -130,7 +130,7 @@ contract Auction_ERC20 {
         */
 
         sumBids = cumulativeBids[0];
-        for (uint8 i = 1; i < MAX_SLOTS; i++) {
+        for (uint8 i = 1; i <= MAX_SLOTS; i++) {
             sumBids = sumBids + cumulativeBids[i];
             uint256 tokensNeeded = ((sumBids * MAX_SLOTS) / i);
             if (tokensNeeded >= totalBids) {
