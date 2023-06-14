@@ -10,6 +10,7 @@ import time
 from hashlib import sha256
 
 from web3 import Web3, EthereumTesterProvider
+from web3.logs import STRICT, IGNORE, DISCARD, DISCARD
 
 import json
 import bitcoin
@@ -528,7 +529,7 @@ class TestRealitio(TestCase):
 
         # deployFork will create a LogNewAnswer event. 
         # We'll need this for the claim transaction.
-        ans_log = self.l1realityeth.events.LogNewAnswer().process_receipt(rcpt)
+        ans_log = self.l1realityeth.events.LogNewAnswer().process_receipt(rcpt, errors=DISCARD)
 
         # print(rcpt)
         self.raiseOnZeroStatus(txid, self.l1web3)
@@ -690,7 +691,7 @@ class TestRealitio(TestCase):
         self.raiseOnZeroStatus(txid, self.l1web3)
 
         tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
-        bridge_log = self.bridgeToL2.events.LogPassMessage().process_receipt(tx_receipt)
+        bridge_log = self.bridgeToL2.events.LogPassMessage().process_receipt(tx_receipt, errors=DISCARD)
         self.assertEqual(len(bridge_log), 1, "The bridge on L1 was called and logged an event")
         call_data = bridge_log[0]['args']['_data']
 
@@ -824,7 +825,7 @@ class TestRealitio(TestCase):
         gas_price = tx_receipt['effectiveGasPrice']
         spent_on_gas = gas_price * gas_used
         self.assertGreater(self.dispute_fee, spent_on_gas)
-        withdraw_log = self.whitelist_arbitrator.events.LogWithdraw().process_receipt(tx_receipt)
+        withdraw_log = self.whitelist_arbitrator.events.LogWithdraw().process_receipt(tx_receipt, errors=DISCARD)
         self.assertEqual(len(withdraw_log), 1, "The whitelist arbitrator on L2 was called and logged an event")
         self.assertEqual(withdraw_log[0]['args']['user'], self.L2_BOB)
         self.assertEqual(withdraw_log[0]['args']['amount'], self.dispute_fee)
@@ -849,7 +850,7 @@ class TestRealitio(TestCase):
         self.raiseOnZeroStatus(txid, self.l1web3)
 
         tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
-        bridge_log = self.bridgeToL2.events.LogPassMessage().process_receipt(tx_receipt)
+        bridge_log = self.bridgeToL2.events.LogPassMessage().process_receipt(tx_receipt, errors=DISCARD)
         self.assertEqual(len(bridge_log), 1, "The bridge on L1 was called and logged an event")
         call_data = bridge_log[0]['args']['_data']
 
@@ -882,7 +883,7 @@ class TestRealitio(TestCase):
         self.raiseOnZeroStatus(txid, self.l1web3)
 
         tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
-        bridge_log = self.bridgeToL2.events.LogPassMessage().process_receipt(tx_receipt)
+        bridge_log = self.bridgeToL2.events.LogPassMessage().process_receipt(tx_receipt, errors=DISCARD)
         self.assertEqual(len(bridge_log), 1, "The bridge on L1 was called and logged an event")
         call_data = bridge_log[0]['args']['_data']
 
@@ -919,7 +920,7 @@ class TestRealitio(TestCase):
         self.raiseOnZeroStatus(txid, self.l1web3)
 
         tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
-        bridge_log = self.bridgeToL2.events.LogPassMessage().process_receipt(tx_receipt)
+        bridge_log = self.bridgeToL2.events.LogPassMessage().process_receipt(tx_receipt, errors=DISCARD)
         self.assertEqual(len(bridge_log), 1, "The bridge on L1 was called and logged an event")
         call_data = bridge_log[0]['args']['_data']
 
@@ -960,7 +961,7 @@ class TestRealitio(TestCase):
         self.raiseOnZeroStatus(txid, self.l1web3)
         tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
 
-        ask_log = self.l1realityeth.events.LogNewQuestion().process_receipt(tx_receipt)
+        ask_log = self.l1realityeth.events.LogNewQuestion().process_receipt(tx_receipt, errors=DISCARD)
         contest_question_id = ask_log[0]['args']['question_id']
 
         txid = self.forkmanager.functions.transfer(self.L1_CHARLIE, 12345).transact(self._txargs(sender=self.FORKMANAGER_INITIAL_RECIPIENT))
@@ -976,7 +977,7 @@ class TestRealitio(TestCase):
         self.raiseOnZeroStatus(txid, self.l1web3)
 
         tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
-        ans_log = self.l1realityeth.events.LogNewAnswer().process_receipt(tx_receipt)
+        ans_log = self.l1realityeth.events.LogNewAnswer().process_receipt(tx_receipt, errors=DISCARD)
 
         answer_history.append(self._log_to_answer_history(ans_log, last_history_hash))
 
@@ -1056,7 +1057,7 @@ class TestRealitio(TestCase):
 
         # deployFork will create a LogNewAnswer event. 
         # We'll need this for the claim transaction.
-        ans_log = self.l1realityeth.events.LogNewAnswer().process_receipt(rcpt)
+        ans_log = self.l1realityeth.events.LogNewAnswer().process_receipt(rcpt, errors=DISCARD)
 
         # print(rcpt)
         self.raiseOnZeroStatus(txid, self.l1web3)
@@ -1157,7 +1158,7 @@ class TestRealitio(TestCase):
 
         txid = self.forkmanager.functions.beginRemoveArbitratorFromWhitelist(self.whitelist_arbitrator.address, self.arb1.address).transact()
         tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
-        ask_log = self.l1realityeth.events.LogNewQuestion().process_receipt(tx_receipt)
+        ask_log = self.l1realityeth.events.LogNewQuestion().process_receipt(tx_receipt, errors=DISCARD)
         contest_question_id = ask_log[0]['args']['question_id']
 
         # To be able to freeze an arbitrator we need to post at least 1% of supply
@@ -1175,7 +1176,7 @@ class TestRealitio(TestCase):
         txid = self.l1realityeth.functions.submitAnswerERC20(contest_question_id, to_answer_for_contract(1), 0, freeze_amount).transact(self._txargs(sender=self.L1_CHARLIE))
         #self.raiseOnZeroStatus(txid, self.l1web3)
         tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
-        answer_log = self.l1realityeth.events.LogNewAnswer().process_receipt(tx_receipt)
+        answer_log = self.l1realityeth.events.LogNewAnswer().process_receipt(tx_receipt, errors=DISCARD)
 
         history_item = self._log_to_answer_history(answer_log, last_history_hash)
         last_bond = history_item['bond']
@@ -1202,7 +1203,7 @@ class TestRealitio(TestCase):
         #print(encode_hex(contestq[QINDEX_HISTORY_HASH]))
 
         tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
-        bridge_log = self.bridgeToL2.events.LogPassMessage().process_receipt(tx_receipt)
+        bridge_log = self.bridgeToL2.events.LogPassMessage().process_receipt(tx_receipt, errors=DISCARD)
         call_data = bridge_log[0]['args']['_data']
 
 
@@ -1319,7 +1320,7 @@ class TestRealitio(TestCase):
         rcpt = self.l1web3.eth.get_transaction_receipt(txid)
         self.raiseOnZeroStatus(txid, self.l1web3)
 
-        answer_log1 = self.l1realityeth.events.LogNewAnswer().process_receipt(rcpt)
+        answer_log1 = self.l1realityeth.events.LogNewAnswer().process_receipt(rcpt, errors=DISCARD)
         history_item1 = self._log_to_answer_history(answer_log1, new_history_hash)
         answer_history1.append(history_item1)
 
@@ -1331,7 +1332,7 @@ class TestRealitio(TestCase):
         # print(rcpt)
         self.raiseOnZeroStatus(txid, self.l1web3)
 
-        answer_log2 = self.l1realityeth.events.LogNewAnswer().process_receipt(rcpt)
+        answer_log2 = self.l1realityeth.events.LogNewAnswer().process_receipt(rcpt, errors=DISCARD)
         history_item2 = self._log_to_answer_history(answer_log2, new_history_hash)
         answer_history2.append(history_item2)
 
@@ -1776,7 +1777,7 @@ class TestRealitio(TestCase):
         self.raiseOnZeroStatus(txid, self.l1web3)
         tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
 
-        ask_log = self.l1realityeth.events.LogNewQuestion().process_receipt(tx_receipt)
+        ask_log = self.l1realityeth.events.LogNewQuestion().process_receipt(tx_receipt, errors=DISCARD)
         upgrade_question_id = ask_log[0]['args']['question_id']
         #upgrade_question_id = Web3.to_bytes(hexstr="0x"+encode_hex(ask_log[0]['args']['question_id']))
 
@@ -1800,7 +1801,7 @@ class TestRealitio(TestCase):
         self.raiseOnZeroStatus(txid, self.l1web3)
 
         tx_receipt = self.l1web3.eth.get_transaction_receipt(txid)
-        ans_log = self.l1realityeth.events.LogNewAnswer().process_receipt(tx_receipt)
+        ans_log = self.l1realityeth.events.LogNewAnswer().process_receipt(tx_receipt, errors=DISCARD)
 
         answer_history.append(self._log_to_answer_history(ans_log, last_history_hash))
         # self.assertNotEqual(last_history_hash, ans_log['history_hash'])
