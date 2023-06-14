@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.10;
 
-import "openzeppelin/token/ERC20/IERC20.sol";
+import "./interfaces/IERC20.sol";
 import "./ERC20.sol";
 
 import "./ForkableRealityETH_ERC20.sol";

@@ -8,7 +8,7 @@ import "./RealityETH_ERC20-3.0.sol";
 
 import "./interfaces/IArbitrator.sol";
 import "./interfaces/IAMB.sol";
-import "openzeppelin/token/ERC20/IERC20.sol";
+import "./interfaces/IERC20.sol";
 
 /*
 This contract sits between a Reality.eth instance and an Arbitrator.

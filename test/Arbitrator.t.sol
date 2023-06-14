@@ -3,7 +3,7 @@ import "forge-std/Test.sol";
 import "../development/contracts/Arbitrator.sol";
 
 import "../development/contracts/interfaces/IRealityETH.sol";
-import "openzeppelin/token/ERC20/IERC20.sol";
+import "../development/contracts/interfaces/IERC20.sol";
 
 contract ArbitratorTest is Test {
     Arbitrator arb;

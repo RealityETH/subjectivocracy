@@ -4,7 +4,7 @@ pragma solidity ^0.8.10;
 
 import "./interfaces/IArbitrator.sol";
 import "./interfaces/IRealityETH.sol";
-import "openzeppelin/token/ERC20/IERC20.sol";
+import "./interfaces/IERC20.sol";
 import "./Owned.sol";
 
 contract Arbitrator is Owned, IArbitrator {

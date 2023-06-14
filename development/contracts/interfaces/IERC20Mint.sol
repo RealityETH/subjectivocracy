@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.10;
 
-import "openzeppelin/token/ERC20/IERC20.sol";
+import "./IERC20.sol";
 
 /**
  * @title ERC20 interface
