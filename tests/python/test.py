@@ -13,7 +13,6 @@ from web3 import Web3, EthereumTesterProvider
 from web3.logs import STRICT, IGNORE, DISCARD, DISCARD
 
 import json
-import bitcoin
 import os
 
 import time
