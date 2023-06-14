@@ -2,12 +2,11 @@
 
 pragma solidity ^0.8.10;
 
-import './BalanceHolder_ERC20.sol';
+import "./BalanceHolder_ERC20.sol";
 
 import "./interfaces/IForkableRealityETH.sol";
 
 contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
-
     address constant NULL_ADDRESS = address(0);
 
     // History hash when no history is created, or history has been cleared
@@ -23,17 +22,17 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
 
     event LogNewTemplate(
         uint256 indexed template_id,
-        address indexed user, 
+        address indexed user,
         string question_text
     );
 
     event LogNewQuestion(
         bytes32 indexed question_id,
-        address indexed user, 
+        address indexed user,
         uint256 template_id,
         string question,
         bytes32 indexed content_hash,
-        address arbitrator, 
+        address arbitrator,
         uint32 timeout,
         uint32 opening_ts,
         uint256 nonce,
@@ -52,13 +51,10 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
 
     event LogNotifyOfArbitrationRequest(
         bytes32 indexed question_id,
-        address indexed user 
+        address indexed user
     );
 
-    event LogFinalize(
-        bytes32 indexed question_id,
-        bytes32 indexed answer
-    );
+    event LogFinalize(bytes32 indexed question_id, bytes32 indexed answer);
 
     event LogClaim(
         bytes32 indexed question_id,
@@ -95,7 +91,10 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     mapping(bytes32 => Claim) public question_claims;
 
     modifier onlyArbitrator(bytes32 question_id) {
-        require(msg.sender == questions[question_id].arbitrator, "msg.sender must be arbitrator");
+        require(
+            msg.sender == questions[question_id].arbitrator,
+            "msg.sender must be arbitrator"
+        );
         _;
     }
 
@@ -109,18 +108,30 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     }
 
     modifier statePendingArbitration(bytes32 question_id) {
-        require(questions[question_id].is_pending_arbitration, "question must be pending arbitration");
+        require(
+            questions[question_id].is_pending_arbitration,
+            "question must be pending arbitration"
+        );
         _;
     }
 
     modifier stateOpen(bytes32 question_id) {
         require(questions[question_id].timeout > 0, "question must exist");
-        require(!questions[question_id].is_pending_arbitration, "question must not be pending arbitration");
+        require(
+            !questions[question_id].is_pending_arbitration,
+            "question must not be pending arbitration"
+        );
         require(!is_frozen, "contract must not be pending frozen");
         uint32 finalize_ts = questions[question_id].finalize_ts;
-        require(finalize_ts == UNANSWERED || finalize_ts > uint32(block.timestamp), "finalization deadline must not have passed");
+        require(
+            finalize_ts == UNANSWERED || finalize_ts > uint32(block.timestamp),
+            "finalization deadline must not have passed"
+        );
         uint32 opening_ts = questions[question_id].opening_ts;
-        require(opening_ts == 0 || opening_ts <= uint32(block.timestamp), "opening date must have passed"); 
+        require(
+            opening_ts == 0 || opening_ts <= uint32(block.timestamp),
+            "opening date must have passed"
+        );
         _;
     }
 
@@ -132,9 +143,15 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
         uint32 finalize_ts = questions[question_id].finalize_ts;
 
         // The same checks as the traditional isFinalized()
-        require(!questions[question_id].is_pending_arbitration, "Pending arbitration, cannot finalize yet");
+        require(
+            !questions[question_id].is_pending_arbitration,
+            "Pending arbitration, cannot finalize yet"
+        );
         require(finalize_ts > UNANSWERED, "Not answered, cannot finalize");
-        require(finalize_ts <= uint32(block.timestamp), "Finalization time has not yet arrived");
+        require(
+            finalize_ts <= uint32(block.timestamp),
+            "Finalization time has not yet arrived"
+        );
         _;
     }
 
@@ -149,24 +166,42 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     }
 
     modifier bondMustDouble(bytes32 question_id, uint256 tokens) {
-        require(tokens > 0, "bond must be positive"); 
-        require(tokens >= (questions[question_id].bond * 2), "bond must be double at least previous bond");
+        require(tokens > 0, "bond must be positive");
+        require(
+            tokens >= (questions[question_id].bond * 2),
+            "bond must be double at least previous bond"
+        );
         _;
     }
 
-    modifier previousBondMustNotBeatMaxPrevious(bytes32 question_id, uint256 max_previous) {
+    modifier previousBondMustNotBeatMaxPrevious(
+        bytes32 question_id,
+        uint256 max_previous
+    ) {
         if (max_previous > 0) {
-            require(questions[question_id].bond <= max_previous, "bond must exceed max_previous");
+            require(
+                questions[question_id].bond <= max_previous,
+                "bond must exceed max_previous"
+            );
         }
         _;
     }
 
-    function init(IERC20 _token, address _parent_reality_eth, bytes32 _question_id)
-    public {
+    function init(
+        IERC20 _token,
+        address _parent_reality_eth,
+        bytes32 _question_id
+    ) public {
         require(address(token) == address(0), "Can only be initialized once");
-        createTemplate('{"title": "Should we add arbitrator %s to whitelist contract %s", "type": "bool"}');
-        createTemplate('{"title": "Should we remove arbitrator %s from whitelist contract %s", "type": "bool"}');
-        createTemplate('{"title": "Should switch to ForkManager %s", "type": "bool"}');
+        createTemplate(
+            '{"title": "Should we add arbitrator %s to whitelist contract %s", "type": "bool"}'
+        );
+        createTemplate(
+            '{"title": "Should we remove arbitrator %s from whitelist contract %s", "type": "bool"}'
+        );
+        createTemplate(
+            '{"title": "Should switch to ForkManager %s", "type": "bool"}'
+        );
         token = _token;
         if (_question_id != bytes32(0x0)) {
             _importQuestion(_parent_reality_eth, _question_id);
@@ -178,9 +213,9 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     /// @dev Template data is only stored in the event logs, but its block number is kept in contract storage.
     /// @param content The template content
     /// @return The ID of the newly-created template, which is created sequentially.
-    function createTemplate(string memory content) 
-        stateAny()
-    private returns (uint256) {
+    function createTemplate(
+        string memory content
+    ) private stateAny returns (uint256) {
         uint256 id = nextTemplateID;
         templates[id] = block.number;
         template_hashes[id] = keccak256(abi.encodePacked(content));
@@ -200,24 +235,59 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     /// @param opening_ts If set, the earliest time it should be possible to answer the question.
     /// @param nonce A user-specified nonce used in the question ID. Change it to repeat a question.
     /// @return The ID of the newly-created question, created deterministically.
-    function askQuestion(uint256 template_id, string memory question, address arbitrator, uint32 timeout, uint32 opening_ts, uint256 nonce) 
-        // stateNotCreated is enforced by the internal _askQuestion
-    public returns (bytes32) {
-
+    function askQuestion(
+        uint256 template_id,
+        string memory question,
+        address arbitrator,
+        uint32 timeout,
+        uint32 opening_ts,
+        uint256 nonce
+    )
+        public
+        returns (
+            // stateNotCreated is enforced by the internal _askQuestion
+            bytes32
+        )
+    {
         require(templates[template_id] > 0, "template must exist");
 
-        bytes32 content_hash = keccak256(abi.encodePacked(template_id, opening_ts, question));
-        bytes32 question_id = keccak256(abi.encodePacked(content_hash, arbitrator, timeout, msg.sender, nonce));
+        bytes32 content_hash = keccak256(
+            abi.encodePacked(template_id, opening_ts, question)
+        );
+        bytes32 question_id = keccak256(
+            abi.encodePacked(
+                content_hash,
+                arbitrator,
+                timeout,
+                msg.sender,
+                nonce
+            )
+        );
 
-        _askQuestion(question_id, content_hash, arbitrator, timeout, opening_ts);
-        emit LogNewQuestion(question_id, msg.sender, template_id, question, content_hash, arbitrator, timeout, opening_ts, nonce, block.timestamp);
+        _askQuestion(
+            question_id,
+            content_hash,
+            arbitrator,
+            timeout,
+            opening_ts
+        );
+        emit LogNewQuestion(
+            question_id,
+            msg.sender,
+            template_id,
+            question,
+            content_hash,
+            arbitrator,
+            timeout,
+            opening_ts,
+            nonce,
+            block.timestamp
+        );
 
         return question_id;
     }
 
-    function _deductTokensOrRevert(uint256 tokens) 
-    internal {
-
+    function _deductTokensOrRevert(uint256 tokens) internal {
         if (tokens == 0) {
             return;
         }
@@ -234,27 +304,37 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
                 balanceOf[msg.sender] = 0;
             }
         }
-        // Now we need to charge the rest from 
-        require(token.transferFrom(msg.sender, address(this), tokens), "Transfer of tokens failed, insufficient approved balance?");
+        // Now we need to charge the rest from
+        require(
+            token.transferFrom(msg.sender, address(this), tokens),
+            "Transfer of tokens failed, insufficient approved balance?"
+        );
         return;
-
     }
 
-    function _askQuestion(bytes32 question_id, bytes32 content_hash, address arbitrator, uint32 timeout, uint32 opening_ts) 
-        stateNotCreated(question_id)
-    internal {
-
+    function _askQuestion(
+        bytes32 question_id,
+        bytes32 content_hash,
+        address arbitrator,
+        uint32 timeout,
+        uint32 opening_ts
+    ) internal stateNotCreated(question_id) {
         // A timeout of 0 makes no sense, and we will use this to check existence
-        require(timeout > 0, "timeout must be positive"); 
-        require(timeout < 365 days, "timeout must be less than 365 days"); 
-        require(arbitrator == address(token), "Our ForkManager must be the arbitrator");
-        require(arbitrator == msg.sender, "Questions must be proxied through the ForkManager");
+        require(timeout > 0, "timeout must be positive");
+        require(timeout < 365 days, "timeout must be less than 365 days");
+        require(
+            arbitrator == address(token),
+            "Our ForkManager must be the arbitrator"
+        );
+        require(
+            arbitrator == msg.sender,
+            "Questions must be proxied through the ForkManager"
+        );
 
         questions[question_id].content_hash = content_hash;
         questions[question_id].arbitrator = arbitrator;
         questions[question_id].opening_ts = opening_ts;
         questions[question_id].timeout = timeout;
-
     }
 
     /// @notice Submit an answer for a question.
@@ -264,16 +344,21 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     /// @param answer The answer, encoded into bytes32
     /// @param max_previous If specified, reverts if a bond higher than this was submitted after you sent your transaction.
     /// @param tokens The amount of tokens to submit
-    function submitAnswerERC20(bytes32 question_id, bytes32 answer, uint256 max_previous, uint256 tokens) 
+    function submitAnswerERC20(
+        bytes32 question_id,
+        bytes32 answer,
+        uint256 max_previous,
+        uint256 tokens
+    )
+        external
         stateOpen(question_id)
         bondMustDouble(question_id, tokens)
         previousBondMustNotBeatMaxPrevious(question_id, max_previous)
-    external {
+    {
         _deductTokensOrRevert(tokens);
         _addAnswerToHistory(question_id, answer, msg.sender, tokens);
         _updateCurrentAnswer(question_id, answer);
     }
-
 
     /// @notice Submit an answer for a question, crediting it to the specified account.
     /// @dev Adds the answer to the history and updates the current "best" answer.
@@ -283,42 +368,81 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     /// @param max_previous If specified, reverts if a bond higher than this was submitted after you sent your transaction.
     /// @param answerer The account to which the answer should be credited
     /// @param tokens The amount of tokens to submit
-    function submitAnswerForERC20(bytes32 question_id, bytes32 answer, uint256 max_previous, address answerer, uint256 tokens)
+    function submitAnswerForERC20(
+        bytes32 question_id,
+        bytes32 answer,
+        uint256 max_previous,
+        address answerer,
+        uint256 tokens
+    )
+        external
+        payable
         stateOpen(question_id)
         bondMustDouble(question_id, tokens)
         previousBondMustNotBeatMaxPrevious(question_id, max_previous)
-    external payable {
+    {
         _deductTokensOrRevert(tokens);
         require(answerer != NULL_ADDRESS, "answerer must be non-zero");
         _addAnswerToHistory(question_id, answer, answerer, tokens);
         _updateCurrentAnswer(question_id, answer);
     }
 
-    function _addAnswerToHistory(bytes32 question_id, bytes32 answer_or_commitment_id, address answerer, uint256 bond) 
-    internal 
-    {
-        require(answer_or_commitment_id == bytes32(uint256(1)) || answer_or_commitment_id == bytes32(uint256(0)), "Only answer 1 and 0 are supported");
+    function _addAnswerToHistory(
+        bytes32 question_id,
+        bytes32 answer_or_commitment_id,
+        address answerer,
+        uint256 bond
+    ) internal {
+        require(
+            answer_or_commitment_id == bytes32(uint256(1)) ||
+                answer_or_commitment_id == bytes32(uint256(0)),
+            "Only answer 1 and 0 are supported"
+        );
 
-        bytes32 new_history_hash = keccak256(abi.encodePacked(questions[question_id].history_hash, answer_or_commitment_id, bond, answerer, false));
+        bytes32 new_history_hash = keccak256(
+            abi.encodePacked(
+                questions[question_id].history_hash,
+                answer_or_commitment_id,
+                bond,
+                answerer,
+                false
+            )
+        );
 
         // Update the current bond level, if there's a bond (ie anything except arbitration)
         if (bond > 0) {
             questions[question_id].bond = bond;
-            questions[question_id].cumulative_bonds = questions[question_id].cumulative_bonds + bond;
+            questions[question_id].cumulative_bonds =
+                questions[question_id].cumulative_bonds +
+                bond;
         }
         questions[question_id].history_hash = new_history_hash;
 
-        emit LogNewAnswer(answer_or_commitment_id, question_id, new_history_hash, answerer, bond, block.timestamp, false);
+        emit LogNewAnswer(
+            answer_or_commitment_id,
+            question_id,
+            new_history_hash,
+            answerer,
+            bond,
+            block.timestamp,
+            false
+        );
     }
 
-    function _updateCurrentAnswer(bytes32 question_id, bytes32 answer)
-    internal {
+    function _updateCurrentAnswer(
+        bytes32 question_id,
+        bytes32 answer
+    ) internal {
         questions[question_id].best_answer = answer;
-        questions[question_id].finalize_ts = uint32(block.timestamp) + questions[question_id].timeout;
+        questions[question_id].finalize_ts =
+            uint32(block.timestamp) +
+            questions[question_id].timeout;
     }
 
-    function _updateCurrentAnswerByArbitrator(bytes32 question_id, bytes32 answer)
-    internal {
+    function _updateCurrentAnswerByArbitrator(
+        bytes32 question_id,
+        bytes32 answer
+    ) internal {
         questions[question_id].best_answer = answer;
         questions[question_id].finalize_ts = uint32(block.timestamp);
     }
@@ -329,14 +453,25 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     /// @param question_id The ID of the question
     /// @param requester The account that requested arbitration
     /// @param max_previous If specified, reverts if a bond higher than this was submitted after you sent your transaction.
-    function notifyOfArbitrationRequest(bytes32 question_id, address requester, uint256 max_previous) 
+    function notifyOfArbitrationRequest(
+        bytes32 question_id,
+        address requester,
+        uint256 max_previous
+    )
+        external
         onlyArbitrator(question_id)
         stateOpen(question_id)
         previousBondMustNotBeatMaxPrevious(question_id, max_previous)
-    external {
-        require(questions[question_id].bond > 0, "Question must already have an answer when arbitration is requested");
+    {
+        require(
+            questions[question_id].bond > 0,
+            "Question must already have an answer when arbitration is requested"
+        );
         questions[question_id].is_pending_arbitration = true;
-        require(msg.sender == address(token), "Only the owner (ForkManger token) can do freeze the contract");
+        require(
+            msg.sender == address(token),
+            "Only the owner (ForkManger token) can do freeze the contract"
+        );
 
         is_frozen = true;
 
@@ -355,11 +490,11 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     /// @param question_id The ID of the question
     /// @param answer The answer, encoded into bytes32
     /// @param answerer The account credited with this answer for the purpose of bond claims
-    function submitAnswerByArbitrator(bytes32 question_id, bytes32 answer, address answerer)
-        onlyArbitrator(question_id)
-        statePendingArbitration(question_id)
-    public {
-
+    function submitAnswerByArbitrator(
+        bytes32 question_id,
+        bytes32 answer,
+        address answerer
+    ) public onlyArbitrator(question_id) statePendingArbitration(question_id) {
         require(answerer != NULL_ADDRESS, "answerer must be provided");
         emit LogFinalize(question_id, answer);
 
@@ -373,8 +508,7 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     /// @notice Report whether the answer to the specified question is finalized
     /// @param question_id The ID of the question
     /// @return Return true if finalized
-    function isFinalized(bytes32 question_id) 
-    view public returns (bool) {
+    function isFinalized(bytes32 question_id) public view returns (bool) {
         return questions[question_id].is_finalized;
     }
 
@@ -382,21 +516,22 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     /// @dev Returns false if pending arbitration
     /// @param question_id The ID of the question
     /// @return Return true if finalized
-    function canBeFinalized(bytes32 question_id) 
-    view public returns (bool) {
+    function canBeFinalized(bytes32 question_id) public view returns (bool) {
         if (is_frozen) {
             return false;
         }
         uint32 finalize_ts = questions[question_id].finalize_ts;
-        return ( !questions[question_id].is_pending_arbitration && (finalize_ts > UNANSWERED) && (finalize_ts <= uint32(block.timestamp)) );
+        return (!questions[question_id].is_pending_arbitration &&
+            (finalize_ts > UNANSWERED) &&
+            (finalize_ts <= uint32(block.timestamp)));
     }
 
     /// @notice Finalize the question
-    /// @dev This isn't done in the unforkable version, there we just finalize by time. 
+    /// @dev This isn't done in the unforkable version, there we just finalize by time.
     /// @param question_id The ID of the question
-    function finalize(bytes32 question_id) 
-        stateAwaitingFinalization(question_id)
-    external {
+    function finalize(
+        bytes32 question_id
+    ) external stateAwaitingFinalization(question_id) {
         require(canBeFinalized(question_id), "Cannot be finalized yet");
         questions[question_id].is_finalized = true;
         emit LogFinalize(question_id, questions[question_id].best_answer);
@@ -405,24 +540,25 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     /// @notice (Deprecated) Return the final answer to the specified question, or revert if there isn't one
     /// @param question_id The ID of the question
     /// @return The answer formatted as a bytes32
-    function getFinalAnswer(bytes32 question_id) 
-        stateFinalized(question_id)
-    external view returns (bytes32) {
+    function getFinalAnswer(
+        bytes32 question_id
+    ) external view stateFinalized(question_id) returns (bytes32) {
         return questions[question_id].best_answer;
     }
 
     /// @notice Return the final answer to the specified question, or revert if there isn't one
     /// @param question_id The ID of the question
     /// @return The answer formatted as a bytes32
-    function resultFor(bytes32 question_id) 
-        stateFinalized(question_id)
-    external view returns (bytes32) {
+    function resultFor(
+        bytes32 question_id
+    ) external view stateFinalized(question_id) returns (bytes32) {
         return questions[question_id].best_answer;
     }
 
-    function _subtractClaimFee(bytes32 question_id, uint256 last_bond)
-    internal returns (uint256) {
-
+    function _subtractClaimFee(
+        bytes32 question_id,
+        uint256 last_bond
+    ) internal returns (uint256) {
         address arbitrator = questions[question_id].arbitrator;
         // Give the arbitrator a fraction of all bonds except the final one.
         // This creates a cost to increasing your own bond, which could be used to delay resolution maliciously
@@ -432,7 +568,6 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
             balanceOf[arbitrator] = balanceOf[arbitrator] + claim_fee;
         }
         return last_bond;
-
     }
 
     /// @notice Return the final answer to the specified question, provided it matches the specified criteria.
@@ -444,15 +579,28 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     /// @param min_bond The bond sent with the final answer must be this high or higher
     /// @return The answer formatted as a bytes32
     function getFinalAnswerIfMatches(
-        bytes32 question_id, 
-        bytes32 content_hash, address arbitrator, uint32 min_timeout, uint256 min_bond
-    ) 
-        stateFinalized(question_id)
-    external view returns (bytes32) {
-        require(content_hash == questions[question_id].content_hash, "content hash must match");
-        require(arbitrator == questions[question_id].arbitrator, "arbitrator must match");
-        require(min_timeout <= questions[question_id].timeout, "timeout must be long enough");
-        require(min_bond <= questions[question_id].bond, "bond must be high enough");
+        bytes32 question_id,
+        bytes32 content_hash,
+        address arbitrator,
+        uint32 min_timeout,
+        uint256 min_bond
+    ) external view stateFinalized(question_id) returns (bytes32) {
+        require(
+            content_hash == questions[question_id].content_hash,
+            "content hash must match"
+        );
+        require(
+            arbitrator == questions[question_id].arbitrator,
+            "arbitrator must match"
+        );
+        require(
+            min_timeout <= questions[question_id].timeout,
+            "timeout must be long enough"
+        );
+        require(
+            min_bond <= questions[question_id].bond,
+            "bond must be high enough"
+        );
         return questions[question_id].best_answer;
     }
 
@@ -471,18 +619,21 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     /// @param bonds Last-to-first, the bond supplied with each answer or commitment
     /// @param answers Last-to-first, each answer supplied, or commitment ID if the answer was supplied with commit->reveal
     function claimWinnings(
-        bytes32 question_id, 
-        bytes32[] memory history_hashes, address[] memory addrs, uint256[] memory bonds, bytes32[] memory answers
-    ) 
-        stateFinalized(question_id)
-    public {
-
-        require(history_hashes.length > 0, "at least one history hash entry must be provided");
+        bytes32 question_id,
+        bytes32[] memory history_hashes,
+        address[] memory addrs,
+        uint256[] memory bonds,
+        bytes32[] memory answers
+    ) public stateFinalized(question_id) {
+        require(
+            history_hashes.length > 0,
+            "at least one history hash entry must be provided"
+        );
 
         // These are only set if we split our claim over multiple transactions.
-        address payee = question_claims[question_id].payee; 
-        uint256 last_bond = question_claims[question_id].last_bond; 
-        uint256 queued_funds = question_claims[question_id].queued_funds; 
+        address payee = question_claims[question_id].payee;
+        uint256 last_bond = question_claims[question_id].last_bond;
+        uint256 queued_funds = question_claims[question_id].queued_funds;
 
         // Starts as the hash of the final answer submitted. It'll be cleared when we're done.
         // If we're splitting the claim over multiple transactions, it'll be the hash where we left off last time
@@ -492,21 +643,31 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
 
         uint256 i;
         for (i = 0; i < history_hashes.length; i++) {
-        
             // Check input against the history hash, and see which of 2 possible values of is_commitment fits.
-            _verifyHistoryInputOrRevert(last_history_hash, history_hashes[i], answers[i], bonds[i], addrs[i]);
-            
+            _verifyHistoryInputOrRevert(
+                last_history_hash,
+                history_hashes[i],
+                answers[i],
+                bonds[i],
+                addrs[i]
+            );
+
             queued_funds = queued_funds + last_bond;
             (queued_funds, payee) = _processHistoryItem(
-                question_id, best_answer, queued_funds, payee, 
-                addrs[i], bonds[i], answers[i]);
- 
+                question_id,
+                best_answer,
+                queued_funds,
+                payee,
+                addrs[i],
+                bonds[i],
+                answers[i]
+            );
+
             // Line the bond up for next time, when it will be added to somebody's queued_funds
             last_bond = _subtractClaimFee(question_id, bonds[i]);
             last_history_hash = history_hashes[i];
-
         }
- 
+
         if (last_history_hash != NULL_HASH) {
             // We haven't yet got to the null hash (1st answer), ie the caller didn't supply the full answer chain.
             // Persist the details so we can pick up later where we left off later.
@@ -528,70 +689,81 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
         }
 
         questions[question_id].history_hash = last_history_hash;
-
     }
 
-    function _payPayee(bytes32 question_id, address payee, uint256 value) 
-    internal {
+    function _payPayee(
+        bytes32 question_id,
+        address payee,
+        uint256 value
+    ) internal {
         balanceOf[payee] = balanceOf[payee] + value;
         emit LogClaim(question_id, payee, value);
     }
 
     function _verifyHistoryInputOrRevert(
         bytes32 last_history_hash,
-        bytes32 history_hash, bytes32 answer, uint256 bond, address addr
-    )
-    internal pure returns (bool) {
-        if (last_history_hash == keccak256(abi.encodePacked(history_hash, answer, bond, addr, true)) ) {
+        bytes32 history_hash,
+        bytes32 answer,
+        uint256 bond,
+        address addr
+    ) internal pure returns (bool) {
+        if (
+            last_history_hash ==
+            keccak256(abi.encodePacked(history_hash, answer, bond, addr, true))
+        ) {
             return true;
         }
-        if (last_history_hash == keccak256(abi.encodePacked(history_hash, answer, bond, addr, false)) ) {
+        if (
+            last_history_hash ==
+            keccak256(abi.encodePacked(history_hash, answer, bond, addr, false))
+        ) {
             return false;
-        } 
+        }
         revert("History input provided did not match the expected hash");
     }
 
     function _processHistoryItem(
-        bytes32 question_id, bytes32 best_answer, 
-        uint256 queued_funds, address payee, 
-        address addr, uint256 bond, bytes32 answer
-    )
-    internal returns (uint256, address) {
-
+        bytes32 question_id,
+        bytes32 best_answer,
+        uint256 queued_funds,
+        address payee,
+        address addr,
+        uint256 bond,
+        bytes32 answer
+    ) internal returns (uint256, address) {
         // For commit-and-reveal, the answer history holds the commitment ID instead of the answer.
         // We look at the referenced commitment ID and switch in the actual answer.
         if (answer == best_answer) {
-
             if (payee == NULL_ADDRESS) {
-
                 // The entry is for the first payee we come to, ie the winner.
                 payee = addr;
-
             } else if (addr != payee) {
-
                 // Answerer has changed, ie we found someone lower down who needs to be paid
 
                 // The lower answerer will take over receiving bonds from higher answerer.
-                // They should also be paid the takeover fee, which is set at a rate equivalent to their bond. 
+                // They should also be paid the takeover fee, which is set at a rate equivalent to their bond.
                 // (This is our arbitrary rule, to give consistent right-answerers a defence against high-rollers.)
 
                 // There should be enough for the fee, but if not, take what we have.
                 // There's an edge case involving weird arbitrator behaviour where we may be short.
-                uint256 answer_takeover_fee = (queued_funds >= bond) ? bond : queued_funds;
+                uint256 answer_takeover_fee = (queued_funds >= bond)
+                    ? bond
+                    : queued_funds;
 
                 // Settle up with the old (higher-bonded) payee
-                _payPayee(question_id, payee, queued_funds - answer_takeover_fee);
+                _payPayee(
+                    question_id,
+                    payee,
+                    queued_funds - answer_takeover_fee
+                );
 
                 // Now start queued_funds again for the new (lower-bonded) payee
                 payee = addr;
                 queued_funds = answer_takeover_fee;
-
             }
-
         }
 
         return (queued_funds, payee);
-
     }
 
     /// @notice Convenience function to assign bounties/bonds for multiple questions in one go, then withdraw all your funds.
@@ -602,14 +774,18 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     /// @param hist_hashes In a single list for all supplied questions, the hash of each history entry.
     /// @param addrs In a single list for all supplied questions, the address of each answerer or commitment sender
     /// @param bonds In a single list for all supplied questions, the bond supplied with each answer or commitment
-    /// @param answers In a single list for all supplied questions, each answer supplied, or commitment ID 
+    /// @param answers In a single list for all supplied questions, each answer supplied, or commitment ID
     function claimMultipleAndWithdrawBalance(
-        bytes32[] memory question_ids, uint256[] memory lengths, 
-        bytes32[] memory hist_hashes, address[] memory addrs, uint256[] memory bonds, bytes32[] memory answers
-    ) 
-        stateAny() // The finalization checks are done in the claimWinnings function
-    public {
-        
+        bytes32[] memory question_ids,
+        uint256[] memory lengths,
+        bytes32[] memory hist_hashes,
+        address[] memory addrs,
+        uint256[] memory bonds,
+        bytes32[] memory answers
+    )
+        public
+        stateAny // The finalization checks are done in the claimWinnings function
+    {
         uint256 qi;
         uint256 i;
         for (qi = 0; qi < question_ids.length; qi++) {
@@ -644,26 +820,31 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     /// @param bonds Last-to-first, the bond supplied with each answer or commitment
     /// @param answers Last-to-first, each answer supplied, or commitment ID if the answer was supplied with commit->reveal
     function refund(
-        bytes32 question_id, 
-        bytes32[] memory history_hashes, address[] memory addrs, uint256[] memory bonds, bytes32[] memory answers
-    ) 
-        stateFrozen()
-        stateOpen(question_id)
-    public {
-
-        require(history_hashes.length > 0, "at least one history hash entry must be provided");
+        bytes32 question_id,
+        bytes32[] memory history_hashes,
+        address[] memory addrs,
+        uint256[] memory bonds,
+        bytes32[] memory answers
+    ) public stateFrozen stateOpen(question_id) {
+        require(
+            history_hashes.length > 0,
+            "at least one history hash entry must be provided"
+        );
 
         uint256 i;
         for (i = 0; i < history_hashes.length; i++) {
-        
             // Check input against the history hash
-            _verifyHistoryInputOrRevert(questions[question_id].history_hash, history_hashes[i], answers[i], bonds[i], addrs[i]);
-            
+            _verifyHistoryInputOrRevert(
+                questions[question_id].history_hash,
+                history_hashes[i],
+                answers[i],
+                bonds[i],
+                addrs[i]
+            );
+
             balanceOf[addrs[i]] = balanceOf[addrs[i]] + bonds[i];
             questions[question_id].history_hash = history_hashes[i];
-
         }
- 
     }
 
     /// @notice Convenience function to refund bonds for multiple questions in one go, then withdraw all your funds.
@@ -674,14 +855,15 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     /// @param hist_hashes In a single list for all supplied questions, the hash of each history entry.
     /// @param addrs In a single list for all supplied questions, the address of each answerer or commitment sender
     /// @param bonds In a single list for all supplied questions, the bond supplied with each answer or commitment
-    /// @param answers In a single list for all supplied questions, each answer supplied, or commitment ID 
+    /// @param answers In a single list for all supplied questions, each answer supplied, or commitment ID
     function refundMultipleAndWithdrawBalance(
-        bytes32[] memory question_ids, uint256[] memory lengths, 
-        bytes32[] memory hist_hashes, address[] memory addrs, uint256[] memory bonds, bytes32[] memory answers
-    ) 
-        stateFrozen()
-    public {
-        
+        bytes32[] memory question_ids,
+        uint256[] memory lengths,
+        bytes32[] memory hist_hashes,
+        address[] memory addrs,
+        uint256[] memory bonds,
+        bytes32[] memory answers
+    ) public stateFrozen {
         uint256 qi;
         uint256 i;
         for (qi = 0; qi < question_ids.length; qi++) {
@@ -705,21 +887,20 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     }
 
     /// Copies a question from an old instance to this new one after a fork
-    /// The question we fork over, which will be the only one pending arbitration, will be migrated with its answers. 
+    /// The question we fork over, which will be the only one pending arbitration, will be migrated with its answers.
     /// The budget for this question should have been transferred when we did the fork.
     /// Other questions will to be created as if asked new, but this method preserves their old question_ids
     /// NB The question_id will no longer match the hash of the content, as the arbitrator has changed
     /// @param _parent - The address of the reality.eth we should import from
     /// @param _question_id - The ID of the question to migrate.
-    function _importQuestion(address _parent, bytes32 _question_id) 
-    internal {
+    function _importQuestion(address _parent, bytes32 _question_id) internal {
         IForkableRealityETH parent = IForkableRealityETH(_parent);
         questions[_question_id] = Question(
-            parent.getContentHash(_question_id),	
+            parent.getContentHash(_question_id),
             msg.sender,
-            parent.getOpeningTS(_question_id),	
-            parent.getTimeout(_question_id),	
-            parent.getFinalizeTS(_question_id),	
+            parent.getOpeningTS(_question_id),
+            parent.getTimeout(_question_id),
+            parent.getFinalizeTS(_question_id),
             true,
             parent.getCumulativeBonds(_question_id),
             parent.getBestAnswer(_question_id),
@@ -730,75 +911,68 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     }
 
     /// @notice Returns the questions's content hash, identifying the question content
-    /// @param question_id The ID of the question 
-    function getContentHash(bytes32 question_id) 
-    public view returns(bytes32) {
+    /// @param question_id The ID of the question
+    function getContentHash(bytes32 question_id) public view returns (bytes32) {
         return questions[question_id].content_hash;
     }
 
     /// @notice Returns the arbitrator address for the question
-    /// @param question_id The ID of the question 
-    function getArbitrator(bytes32 question_id) 
-    public view returns(address) {
+    /// @param question_id The ID of the question
+    function getArbitrator(bytes32 question_id) public view returns (address) {
         return questions[question_id].arbitrator;
     }
 
     /// @notice Returns the timestamp when the question can first be answered
-    /// @param question_id The ID of the question 
-    function getOpeningTS(bytes32 question_id) 
-    public view returns(uint32) {
+    /// @param question_id The ID of the question
+    function getOpeningTS(bytes32 question_id) public view returns (uint32) {
         return questions[question_id].opening_ts;
     }
 
     /// @notice Returns the timeout in seconds used after each answer
-    /// @param question_id The ID of the question 
-    function getTimeout(bytes32 question_id) 
-    public view returns(uint32) {
+    /// @param question_id The ID of the question
+    function getTimeout(bytes32 question_id) public view returns (uint32) {
         return questions[question_id].timeout;
     }
 
     /// @notice Returns the timestamp at which the question will be/was finalized
-    /// @param question_id The ID of the question 
-    function getFinalizeTS(bytes32 question_id) 
-    public view returns(uint32) {
+    /// @param question_id The ID of the question
+    function getFinalizeTS(bytes32 question_id) public view returns (uint32) {
         return questions[question_id].finalize_ts;
     }
 
     /// @notice Returns whether the question is pending arbitration
-    /// @param question_id The ID of the question 
-    function isPendingArbitration(bytes32 question_id) 
-    public view returns(bool) {
+    /// @param question_id The ID of the question
+    function isPendingArbitration(
+        bytes32 question_id
+    ) public view returns (bool) {
         return questions[question_id].is_pending_arbitration;
     }
 
     /// @notice Returns the current total cumulative bonds
     /// @dev Used when migrating questions in forks, as we have to give the child contract the money to pay out
-    /// @param question_id The ID of the question 
-    function getCumulativeBonds(bytes32 question_id) 
-    public view returns(uint256) {
+    /// @param question_id The ID of the question
+    function getCumulativeBonds(
+        bytes32 question_id
+    ) public view returns (uint256) {
         return questions[question_id].cumulative_bonds;
     }
 
     /// @notice Returns the current best answer
-    /// @param question_id The ID of the question 
-    function getBestAnswer(bytes32 question_id) 
-    public view returns(bytes32) {
+    /// @param question_id The ID of the question
+    function getBestAnswer(bytes32 question_id) public view returns (bytes32) {
         return questions[question_id].best_answer;
     }
 
-    /// @notice Returns the history hash of the question 
-    /// @param question_id The ID of the question 
+    /// @notice Returns the history hash of the question
+    /// @param question_id The ID of the question
     /// @dev Updated on each answer, then rewound as each is claimed
-    function getHistoryHash(bytes32 question_id) 
-    public view returns(bytes32) {
+    function getHistoryHash(bytes32 question_id) public view returns (bytes32) {
         return questions[question_id].history_hash;
     }
 
     /// @notice Returns the highest bond posted so far for a question
-    /// @param question_id The ID of the question 
-    function getBond(bytes32 question_id) 
-    public view returns(uint256) {
+    /// @param question_id The ID of the question
+    function getBond(bytes32 question_id) public view returns (uint256) {
         return questions[question_id].bond;
     }
-
 }
