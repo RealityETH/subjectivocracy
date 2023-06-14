@@ -89,6 +89,7 @@ contract Auction_ERC20 {
     // ForkManager should lock the tokens before calling this
     function bid(address owner, uint8 _bid, uint256 _amount) 
         beforeFork
+        onlyForkManager
     external
     {
         require(_bid <= MAX_SLOTS);
