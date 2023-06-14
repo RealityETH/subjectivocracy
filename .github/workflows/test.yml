@@ -42,7 +42,7 @@ jobs:
           python3 -m venv venv
           source venv/bin/activate
           cd tests/python
-          - pip install -r requirements.txt
+          -pip install -r requirements.txt
           python test.py
 
   lint:
