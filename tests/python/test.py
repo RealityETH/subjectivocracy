@@ -231,10 +231,6 @@ class TestRealitio(TestCase):
         bcode = None
         contract_if = None
 
-        bytecode_file = '../../bytecode/' + con_name + '.bin'
-        with open(bytecode_file) as f:
-            bcode = f.read().strip("\n")
-
         with open(build_file) as f:
             fj = json.load(f)
             contract_if = fj['abi']
