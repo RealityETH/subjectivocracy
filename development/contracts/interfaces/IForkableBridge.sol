@@ -3,11 +3,7 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 interface IForkableBridge {
-
-    function initialize(
-        address _forkmanager,
-        address _parentBridge
-    ) external;
+    function initialize(address _forkmanager, address _parentBridge) external;
 
     /**
      * @notice allows the forkmanager to create the new children
