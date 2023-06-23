@@ -3,21 +3,9 @@ pragma solidity ^0.8.17;
 import "@RealityETH/zkevm-contracts/contracts/PolygonZkEVM.sol";
 import "@RealityETH/zkevm-contracts/contracts/lib/TokenWrapped.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
+import "./mixin/ForkStructure.sol";
 
-contract ForkableZkEVM is PolygonZkEVM {
-    address public forkmanager;
-    address public parentZkEVM;
-    address[] public children = new address[](2);
-
-    modifier onlyParent() {
-        require(msg.sender == parentZkEVM);
-        _;
-    }
-
-    modifier onlyForkManger() {
-        require(msg.sender == forkmanager);
-        _;
-    }
+contract ForkableZkEVM is PolygonZkEVM, ForkStructure {
 
     // probably the constructor needs to be rewritten and merged with initializer
     /**
@@ -48,10 +36,10 @@ contract ForkableZkEVM is PolygonZkEVM {
 
     function initialize(
         address _forkmanager,
-        address _parentZkEVM
+        address _parentContract
     ) external initializer {
         forkmanager = _forkmanager;
-        parentZkEVM = _parentZkEVM;
+        parentContract = _parentContract;
         // todo: overwrite the initialization once interfaces are correct.
         // PolygonZkEVMBridge.initialize
     }
@@ -68,9 +56,5 @@ contract ForkableZkEVM is PolygonZkEVM {
         forkableZkEVM = ClonesUpgradeable.clone(address(this));
         // Todo: forkableZkEVM.initialize
         children[1] = forkableZkEVM;
-    }
-
-    function getChild(uint256 index) external view returns (address) {
-        return children[index];
     }
 }

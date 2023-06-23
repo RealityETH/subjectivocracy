@@ -3,21 +3,9 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "./mixin/ForkStructure.sol";
 
-contract ForknomicToken is ERC20PresetMinterPauser, Initializable {
-    address public forkmanager;
-    address public parentToken;
-    address[] public children = new address[](2);
-
-    modifier onlyParent() {
-        require(msg.sender == parentToken);
-        _;
-    }
-
-    modifier onlyForkManger() {
-        require(msg.sender == forkmanager);
-        _;
-    }
+contract ForknomicToken is ERC20PresetMinterPauser, Initializable, ForkStructure {
 
     constructor() ERC20PresetMinterPauser("Forkonomic Token", "FORK") {}
 
@@ -39,10 +27,6 @@ contract ForknomicToken is ERC20PresetMinterPauser, Initializable {
         forkableToken = ClonesUpgradeable.clone(address(this));
         // Todo: forkableToken.initialize
         children[1] = forkableToken;
-    }
-
-    function getChild(uint256 index) external view returns (address) {
-        return children[index];
     }
 
     function splitTokensIntoChildTokens(uint256 amount) external {

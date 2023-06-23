@@ -4,30 +4,18 @@ import "@RealityETH/zkevm-contracts/contracts/PolygonZkEVMBridge.sol";
 import "@RealityETH/zkevm-contracts/contracts/lib/TokenWrapped.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 import "./interfaces/IForkableBridge.sol";
+import "./mixin/ForkStructure.sol";
 
-contract ForkableBridge is PolygonZkEVMBridge, IForkableBridge {
-    address public forkmanager;
-    address public parentBridge;
-    address[] public children = new address[](2);
-
-    modifier onlyParent() {
-        require(msg.sender == parentBridge);
-        _;
-    }
-
-    modifier onlyForkManger() {
-        require(msg.sender == forkmanager);
-        _;
-    }
+contract ForkableBridge is PolygonZkEVMBridge, IForkableBridge, ForkStructure {
 
     function initialize(
         address _forkmanager,
-        address _parentBridge
+        address _parentContract
     ) external initializer {
         forkmanager = _forkmanager;
-        parentBridge = _parentBridge;
+        parentContract = _parentContract;
         // todo: overwrite the initialization once interfaces are correct.
-        // PolygonZkEVMBridge.initialize(_forkmanager, _parentBridge);
+        // PolygonZkEVMBridge.initialize(_forkmanager, _parentContract);
     }
 
     /**
@@ -101,10 +89,6 @@ contract ForkableBridge is PolygonZkEVMBridge, IForkableBridge {
             destinationAddress,
             amount
         );
-    }
-
-    function getChild(uint256 index) external view returns (address) {
-        return children[index];
     }
 
     // This function will be present in the inherited contract, once the other PR is merged
