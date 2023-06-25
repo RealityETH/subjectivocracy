@@ -10,26 +10,27 @@ contract ForkableBridge is PolygonZkEVMBridge, IForkableBridge, ForkStructure {
 
     function initialize(
         address _forkmanager,
-        address _parentContract
+        address _parentContract,
+         uint32 _networkID,
+        IBasePolygonZkEVMGlobalExitRoot _globalExitRootManager,
+        address _polygonZkEVMaddress,
+        address _gasTokenAddress,
+        bool _isDeployedOnL2
     ) external initializer {
         forkmanager = _forkmanager;
         parentContract = _parentContract;
-        // todo: overwrite the initialization once interfaces are correct.
-        // PolygonZkEVMBridge.initialize(_forkmanager, _parentContract);
+        PolygonZkEVMBridge.initialize(_networkID, _globalExitRootManager, _polygonZkEVMaddress, _gasTokenAddress, _isDeployedOnL2);
     }
 
     /**
      * @notice Allows the forkmanager to create the new children
      */
-    function createChildren() external onlyForkManger {
+    function createChildren() external onlyForkManger returns (address, address){
         address forkableBridge = ClonesUpgradeable.clone(address(this));
-        // Todo: forkableBridge.initialize(super.networkId, super.globalExitRootManger.getFirstChild(),
-        // super.polygonZKEVMaddress.getFirstChild(), super.gasTokenAddress.getFirstChild(),super.isDeployedOnl2);
         children[0] = forkableBridge;
         forkableBridge = ClonesUpgradeable.clone(address(this));
-        // Todo: forkableBridge.initialize(super.networkId, super.globalExitRootManger.getFirstChild(),
-        // super.polygonZKEVMaddress.getFirstChild(), super.gasTokenAddress.getFirstChild(),super.isDeployedOnl2);
         children[1] = forkableBridge;
+        return (children[0], children[1]);
     }
 
     /**
@@ -89,51 +90,5 @@ contract ForkableBridge is PolygonZkEVMBridge, IForkableBridge, ForkStructure {
             destinationAddress,
             amount
         );
-    }
-
-    // This function will be present in the inherited contract, once the other PR is merged
-    function issueBridgedTokens(
-        uint32 originNetwork,
-        address originTokenAddress,
-        bytes memory metadata,
-        address destinationAddress,
-        uint256 amount
-    ) internal {
-        // Create a wrapper for the token if not exist yet
-        bytes32 tokenInfoHash = keccak256(
-            abi.encodePacked(originNetwork, originTokenAddress)
-        );
-        address wrappedToken = tokenInfoToWrappedToken[tokenInfoHash];
-
-        if (wrappedToken == address(0)) {
-            // Get ERC20 metadata
-            (string memory name, string memory symbol, uint8 decimals) = abi
-                .decode(metadata, (string, string, uint8));
-
-            // Create a new wrapped erc20 using create2
-            TokenWrapped newWrappedToken = (new TokenWrapped){
-                salt: tokenInfoHash
-            }(name, symbol, decimals);
-
-            // Mint tokens for the destination address
-            newWrappedToken.mint(destinationAddress, amount);
-
-            // Create mappings
-            tokenInfoToWrappedToken[tokenInfoHash] = address(newWrappedToken);
-
-            wrappedTokenToTokenInfo[
-                address(newWrappedToken)
-            ] = TokenInformation(originNetwork, originTokenAddress);
-
-            emit NewWrappedToken(
-                originNetwork,
-                originTokenAddress,
-                address(newWrappedToken),
-                metadata
-            );
-        } else {
-            // Use the existing wrapped erc20
-            TokenWrapped(wrappedToken).mint(destinationAddress, amount);
-        }
     }
 }

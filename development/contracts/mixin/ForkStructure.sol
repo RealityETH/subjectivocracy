@@ -1,6 +1,8 @@
 pragma solidity ^0.8.17;
 
-contract ForkStructure {
+import "../interfaces/IForkableStructure.sol";
+
+contract ForkStructure is IForkableStructure {
     address public forkmanager;
     address public parentContract;
     address[] public children = new address[](2);
@@ -15,7 +17,7 @@ contract ForkStructure {
         _;
     }
 
-    function getChild(uint256 index) external view returns (address) {
+    function getChild(uint256 index) external override view returns (address) {
         return children[index];
     }
 }
