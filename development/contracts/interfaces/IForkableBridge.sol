@@ -5,21 +5,21 @@ import "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol
 import "./IForkableStructure.sol";
 import "@RealityETH/zkevm-contracts/contracts/interfaces/IBasePolygonZkEVMGlobalExitRoot.sol";
 
-
 interface IForkableBridge is IPolygonZkEVMBridge, IForkableStructure {
     function initialize(
         address _forkmanager,
         address _parentContract,
-         uint32 _networkID,
+        uint32 _networkID,
         IBasePolygonZkEVMGlobalExitRoot _globalExitRootManager,
         address _polygonZkEVMaddress,
         address _gasTokenAddress,
         bool _isDeployedOnL2
     ) external;
+
     /**
      * @notice allows the forkmanager to create the new children
      */
-    function createChildren() external returns(address, address);
+    function createChildren() external returns (address, address);
 
     /**
      * @notice Anyone can use their tokens to split the bridged tokens into the two corresponding children tokens

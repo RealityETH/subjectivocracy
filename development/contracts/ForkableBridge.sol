@@ -7,11 +7,10 @@ import "./interfaces/IForkableBridge.sol";
 import "./mixin/ForkStructure.sol";
 
 contract ForkableBridge is PolygonZkEVMBridge, IForkableBridge, ForkStructure {
-
     function initialize(
         address _forkmanager,
         address _parentContract,
-         uint32 _networkID,
+        uint32 _networkID,
         IBasePolygonZkEVMGlobalExitRoot _globalExitRootManager,
         address _polygonZkEVMaddress,
         address _gasTokenAddress,
@@ -19,13 +18,23 @@ contract ForkableBridge is PolygonZkEVMBridge, IForkableBridge, ForkStructure {
     ) external initializer {
         forkmanager = _forkmanager;
         parentContract = _parentContract;
-        PolygonZkEVMBridge.initialize(_networkID, _globalExitRootManager, _polygonZkEVMaddress, _gasTokenAddress, _isDeployedOnL2);
+        PolygonZkEVMBridge.initialize(
+            _networkID,
+            _globalExitRootManager,
+            _polygonZkEVMaddress,
+            _gasTokenAddress,
+            _isDeployedOnL2
+        );
     }
 
     /**
      * @notice Allows the forkmanager to create the new children
      */
-    function createChildren() external onlyForkManger returns (address, address){
+    function createChildren()
+        external
+        onlyForkManger
+        returns (address, address)
+    {
         address forkableBridge = ClonesUpgradeable.clone(address(this));
         children[0] = forkableBridge;
         forkableBridge = ClonesUpgradeable.clone(address(this));

@@ -7,8 +7,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "./mixin/ForkStructure.sol";
 import "./interfaces/IForkableZkEVM.sol";
 
-contract ForkableZkEVM is  ForkStructure, IForkableZkEVM,PolygonZkEVM {
-
+contract ForkableZkEVM is ForkStructure, IForkableZkEVM, PolygonZkEVM {
     function initialize(
         address _forkmanager,
         address _parentContract,
@@ -26,19 +25,35 @@ contract ForkableZkEVM is  ForkStructure, IForkableZkEVM,PolygonZkEVM {
     ) external initializer {
         forkmanager = _forkmanager;
         parentContract = _parentContract;
-        PolygonZkEVM.initialize(initializePackedParameters, genesisRoot, _trustedSequencerURL, _networkName, _version, _globalExitRootManager, _matic, _rollupVerifier, _bridgeAddress, _chainID, _forkID);
+        PolygonZkEVM.initialize(
+            initializePackedParameters,
+            genesisRoot,
+            _trustedSequencerURL,
+            _networkName,
+            _version,
+            _globalExitRootManager,
+            _matic,
+            _rollupVerifier,
+            _bridgeAddress,
+            _chainID,
+            _forkID
+        );
     }
 
     /**
      * @notice Allows the forkmanager to create the new children
      */
-    function createChildren() external onlyForkManger returns(address,  address) {
+    function createChildren()
+        external
+        onlyForkManger
+        returns (address, address)
+    {
         // create emergency mode to stop all operations:
         _activateEmergencyState();
         address forkableZkEVM = ClonesUpgradeable.clone(address(this));
         children[0] = forkableZkEVM;
         forkableZkEVM = ClonesUpgradeable.clone(address(this));
         children[1] = forkableZkEVM;
-        return  (children[0], children[1]);
+        return (children[0], children[1]);
     }
 }

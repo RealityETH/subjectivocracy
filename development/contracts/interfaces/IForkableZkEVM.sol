@@ -27,5 +27,5 @@ interface IForkableZkEVM is IForkableStructure, IPolygonZkEVM {
     /**
      * @notice Allows the forkmanager to create the new children
      */
-    function createChildren() external returns(address,  address)  ;
+    function createChildren() external returns (address, address);
 }
