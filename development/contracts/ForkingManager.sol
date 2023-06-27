@@ -6,13 +6,13 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
+import "./mixin/ForkableUUPS.sol";
 import "./interfaces/IForkableBridge.sol";
 import "./interfaces/IForkableZkEVM.sol";
 import "./interfaces/IForkingManager.sol";
 import "./interfaces/IForkonomicToken.sol";
-import "./mixin/ForkStructure.sol";
 
-contract ForkingManager is IForkingManager, ForkStructure, Initializable {
+contract ForkingManager is IForkingManager, ForkableUUPS, Initializable {
     using SafeERC20 for IERC20;
     address public zkEVM;
     address public bridge;

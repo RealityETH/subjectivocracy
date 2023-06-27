@@ -4,9 +4,9 @@ import "@RealityETH/zkevm-contracts/contracts/PolygonZkEVMBridge.sol";
 import "@RealityETH/zkevm-contracts/contracts/lib/TokenWrapped.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 import "./interfaces/IForkableBridge.sol";
-import "./mixin/ForkStructure.sol";
+import "./mixin/ForkableUUPS.sol";
 
-contract ForkableBridge is PolygonZkEVMBridge, IForkableBridge, ForkStructure {
+contract ForkableBridge is PolygonZkEVMBridge, IForkableBridge, ForkableUUPS {
     function initialize(
         address _forkmanager,
         address _parentContract,

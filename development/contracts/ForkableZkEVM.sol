@@ -4,10 +4,10 @@ import "@RealityETH/zkevm-contracts/contracts/PolygonZkEVM.sol";
 import "@RealityETH/zkevm-contracts/contracts/lib/TokenWrapped.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "./mixin/ForkStructure.sol";
 import "./interfaces/IForkableZkEVM.sol";
+import "./mixin/ForkableUUPS.sol";
 
-contract ForkableZkEVM is ForkStructure, IForkableZkEVM, PolygonZkEVM {
+contract ForkableZkEVM is ForkableUUPS, IForkableZkEVM, PolygonZkEVM {
     function initialize(
         address _forkmanager,
         address _parentContract,
