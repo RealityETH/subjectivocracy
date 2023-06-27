@@ -2,7 +2,6 @@ pragma solidity ^0.8.17;
 
 import "@RealityETH/zkevm-contracts/contracts/PolygonZkEVMBridge.sol";
 import "@RealityETH/zkevm-contracts/contracts/lib/TokenWrapped.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 import "./interfaces/IForkableBridge.sol";
 import "./mixin/ForkableUUPS.sol";
 
@@ -25,21 +24,6 @@ contract ForkableBridge is PolygonZkEVMBridge, IForkableBridge, ForkableUUPS {
             _gasTokenAddress,
             _isDeployedOnL2
         );
-    }
-
-    /**
-     * @notice Allows the forkmanager to create the new children
-     */
-    function createChildren()
-        external
-        onlyForkManger
-        returns (address, address)
-    {
-        address forkableBridge = ClonesUpgradeable.clone(address(this));
-        children[0] = forkableBridge;
-        forkableBridge = ClonesUpgradeable.clone(address(this));
-        children[1] = forkableBridge;
-        return (children[0], children[1]);
     }
 
     /**
@@ -79,6 +63,12 @@ contract ForkableBridge is PolygonZkEVMBridge, IForkableBridge, ForkableUUPS {
             metadata,
             msg.sender
         );
+    }
+
+    function createChildren(
+        address implementation
+    ) external onlyForkManger returns (address, address) {
+        return _createChildren(implementation);
     }
 
     function mintForkableToken(

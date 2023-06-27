@@ -10,8 +10,7 @@ interface IForkonomicToken is IForkableStructure {
      */
     function initialize(address _forkmanager, address _parentContract) external;
 
-    /**
-     * @notice Allows the forkmanager to create the new children
-     */
-    function createChildren() external returns (address, address);
+    function createChildren(
+        address implementation
+    ) external returns (address, address);
 }

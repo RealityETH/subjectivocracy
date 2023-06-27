@@ -40,20 +40,10 @@ contract ForkableZkEVM is ForkableUUPS, IForkableZkEVM, PolygonZkEVM {
         );
     }
 
-    /**
-     * @notice Allows the forkmanager to create the new children
-     */
-    function createChildren()
-        external
-        onlyForkManger
-        returns (address, address)
-    {
-        // create emergency mode to stop all operations:
+    function createChildren(
+        address implementation
+    ) external onlyForkManger returns (address, address) {
         _activateEmergencyState();
-        address forkableZkEVM = ClonesUpgradeable.clone(address(this));
-        children[0] = forkableZkEVM;
-        forkableZkEVM = ClonesUpgradeable.clone(address(this));
-        children[1] = forkableZkEVM;
-        return (children[0], children[1]);
+        return _createChildren(implementation);
     }
 }

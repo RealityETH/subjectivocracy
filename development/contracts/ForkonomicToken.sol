@@ -5,12 +5,13 @@ import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./mixin/ForkStructure.sol";
 import "./interfaces/IForkonomicToken.sol";
+import "./mixin/ForkableUUPS.sol";
 
 contract ForknomicToken is
     IForkonomicToken,
     ERC20PresetMinterPauser,
-    Initializable,
-    ForkStructure
+    ForkableUUPS,
+    Initializable
 {
     constructor() ERC20PresetMinterPauser("Forkonomic Token", "FORK") {}
 
@@ -23,25 +24,17 @@ contract ForknomicToken is
         parentContract = _parentContract;
     }
 
-    /// @inheritdoc IForkonomicToken
-    function createChildren()
-        external
-        override
-        onlyForkManger
-        returns (address, address)
-    {
-        address forkableToken = ClonesUpgradeable.clone(address(this));
-        children[0] = forkableToken;
-        forkableToken = ClonesUpgradeable.clone(address(this));
-        children[1] = forkableToken;
-        return (children[0], children[1]);
-    }
-
     function splitTokensIntoChildTokens(uint256 amount) external {
         require(children[0] != address(0), "Children not created yet");
         require(children[1] != address(0), "Children not created yet");
         _burn(msg.sender, amount);
         ERC20PresetMinterPauser(children[0]).mint(msg.sender, amount);
         ERC20PresetMinterPauser(children[1]).mint(msg.sender, amount);
+    }
+
+    function createChildren(
+        address implementation
+    ) external onlyForkManger returns (address, address) {
+        return _createChildren(implementation);
     }
 }

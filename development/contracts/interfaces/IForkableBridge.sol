@@ -2,8 +2,8 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
-import "./IForkableStructure.sol";
 import "@RealityETH/zkevm-contracts/contracts/interfaces/IBasePolygonZkEVMGlobalExitRoot.sol";
+import "./IForkableStructure.sol";
 
 interface IForkableBridge is IPolygonZkEVMBridge, IForkableStructure {
     function initialize(
@@ -16,10 +16,9 @@ interface IForkableBridge is IPolygonZkEVMBridge, IForkableStructure {
         bool _isDeployedOnL2
     ) external;
 
-    /**
-     * @notice allows the forkmanager to create the new children
-     */
-    function createChildren() external returns (address, address);
+    function createChildren(
+        address implementation
+    ) external returns (address, address);
 
     /**
      * @notice Anyone can use their tokens to split the bridged tokens into the two corresponding children tokens

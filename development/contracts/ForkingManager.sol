@@ -36,16 +36,7 @@ contract ForkingManager is IForkingManager, ForkableUUPS, Initializable {
         arbitrationFee = _arbitrationFee;
     }
 
-    function createChildren(
-        address implementation
-    ) internal returns (address, address) {
-        address forkingManager1 = ClonesUpgradeable.clone(implementation);
-        children[0] = forkingManager1;
-        address forkingManager2 = ClonesUpgradeable.clone(implementation);
-        children[1] = forkingManager2;
-        return (children[0], children[1]);
-    }
-
+    // todo: remove this function
     function getChainID() public view returns (uint32) {
         uint256 id;
         assembly {
@@ -56,7 +47,11 @@ contract ForkingManager is IForkingManager, ForkableUUPS, Initializable {
 
     function initiateFork(
         address _disputeContract,
-        bytes memory _disputeCall
+        bytes memory _disputeCall,
+        address bridgeImplementation,
+        address zkEVMImplementation,
+        address forkonomicTokenImplementation,
+        address forkingManagerImplementation
     ) external {
         require(children[0] == address(0), "Children already created");
         require(children[1] == address(0), "Children already created");
@@ -68,15 +63,16 @@ contract ForkingManager is IForkingManager, ForkableUUPS, Initializable {
         );
 
         // Create the children of each contract
-        (address forkmanager1, address forkmanager2) = createChildren(
-            address(this)
+        (address forkmanager1, address forkmanager2) = _createChildren(
+            forkingManagerImplementation
         );
         (address token1, address token2) = IForkonomicToken(forkonomicToken)
-            .createChildren();
+            .createChildren(forkonomicTokenImplementation);
         (address bridge1, address bridge2) = IForkableBridge(bridge)
-            .createChildren();
-        (address zkevm1, address zkevm2) = IForkableZkEVM(zkEVM)
-            .createChildren();
+            .createChildren(bridgeImplementation);
+        (address zkevm1, address zkevm2) = IForkableZkEVM(zkEVM).createChildren(
+            zkEVMImplementation
+        );
 
         // retrieve some information from the zkEVM contract
         bytes32 genesisRoot = IPolygonZkEVM(zkEVM).batchNumToStateRoot(
