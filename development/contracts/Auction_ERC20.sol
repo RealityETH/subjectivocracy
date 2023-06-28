@@ -10,7 +10,7 @@ They will then be paid out in one or the other of the tokens, at the rate they b
 eg if you say the value of A:B splits 80:20, you will receive at least either 5 of B or 1.25 of A.
 */
 
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.17;
 
 contract Auction_ERC20 {
     uint256 constant MAX_SLOTS = 100;

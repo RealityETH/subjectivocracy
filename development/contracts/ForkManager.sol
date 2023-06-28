@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.17;
 
 import "./interfaces/IERC20.sol";
 import "./ERC20.sol";
@@ -43,9 +43,9 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
 
     // Each each type of proposition we handle has its own template.
     // These are created by ForkableRealityETH_ERC20 in its constructor
-    uint256 public constant TEMPLATE_ID_ADD_ARBITRATOR = 2147483648;
-    uint256 public constant TEMPLATE_ID_REMOVE_ARBITRATOR = 2147483649;
-    uint256 public constant TEMPLATE_ID_BRIDGE_UPGRADE = 2147483650;
+    uint256 constant TEMPLATE_ID_ADD_ARBITRATOR = 2147483648;
+    uint256 constant TEMPLATE_ID_REMOVE_ARBITRATOR = 2147483649;
+    uint256 constant TEMPLATE_ID_BRIDGE_UPGRADE = 2147483650;
 
     enum PropositionType {
         NONE,
