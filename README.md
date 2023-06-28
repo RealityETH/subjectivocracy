@@ -73,6 +73,12 @@ If either the L2 system or the bridge on L1 is not trusted, contracts relying on
 ![Example of a crowdfund contract using an enshrined oracle](diagrams/reality_l1_reality.png)
 
 
+## Handling disputes that need to be settled fast
+
+Settling disputes via a fork can be slow, but we assume that in most cases this will not be a problem as it only has to happen occasionally. However there are also cases where getting to the truth slowly is not acceptable. For instance, some stablecoins and other synthetic assets may need to react to price changes quickly, for example to force people to put up more collateral. It is possible to add an additional ledger on top with different forking logic: Instead of doing a slow, human-managed escalation, a chain can instead fork immediately, and operate in each case as if its respective worldview is correct. This can be implemented as an additional layer on top of the main oracle-enshrined layer, and use the oracle-enshrined layer to decide how to handle any assets bridged from this additional layer.
+
+
+
 ## Prototype implementation
 
 The interactions between users and contracts are specified in detail in [interactions](interactions.md).
