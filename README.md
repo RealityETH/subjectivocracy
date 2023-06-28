@@ -1,7 +1,7 @@
 
-# Branching Subjectivocratic Oracle-enshrined Rollup Governance 
+# Subjectivocratic Oracle-enshrined Rollup
 
-### Edmund Edgar, 2021-03-16
+### Edmund Edgar, 2021-03-16, last updated 2023-06-28
 
 ## Summary
 
