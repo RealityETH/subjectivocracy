@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 
-import "@RealityETH/zkevm-contracts/contracts/PolygonZkEVMBridge.sol";
+import "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
 import "@RealityETH/zkevm-contracts/contracts/lib/TokenWrapped.sol";
 import "./interfaces/IForkableBridge.sol";
 import "./mixin/ForkableUUPS.sol";

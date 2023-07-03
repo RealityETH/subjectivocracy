@@ -7,7 +7,7 @@ import "./mixin/ForkStructure.sol";
 import "./interfaces/IForkonomicToken.sol";
 import "./mixin/ForkableUUPS.sol";
 
-contract ForknomicToken is
+contract ForkonomicToken is
     IForkonomicToken,
     ERC20PresetMinterPauser,
     ForkableUUPS,
@@ -18,10 +18,13 @@ contract ForknomicToken is
     /// @inheritdoc IForkonomicToken
     function initialize(
         address _forkmanager,
-        address _parentContract
+        address _parentContract,
+        address admin
     ) external override initializer {
         forkmanager = _forkmanager;
         parentContract = _parentContract;
+        _setupRole(DEFAULT_ADMIN_ROLE, admin);
+        _setupRole(MINTER_ROLE, admin);
     }
 
     function splitTokensIntoChildTokens(uint256 amount) external {

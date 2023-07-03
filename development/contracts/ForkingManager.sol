@@ -102,8 +102,16 @@ contract ForkingManager is IForkingManager, ForkableUUPS, Initializable {
                 });
 
         // Initialize the tokens
-        IForkonomicToken(token1).initialize(forkmanager1, forkonomicToken);
-        IForkonomicToken(token2).initialize(forkmanager2, forkonomicToken);
+        IForkonomicToken(token1).initialize(
+            forkmanager1,
+            forkonomicToken,
+            address(this)
+        );
+        IForkonomicToken(token2).initialize(
+            forkmanager2,
+            forkonomicToken,
+            address(this)
+        );
 
         //Initialize the zkevm contracts
         uint64 _chainID = (IPolygonZkEVM(zkEVM).chainID() / 2) * 2 + 3;

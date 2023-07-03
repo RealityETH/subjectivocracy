@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 
-import "@RealityETH/zkevm-contracts/contracts/PolygonZkEVM.sol";
+import "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVM.sol";
 import "@RealityETH/zkevm-contracts/contracts/lib/TokenWrapped.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
