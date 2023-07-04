@@ -9,8 +9,8 @@ import "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol
 
 interface IForkableZkEVM is IForkableStructure, IPolygonZkEVM {
     function initialize(
-        address _forkmanager,
-        address _parentContract,
+        address forkmanager,
+        address parentContract,
         InitializePackedParameters calldata initializePackedParameters,
         bytes32 genesisRoot,
         string memory _trustedSequencerURL,
@@ -19,9 +19,7 @@ interface IForkableZkEVM is IForkableStructure, IPolygonZkEVM {
         IPolygonZkEVMGlobalExitRoot _globalExitRootManager,
         IERC20Upgradeable _matic,
         IVerifierRollup _rollupVerifier,
-        IPolygonZkEVMBridge _bridgeAddress,
-        uint64 _chainID,
-        uint64 _forkID
+        IPolygonZkEVMBridge _bridgeAddress
     ) external;
 
     function createChildren(

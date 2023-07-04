@@ -51,7 +51,7 @@ contract E2E is Test {
         IVerifierRollup(0x1234567890123456789012345678901234567893);
     uint256 public arbitrationFee = 1020;
 
-    function bytesToAddress(bytes32 b) public returns (address) {
+    function bytesToAddress(bytes32 b) public pure returns (address) {
         return address(uint160(uint256(b)));
     }
 
@@ -89,7 +89,9 @@ contract E2E is Test {
                     trustedSequencer: trustedSequencer,
                     pendingStateTimeout: pendingStateTimeout,
                     trustedAggregator: trustedAggregator,
-                    trustedAggregatorTimeout: trustedAggregatorTimeout
+                    trustedAggregatorTimeout: trustedAggregatorTimeout,
+                    chainID: chainID,
+                    forkID: forkID
                 });
         zkevm.initialize(
             address(forkmanager),
@@ -102,9 +104,7 @@ contract E2E is Test {
             globalExitMock2,
             IERC20Upgradeable(address(forkonomicToken)),
             rollupVerifierMock,
-            IPolygonZkEVMBridge(address(bridge)),
-            chainID,
-            forkID
+            IPolygonZkEVMBridge(address(bridge))
         );
         forkmanager.initialize(
             address(zkevm),
@@ -144,10 +144,12 @@ contract E2E is Test {
         forkmanager.initiateFork(
             disputeContract,
             disputeData,
-            newBridgeImplementation,
-            newZkevmImplementation,
-            newForkonomicTokenImplementation,
-            newForkmanagerImplementation
+            ForkingManager.NewImplementations({
+                bridgeImplementation: newBridgeImplementation,
+                zkEVMImplementation: newZkevmImplementation,
+                forkonomicTokenImplementation: newForkonomicTokenImplementation,
+                forkingManagerImplementation: newForkmanagerImplementation
+            })
         );
 
         // Fetch the children from the ForkingManager

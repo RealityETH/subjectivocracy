@@ -2,7 +2,6 @@ pragma solidity ^0.8.17;
 
 import "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVM.sol";
 import "@RealityETH/zkevm-contracts/contracts/lib/TokenWrapped.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "./interfaces/IForkableZkEVM.sol";
 import "./mixin/ForkableUUPS.sol";
@@ -19,9 +18,7 @@ contract ForkableZkEVM is ForkableUUPS, IForkableZkEVM, PolygonZkEVM {
         IPolygonZkEVMGlobalExitRoot _globalExitRootManager,
         IERC20Upgradeable _matic,
         IVerifierRollup _rollupVerifier,
-        IPolygonZkEVMBridge _bridgeAddress,
-        uint64 _chainID,
-        uint64 _forkID
+        IPolygonZkEVMBridge _bridgeAddress
     ) external initializer {
         forkmanager = _forkmanager;
         parentContract = _parentContract;
@@ -34,9 +31,7 @@ contract ForkableZkEVM is ForkableUUPS, IForkableZkEVM, PolygonZkEVM {
             _globalExitRootManager,
             _matic,
             _rollupVerifier,
-            _bridgeAddress,
-            _chainID,
-            _forkID
+            _bridgeAddress
         );
     }
 
