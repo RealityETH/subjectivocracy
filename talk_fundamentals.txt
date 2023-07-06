@@ -1,0 +1,213 @@
+I want to go right back to basics today and talk about how do we secure stuff in cryptoeconomics. I will get to oracles, please bear with me.
+
+> How we secure stuff
+>
+> ie how we make it apply the rules that the user expects it to apply
+
+When I talk about securing stuff I mean that the system needs to apply a bunch some rules on the user's behalf and it's secure if it's actually going to apply them and insecure if someone can make it apply different rules. For a regular blockchain, a base layer like Bitcoin or Ethereum the job is mainly to accept whatever transactions you send it and put them in order.
+
+For an application on top of a blockchain it could be all kinds of things. If you've got an oracle that's supposed to send you the price of bitcoin then its job is to send you the right price. If you've got a DAO with the goal of planting flowers, it needs to actually direct its assets to things that plant flowers, and it's insecure if people can make it use its assets for some other purpose.
+
+
+So what mechanisms to do we have? First let's look at Layer 1. So we're looking at base layers, regular blockchains like Bitcoin or Ethereum.
+
+> Securing base layers
+>  Voting (susceptible to bribery, capture that exploits minorities)
+>  Schelling games (susceptible to 51% attacks which punish honest participants)
+>  Subjectivocracy (chaos if regular but works great occasionally or as a backstop)
+
+
+[>] First there's voting. This isn't used much in base layers but it's used a bit. So in Ethereum we have what's basically a voting mechanic to set the capacity of the system, the block gas limit.
+These aren't used much because they can be kind of terrifyingly insecure. You can bribe people quite cheaply, at least in theory. And the people with the vote, so for layer1 that's hashpower or staked tokens, aren't aligned with the interests of the users. 
+
+[>>] Then there's what I'm going to very loosely going to call schelling games. These are the basis of Bitcoin and Ethereum consensus. So what happens is that everyone is trying to apply some rules and they get rewarded if they apply them the same way that everyone else does and punished if they don't. So in bitcoin you've got a chain of blocks and everyone's trying to build on the longest chain. If I build on a shorter chain then I'll potentially waste my money because the block I publish is going to get ignored by everyone else, because *they're* trying to build on the longest chain.
+
+And this is generally a much more robust mechanism than voting but it has some problems. The famous one is the 51% attack where if I buy up enough hashpower or stake enough tokens or whatever I can start to set my own rules. For instance I can say I don't like your transactions, so if I see them in a block I'm not going to build on that block. And what's worse about this is that you can actually invert the incentives for honest participants, so if you convince them that the majority is going to follow your rules, you can make everyone else also follow your rules.
+
+
+[>>>] But there's a third mechanism. Some people like to pretend it's not important but it is. And that's what Vitalik calls Subjectivocracy. If you make some kind of big, public attack like the ones we talked about, everyone can just ignore your attack chain and use an honest chain. We don't want to have to do this all the time but occasionally it's OK, especially if we have some lead time to make a decision and people have to say, "that chain is nonsense, I'm not going to use that one, I'm going to use this one". So this is how Ethereum does governance. Someone will publish some new software with new rules, and you run the software you want. If you get two chains out of that then you follow the chain you want. And that's also what we'd do if the system was attacked. So if stakers tried to censor blocks, we'd do what we'd call social slashing, we'd do a fork we'd follow a different chain where they'd lost their stake and no longer had any power.
+
+
+So that's what we've got for base layers and it's very robust. 
+
+But most of us aren't building base layers, we're making stuff on top of the base layers. And there the picture looks more like this:
+
+> Securing contracts on the base layer
+>  Voting 
+>  Schelling games 
+>  ~~Subjectivocracy~~
+
+And what people here are using is lots of voting, a few schelling games, and almost no subjectivocracy. And just using voting and schelling games really hard to build a secure oracle.
+
+The best you can generally do with a cryptoeconomic oracle is that you have a token and you can secure some amount relative to the value of your token.
+
+> Scales diagram
+>         .
+>    $$$  |   $
+>   _____ | _____
+
+If the token's worth a lot, and the oracle lying would destroy the token, we hope that people aren't going to spend money to make the oracle lie unless they've got a lot of money at stake, for example unless they have a really big insurance payout. So we've got this security
+
+And the better projects will talk about this. For instance if you here the UMA guys talk they'll tell you how they can only secure up to a certain value. And what's really nasty about this is that in a composible system there's no way to really know how much value you're securing. The same datapoint could be read by a lot of different contracts. Let alone know that you won't be securing too much.
+
+And what scares me about this is that it gets worse as projects mature. The valuation of a young project accounts for all its future potential over many years. You pay now to get the token to get the revenue for tomorrow's usage. But then tomorrow comes and the amount of usage grows without the valuation growing.
+
+
+And the result is that we have some fairly terrifyingly insecure systems. Our oracle systems scare me and our governance systems scare me more.
+We have just loads of projects that are subject to governance by coinvoting.
+We have a lot of projects that are supposed to be public goods but are owned by tokenholders and their users could get rugged just by their tokenholders acting like rational actors and decide to cash in.
+And we have projects that will be secure as long as the ratio of the token value to the value secured is good, but we have no idea if it will be.
+So we're building systems that look secure when not many people are using them and become less secure as more people use them. Which is the exact opposite of what we want to be building. We want to build stuff that, if it's going to break, it's going to break now, not when lots of people are relying on it.
+
+
+We get kind of numb to this but it's kind of ridiculous that we've ended up in this position because the blockchain isn't reality. The blockchain is something we made up. It's our model of reality. So we shouldn't really be systematically putting ourselves in this situation where everyone can see that it's modelling reality wrong, there's been a big expensive attack to make it wrong, and we have no way to put it right. So we really need a way to get this subjectivocratic property that the base layer has and give it to decisions about applications that we build on top.
+
+
+Now, I said earlier that subjectivocracy isn't really used in applications and there are some cases where it is but it's kind of tricky. So one case was ENS. We started with ENS v1. That was an unupgradeable contract. And then the team released ENS v2 and people just started using it. 
+
+
+> ENS v1 <- look up edmundedgar.eth
+
+
+> ENS v1 <- ~~look up edmundedgar.eth~~ you can still do this but don't
+>  ^
+> copy data
+> ENS v2 <- look up edmundedgar.eth
+
+
+
+And the problem with these examples is that they don't play well with composibility.
+
+> [] () 
+>    
+>    ^
+
+So if you had a contract that said it was going to send some money to edmundedgar.eth it doesn't know that it now needs to get that information from ENSv2.
+
+
+And we particularly feel this with oracles because the model is that you have an information provider contract and a consumer contract, so there are always at least two contracts involved, and often they're in a whole interacting mesh of other contracts
+
+So if your oracle gets attached you can fork your oracle contract and make a new system and maybe salvage something for the oracle's tokenholders, but any contracts that are already set to get data from it are still screwed.
+
+> MyOracle v1 <- [ look up ETH/USD ]
+>
+> MyOracle v2
+
+
+So at the application layer we can't do subjectivocracy at the level of a single contract. We need to be able to fork a whole cluster of stuff together. 
+We need to put whole ecosystems on a forkable ledger.
+
+
+And that may sound like a bold proposition but the current moment is kind of fortuitous. 
+Mostly for scalability reasons Ethereum is moving from a model where all the contracts lived on the one chain to a model where contracts live in clusters on a bunch of interacting chains.
+ 
+https://ethereum.org/static/d17b5ecb3655c50d6540e590a93d65e7/33dd0/dao-2.webp
+
+So a couple of years ago Ethereum looked like this:
+
+>
+> c1 c2 c3 c4
+>
+
+The future looks more like this:
+
+> rollup1     rollup2 
+>  [root]      [root]
+>
+> -------    -------------
+>
+>  c1 c2      c3 c4
+
+We've got some rollup contracts on layer one with state roots for the layer 2 ledgers, and the contracts live on layer 2 ledgers.
+
+So on that model we can do something like this:
+
+>
+> Forkable Rollup
+>  [root]
+>
+> ------------
+>
+>  c1 c2
+
+Initially it looks the same. 
+
+But if you send a very large amount of money to this ForkManager contract, you can make it fork over any binary question that your contract is trying to answer.
+
+>
+> [Forkable Rollup 0]     [Forkable Rollup 1]   [Forkable Rollup 2]
+>   [~~root~~]              [root]                [root]
+>
+> ------------
+>
+>                          c1 c2 X              c1 c2 'X
+
+
+And now there are two versions of everything created on the layer2 and people decide for themselves which one is correct and ignore the other ledger.
+
+There's one more piece we need here because I said that you need a very large amount of money to fork, and that's important because forking has some overhead, people need to pay attention and decide which ledger is the correct one.
+
+But we still want the forking mechanism to secure even low-value decisions. So we need to escalate this small decision into a big decision.
+
+That is what reality.eth does. It's an escalation game backstopped by what we call an Arbitrator contract. An arbitrator is any contract that can make decisions. People often use Kleros, but you can use anything.
+
+So let me work through what would happen with reality.eth. The first part will be common to any contract that uses reality.eth now, the second part will be specific to handling a forkable ledger.
+
+
+So let's say you've got an insurance contract insuring me against my goat getting sick, and we want to pay out if my goat gets sick and not if it doesn't. So I come to make a claim and this happens
+
+> (l2)
+>   [ Insurance contract ]:  [ reality.eth contract ]
+>
+>        Did Ed's Goat get sick?
+>
+>          -> Alice Y:  10
+>          -> Bob   N:  20
+>          -> Alice Y:  40
+>          -> Bob   N: 200
+>          -> Alice: Arbitration (pay arbitrator 100)
+>
+>    Arbitrator rules for Bob. Bob gets Alice's bonds.
+
+The insurance contract sends a question to reality.eth. 
+
+At that point anyone can answer the question. but when they do they have to put up a bond. If nobody disagrees then that's the end of it and it settles to that question.
+But if Bob shows up and says it didn't, they can come along and change the answer, but then they have to double the bond.
+Alice can give up at that point or she can come back and raise again. 
+If everybody keeps at this then at some point somebody's going to run out of capital and instead of raising again, they're going to pay the arbitration fee.
+
+So this is designed that at every step it's profitable to put in this money if you're correct. And that also means that even if Alice and Bob don't have much money somebody else can step in and start putting up bonds. They may not care who gets the insurance money but they can make a profit calling the bullshit of someone who's put up a wrong answer.
+
+So if this arbitrator was perfect then we'd have no problem and we wouldn't need anything else but maybe we do. So let's imagine Alice says, that arbitrator was hacked.
+At that point we run the whole game again on layer 1.
+
+> (l1)
+>    Alice: The arbitrator was hacked! 
+>     reality.eth: Was this arbitrator hacked?
+>      -> Alice 1000
+>      -> Charlie 2000
+>      -> Alice 4000
+>      -> Charlie 8000
+>      -> Alice: Arbitration by fork
+>
+>    And at that point the chain forks, there are two chains
+>
+>     On one of the chains the arbitrator was good and their decision stands. On the other chain the arbitrator was bad and it'll go to another arbitrator who will maybe rule the other way on the office question.
+
+
+OK, so that's the process. 
+
+So the point of this is, as long as you do your transactions in assets issued on this layer2 ledger, it's secure for any amount of money. It has no security bound. Someone can spend a lot of money making a system give the wrong decision, and then the whole chain forks in two and everyone ignores the ledger where they've made a profit.
+
+
+
+I don't really have time to talk about asset bridging and stablecoins and stuff but there's more on our discord.
+
+If you're interested in collaborating on this project or you're interested in deploying to a chain where everything isn't game-theoretically broken then please take a look.
+I've put some links at 
+Hope to see you in our discord.
+
+
+> reality.eth.limo/bos
+
+
