@@ -82,7 +82,7 @@ contract ForkableBridge is PolygonZkEVMBridge, IForkableBridge, ForkableUUPS {
             wrappedTokenToTokenInfo[address(token)].originNetwork != networkID,
             "Token is from this network"
         );
-        issueBridgedTokens(
+        _issueBridgedTokens(
             originNetwork,
             address(token),
             metadata,

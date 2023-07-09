@@ -1,12 +1,19 @@
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "./ForkStructure.sol";
 
-abstract contract ForkableUUPS is ForkStructure, UUPSUpgradeable, Ownable {
-    function _authorizeUpgrade(address) internal override onlyOwner {}
+abstract contract ForkableUUPS is ForkStructure, UUPSUpgradeable
+ {
+    // bytes32 public constant UPDATER = keccak256("UPDATER");
+ //, AccessControlUpgradeable
+
+    function _authorizeUpgrade(address) internal override {
+        // require(hasRole(UPDATER, msg.sender));
+
+    }
 
     function _createChildren(
         address implementation

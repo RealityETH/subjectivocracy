@@ -6,6 +6,7 @@ import "../development/contracts/ForkingManager.sol";
 import "../development/contracts/ForkableBridge.sol";
 import "../development/contracts/ForkableZkEVM.sol";
 import "../development/contracts/ForkonomicToken.sol";
+import "../development/contracts/ForkableGlobalExitRoot.sol";
 import "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
 import "@RealityETH/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
 import "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
@@ -18,10 +19,13 @@ contract E2E is Test {
     ForkonomicToken public forkonomicToken;
     ForkingManager public forkmanager;
     ForkableZkEVM public zkevm;
+    ForkableGlobalExitRoot public globalExitRoot;
+
     address public bridgeImplementation;
     address public forkmanagerImplementation;
     address public zkevmImplementation;
     address public forkonomicTokenImplementation;
+    address public globalExitRootImplementation;
     bytes32 internal constant _IMPLEMENTATION_SLOT =
         0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
@@ -31,8 +35,6 @@ contract E2E is Test {
         IBasePolygonZkEVMGlobalExitRoot(
             0x1234567890123456789012345678901234567892
         );
-    IPolygonZkEVMGlobalExitRoot public globalExitMock2 =
-        IPolygonZkEVMGlobalExitRoot(0x1234567890123456789012345678901234567893);
     bytes32 public genesisRoot =
         bytes32(
             0x827a9240c96ccb855e4943cc9bc49a50b1e91ba087007441a1ae5f9df8d1c57c
@@ -72,6 +74,11 @@ contract E2E is Test {
         forkonomicToken = ForkonomicToken(
             address(new ERC1967Proxy(forkonomicTokenImplementation, ""))
         );
+        globalExitRootImplementation = address(new ForkableGlobalExitRoot());
+        globalExitRoot = ForkableGlobalExitRoot(
+            address(new ERC1967Proxy(globalExitRootImplementation, ""))
+        );
+        globalExitRoot.initialize(address(forkmanager), address(0x0), address(zkevm), address(bridge));
         bridge.initialize(
             address(forkmanager),
             address(0x0),
@@ -101,7 +108,7 @@ contract E2E is Test {
             "trustedSequencerURL",
             "test network",
             "0.0.1",
-            globalExitMock2,
+            globalExitRoot,
             IERC20Upgradeable(address(forkonomicToken)),
             rollupVerifierMock,
             IPolygonZkEVMBridge(address(bridge))
@@ -111,6 +118,7 @@ contract E2E is Test {
             address(bridge),
             address(forkonomicToken),
             address(0x0),
+            address(globalExitRoot),
             arbitrationFee
         );
         forkonomicToken.initialize(
@@ -125,6 +133,8 @@ contract E2E is Test {
         address newBridgeImplementation = address(new ForkableBridge());
         address newForkmanagerImplementation = address(new ForkingManager());
         address newZkevmImplementation = address(new ForkableZkEVM());
+        address newGlobalExitRoot = address(new ForkableGlobalExitRoot());
+
         address newForkonomicTokenImplementation = address(
             new ForkonomicToken()
         );
@@ -148,9 +158,10 @@ contract E2E is Test {
                 bridgeImplementation: newBridgeImplementation,
                 zkEVMImplementation: newZkevmImplementation,
                 forkonomicTokenImplementation: newForkonomicTokenImplementation,
-                forkingManagerImplementation: newForkmanagerImplementation
+                forkingManagerImplementation: newForkmanagerImplementation,
+                globalExitRootImplementation: newGlobalExitRoot
             })
-        );
+        ); 
 
         // Fetch the children from the ForkingManager
         (address childForkmanager1, address childForkmanager2) = forkmanager

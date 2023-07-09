@@ -8,6 +8,7 @@ interface IForkingManager is IForkableStructure {
         address _bridge,
         address _forkonomicToken,
         address _parentContract,
+        address _globalExitRoot,
         uint256 _arbitrationFee
     ) external;
 }

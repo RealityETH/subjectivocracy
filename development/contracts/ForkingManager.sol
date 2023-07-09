@@ -10,12 +10,15 @@ import "./interfaces/IForkableBridge.sol";
 import "./interfaces/IForkableZkEVM.sol";
 import "./interfaces/IForkingManager.sol";
 import "./interfaces/IForkonomicToken.sol";
+import "./interfaces/IForkableGlobalExitRoot.sol";
+
 
 contract ForkingManager is IForkingManager, ForkableUUPS, Initializable {
     using SafeERC20 for IERC20;
     address public zkEVM;
     address public bridge;
     address public forkonomicToken;
+    address public globalExitRoot;
     uint256 public arbitrationFee;
     address public disputeContract;
     bytes public disputeCall;
@@ -26,12 +29,14 @@ contract ForkingManager is IForkingManager, ForkableUUPS, Initializable {
         address _bridge,
         address _forkonomicToken,
         address _parentContract,
+        address _globalExitRoot,
         uint256 _arbitrationFee
     ) external initializer {
         zkEVM = _zkEVM;
         bridge = _bridge;
         forkonomicToken = _forkonomicToken;
         parentContract = _parentContract;
+        globalExitRoot = _globalExitRoot;
         arbitrationFee = _arbitrationFee;
     }
 
@@ -49,6 +54,7 @@ contract ForkingManager is IForkingManager, ForkableUUPS, Initializable {
         address zkEVMImplementation;
         address forkonomicTokenImplementation;
         address forkingManagerImplementation;
+        address globalExitRootImplementation;
     }
 
     struct AddressPair {
@@ -60,6 +66,7 @@ contract ForkingManager is IForkingManager, ForkableUUPS, Initializable {
         AddressPair bridge;
         AddressPair zkEVM;
         AddressPair forkonomicToken;
+        AddressPair globalExitRoot;
     }
 
     function initiateFork(
@@ -92,12 +99,15 @@ contract ForkingManager is IForkingManager, ForkableUUPS, Initializable {
         ) = IForkonomicToken(forkonomicToken).createChildren(
             newImplementations.forkonomicTokenImplementation
         );
+        (
+            newInstances.globalExitRoot.one,
+            newInstances.globalExitRoot.two
+        ) = IForkableGlobalExitRoot(globalExitRoot).createChildren(
+            newImplementations.globalExitRootImplementation
+        );
 
         IPolygonZkEVM.InitializePackedParameters
             memory initializePackedParameters;
-        IPolygonZkEVMGlobalExitRoot _globalExitRootManager = IPolygonZkEVM(
-            zkEVM
-        ).globalExitRootManager();
 
         {
             // retrieve some information from the zkEVM contract
@@ -133,7 +143,7 @@ contract ForkingManager is IForkingManager, ForkableUUPS, Initializable {
                 IPolygonZkEVM(zkEVM).trustedSequencerURL(),
                 IPolygonZkEVM(zkEVM).networkName(),
                 "0.1.0",
-                _globalExitRootManager,
+                IPolygonZkEVMGlobalExitRoot(newInstances.globalExitRoot.one),
                 IERC20Upgradeable(newInstances.forkonomicToken.one),
                 _rollupVerifier,
                 IPolygonZkEVMBridge(newInstances.bridge.one)
@@ -148,7 +158,7 @@ contract ForkingManager is IForkingManager, ForkableUUPS, Initializable {
                 IPolygonZkEVM(zkEVM).trustedSequencerURL(),
                 IPolygonZkEVM(zkEVM).networkName(),
                 "0.1.0",
-                _globalExitRootManager,
+                IPolygonZkEVMGlobalExitRoot(newInstances.globalExitRoot.two),
                 IERC20Upgradeable(newInstances.forkonomicToken.two),
                 _rollupVerifier,
                 IPolygonZkEVMBridge(newInstances.bridge.two)
@@ -172,7 +182,7 @@ contract ForkingManager is IForkingManager, ForkableUUPS, Initializable {
             newInstances.forkingManager.one,
             bridge,
             getChainID(),
-            _globalExitRootManager,
+            IBasePolygonZkEVMGlobalExitRoot(newInstances.globalExitRoot.one),
             address(newInstances.zkEVM.two),
             address(newInstances.forkonomicToken.one),
             false
@@ -181,7 +191,7 @@ contract ForkingManager is IForkingManager, ForkableUUPS, Initializable {
             newInstances.forkingManager.two,
             bridge,
             getChainID(),
-            _globalExitRootManager,
+            IBasePolygonZkEVMGlobalExitRoot(newInstances.globalExitRoot.two),
             address(newInstances.zkEVM.two),
             address(newInstances.forkonomicToken.two),
             false
@@ -192,6 +202,7 @@ contract ForkingManager is IForkingManager, ForkableUUPS, Initializable {
             newInstances.zkEVM.one,
             newInstances.bridge.one,
             newInstances.forkonomicToken.one,
+            newInstances.globalExitRoot.one,
             address(this),
             arbitrationFee
         );
@@ -199,6 +210,7 @@ contract ForkingManager is IForkingManager, ForkableUUPS, Initializable {
             newInstances.zkEVM.two,
             newInstances.zkEVM.two,
             newInstances.forkonomicToken.two,
+            newInstances.globalExitRoot.two,
             address(this),
             arbitrationFee
         );
