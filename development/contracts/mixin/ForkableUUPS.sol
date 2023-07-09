@@ -5,14 +5,12 @@ import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "./ForkStructure.sol";
 
-abstract contract ForkableUUPS is ForkStructure, UUPSUpgradeable
- {
+abstract contract ForkableUUPS is ForkStructure, UUPSUpgradeable {
     // bytes32 public constant UPDATER = keccak256("UPDATER");
- //, AccessControlUpgradeable
+    //, AccessControlUpgradeable
 
     function _authorizeUpgrade(address) internal override {
         // require(hasRole(UPDATER, msg.sender));
-
     }
 
     function _createChildren(

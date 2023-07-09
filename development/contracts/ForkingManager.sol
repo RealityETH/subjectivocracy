@@ -12,7 +12,6 @@ import "./interfaces/IForkingManager.sol";
 import "./interfaces/IForkonomicToken.sol";
 import "./interfaces/IForkableGlobalExitRoot.sol";
 
-
 contract ForkingManager is IForkingManager, ForkableUUPS, Initializable {
     using SafeERC20 for IERC20;
     address public zkEVM;

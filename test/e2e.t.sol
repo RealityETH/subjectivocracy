@@ -78,7 +78,12 @@ contract E2E is Test {
         globalExitRoot = ForkableGlobalExitRoot(
             address(new ERC1967Proxy(globalExitRootImplementation, ""))
         );
-        globalExitRoot.initialize(address(forkmanager), address(0x0), address(zkevm), address(bridge));
+        globalExitRoot.initialize(
+            address(forkmanager),
+            address(0x0),
+            address(zkevm),
+            address(bridge)
+        );
         bridge.initialize(
             address(forkmanager),
             address(0x0),
@@ -161,7 +166,7 @@ contract E2E is Test {
                 forkingManagerImplementation: newForkmanagerImplementation,
                 globalExitRootImplementation: newGlobalExitRoot
             })
-        ); 
+        );
 
         // Fetch the children from the ForkingManager
         (address childForkmanager1, address childForkmanager2) = forkmanager
