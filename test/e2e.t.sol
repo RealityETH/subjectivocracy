@@ -100,7 +100,7 @@ contract E2E is Test {
             address(globalExitRoot),
             arbitrationFee
         );
-        forkonomicToken.initialize(address(forkmanager), address(0x0), address(this));
+        forkonomicToken.initialize(address(forkmanager), address(0x0), address(this), "Fork", "FORK");
     }
 
     function testForkConfigurationAndImplementations() public {

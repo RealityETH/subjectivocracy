@@ -9,7 +9,7 @@ interface IForkonomicToken is IForkableStructure {
      * @param _parentContract The address of the parent contract
      * @param admin The address of the admin of erc20 token
      */
-    function initialize(address _forkmanager, address _parentContract, address admin) external;
+    function initialize(address _forkmanager, address _parentContract, address admin, string calldata name, string calldata symbol) external;
 
     function mint(address to, uint256 amount) external;
 

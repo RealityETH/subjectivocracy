@@ -4,6 +4,7 @@ import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol"
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
 import "./mixin/ForkableUUPS.sol";
 import "./interfaces/IForkableBridge.sol";
@@ -149,10 +150,10 @@ contract ForkingManager is IForkingManager, ForkableUUPS {
 
         // Initialize the tokens
         IForkonomicToken(newInstances.forkonomicToken.one).initialize(
-            newInstances.forkingManager.one, forkonomicToken, address(this)
+            newInstances.forkingManager.one, forkonomicToken, address(this), string.concat(IERC20Metadata(forkonomicToken).name(), "0"), IERC20Metadata(forkonomicToken).symbol()
         );
         IForkonomicToken(newInstances.forkonomicToken.two).initialize(
-            newInstances.forkingManager.two, forkonomicToken, address(this)
+            newInstances.forkingManager.two, forkonomicToken, address(this), string.concat(IERC20Metadata(forkonomicToken).name(), "1"), IERC20Metadata(forkonomicToken).symbol()
         );
 
         //Initialize the bridge contracts

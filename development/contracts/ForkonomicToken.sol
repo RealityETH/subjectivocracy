@@ -16,13 +16,13 @@ contract ForkonomicToken is IForkonomicToken, ERC20Upgradeable, ForkableUUPS {
     }
 
     /// @inheritdoc IForkonomicToken
-    function initialize(address _forkmanager, address _parentContract, address minter) external initializer {
+    function initialize(address _forkmanager, address _parentContract, address minter, string calldata name, string calldata symbol) external initializer {
         forkmanager = _forkmanager;
         parentContract = _parentContract;
         _setupRole(MINTER_ROLE, minter);
         _setupRole(UPDATER, msg.sender);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        __ERC20_init("Forkonomic Token", "FORK");
+        __ERC20_init(name, symbol);
     }
 
     function splitTokensIntoChildTokens(uint256 amount) external {
