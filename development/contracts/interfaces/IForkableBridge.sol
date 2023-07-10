@@ -3,9 +3,8 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
 import "@RealityETH/zkevm-contracts/contracts/interfaces/IBasePolygonZkEVMGlobalExitRoot.sol";
-import "./IForkableStructure.sol";
 
-interface IForkableBridge is IPolygonZkEVMBridge, IForkableStructure {
+interface IForkableBridge is IPolygonZkEVMBridge {
     function initialize(
         address _forkmanager,
         address _parentContract,

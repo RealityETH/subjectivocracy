@@ -7,20 +7,18 @@ import "./interfaces/IForkableZkEVM.sol";
 import "./mixin/ForkableUUPS.sol";
 
 contract ForkableGlobalExitRoot is ForkableUUPS, PolygonZkEVMGlobalExitRoot {
-    function initialize(
-        address _forkmanager,
-        address _parentContract,
-        address _rollupAddress,
-        address _bridgeAddress
-    ) external initializer {
+    function initialize(address _forkmanager, address _parentContract, address _rollupAddress, address _bridgeAddress)
+        external
+        initializer
+    {
         forkmanager = _forkmanager;
         parentContract = _parentContract;
         PolygonZkEVMGlobalExitRoot.initialize(_rollupAddress, _bridgeAddress);
+        _setupRole(UPDATER, msg.sender);
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function createChildren(
-        address implementation
-    ) external onlyForkManger returns (address, address) {
+    function createChildren(address implementation) external onlyForkManger returns (address, address) {
         return _createChildren(implementation);
     }
 }

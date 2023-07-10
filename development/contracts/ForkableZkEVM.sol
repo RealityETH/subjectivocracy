@@ -35,9 +35,7 @@ contract ForkableZkEVM is ForkableUUPS, IForkableZkEVM, PolygonZkEVM {
         );
     }
 
-    function createChildren(
-        address implementation
-    ) external onlyForkManger returns (address, address) {
+    function createChildren(address implementation) external onlyForkManger returns (address, address) {
         _activateEmergencyState();
         return _createChildren(implementation);
     }

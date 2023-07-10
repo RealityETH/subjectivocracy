@@ -21,7 +21,7 @@ contract ForkStructure is IForkableStructure {
         _;
     }
 
-    function getChild(uint256 index) external view override returns (address) {
+    function getChild(uint256 index) external view returns (address) {
         return children[index];
     }
 
