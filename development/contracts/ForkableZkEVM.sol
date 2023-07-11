@@ -35,19 +35,24 @@ contract ForkableZkEVM is ForkableUUPS, IForkableZkEVM, PolygonZkEVM {
         );
     }
 
-    function createChildren(address implementation) external onlyForkManger returns (address, address) {
+    function createChildren(
+        address implementation
+    ) external onlyForkManger returns (address, address) {
         return _createChildren(implementation);
     }
 
     modifier notAfterForking() {
-        require(children[0] == address(0x0), "No sequencer changes after forking");
+        require(
+            children[0] == address(0x0),
+            "No sequencer changes after forking"
+        );
         _;
-    } 
+    }
 
-     function sequenceBatches(
+    function sequenceBatches(
         BatchData[] calldata batches,
         address l2Coinbase
-    ) public override notAfterForking ifNotEmergencyState onlyTrustedSequencer{
+    ) public override notAfterForking ifNotEmergencyState onlyTrustedSequencer {
         PolygonZkEVM.sequenceBatches(batches, l2Coinbase);
     }
 
@@ -59,7 +64,14 @@ contract ForkableZkEVM is ForkableUUPS, IForkableZkEVM, PolygonZkEVM {
         bytes32 newStateRoot,
         bytes calldata proof
     ) public override notAfterForking ifNotEmergencyState {
-        PolygonZkEVM.verifyBatches(pendingStateNum, initNumBatch, finalNewBatch, newLocalExitRoot, newStateRoot, proof);
+        PolygonZkEVM.verifyBatches(
+            pendingStateNum,
+            initNumBatch,
+            finalNewBatch,
+            newLocalExitRoot,
+            newStateRoot,
+            proof
+        );
     }
 
     function verifyBatchesTrustedAggregator(
@@ -70,6 +82,13 @@ contract ForkableZkEVM is ForkableUUPS, IForkableZkEVM, PolygonZkEVM {
         bytes32 newStateRoot,
         bytes calldata proof
     ) public override notAfterForking onlyTrustedAggregator {
-        PolygonZkEVM.verifyBatchesTrustedAggregator(pendingStateNum, initNumBatch, finalNewBatch, newLocalExitRoot, newStateRoot, proof);
+        PolygonZkEVM.verifyBatchesTrustedAggregator(
+            pendingStateNum,
+            initNumBatch,
+            finalNewBatch,
+            newLocalExitRoot,
+            newStateRoot,
+            proof
+        );
     }
 }
