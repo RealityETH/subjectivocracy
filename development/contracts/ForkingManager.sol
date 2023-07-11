@@ -82,26 +82,45 @@ contract ForkingManager is IForkingManager, ForkableUUPS {
         require(children[0] == address(0), "Children already created");
         require(children[1] == address(0), "Children already created");
         // Charge the forking fee
-        IERC20(forkonomicToken).safeTransferFrom(msg.sender, address(this), arbitrationFee);
+        IERC20(forkonomicToken).safeTransferFrom(
+            msg.sender,
+            address(this),
+            arbitrationFee
+        );
         // Create the children of each contract
         NewInstances memory newInstances;
-        (newInstances.forkingManager.one, newInstances.forkingManager.two) =
-            _createChildren(newImplementations.forkingManagerImplementation);
-        (newInstances.bridge.one, newInstances.bridge.two) =
-            IForkableBridge(bridge).createChildren(newImplementations.bridgeImplementation);
-        (newInstances.zkEVM.one, newInstances.zkEVM.two) =
-            IForkableZkEVM(zkEVM).createChildren(newImplementations.zkEVMImplementation);
-        (newInstances.forkonomicToken.one, newInstances.forkonomicToken.two) =
-            IForkonomicToken(forkonomicToken).createChildren(newImplementations.forkonomicTokenImplementation);
-        (newInstances.globalExitRoot.one, newInstances.globalExitRoot.two) =
-            IForkableGlobalExitRoot(globalExitRoot).createChildren(newImplementations.globalExitRootImplementation);
+        (
+            newInstances.forkingManager.one,
+            newInstances.forkingManager.two
+        ) = _createChildren(newImplementations.forkingManagerImplementation);
+        (newInstances.bridge.one, newInstances.bridge.two) = IForkableBridge(
+            bridge
+        ).createChildren(newImplementations.bridgeImplementation);
+        (newInstances.zkEVM.one, newInstances.zkEVM.two) = IForkableZkEVM(zkEVM)
+            .createChildren(newImplementations.zkEVMImplementation);
+        (
+            newInstances.forkonomicToken.one,
+            newInstances.forkonomicToken.two
+        ) = IForkonomicToken(forkonomicToken).createChildren(
+            newImplementations.forkonomicTokenImplementation
+        );
+        (
+            newInstances.globalExitRoot.one,
+            newInstances.globalExitRoot.two
+        ) = IForkableGlobalExitRoot(globalExitRoot).createChildren(
+            newImplementations.globalExitRootImplementation
+        );
 
-        IPolygonZkEVM.InitializePackedParameters memory initializePackedParameters;
+        IPolygonZkEVM.InitializePackedParameters
+            memory initializePackedParameters;
 
         {
             // retrieve some information from the zkEVM contract
-            bytes32 genesisRoot = IPolygonZkEVM(zkEVM).batchNumToStateRoot(IPolygonZkEVM(zkEVM).lastVerifiedBatch());
-            IVerifierRollup _rollupVerifier = IForkableZkEVM(zkEVM).rollupVerifier();
+            bytes32 genesisRoot = IPolygonZkEVM(zkEVM).batchNumToStateRoot(
+                IPolygonZkEVM(zkEVM).lastVerifiedBatch()
+            );
+            IVerifierRollup _rollupVerifier = IForkableZkEVM(zkEVM)
+                .rollupVerifier();
             // the following variables could be used to save gas, but it requires via-ir in the compiler settings
             // string memory _trustedSequencerURL = IPolygonZkEVM(zkEVM)
             //     .trustedSequencerURL();
@@ -109,15 +128,18 @@ contract ForkingManager is IForkingManager, ForkableUUPS {
             // string memory _version = "0.1.0"; // Todo: get version from zkEVM, currently only emitted as event
             // IERC20Upgradeable _matic = IERC20Upgradeable(newInstances.forkonomicToken.one);
             // string memory _version = "0.1.0"; // Todo: get version from zkEVM, currently only emitted as event
-            initializePackedParameters = IPolygonZkEVM.InitializePackedParameters({
-                admin: IPolygonZkEVM(zkEVM).admin(),
-                trustedSequencer: IPolygonZkEVM(zkEVM).trustedSequencer(),
-                pendingStateTimeout: IPolygonZkEVM(zkEVM).pendingStateTimeout(),
-                trustedAggregator: IPolygonZkEVM(zkEVM).trustedAggregator(),
-                trustedAggregatorTimeout: IPolygonZkEVM(zkEVM).trustedAggregatorTimeout(),
-                chainID: (IPolygonZkEVM(zkEVM).chainID() / 2) * 2 + 3,
-                forkID: (IPolygonZkEVM(zkEVM).chainID() / 2) * 2 + 3
-            });
+            initializePackedParameters = IPolygonZkEVM
+                .InitializePackedParameters({
+                    admin: IPolygonZkEVM(zkEVM).admin(),
+                    trustedSequencer: IPolygonZkEVM(zkEVM).trustedSequencer(),
+                    pendingStateTimeout: IPolygonZkEVM(zkEVM)
+                        .pendingStateTimeout(),
+                    trustedAggregator: IPolygonZkEVM(zkEVM).trustedAggregator(),
+                    trustedAggregatorTimeout: IPolygonZkEVM(zkEVM)
+                        .trustedAggregatorTimeout(),
+                    chainID: (IPolygonZkEVM(zkEVM).chainID() / 2) * 2 + 3,
+                    forkID: (IPolygonZkEVM(zkEVM).chainID() / 2) * 2 + 3
+                });
             IForkableZkEVM(newInstances.zkEVM.one).initialize(
                 newInstances.forkingManager.one,
                 zkEVM,
@@ -150,10 +172,18 @@ contract ForkingManager is IForkingManager, ForkableUUPS {
 
         // Initialize the tokens
         IForkonomicToken(newInstances.forkonomicToken.one).initialize(
-            newInstances.forkingManager.one, forkonomicToken, address(this), string.concat(IERC20Metadata(forkonomicToken).name(), "0"), IERC20Metadata(forkonomicToken).symbol()
+            newInstances.forkingManager.one,
+            forkonomicToken,
+            address(this),
+            string.concat(IERC20Metadata(forkonomicToken).name(), "0"),
+            IERC20Metadata(forkonomicToken).symbol()
         );
         IForkonomicToken(newInstances.forkonomicToken.two).initialize(
-            newInstances.forkingManager.two, forkonomicToken, address(this), string.concat(IERC20Metadata(forkonomicToken).name(), "1"), IERC20Metadata(forkonomicToken).symbol()
+            newInstances.forkingManager.two,
+            forkonomicToken,
+            address(this),
+            string.concat(IERC20Metadata(forkonomicToken).name(), "1"),
+            IERC20Metadata(forkonomicToken).symbol()
         );
 
         //Initialize the bridge contracts

@@ -16,7 +16,13 @@ contract ForkonomicToken is IForkonomicToken, ERC20Upgradeable, ForkableUUPS {
     }
 
     /// @inheritdoc IForkonomicToken
-    function initialize(address _forkmanager, address _parentContract, address minter, string calldata name, string calldata symbol) external initializer {
+    function initialize(
+        address _forkmanager,
+        address _parentContract,
+        address minter,
+        string calldata name,
+        string calldata symbol
+    ) external initializer {
         forkmanager = _forkmanager;
         parentContract = _parentContract;
         _setupRole(MINTER_ROLE, minter);
@@ -33,7 +39,9 @@ contract ForkonomicToken is IForkonomicToken, ERC20Upgradeable, ForkableUUPS {
         IForkonomicToken(children[1]).mint(msg.sender, amount);
     }
 
-    function createChildren(address implementation) external onlyForkManger returns (address, address) {
+    function createChildren(
+        address implementation
+    ) external onlyForkManger returns (address, address) {
         return _createChildren(implementation);
     }
 }
