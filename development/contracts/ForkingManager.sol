@@ -224,6 +224,20 @@ contract ForkingManager is IForkingManager, ForkableUUPS {
             arbitrationFee
         );
 
+        //Initialize the forking manager contracts
+        IForkableGlobalExitRoot(newInstances.globalExitRoot.one).initialize(
+            newInstances.forkingManager.one,
+            globalExitRoot,
+            newInstances.zkEVM.one,
+            newInstances.bridge.one
+        );
+        IForkableGlobalExitRoot(newInstances.globalExitRoot.two).initialize(
+           newInstances.forkingManager.two,
+            globalExitRoot,
+            newInstances.zkEVM.two,
+            newInstances.bridge.two
+        );
+
         // Store the dispute contract and call to identify the dispute
         disputeContract = _disputeContract;
         disputeCall = _disputeCall;

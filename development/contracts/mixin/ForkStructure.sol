@@ -1,15 +1,24 @@
 pragma solidity ^0.8.17;
 
 import "../interfaces/IForkableStructure.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract ForkStructure is IForkableStructure {
+contract ForkStructure is IForkableStructure, Initializable {
+    // The forkmanager is the only one who can clone the instances and create children
     address public forkmanager;
+
+    // The parent contract is the one that was forked during this contract initiation
     address public parentContract;
-    // actually an array would be the natural fit, but this would make the initialization more complex
-    // due to proxy construction.
-    // The option: address[] public children = new address[](2) would need a custom constructor
-    // hence we are taking a mapping
+
+    // The children are the two instances that are created during the fork
+    // Actually an array would address[] public children = new address[](2) be the natural fit, 
+    // but this would make the initialization more complex due to proxy construction.
     mapping(uint256 => address) public children;
+
+    function initialize(address _forkmanager, address _parentContract) public virtual onlyInitializing {
+        forkmanager = _forkmanager;
+        parentContract = _parentContract;
+    }
 
     modifier onlyParent() {
         require(msg.sender == parentContract);

@@ -140,8 +140,7 @@ contract E2E is Test {
         address newBridgeImplementation = address(new ForkableBridge());
         address newForkmanagerImplementation = address(new ForkingManager());
         address newZkevmImplementation = address(new ForkableZkEVM());
-        address newGlobalExitRoot = address(new ForkableGlobalExitRoot());
-
+        address newGlobalExitRootImplementation = address(new ForkableGlobalExitRoot());
         address newForkonomicTokenImplementation = address(
             new ForkonomicToken()
         );
@@ -166,7 +165,7 @@ contract E2E is Test {
                 zkEVMImplementation: newZkevmImplementation,
                 forkonomicTokenImplementation: newForkonomicTokenImplementation,
                 forkingManagerImplementation: newForkmanagerImplementation,
-                globalExitRootImplementation: newGlobalExitRoot
+                globalExitRootImplementation: newGlobalExitRootImplementation
             })
         );
 
@@ -238,6 +237,27 @@ contract E2E is Test {
             newForkonomicTokenImplementation
         );
 
+        // Fetch the children from the ForkonomicToken contract
+        (
+            address childGlobalExitRoot1,
+            address childGlobalExitRoot2
+        ) = globalExitRoot.getChildren();
+
+        // Assert that the forkonomic tokens match the ones we provided
+        assertEq(
+            bytesToAddress(
+                vm.load(address(childGlobalExitRoot1), _IMPLEMENTATION_SLOT)
+            ),
+            globalExitRootImplementation
+        );
+        assertEq(
+            bytesToAddress(
+                vm.load(address(childGlobalExitRoot2), _IMPLEMENTATION_SLOT)
+            ),
+            newGlobalExitRootImplementation
+        );
+
+        assertEq(ForkableGlobalExitRoot(childGlobalExitRoot1).forkmanager(), childForkmanager1);
         // Assert the dispute contract and call stored in the ForkingManager match the ones we provided
         assertEq(forkmanager.disputeContract(), disputeContract);
         assertEq(forkmanager.disputeCall(), disputeData);
