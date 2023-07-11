@@ -35,10 +35,41 @@ contract ForkableZkEVM is ForkableUUPS, IForkableZkEVM, PolygonZkEVM {
         );
     }
 
-    function createChildren(
-        address implementation
-    ) external onlyForkManger returns (address, address) {
-        _activateEmergencyState();
+    function createChildren(address implementation) external onlyForkManger returns (address, address) {
         return _createChildren(implementation);
+    }
+
+    modifier notAfterForking() {
+        require(children[0] == address(0x0), "No sequencer changes after forking");
+        _;
+    } 
+
+     function sequenceBatches(
+        BatchData[] calldata batches,
+        address l2Coinbase
+    ) public override notAfterForking ifNotEmergencyState onlyTrustedSequencer{
+        PolygonZkEVM.sequenceBatches(batches, l2Coinbase);
+    }
+
+    function verifyBatches(
+        uint64 pendingStateNum,
+        uint64 initNumBatch,
+        uint64 finalNewBatch,
+        bytes32 newLocalExitRoot,
+        bytes32 newStateRoot,
+        bytes calldata proof
+    ) public override notAfterForking ifNotEmergencyState {
+        PolygonZkEVM.verifyBatches(pendingStateNum, initNumBatch, finalNewBatch, newLocalExitRoot, newStateRoot, proof);
+    }
+
+    function verifyBatchesTrustedAggregator(
+        uint64 pendingStateNum,
+        uint64 initNumBatch,
+        uint64 finalNewBatch,
+        bytes32 newLocalExitRoot,
+        bytes32 newStateRoot,
+        bytes calldata proof
+    ) public override notAfterForking onlyTrustedAggregator {
+        PolygonZkEVM.verifyBatchesTrustedAggregator(pendingStateNum, initNumBatch, finalNewBatch, newLocalExitRoot, newStateRoot, proof);
     }
 }
