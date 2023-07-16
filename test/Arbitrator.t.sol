@@ -1,12 +1,12 @@
-pragma solidity ^0.8.10;
-import "forge-std/Test.sol";
-import "../development/contracts/Arbitrator.sol";
+pragma solidity ^0.8.17;
+import {Test} from "forge-std/Test.sol";
+import {Arbitrator} from "../development/contracts/Arbitrator.sol";
 
-import "../development/contracts/interfaces/IRealityETH.sol";
-import "../development/contracts/interfaces/IERC20.sol";
+import {IRealityETH} from "../development/contracts/interfaces/IRealityETH.sol";
+import {IERC20} from "../development/contracts/interfaces/IERC20.sol";
 
 contract ArbitratorTest is Test {
-    Arbitrator arb;
+    Arbitrator public arb;
 
     IERC20 internal tokenMock =
         IERC20(0x1234567890123456789012345678901234567890);
