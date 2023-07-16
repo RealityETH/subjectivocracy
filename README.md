@@ -75,7 +75,7 @@ If either the L2 system or the bridge on L1 is not trusted, contracts relying on
 
 ## Prototype implementation
 
-The interactions between users and contracts are specified in detail in [interactions](interactions.md).
+The interactions between users and contracts are specified in detail in [interactions](docs/interactions.md).
 
 The system is implemented in the following contracts (and their dependencies such as existing reality.eth contracts):
 
@@ -89,7 +89,7 @@ Tests for the above are in [tests/python/test.py](tests/python/test.py).
 
 ## Next steps
 
-- We need to select an L2 system to build a prototype. See [L2 choices](l2_choice.md).
+- We need to select an L2 system to build a prototype. See [L2 choices](docs/l2_choice.md).
 - Someone needs to distribute governance tokens, and potentially handle any funds resulting from the sale, possibly one of the DAOs that currently uses reality.eth.
 
 ## Discussion
