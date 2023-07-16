@@ -1,0 +1,319 @@
+\documentclass[a4paper]{article}
+
+%% Language and font encodings
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+%sidecaptures
+\usepackage{wrapfig}
+
+
+
+%% Sets page size and margins
+\usepackage[a4paper,top=3cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+%% Useful packages
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+\title{Oracle-platform}
+\author{Alexander Herrmann}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}Decentralized applications (Dapps), Decentralized Autonomous Organizations (DAOs) and Decentralized Institutions (Dins) executed via smart contracts on blockchains are a growing ecosystem. Many of these Dapps and DAOs have an urgent need for a very reliable information feed connecting the blockchain ecosystem with traditional centralized services and their information. The oracle-platform will be an open-source DAO managing information feeds, which Dapps and DAOs can utilize to build a reliable information feed for their services. Bundling valuations of already existing ERC20 tokens into one platform to protect itself and using an innovative split game theory enforced by smart contracts, this oracle-platform is unique in terms of security and reliability of information correctness.
+\end{abstract}
+
+\section{Introduction}
+
+The oracle-platform is an open source DAO managing information feeds. The platform is intended to provide information from centralized sources to the decentralized blockchain ecosystem. Using the setup of a DAO, the oracle-platform is a decentralized organization, which manages oracle feeds and steps in to provide a decentralized decision process in the case of irregularities of feeds. This can be archived by applying a prediction market, an onchain oracle-DAO split and last but not least by voting of external oracle customer-DAOs about the correctness of the information feed.
+In the proceedings, firstly the oracle platform and the decentralized decision process for determination of the correctness of an information is presented. This is only described in an abstract manner, but all descriptions are linked to their detailed specification listed in the second section. In the last section all possible attack vectors are discussed and the security of the system is analyzed. Hope you enjoy the read!
+
+\section{Oracle-platform}
+\begin{wrapfigure}{r}{0.2\textwidth}
+  \vspace{-1pt}
+  \begin{center}
+    \includegraphics[width=0.18\textwidth]{verieth-dao.png}
+  \end{center}
+  \vspace{-1pt}
+  
+\end{wrapfigure}
+In the following sections the concept of the oracle platform will be presented. In all graphics the oracle platform will be represented with this symbol VE displayed at the right side.
+
+
+
+\subsection{Oracle-platform concept}
+Oracles have a very challenging task. They need to grasp facts from the "real world" and map them into the blockchain system.
+\begin{figure}
+\centering
+\includegraphics[width=0.6\textwidth]{coherence.png}
+\caption{\label{fig:coherence}The challenging task of an oracle. Manage the coherence vector.}
+\end{figure}
+The task of observing the truth is a challenging one and there are rare situations where it even might be impossible, due to subjectivity. Hence, there will always be a coherence vector between the reality and the reports in the blockchain system. 
+Sometimes this coherence vector is needed, because when all of the information is sent unfiltered to the blockchain, evil prediction markets about the day of death of a person could turn into an assassin tool. These markets could provide incentives to kill this person at a specific date. But usually, this coherence vector is a risk for the smart contracts to be tricked and result in losses for participants. Due to this situation, it is very important that oracle systems are build, which have a very well-defined scope and have a very secure, bribe resistant, decentralized governance. This paper proposes a new solution for this task. Especially reporting information like price feeds from regulated markets into the blockchain can be done in a very secure manner using these oracle techniques.
+
+\subsection{Oracle-platform DAO}
+The oracle-platform is essentially a decentralized autonomous organization governed by its tokenholders. The tokenholders nominate and elect an oracle solution provider as for example oralize.it or realitykeys - but this paper proposes also a new technology different from the ones these providers use. The data sent by these selected oracles to the oracle-platform  will be processed by the oracle DAO smart contracts. For example, irregularities will be filtered out.  Also this information will be public and can be checked by anyone in the ecosystem for its correctness, before it is finally sent to the feed requester. One key technology the oracle-platform will be providing are tools to easily check - in an automated manner - for the correctness of these information. If the check of the oracle feeds are not positive, anyone can report an irregularity on the blockchain and the feed will not be sent directly to the requester.
+
+The security of the oracle will be given in a last instance by partner ERC20 token systems, hence it is also a very important task of the oracle-DAO to nominate and elect these partner ERC20 tokens. For each partner special voting contracts need to be deployed, which are linking the ERC20 tokenholder decision to the oracle-outcome \ref{ERC20tokenvoting}. For an overview of the oracle-platform see figure \ref{fig:oracledaosetup}.
+
+\subsection{Escalation process in case of irregularities}
+In the following section a decentralized governance process for oracle irregularities is described.
+\subsubsection{Raising an issue}
+Oracle requests are made on the public ethereum blockchain to a special contract of the oracle-DAO. These oracle requests are public. The central oracles, chosen from the oracle-platform, have to respond to these requests in a predefined way. By execution of the predefined code, the oracles are collecting the information and send them signed by a private key to the filter contracts \ref{filtercontracts} of the DAO. The filter contracts calculate the final result from the oracle's input and send it to the feed requester. But before the information is sent, anyone can check the correctness of the oracle's output by running the predefined oracle code and check its results against the oracle's output. If the information does not match, one can issue an irregularity and the escalation process starts.
+
+Also, an escalation process can be initiated, if a predefined information source is broken. An example would be that a requester is asking for the average ETH:USD price form the API's of several exchanges. If the exchanges API are broken and return false data and the oracle's software is not aware of the issue, the central oracles will also report this wrong data. But then an issue of an irregularity will be initiated and the decentralized decision process will prevent any losses caused by these broken information feeds. It is up to the oracle-DAO token holders to define precise rules to handle these kinds of situations.
+In order to prevent false irregularities reporting, there is a cost associated with reporting, but also a reward in case of a correct irregularity report.
+ \begin{figure}
+\centering
+\includegraphics[width=0.8\textwidth]{oracledaosetup.png}
+\caption{\label{fig:oracledaosetup}Basic set up of the oracle-platform}
+\end{figure}
+\subsubsection{Prediction market for fast issue resolution}
+After an irregularity of a feed has been issued to the system, there needs to be a quick assessment of the issue. Hence, the DAO initiates a binary prediction market, in which participants bet ether for the option "Yes, the reported issue is an irregularity" or "No, the reported issue is not an irregularity". The detailed market workings are described here: \ref{predictionmarket}. The prediction market can have two outcomes: Either the prediction market converges quickly to one option without substantial bets on the minority option or we have substantial bets on both sides of the prediction market.
+In the first case, the prediction market is assumed to reveal the truth and the escalation process is already finished. In the second case, we need to go to higher escalation levels in order to prevent wealthy players to manipulate the prediction market.
+\begin{figure}
+\centering
+\includegraphics[width=0.8\textwidth]{Escalationprocess1.png}
+\caption{\label{fig:escalation1}First steps for the escalation process for decision making about irregularities}
+\end{figure}
+\subsubsection{Oracle-DAO split}
+The next step in the escalation process is the oracle-DAO split. Here, the key contract managing the oracle-platform is getting two child contracts, which have exactly the same construction as the original key contract.
+The child contracts are generated in such a way that they can independently interact with the other contracts of the oracle-platform.
+Each oracle-DAO child will represent a decision: Child A will represent the decision "Yes, the reported issue is an irregularity" and child B will represent "No, there is no irregularity".
+Both new oracle systems are fully functional and they will live forever assuming that they still have supporters. This means oracle clients do not need to agree on a decision. If they disagree with the majority oracle decision, they can just use the split child representing a different subjective truth.
+After these two child contracts are created, the original oracle will be dissolved and their tokenholders have to exchange their tokens against one of the new oracle child tokens. 
+This process also helps revealing the final decision, because the tokens of the oracle child, which does not represent the truth, will most likely end to be worthless. Hence, oracle-DAO tokenholders have a high incentive to evaluate the situation properly and make a good decision. Details about the split are described here: \ref{DAOsplit}.
+\subsubsection{ERC20 token holder voting}
+After the original oracle DAO gets dissolved and the 2 child oracles are created, every ERC20 token system relying on the oracle infrastructure needs to find a decision internally, which new oracle-platform child A or child B they want to connect to. Each ERC20 token can dealt with this selection process individually. For the oracle it is only important that they are at least temporarily selecting one oracle child, which is representing the truth according to their knowledge/investigations.  For the ERC20 tokenholders it is very important to make the correct decision. If the DAO is connected to an unreliable oracle, their internal settlements will not be fair and thus they will lose all their customers very quickly. Hence, the ERC20 tokens have a very high intrinsic incentive to reveal the truth. 
+For an exact proposed ERC20 voting protocol see here: \ref{votingprocess}.
+\begin{figure}
+\centering
+\includegraphics[width=0.8\textwidth]{Escalationprocess2.png}
+\caption{\label{fig:escalation2}Next steps for the escalation process for decision making about irregularities}
+\end{figure}
+\subsubsection{Evaluation of ERC20 token vote}
+After all ERC20 token have finished their voting process, it is required to determine their market value again, since the voting could have a tremendous impact on their market value. Therefore, for each ERC20 token, which is associated to the oracle-DAO, an onchain market contract gets deployed for trading ETH:ERC20 token (cp. \ref{onchainmarket}). From the onchain market trades the correct price relative to ETH can be extracted.
+\subsubsection{Determination of the truth for the challenged oracle feed}
+The truth will be determined by smart contracts in the following way. Assume the oracle-platform has n ERC20 token partners $T_1, ... T_n$ elected before the escalation started. For each $T_i$ we determined the market capitalization $MC_i$ as described in previous subsection.
+Then the smart contracts calculate the total market capitalization TM of the option "Yes, there is an irregularity"
+$$ TM_{Yes}=\sum_{i| T_i voted Yes} CM_i \label{eqdecision}$$
+and the total market capitalization of the option "No, there was not an irregularity"
+$$ TM_{No}=\sum_{i| T_i voted No} CM_i$$
+Now, these two numbers $TM_{Yes}$ and $TM_{No}$ can be compared in order to resolve the market.
+\subsubsection{Smart contract resolution}
+In the case $TM_{Yes}>TM_{No}$, it is assumed that there was an irregularity. Then the oracle-DAO shareholders need to quickly select  a new set of central oracles, having no issues. These oracles will push all information for the pending oracle requests into the blockchain. If these oracle inputs are not challenged again, the oracle works. Otherwise the escalation process starts again.
+In the case $TM_{Yes}<TM_{No}$, it is assumed that there was not an irregularity. All information will be pushed to the oracle requesters, as they were reported by the oracles in the first place.
+
+\section{Oracle-platform components}
+In the following section each component of the oracle platform is defined with a more in depth specification. 
+\subsection{ERC20 tokens} 
+ERC20 is called a standard for tokens on the Ethereum blockchain. Nearly all innovative and valuable DAOs have their shares implemented as ERC20 tokens. The oracle platform will incorporate this concept of the ERC20 in two ways. The tokens of the oracle-DAO will be issued in form of the ERC20 token and the DAO will accept selected DAOs, which have implemented the ERC20 standard, to build up its own game theoretical defense mechanisms.
+
+\subsection{Oracle-DAO}
+The oracle-DAO is at the heart of the oracle platform. The Decentralized Autonomous Organization is responsible for issuing their own tokens, managing the oracle feed, selecting partners DAOs to secure the platform, paying dividends, setting some important parameters of the system and last but not least assist to manage a decentralized split process.
+
+
+\subsubsection{Managing oracle feeds}
+Any oracle provider as for example realitykeys, oraclize, Microsoft's bletchley and Reuters can be chosen as oracle service provider by the oracle-DAO. Anyone can propose a new oracle for the DAO and then tokenholders can vote on the acceptance of the proposals of the new oracles. This process can also be used to change prices for the oracle payments.
+
+\subsubsection{Issue management of the oracles}
+Before information is used for settlements in smart contracts, this information is validated in a decentralized way. After an oracle sends information to the blockchain, in the proceeding 10 blocks users and bots have the chance to verify this information and to raise an issue in case of any irregularity. 
+
+Raising an issue comes along with a small cost of 30 Ether. If the issue was raised correctly, this will be rewarded by the oracle-DAO, but if the issue was not raised correctly, then the 30 Ether will not be given back to the issue raiser. The tasks of the oracle-DAO is also to organize these rewards from the collected fees. The oracle-DAO holders also have an incentive to validate the oracle feeds, because missed issues can devalue the trust in the DAO and devalue their token values.  \subsubsection{Filter contracts}
+\label{filtercontracts}
+The filter contracts are receiving the original transactions from the different central oracles. They filter and process this information and calculate the final information output. This output will be sent to the information requester as the last step.
+The filtering process itself depends on the information type:
+\begin{itemize}
+\item numeric types: If more or equal to 3 oracles are sending numeric answers, then the minimum and maximum of these numeric answers will be dismissed and all other inputs will be used to calculate the average. If less than 2 oracles are sending numeric answers, then all input will be used to calculate the average. The final output sent to the requester will be the average.
+\item boolean types: The final output will be the binary option, which most of the registered oracles were reporting.
+
+\end{itemize}
+The purpose of this filtering contract is to prevent a starting of the escalation process, if only 1 or 2 oracles do not work properly. The escalation process should only be initiated, if the output of the filtering process is not equal to the hypothetical output, in the case that all the oracles would have worked properly. 
+\subsubsection{Paying oracles and dividends}
+The oracle-DAO is charging a predefined fee for all oracle requests, which do not fall under certain exemptions. These collected fees are used to pay the central oracles monthly by the predefined prices. The rest of the collected fees are used to payout dividends for tokenholders. The algorithm for the paying dividends can be found here:
+\cite{div}
+
+\subsubsection{Selection of ERC20 token partners}
+The final security for the oracle-DAO comes with its ERC20 token partners, since they are urged to vote on the correctness of the oracle, if all other escalation steps fail to resolve the issue. Hence it is very important for the DAO to select good partners. This will also be done with a proposal and voting mechanism. For further selection criteria of ERC20 token partners see here: \ref{erc20selectioncriteria}.
+
+\subsection{Prediction market on issue outcome}
+\label{predictionmarket}
+After an irregularity of a feed has been issued to the system, there needs to be a quick assessment of the issue. The DAO initiates a binary prediction market in which participants bet Ether on the option "Yes the reported issue is an irregularity" or "No the reported issue is not an irregularity".
+This prediction market works quite similar to the ultimate oracle. People betting their Ether on this option, which will be identified as the right option later, will be rewarded proportionally to their stake with the Ether bet for the wrong option. People betting on the wrong outcome will loose all their stake. Also betting will happen in 24-hour intervals, in order to prevent sudden manipulation techniques. 
+For this prediction market, there are two possible ways for the final resolution. 
+\begin{enumerate}
+\item \textit{The prediction market is clearly favoring one option without substantial bets on the minority side}
+In this case, there are less than 100 000 ETH bet on the option the minority was betting on and the option of the majority was leading in two consecutive intervals. Here, the oracle platform will assume that the truth is the option the majority bet on. 
+
+
+\item \textit{The prediction market is undecided, substantial bets were made on both sides}
+In this case, there are more than 100 000 ETH bet on both options in some interval.
+Here, the prediction market can not yet be resolved and the oracle-platform will initiate higher escalation stages.
+\end{enumerate}
+
+
+\subsection{Voting contract for nominated ERC20 tokens}\label{ERC20tokenvoting}
+\subsubsection*{General voting contract setup}
+The voting contract (vo-co) is the central interface between ERC20 token contracts and the oracle-DAO. It allows ERC20 tokenholders to vote on their oracle choice in case of an oracle-split event. The contract is an independent contract from the normal ERC20 token and needs to be deployed individually for each ERC20 token oracle partner. In order to make the vo-co work correctly, there is no need for a deeper modification of the ERC20 token system contracts, besides that the contracts select this voting contract as their or one of their oracles. Anyway many DAOs have a proposing and voting process for optional oracles, which fits to this concept very well.
+
+Since this oracle-DAO can guarantee security degrees unreached by any other oracle system, there is a high likelihood that DAOs will opt-in this oracle-DAO as a default oracle for their internal important DAO settlements. This would be great, because it improves the incentive for ERC20 tokenholders to vote in case of a oracle escalation process.
+\subparagraph{Selection criteria}
+\label{erc20selectioncriteria}
+The oracle-DAO might also require ERC20 token partners to fulfill the criteria that either they opt-in the oracle as the standard oracle for important internal settlements or make security deposit, which are incentivizing the ERC20 partners to vote in an escalation situation.
+
+\subsubsection*{Voting contract - voting process}
+\label{votingprocess}The voting contract (vo-co) allows anybody to make a proposal for a new oracle and any tokenholder can refuse or agree to this new oracle by depositing his tokens into the contract until the end of the voting process. The proposal will be accepted if the majority is in favor of the proposal and at least 40 percent of tokens participated. 
+
+In the escalation process after the oracle-DAO split, the voting process will be a special one, making it resistant to bribe attacks. Again each token holder can deposit and thereby vote for one oracle-child representing one of the options: 'Yes, there is an irregularity with the oracles' or 'No, there is no irregularity with the oracles'.
+
+After 3 days, when the voting process is finished and the market price determination phase is ongoing, voters can already withdraw their tokens from the vo-co, but only in exchange for Ether at the last ERC20 Token:Ether ratio reported by the oracle before there was any issue reported to the oracle.
+Only after the market price determination phase, all ether and tokens will be able to withdraw from the contracts. Let us notate a tokenholder of a partner ERC20 token voting x tokens in the vo-co by $TH_x$.
+Then tokenholder $TH_x$ can do a withdraw request according to the following rules:
+\begin{enumerate}
+\item \textit{THx votes like the \textbf{minority} of tokenholders of his ERC20 token and his bet \textbf{is opposite to} the truth revealed in the final oracle escalation process (cp. \ref{eqdecision}).}
+In this case, $TH_x$ will not be able to withdraw any tokens and his tokens will be redistributed between all tokenholders of this token.
+
+
+\item \textit{THx votes like the \textbf{majority} of tokenholders of his ERC20 token and his bet \textbf{is opposite to} the truth revealed in the final oracle escalation process(cp. \ref{eqdecision}).}
+In this case, $TH_x$ can withdraw all his x tokens.
+\item \textit{THx votes \textbf{in alignment to} the truth revealed in the final oracle escalation process (cp. \ref{eqdecision}).}
+In this case, $TH_x$ can withdraw all his x tokens.
+\end{enumerate}
+
+Using this voting mechanism makes bribing very hard since the punishment for voting wrongly is very high. This is very effective as the manipulation of the final truth is very hard (cp. \ref{wrongtruth}).
+
+
+
+\subsection{Onchain split of the oracle DAO} \label{DAOsplit}
+There are rare situations, in which it is very hard to judge about the correctness of an oracle feed. Smart technologies like TSL notary, Intel Software Guard Extension (SGX) and other are minimizing these situations. But in the end, there will always be a coherence vector between reality and reports on the blockchain. Although this paper represents a smart, decentralized governance process for this coherence vector, there should be the possibility for each member of the ecosystem, to make its own, individual decision about the truth and live in the system supporting this truth. 
+For this reason the oracle DAO is providing a on-chain split mechanism. Basically, the DAO V gets two child copies V' and V''. Both have the exact same smart contracts, beside that the one fact about a decision is hardcoded in V' and the exact opposite fact is hardcoded in V''. Now, if a user does not agree to the majority, he can still connect his dapps to the opposite fact oracle. Hence, no decision is enforced to the final end user. Fore sure, only one particular truth can be used for the settlement of a specific event, but in the end users can decide individually, which truth they want to believe and which oracle child DAO they want to follow.
+
+Each tokenholder of the parent-DAO has to make a decision for which child token he wants to exchange his tokens. 
+
+
+Also in order to make the oracle-DAO resistant against a "pure oracle-DAO token takeover attack" resistant (cp. \ref{100percentattack}), one could allow to have more than the 2 above described children of the oracle-DAO. These additional children would state "Yes the issue is an irregularity and this irregularity should be resolved with this ... new central oracle". Shares of such child-DAO would be sold via a initial coin offering.
+\subsection{Onchain ERC20 price feeds} \label{onchainmarket}
+There is a very effective method to determine the price of an ERC20 token onchain: One opens a ERC20 token:ETH market on the blockchain, provides enough liquidity to the market via a market maker bot, which is arbitrating to big exchanges and then measures the average price over 24 hours. Assuming we have enough liquidity, it is very hard to manipulate the price significantly, since any manipulation of the price will be countered by the arbitrage bots. Especially, if there is a limitation of the trading volume per 10 minutes, it is easy for bots to organize new ERC20 tokens or new ether to balance the price.
+If newer, faster onchain markets based on lightening networks are developed, a high liquidity can be generated, driving the costs of manipulation of the price very high, theoretically even infinity. 
+
+
+The upper method requires for good security some kind of market maker. If one does not want to rely on market makers, one could also use a kind of pile-market:
+For pile-markets to work there needs to be upfront deposit of ERC20 tokens and Ether to the oracle-DAO. These funds will be sent to the pile-market contract once the escalation process needs to start the onchain price determination. Now anybody can change the ratio of Ether or ERC20 piled in this contract by sending more ether or more ERC20 tokens to the smart contract. After 24 hours the Ether divided by number of the ERC20 token piled up in the smart contract are describing the ratio between these tokens. Anybody, who sent Ether to the contract gets ERC20 tokens according to this ratio payed out. Also anyone, who sent ERC20 tokens to the pile-market gets Ether payed out according to this ratio. This pile-market is also a very good indicator for the price of an ERC20 proportional to ether, since anybody can make easily some arbitrage money, if the ratio of the pile-market does not fit to the ratio on public exchanges. In order to prevent last second manipulation deposits, the amount of Ether and tokens this pile-market accepts are decreasing in time.
+
+The final market cap reported by the onchain ERC20 markets, will be $$
+min(p_{initial}*2, p_{onchain})*amount of tokens, \label{marketpricecap}$$
+where $p_{initial}$ is the last market price of the ERC20 token before any issue about the oracles was reported - oracles are required to update these prices once a week - and $p_{onchain}$ is the price reported by the deployed onchain market. This formula prevents special attacks targeting to manipulate market capitalizations drastically (cp. \ref{100percentattack}).
+\subsection{ Verifiable computation environments for oracles} \label{oracleserver}
+
+This method has been known for quite some time \cite{oracle}. Basically, one uses the accountability of major could service providers to build up a secure information stream.
+Many cloud providers allow their users to create specific machine images with a set of dedicated programs and scripts on a server and publish all the information needed to enable everyone to verify that exactly this published machine image is running on a dedicated server provider. By linking the information provided by these cloud hosting companies in a decentralized way on the blockchain, one can set up a system, which is linking the companies accountability to one stream of trust. This enables us to build already very secure information feeds in the first place.
+
+\subsubsection{technical setup}
+In order to demonstrate the method described above, we describe how to set up an oracle server.
+
+The oracle server is supposed to run the following software:
+
+\begin{itemize}
+\item a client software that reads price feed requests from the blockchain
+\item a script that performs the requested price feed request via TLS
+\item a client software that creates transactions for the blockchain with price feed information
+\end{itemize}
+
+Moreover, there must be two application programming interfaces (API) 
+\begin{itemize}
+\item One API for publishing all answered price feed requests
+\item One API for serving the history of machine images running on the server
+\end{itemize}
+
+The oracle can be set up performing the following steps:
+
+\begin{enumerate}
+\item Create an instance from a public machine image and modify the software according to oracle's needs. 
+\item Create a snapshot of the machine image/volume and make that snapshot public including its snapshot ID.
+\item Describe all the modifications applied to the initial machine image, so that anyone could perform the same actions in order to reproduce the file tree hashes of the public snapshot.
+\item Starting a server instance and submit its private key for signing transactions.
+\item Provide a server API giving the history of machine image running on the server.
+\end{enumerate}
+
+Once these steps are done, we have a basic price feed, which can only be manipulated by the oracle server administrator or the hosting company. Both sources of manipulation can be removed by the following approach.
+
+The hosting company is not a concern, since an oracle server can be set up at different hosting companies as for example Google, Amazon and Microsoft and their price information are compared on the blockchain. If only one hosting company is manipulating the price feed, smart contracts identify this price feed easily and sort it out. Let us call the event, in which many of these companies are tampering their oracle servers at the same time, \emph{company tampering}\label{Tampering}. This event is very unlikely and it can be handled via the escalation betting process by an oracle DAO.
+
+The other concern is due to server administrators. They could either detach the machine image or abuse private keys to sign arbitrary information. Certainly, one malicious oracle operator can be easily sorted out on the blockchain. But even if the majority of oracle operators collude for something malicious, our price feed system can still defend its users and penalize these oracles. The big advantage about this setup is that anybody can see easily whether oracles are working correctly. Using the server API provided by the hosting company, everybody sees whether the right server images are running. Furthermore, by comparing all public transactions signed by the private key of the server and the listed transaction on the oracle API, everybody sees whether the private keys have been misused. Let us call the event in which many of the oracle server administrators collude and manipulate this price feed \emph{oracles conspiracy}. This event would be obvious to everyone via the hosting API. Hence, it could be easily reported into the blockchain and smart contracts - the oracle DAO - can initiate the required actions. 
+
+Having this setup, it makes sense to formulate the following hypothesis: \label{effectiveinformationhypothesis}
+
+
+\textbf{\textit{Effective information availability hypothesis}}
+In the framework of regulated financial markets, this hypothesis states that normal user, equipped with good software, can easily determine whether an oracle sends the correct information to the blockchain.
+
+For this hypothesis to be truth, the observer must be able to identify the following scenarios:
+
+\begin{enumerate}
+\item \textit{Financial markets APIs are broken}
+This can be observed by comparing different markets between each other.
+\item \textit{All cloud providers, which are used by central oracle are simultaneously malicious or hijacked }
+This can be observed by comparing the APIs of the financial markets and the oracles outputs.
+\end{enumerate}
+
+
+
+\section{Possible oracle attacks discussed}
+\subsection{Manipulating the "truth"}
+\label{wrongtruth}
+In order to manipulate the actual decision about the correctness of an oracle feed, one needs to influence the decision of ERC20 token votes and control the prices of ERC20 after the voting.
+\subsubsection*{Cost of corruptive influence on the ERC20 token vote}
+Let us assume that the oracle-DAO has the ERC20 token partners $T_i$  $i\in I$ for a set I, each $T_i$ has a market capitalization $MC_i$. In order to introduce a false truth, an attacker must influence some subset J of I of ERC20 tokens, such that $$\sum_{i\in J} MC_i >\sum_{i\in I/J} MC_i $$
+
+In order to influence a single $T_i$ the attacker has to own or at least bribe the majority of tokens voting of $T_i$. Since tokens would loose a lot of their value when being manipulated, there is a high incentive to vote and to correct a possible manipulation. Hence, it is assumed that at least 40-80 \% of tokenholders are voting.
+Assuming in average 50 \% of tokenholders are actually voting, the attacker can only gain any influence by investing at least this much capital$$ \label{decisionformula}
+\frac{1}{4}\sum_{i\in J} MC_i >\frac{1}{4}\sum_{i\in I/J} MC_i $$
+Considering that these $T_i \, i\in J$ will end up to be worthless, if they voted against the truth, the capital lost would be huge!
+Bribing tokenholder seems to be the cheaper attack vector, but still this one is also very expensive. There are two possible scenarios:
+
+\begin{enumerate}
+\item \textit{Bribing is successful}
+In this case the majority of the tokenholder decided for the bribe reward and voted against the truth. In such a scenario, the credibility of the ERC20 system got a huge hit and the token value will tank to zero, assuming \ref{effectiveinformationhypothesis}
+$$MC_i \xrightarrow []{} 0$$
+This is especially evident, if the DAO was selected by this criteria \ref{erc20selectioncriteria}.
+After the price fall is revealed by the onchain markets \ref{onchainmarket}, the ERC20token influence to the overall decision of the oracle platform will only be marginal, as seen from this formula \ref{eqdecision}.
+Thus such a bribe attack is not dangerous for the oracle, but for the ERC20 token itself. Basically it's willingness to join the oracle-DAO depends on such attack vectors. That is why the oracle-DAO proposes voting contracts disincentivizing bribe attacks.
+\item \textit{Bribing is not successful}
+If the attacker can not bribe the majority of the tokenholders and only a minority is  voting against the truth, there is also no risk for the oracle. If the ERC20 token has chosen to protect itself from bribe attacks via an algorithm like this one \ref{ERC20tokenvoting}, everyone who accepted a bribe reward r will lose all of its tokens used for voting, assuming the final oracle decision is not opposing it (cp. \ref{votingprocess}). Thus, a bribe offered to a tokenholder should be higher than a single token value.
+\end{enumerate}
+\textit{Assuming that the final decision of the oracle after the market evaluation is correct}, accepting a bribe is very unlikely rewarding, as in one case your tokens will loose all its value and in the other case, you are not getting your tokens back. Accepting a bribe is only attractive if the ratio of reward and single token value is higher than one.
+
+\textit{Assuming that the final decision of the oracle after the market evaluation is not correct}, the market value lost of many ERC20 tokens will be huge and the bribe would need to cover these huge losses, which pushes the needed bribe rewards somewhere to :$ \frac{1}{4}\sum_{i\in I/J} MC_i $
+
+\subsubsection*{Cost of corruptive influence on the ERC20 value determination }
+An attacker might also try to influence the markets during the price finding period.
+
+A possible attack is that a malicious actor introduces the a wrong ERC20 token voting and then, when the market have crashed, he is buying cheaply nearly all the tokens. As a next step, he would pump the markets cheaply and introduce a very high price to the ERC20 token, trying to manipulate the overall oracle decision. The proposed pile-markets (cp. \ref{onchainmarket}) are very effective in countering such an attack, but assuming that most of the trading volume will be off-chain, such an attack is possible. The costs for this kind of attack are hard to estimate. But for sure there are two big costs factors. Firstly, costs to introduce a wrong ERC20 token vote and secondly pumping the token. In order to succeed, the attacker probably needs to buy up to 95\% percent of tokens. Also the impact of this attack is quite limited, since the market cap of the token can not exceed the last market capitalization reported by the oracle-DAO before the first issue was reported to the oracle (cp.  \ref{marketpricecap}).
+\subsubsection*{Final evaluation}
+The analysis above shows that the an attacker would have capital lost higher than $$
+\frac{1}{4}\sum_{i\in J} MC_i >\frac{1}{4}\sum_{i\in I/J} MC_i .$$
+Assuming big projects like MakerDAO, Gnosis and others are joining the oracle-DAO, the loss for an attacker would go into the billions.
+\subsection{Manipulating the public opinion}
+As mentioned in the introduction for some information it is easy to draw the curtain over the truth, for others it is quite hard. The willings of ERC20 tokens systems to join the oracle-platform is essentially depended on the complexity for tokenholders to observe the actual truth and the easiness to report it by correct voting. Since the willingness of ERC20 tokens to join the system is of fundamental importance, there is the need to keep the complexity of the decision finding as small as possible. It might make sense to construct different oracle-platforms, with different observing complexities.
+One oracle-platform, the most secure one, would probably be restricted to information available from licensed data providers, as for examples big traditional exchanges as Nasdaq, etc. The advantage of these licensed environments is that information is very hard to manipulate and if they are manipulated, this new would be spread as governments would start their investigations.
+Other oracle-platforms could specialize on public information know from newspapers, such as who is the US president. A big portion of these facts are also very hard to manipulate, but others such as the global warming temperature change in the last 10 years might be very hard to judge. For these kind of oracles one should always keep the option undecided, in the case no accurate data can be provided.
+\subsection{Malicious DAO tokenholders implementing only bad oracles}
+First of all, it is important to know that the oracle-DAO tokenholders are not directly involved in the decision process of the escalation process. The oracle-DAO holders set up only the central oracles in the first place and also they are required to select trustworthy ERC20 token partner. But once these boundary conditions are set, their influence is marginal.
+\label{100percentattack}One possible attack would be to set up a bad oracle and making this oracle supplying an information very much in favor of your personal bets on secondary markets. After the whole escalation process is done, the oracle-DAO shareholders need to select another central oracle. If these oracle are chosen badly again and always wrong information is send into the system, ERC20 partner tokens might lose patience and give up the oracle system. At some point, it might be easier to manipulate the market. But there are two factors limiting this attack vector. Firstly, each time the market is escalated, the malicious actor needs to spend  100,000 ether in the prediction market bringing the situation to such a high escalation stage. Also, the implementation of different oracle-DAO children with hardcoded first oracles can prevent such an attack. 
+\subsection{Incentive to join the oracle system}
+The main incentive to join the oracle is to get access to one very secure oracle. Of course, the oracle platform will be public and answer any requests, but the costs model would be chosen in such a model, that is very attractive for ERC20 tokens to join the system. ERC20 token partners would not have to pay any oracle fees, while other non-partners would be required to pay fees up to 10 USD per request. 
+
+Since there are no updates of the contracts of the partner ERC20 tokens are required, the only compromise these ERC20 tokens are making by joining the system, is that they are shifting the inconvenience of voting to the tokenholders. But this is also not a really a hindering factor since the ERC20 voting escalation is really just the last escalation stage. It is expected that in 99.99\% of cases the prediction market will already resolve any issues. 
+\section{Conclusion}
+This paper has taken many good ideas from the augur oracle and generalized them for a more general setup. This allows building an oracle magnitudes safer than the original augur oracle. Firstly, because it allows bundling resource from several ERC20 tokens instead of only one ERC20 token and secondly because the intertwining between the overall ERC20 token voting result and the single ERC20 token result makes it much safer for a single ERC20 token to be manipulated. 
+
+It is the author's conviction that the only way to implement a more secure would be by implementing a DAO split for all ERC20 tokens connected to the oracle-platform as outlined here:\cite{oracleDAOsplit}. But the big disadvantage of this proposed construction is that is very hard to implement and needs all ERC20 tokens to be redeployed.
+
+\bibliographystyle{alpha}
+\bibliography{sample}
+
+\end{document}
