@@ -5,9 +5,9 @@ import {TokenWrapped} from "@RealityETH/zkevm-contracts/contracts/lib/TokenWrapp
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import {ForkableUUPS} from "./mixin/ForkableUUPS.sol";
 import {ForkableStructure} from "./mixin/ForkableStructure.sol";
+import {IForkableGlobalExitRoot} from "./interfaces/IForkableGlobalExitRoot.sol";
 
-contract ForkableGlobalExitRoot is ForkableUUPS, PolygonZkEVMGlobalExitRoot {
-
+contract ForkableGlobalExitRoot is IForkableGlobalExitRoot, ForkableUUPS, PolygonZkEVMGlobalExitRoot {
     /// @dev Initializting function
     /// @param _forkmanager The address of the forkmanager
     /// @param _parentContract The address of the parent contract
