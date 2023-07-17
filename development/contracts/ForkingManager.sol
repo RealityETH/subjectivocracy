@@ -231,7 +231,7 @@ contract ForkingManager is IForkingManager, ForkableUUPS {
             newInstances.bridge.one
         );
         IForkableGlobalExitRoot(newInstances.globalExitRoot.two).initialize(
-           newInstances.forkingManager.two,
+            newInstances.forkingManager.two,
             globalExitRoot,
             newInstances.zkEVM.two,
             newInstances.bridge.two

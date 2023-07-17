@@ -11,11 +11,14 @@ contract ForkStructure is IForkableStructure, Initializable {
     address public parentContract;
 
     // The children are the two instances that are created during the fork
-    // Actually an array like this: address[] public children = new address[](2) would be the natural fit, 
+    // Actually an array like this: address[] public children = new address[](2) would be the natural fit,
     // but this would make the initialization more complex due to proxy construction.
     mapping(uint256 => address) public children;
 
-    function initialize(address _forkmanager, address _parentContract) public virtual onlyInitializing {
+    function initialize(
+        address _forkmanager,
+        address _parentContract
+    ) public virtual onlyInitializing {
         forkmanager = _forkmanager;
         parentContract = _parentContract;
     }

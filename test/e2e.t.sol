@@ -140,7 +140,9 @@ contract E2E is Test {
         address newBridgeImplementation = address(new ForkableBridge());
         address newForkmanagerImplementation = address(new ForkingManager());
         address newZkevmImplementation = address(new ForkableZkEVM());
-        address newGlobalExitRootImplementation = address(new ForkableGlobalExitRoot());
+        address newGlobalExitRootImplementation = address(
+            new ForkableGlobalExitRoot()
+        );
         address newForkonomicTokenImplementation = address(
             new ForkonomicToken()
         );
@@ -257,7 +259,10 @@ contract E2E is Test {
             newGlobalExitRootImplementation
         );
 
-        assertEq(ForkableGlobalExitRoot(childGlobalExitRoot1).forkmanager(), childForkmanager1);
+        assertEq(
+            ForkableGlobalExitRoot(childGlobalExitRoot1).forkmanager(),
+            childForkmanager1
+        );
         // Assert the dispute contract and call stored in the ForkingManager match the ones we provided
         assertEq(forkmanager.disputeContract(), disputeContract);
         assertEq(forkmanager.disputeCall(), disputeData);
