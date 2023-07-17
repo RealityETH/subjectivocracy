@@ -6,12 +6,8 @@ import {IForkonomicToken} from "./interfaces/IForkonomicToken.sol";
 import {ForkableUUPS} from "./mixin/ForkableUUPS.sol";
 
 contract ForkonomicToken is IForkonomicToken, ERC20Upgradeable, ForkableUUPS {
+    /// @dev The role that allows minting new tokens
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-
-    function mint(address to, uint256 amount) external {
-        require(hasRole(MINTER_ROLE, msg.sender), "Caller is not a minter");
-        _mint(to, amount);
-    }
 
     /// @inheritdoc IForkonomicToken
     function initialize(
@@ -27,17 +23,29 @@ contract ForkonomicToken is IForkonomicToken, ERC20Upgradeable, ForkableUUPS {
         __ERC20_init(name, symbol);
     }
 
+    /// @inheritdoc IForkonomicToken
+    function mint(address to, uint256 amount) external {
+        require(
+            hasRole(MINTER_ROLE, msg.sender) || msg.sender == parentContract,
+            "Caller is not a minter"
+        );
+        _mint(to, amount);
+    }
+
+    /// @inheritdoc IForkonomicToken
+    function createChildren(
+        address implementation
+    ) external onlyForkManger returns (address, address) {
+        return _createChildren(implementation);
+    }
+
+    /// @dev Allows anyone to split the tokens from the parent contract into the tokens of the children
+    /// @param amount The amount of tokens to split
     function splitTokensIntoChildTokens(uint256 amount) external {
         require(children[0] != address(0), "Children not created yet");
         require(children[1] != address(0), "Children not created yet");
         _burn(msg.sender, amount);
         IForkonomicToken(children[0]).mint(msg.sender, amount);
         IForkonomicToken(children[1]).mint(msg.sender, amount);
-    }
-
-    function createChildren(
-        address implementation
-    ) external onlyForkManger returns (address, address) {
-        return _createChildren(implementation);
     }
 }

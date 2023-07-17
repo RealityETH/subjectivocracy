@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 
-import "./IForkableStructure.sol";
+import {IForkableStructure} from "./IForkableStructure.sol";
 
 interface IForkonomicToken is IForkableStructure {
     /**
@@ -17,8 +17,14 @@ interface IForkonomicToken is IForkableStructure {
         string calldata symbol
     ) external;
 
+    /// @dev Allows the parent contract to mint new tokens
+    /// @param to The address of the receiver
+    /// @param amount The amount of tokens to mint
     function mint(address to, uint256 amount) external;
 
+    /// @dev Interface for the forkManger to create children
+    /// @param implementation Allows to pass a different implementation contract for the second proxied child.
+    /// @return The addresses of the two children
     function createChildren(
         address implementation
     ) external returns (address, address);
