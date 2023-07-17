@@ -46,15 +46,11 @@ contract ForkableUUPSTest is Test {
 
         // the implementation address of children should match the expected ones
         assertEq(
-            Util.bytesToAddress(
-                vm.load(address(child1), _IMPLEMENTATION_SLOT)
-            ),
+            Util.bytesToAddress(vm.load(address(child1), _IMPLEMENTATION_SLOT)),
             forkableUUPSImplementation
         );
         assertEq(
-            Util.bytesToAddress(
-                vm.load(address(child2), _IMPLEMENTATION_SLOT)
-            ),
+            Util.bytesToAddress(vm.load(address(child2), _IMPLEMENTATION_SLOT)),
             secondForkableUUPSImplementation
         );
     }
