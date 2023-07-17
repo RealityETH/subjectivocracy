@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 import {Test} from "forge-std/Test.sol";
 import {ForkableUUPSWrapper} from "./testcontract/ForkableUUPSWrapper.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import {Utils} from "./utils/Utils.sol";
+import {Util} from "./utils/Util.sol";
 
 contract ForkableUUPSTest is Test {
     ForkableUUPSWrapper public forkableUUPS;
@@ -46,13 +46,13 @@ contract ForkableUUPSTest is Test {
 
         // the implementation address of children should match the expected ones
         assertEq(
-            Utils.bytesToAddress(
+            Util.bytesToAddress(
                 vm.load(address(child1), _IMPLEMENTATION_SLOT)
             ),
             forkableUUPSImplementation
         );
         assertEq(
-            Utils.bytesToAddress(
+            Util.bytesToAddress(
                 vm.load(address(child2), _IMPLEMENTATION_SLOT)
             ),
             secondForkableUUPSImplementation
