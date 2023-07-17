@@ -12,8 +12,9 @@ abstract contract ForkableUUPS is
 {
     bytes32 public constant UPDATER = keccak256("UPDATER");
 
-    function initialize(address _forkmanager, address _parentContract) public virtual override(ForkStructure) onlyInitializing {
+    function initialize(address _forkmanager, address _parentContract, address _updater) public virtual onlyInitializing {
         ForkStructure.initialize(_forkmanager, _parentContract);
+        _setupRole(UPDATER, _updater);
     }
 
     function _authorizeUpgrade(address) internal view override {

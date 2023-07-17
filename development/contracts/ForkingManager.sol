@@ -39,8 +39,7 @@ contract ForkingManager is IForkingManager, ForkableUUPS {
         parentContract = _parentContract;
         globalExitRoot = _globalExitRoot;
         arbitrationFee = _arbitrationFee;
-
-        _setupRole(UPDATER, msg.sender);
+        ForkableUUPS.initialize(address(this), _parentContract, msg.sender);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 

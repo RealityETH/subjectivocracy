@@ -23,10 +23,8 @@ contract ForkonomicToken is IForkonomicToken, ERC20Upgradeable, ForkableUUPS {
         string calldata name,
         string calldata symbol
     ) external initializer {
-        forkmanager = _forkmanager;
-        parentContract = _parentContract;
+        ForkableUUPS.initialize(_forkmanager, _parentContract, msg.sender);
         _setupRole(MINTER_ROLE, minter);
-        _setupRole(UPDATER, msg.sender);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         __ERC20_init(name, symbol);
     }

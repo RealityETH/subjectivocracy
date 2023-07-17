@@ -14,13 +14,12 @@ contract ForkableGlobalExitRoot is ForkableUUPS, PolygonZkEVMGlobalExitRoot {
         address _rollupAddress,
         address _bridgeAddress
     ) public initializer {
-        ForkableUUPS.initialize( _forkmanager, _parentContract);
+        ForkableUUPS.initialize( _forkmanager, _parentContract, msg.sender);
         PolygonZkEVMGlobalExitRoot.initialize(_rollupAddress, _bridgeAddress);
-        _setupRole(UPDATER, msg.sender);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function initialize(address forkmanager, address parentContract) public virtual override(ForkableUUPS,PolygonZkEVMGlobalExitRoot ) onlyInitializing {
+    function initialize(address forkmanager, address parentContract) public virtual override(ForkStructure,PolygonZkEVMGlobalExitRoot ) onlyInitializing {
         revert(string(abi.encode("illicit call to initialize with arguments:", forkmanager, parentContract)));
     }
 

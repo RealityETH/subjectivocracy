@@ -15,8 +15,7 @@ contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
         address _gasTokenAddress,
         bool _isDeployedOnL2
     ) external initializer {
-        forkmanager = _forkmanager;
-        parentContract = _parentContract;
+        ForkableUUPS.initialize(_forkmanager, _parentContract, msg.sender);
         PolygonZkEVMBridge.initialize(
             _networkID,
             _globalExitRootManager,
@@ -24,7 +23,6 @@ contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
             _gasTokenAddress,
             _isDeployedOnL2
         );
-        _setupRole(UPDATER, msg.sender);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 

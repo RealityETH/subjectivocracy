@@ -20,8 +20,7 @@ contract ForkableZkEVM is ForkableUUPS, IForkableZkEVM, PolygonZkEVM {
         IVerifierRollup _rollupVerifier,
         IPolygonZkEVMBridge _bridgeAddress
     ) external initializer {
-        forkmanager = _forkmanager;
-        parentContract = _parentContract;
+        ForkableUUPS.initialize(_forkmanager, _parentContract, msg.sender);
         PolygonZkEVM.initialize(
             initializePackedParameters,
             genesisRoot,
