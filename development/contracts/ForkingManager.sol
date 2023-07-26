@@ -58,6 +58,7 @@ contract ForkingManager is IForkingManager, ForkableUUPS {
         address forkonomicTokenImplementation;
         address forkingManagerImplementation;
         address globalExitRootImplementation;
+        address verifier;
     }
 
     struct AddressPair {
@@ -118,8 +119,6 @@ contract ForkingManager is IForkingManager, ForkableUUPS {
             bytes32 genesisRoot = IPolygonZkEVM(zkEVM).batchNumToStateRoot(
                 IPolygonZkEVM(zkEVM).lastVerifiedBatch()
             );
-            IVerifierRollup _rollupVerifier = IForkableZkEVM(zkEVM)
-                .rollupVerifier();
             // the following variables could be used to save gas, but it requires via-ir in the compiler settings
             // string memory _trustedSequencerURL = IPolygonZkEVM(zkEVM)
             //     .trustedSequencerURL();
@@ -149,7 +148,7 @@ contract ForkingManager is IForkingManager, ForkableUUPS {
                 "0.1.0",
                 IPolygonZkEVMGlobalExitRoot(newInstances.globalExitRoot.one),
                 IERC20Upgradeable(newInstances.forkonomicToken.one),
-                _rollupVerifier,
+                IForkableZkEVM(zkEVM).rollupVerifier(),
                 IPolygonZkEVMBridge(newInstances.bridge.one)
             );
             initializePackedParameters.chainID += 1;
@@ -164,7 +163,7 @@ contract ForkingManager is IForkingManager, ForkableUUPS {
                 "0.1.0",
                 IPolygonZkEVMGlobalExitRoot(newInstances.globalExitRoot.two),
                 IERC20Upgradeable(newInstances.forkonomicToken.two),
-                _rollupVerifier,
+                IVerifierRollup(newImplementations.verifier),
                 IPolygonZkEVMBridge(newInstances.bridge.two)
             );
         }

@@ -140,6 +140,10 @@ contract E2E is Test {
         address newBridgeImplementation = address(new ForkableBridge());
         address newForkmanagerImplementation = address(new ForkingManager());
         address newZkevmImplementation = address(new ForkableZkEVM());
+        address newVerifierImplementation = address(
+            0x1234567890123456789012345678901234567894
+        );
+
         address newGlobalExitRootImplementation = address(
             new ForkableGlobalExitRoot()
         );
@@ -167,7 +171,8 @@ contract E2E is Test {
                 zkEVMImplementation: newZkevmImplementation,
                 forkonomicTokenImplementation: newForkonomicTokenImplementation,
                 forkingManagerImplementation: newForkmanagerImplementation,
-                globalExitRootImplementation: newGlobalExitRootImplementation
+                globalExitRootImplementation: newGlobalExitRootImplementation,
+                verifier: newVerifierImplementation
             })
         );
 
