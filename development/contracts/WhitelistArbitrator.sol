@@ -67,7 +67,6 @@ contract WhitelistArbitrator is BalanceHolder {
         uint256 price;
         uint256 reserved_ts;
     }
-
     mapping(bytes32 => TokenReservation) public token_reservations;
     uint256 public reserved_tokens;
 
