@@ -176,7 +176,7 @@ contract ForkableZkEVMTest is Test {
         batches[0] = PolygonZkEVM.BatchData({
             transactions: bytes("0x"),
             globalExitRoot: bytes32("0x"),
-            timestamp: uint64(block.timestamp),
+            timestamp: uint64(0),
             minForcedTimestamp: 0
         });
         address l2Coinbase = address(
