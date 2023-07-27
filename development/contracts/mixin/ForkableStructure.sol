@@ -29,7 +29,7 @@ contract ForkableStructure is IForkableStructure, Initializable {
     }
 
     modifier onlyForkManger() {
-        require(msg.sender == forkmanager, "Only avaialble for fork");
+        require(msg.sender == forkmanager, "Only forkManager is allowed");
         _;
     }
 
