@@ -81,7 +81,7 @@ contract ForkableZkEVM is ForkableUUPS, IForkableZkEVM, PolygonZkEVM {
         bytes32 newLocalExitRoot,
         bytes32 newStateRoot,
         bytes calldata proof
-    ) public override onlyBeforeForking onlyTrustedAggregator {
+    ) public override onlyBeforeForking {
         PolygonZkEVM.verifyBatchesTrustedAggregator(
             pendingStateNum,
             initNumBatch,
