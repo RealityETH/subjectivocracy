@@ -28,4 +28,8 @@ interface IForkonomicToken is IForkableStructure {
     function createChildren(
         address implementation
     ) external returns (address, address);
+
+    /// @dev Allows anyone to split the tokens from the parent contract into the tokens of the children
+    /// @param amount The amount of tokens to split
+    function splitTokensIntoChildTokens(uint256 amount) external;
 }

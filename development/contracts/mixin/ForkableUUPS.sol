@@ -13,6 +13,11 @@ abstract contract ForkableUUPS is
     /// @dev The following role is allowed to trigger the upgrade of the implementation contract
     bytes32 public constant UPDATER = keccak256("UPDATER");
 
+    modifier onlyBeforeForking() {
+        require(children[0] == address(0x0), "No changes after forking");
+        _;
+    }
+
     function initialize(
         address _forkmanager,
         address _parentContract,
