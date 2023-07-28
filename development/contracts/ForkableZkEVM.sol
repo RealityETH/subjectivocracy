@@ -51,11 +51,6 @@ contract ForkableZkEVM is ForkableUUPS, IForkableZkEVM, PolygonZkEVM {
     // This ensure that the functions do not change the consolidated state after forking.
     ///////////////////////////////////////////////////////////////////////////
 
-    modifier onlyBeforeForking() {
-        require(children[0] == address(0x0), "No changes after forking");
-        _;
-    }
-
     function verifyBatches(
         uint64 pendingStateNum,
         uint64 initNumBatch,
