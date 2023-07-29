@@ -4,8 +4,10 @@ import {Test} from "forge-std/Test.sol";
 import {ForkableBridge} from "../development/contracts/ForkableBridge.sol";
 import {ForkableBridgeWrapper} from "./testcontract/ForkableBridgeWrapper.sol";
 import {ForkonomicToken} from "../development/contracts/ForkonomicToken.sol";
+import {IForkonomicToken} from "../development/contracts/interfaces/IForkonomicToken.sol";
 import {ForkableGlobalExitRoot} from "../development/contracts/ForkableGlobalExitRoot.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC20Upgradeable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {PolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
 import {ForkableGlobalExitRoot} from "./ForkableGlobalExitRoot.t.sol";
@@ -710,5 +712,102 @@ contract ForkableBridgeTest is Test {
 
         assertEq(erc20Token.balanceOf(child2), amount);
         assertEq(erc20Token.balanceOf(address(forkableBridge)), 0);
+    }
+
+    function testSendForkonomicTokensToChildren() public {
+        address forkonomicTokenImplementation = address(new ForkonomicToken());
+        ForkonomicToken erc20GasToken = ForkonomicToken(
+            address(new ERC1967Proxy(forkonomicTokenImplementation, ""))
+        );
+        erc20GasToken.initialize(
+            forkmanager,
+            address(0x0),
+            address(this),
+            "GASTOKEN",
+            "FORK"
+        );
+        address bridgeImplementation = address(new ForkableBridgeWrapper());
+        ForkableBridgeWrapper forkableBridge2 = ForkableBridgeWrapper(
+            address(new ERC1967Proxy(bridgeImplementation, ""))
+        );
+        forkableBridge2.initialize(
+            forkmanager,
+            parentContract,
+            networkID,
+            _globalExitRootManager,
+            polygonZkEVMaddress,
+            address(erc20GasToken),
+            isDeployedOnL2,
+            hardAssetManger,
+            2,
+            depositTree
+        );
+        // Let's start by minting some tokens to our contract
+        uint256 mintAmount = 1000 * (10 ** 18);
+        erc20GasToken.mint(address(forkableBridge2), mintAmount);
+
+        // Now, call the function as the forkmanager
+        vm.expectRevert(bytes("Children not created yet"));
+        vm.prank(forkmanager);
+        forkableBridge2.sendForkonomicTokensToChildren();
+
+        // Create initiate the forking process and create children
+        address secondBridgeImplementation = address(
+            new ForkableBridgeWrapper()
+        );
+        ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
+        vm.mockCall(
+            address(_globalExitRootManager),
+            abi.encodeWithSelector(
+                exitRoot.updateExitRoot.selector,
+                bytes32("0")
+            ),
+            ""
+        );
+        vm.prank(forkableBridge2.forkmanager());
+        (address child1, address child2) = forkableBridge2.createChildren(
+            secondBridgeImplementation
+        );
+
+        // The initial balances
+        uint256 initialBridgeBalance = erc20GasToken.balanceOf(
+            address(forkableBridge2)
+        );
+
+        // Make sure our initial balances are correct
+        assertEq(initialBridgeBalance, mintAmount);
+        assertEq(erc20GasToken.balanceOf(child1), 0);
+        assertEq(erc20GasToken.balanceOf(child2), 0);
+
+        vm.prank(forkmanager);
+        (address forkonomicToken1, address forkonomicToken2) = erc20GasToken
+            .createChildren(forkonomicTokenImplementation);
+        ForkonomicToken(forkonomicToken1).initialize(
+            forkmanager,
+            address(erc20GasToken),
+            address(this),
+            "ForkonomicToken",
+            "FTK"
+        );
+        ForkonomicToken(forkonomicToken2).initialize(
+            forkmanager,
+            address(erc20GasToken),
+            address(this),
+            "ForkonomicToken",
+            "FTK"
+        );
+        // Now, call the function as the forkmanager
+        vm.prank(forkmanager);
+        forkableBridge2.sendForkonomicTokensToChildren();
+
+        // Check that the tokens were transferred correctly
+        assertEq(
+            IERC20(forkonomicToken1).balanceOf(child1),
+            initialBridgeBalance
+        );
+        assertEq(
+            IERC20(forkonomicToken2).balanceOf(child2),
+            initialBridgeBalance
+        );
     }
 }
