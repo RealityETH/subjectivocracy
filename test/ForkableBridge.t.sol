@@ -210,11 +210,7 @@ contract ForkableBridgeTest is Test {
 
         // Testing revert if children are not yet created
         vm.expectRevert(bytes("Children not created yet"));
-        forkableBridge.splitTokenIntoChildTokens(
-            address(token),
-            originNetwork,
-            amount
-        );
+        forkableBridge.splitTokenIntoChildTokens(address(token), amount);
 
         address secondBridgeImplementation = address(
             new ForkableBridgeWrapper()
@@ -225,11 +221,7 @@ contract ForkableBridgeTest is Test {
         );
         // Testing revert if token was not bridged before (i.e. is not forkable)
         vm.expectRevert(bytes("Token not forkable"));
-        forkableBridge.splitTokenIntoChildTokens(
-            address(token),
-            originNetwork,
-            amount
-        );
+        forkableBridge.splitTokenIntoChildTokens(address(token), amount);
 
         // Create forkable token
         vm.prank(forkableBridge.parentContract());
@@ -274,18 +266,10 @@ contract ForkableBridgeTest is Test {
         // splitting fails, if sender does not have the funds
         vm.prank(address(0x234234));
         vm.expectRevert(bytes("ERC20: burn amount exceeds balance"));
-        forkableBridge.splitTokenIntoChildTokens(
-            forkableToken,
-            originNetwork,
-            amount
-        );
+        forkableBridge.splitTokenIntoChildTokens(forkableToken, amount);
 
         // Split the token
-        forkableBridge.splitTokenIntoChildTokens(
-            forkableToken,
-            originNetwork,
-            amount
-        );
+        forkableBridge.splitTokenIntoChildTokens(forkableToken, amount);
 
         // Assert token balances
         address forkableTokenChild1 = ForkableBridge(child1)
@@ -367,11 +351,7 @@ contract ForkableBridgeTest is Test {
         );
 
         // Split the token
-        forkableBridge.splitTokenIntoChildTokens(
-            forkableToken,
-            originNetwork,
-            amount
-        );
+        forkableBridge.splitTokenIntoChildTokens(forkableToken, amount);
 
         // Only parent can merge
         vm.expectRevert(bytes("Children not created yet"));
