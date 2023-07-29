@@ -2,7 +2,7 @@ pragma solidity ^0.8.17;
 
 import {PolygonZkEVMBridge, IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
-import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {TokenWrapped} from "@RealityETH/zkevm-contracts/contracts/lib/TokenWrapped.sol";
 import {IForkableBridge} from "./interfaces/IForkableBridge.sol";
@@ -10,7 +10,7 @@ import {IForkonomicToken} from "./interfaces/IForkonomicToken.sol";
 import {ForkableUUPS} from "./mixin/ForkableUUPS.sol";
 
 contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
-    bytes32 public HARD_ASSET_MANAGER_ROLE =
+    bytes32 public constant HARD_ASSET_MANAGER_ROLE =
         keccak256("HARD_ASSET_MANAGER_ROLE");
 
     // @inheritdoc IForkableBridge
@@ -53,7 +53,7 @@ contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
         require(hasRole(HARD_ASSET_MANAGER_ROLE, msg.sender), "Not authorized");
         require(children[0] != address(0), "only after fork");
         require(to == children[0] || to == children[1], "Invalid to address");
-        IERC20Upgradeable(token).transfer(to, amount);
+        IERC20(token).transfer(to, amount);
     }
 
     /**
@@ -61,15 +61,14 @@ contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
      * @param index Index. function is overridden to check for a potential
      * claim in the parent contract
      * note: This function is recursive and could run into stack too deep issues
-     * hence users need to claim their tokens before several forks are processed.
+     * hence users need to claim their tokens before several forks happened.
      */
     function isClaimed(uint256 index) public view override returns (bool) {
         if (depositCount < index) {
             return false;
         }
-        (uint256 wordPos, uint256 bitPos) = _bitmapPositions(index);
-        uint256 mask = (1 << bitPos);
-        if ((claimedBitMap[wordPos] & mask) == mask) {
+        bool isClaimedInCurrentContract = PolygonZkEVMBridge.isClaimed(index);
+        if (isClaimedInCurrentContract) {
             return true;
         }
         if (parentContract != address(0)) {
@@ -85,9 +84,6 @@ contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
      * @param index Index
      */
     function _setAndCheckClaimed(uint256 index) internal override {
-        (uint256 wordPos, uint256 bitPos) = _bitmapPositions(index);
-        uint256 mask = 1 << bitPos;
-        uint256 flipped = claimedBitMap[wordPos] ^= mask;
         // Additional to the normal implemenation, we also check the parent contract
         // for already claimed indexes
         if (parentContract != address(0)) {
@@ -95,9 +91,7 @@ contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
                 revert AlreadyClaimed();
             }
         }
-        if (flipped & mask == 0) {
-            revert AlreadyClaimed();
-        }
+        PolygonZkEVMBridge._setAndCheckClaimed(index);
     }
 
     // @inheritdoc IForkableBridge
@@ -128,11 +122,7 @@ contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
     }
 
     // @inheritdoc IForkableBridge
-    function splitTokenIntoChildTokens(
-        address token,
-        uint32 originNetwork,
-        uint256 amount
-    ) external {
+    function splitTokenIntoChildTokens(address token, uint256 amount) external {
         require(children[0] != address(0), "Children not created yet");
         require(
             wrappedTokenToTokenInfo[token].originNetwork != 0,
@@ -146,14 +136,14 @@ contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
         );
         ForkableBridge(children[0]).mintForkableToken(
             wrappedTokenToTokenInfo[token].originTokenAddress,
-            originNetwork,
+            wrappedTokenToTokenInfo[token].originNetwork,
             amount,
             metadata,
             msg.sender
         );
         ForkableBridge(children[1]).mintForkableToken(
             wrappedTokenToTokenInfo[token].originTokenAddress,
-            originNetwork,
+            wrappedTokenToTokenInfo[token].originNetwork,
             amount,
             metadata,
             msg.sender
@@ -209,18 +199,18 @@ contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
     function sendForkonomicTokensToChildren() public onlyForkManger {
         require(children[0] != address(0), "Children not created yet");
         IForkonomicToken(gasTokenAddress).splitTokensIntoChildTokens(
-            IERC20Upgradeable(gasTokenAddress).balanceOf(address(this))
+            IERC20(gasTokenAddress).balanceOf(address(this))
         );
         (address forkonomicToken1, address forkonomicToken2) = IForkonomicToken(
             gasTokenAddress
         ).getChildren();
-        IERC20Upgradeable(forkonomicToken1).transfer(
+        IERC20(forkonomicToken1).transfer(
             children[0],
-            IERC20Upgradeable(forkonomicToken1).balanceOf(address(this))
+            IERC20(forkonomicToken1).balanceOf(address(this))
         );
-        IERC20Upgradeable(forkonomicToken2).transfer(
+        IERC20(forkonomicToken2).transfer(
             children[0],
-            IERC20Upgradeable(forkonomicToken2).balanceOf(address(this))
+            IERC20(forkonomicToken2).balanceOf(address(this))
         );
     }
 

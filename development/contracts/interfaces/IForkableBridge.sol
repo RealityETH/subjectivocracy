@@ -40,14 +40,9 @@ interface IForkableBridge is IPolygonZkEVMBridge {
     /**
      * @dev Anyone can use their tokens to split the bridged tokens into the two corresponding children tokens
      * @param token token that should be split
-     * @param originNetwork origin network of the token to be split
      * @param amount amount of tokens to be split
      */
-    function splitTokenIntoChildTokens(
-        address token,
-        uint32 originNetwork,
-        uint256 amount
-    ) external;
+    function splitTokenIntoChildTokens(address token, uint256 amount) external;
 
     /**
      * @dev Function to mint the forkable token by the parent contract
