@@ -209,7 +209,7 @@ contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
             IERC20(forkonomicToken1).balanceOf(address(this))
         );
         IERC20(forkonomicToken2).transfer(
-            children[0],
+            children[1],
             IERC20(forkonomicToken2).balanceOf(address(this))
         );
     }
