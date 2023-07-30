@@ -24,10 +24,10 @@ contract ForkableBridgeTest is Test {
     address public gasTokenAddress = address(0xabc);
     uint32 public networkID = 11;
     bool public isDeployedOnL2 = true;
-    IBasePolygonZkEVMGlobalExitRoot _globalExitRootManager =
+    IBasePolygonZkEVMGlobalExitRoot public _globalExitRootManager =
         IBasePolygonZkEVMGlobalExitRoot(address(0xdef));
-    address hardAssetManger = address(0xde34f);
-    bytes32[32] depositTree;
+    address public hardAssetManger = address(0xde34f);
+    bytes32[32] public depositTree;
 
     function setUp() public {
         address bridgeImplementation = address(new ForkableBridge());
@@ -634,10 +634,10 @@ contract ForkableBridgeWrapperTest is Test {
     address public gasTokenAddress = address(0xabc);
     uint32 public networkID = 11;
     bool public isDeployedOnL2 = true;
-    IBasePolygonZkEVMGlobalExitRoot _globalExitRootManager =
+    IBasePolygonZkEVMGlobalExitRoot public _globalExitRootManager =
         IBasePolygonZkEVMGlobalExitRoot(address(0xdef));
-    address hardAssetManger = address(0xde34f);
-    bytes32[32] depositTree;
+    address public hardAssetManger = address(0xde34f);
+    bytes32[32] public depositTree;
 
     function setUp() public {
         address bridgeImplementation = address(new ForkableBridgeWrapper());
