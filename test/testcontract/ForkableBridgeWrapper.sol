@@ -5,7 +5,6 @@ import {IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contr
 
 import {PolygonZkEVMBridge, IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
-// import{IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts//interfaces/IBasePolygonZkEVMGlobalExitRoot.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {TokenWrapped} from "@RealityETH/zkevm-contracts/contracts/lib/TokenWrapped.sol";
@@ -26,18 +25,19 @@ contract ForkableBridgeWrapper is ForkableBridge {
         uint32 lastUpdatedDepositCount,
         bytes32[_DEPOSIT_CONTRACT_TREE_DEPTH] calldata depositTree
     ) public override initializer {
-        ForkableBridge.initialize(
-            _forkmanager,
-            _parentContract,
+        // The following code is copied from the ForkableBridge contract
+        // ForkableBridge.initialize() is avoided to make ForkableBridge.initialize() an initializer
+        ForkableUUPS.initialize(_forkmanager, _parentContract, msg.sender);
+        PolygonZkEVMBridge.initialize(
             _networkID,
             _globalExitRootManager,
             _polygonZkEVMaddress,
             _gasTokenAddress,
             _isDeployedOnL2,
-            hardAssetManger,
             lastUpdatedDepositCount,
             depositTree
         );
+        _setupRole(HARD_ASSET_MANAGER_ROLE, hardAssetManger);
     }
 
     function setAndCheckClaimed(uint256 index) public {

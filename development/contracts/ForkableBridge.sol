@@ -25,7 +25,7 @@ contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
         address hardAssetManger,
         uint32 lastUpdatedDepositCount,
         bytes32[_DEPOSIT_CONTRACT_TREE_DEPTH] calldata depositTree
-    ) public virtual onlyInitializing {
+    ) public virtual initializer {
         ForkableUUPS.initialize(_forkmanager, _parentContract, msg.sender);
         PolygonZkEVMBridge.initialize(
             _networkID,

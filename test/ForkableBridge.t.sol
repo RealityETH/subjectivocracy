@@ -15,7 +15,7 @@ import {IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contr
 import {ERC20PresetMinterPauser} from "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 
 contract ForkableBridgeTest is Test {
-    ForkableBridgeWrapper public forkableBridge;
+    ForkableBridge public forkableBridge;
     IERC20Upgradeable public token = IERC20Upgradeable(address(0x987654));
 
     address public forkmanager = address(0x123);
@@ -30,8 +30,8 @@ contract ForkableBridgeTest is Test {
     bytes32[32] depositTree;
 
     function setUp() public {
-        address bridgeImplementation = address(new ForkableBridgeWrapper());
-        forkableBridge = ForkableBridgeWrapper(
+        address bridgeImplementation = address(new ForkableBridge());
+        forkableBridge = ForkableBridge(
             address(new ERC1967Proxy(bridgeImplementation, ""))
         );
         forkableBridge.initialize(
@@ -442,194 +442,6 @@ contract ForkableBridgeTest is Test {
         );
     }
 
-    function testIsClaimedOnParent() public {
-        uint256 index = 1;
-
-        address secondBridgeImplementation = address(
-            new ForkableBridgeWrapper()
-        );
-        ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
-        vm.mockCall(
-            address(_globalExitRootManager),
-            abi.encodeWithSelector(
-                exitRoot.updateExitRoot.selector,
-                bytes32("0")
-            ),
-            ""
-        );
-        vm.prank(forkableBridge.forkmanager());
-        (address child1, address child2) = forkableBridge.createChildren(
-            secondBridgeImplementation
-        );
-
-        // initialize the child contracts to set the parent contract
-        ForkableBridge(child1).initialize(
-            forkmanager,
-            address(forkableBridge),
-            networkID,
-            _globalExitRootManager,
-            polygonZkEVMaddress,
-            gasTokenAddress,
-            isDeployedOnL2,
-            hardAssetManger,
-            forkableBridge.lastUpdatedDepositCount() + uint32(index),
-            depositTree
-        );
-        ForkableBridge(child2).initialize(
-            forkmanager,
-            address(forkableBridge),
-            networkID,
-            _globalExitRootManager,
-            polygonZkEVMaddress,
-            gasTokenAddress,
-            isDeployedOnL2,
-            hardAssetManger,
-            forkableBridge.lastUpdatedDepositCount() + uint32(index),
-            depositTree
-        );
-        assertEq(forkableBridge.isClaimed(index), false);
-        assertEq(ForkableBridge(child1).isClaimed(index), false);
-        assertEq(ForkableBridge(child2).isClaimed(index), false);
-
-        ForkableBridgeWrapper(child2).setClaimedBit(index);
-
-        assertEq(forkableBridge.isClaimed(index), false);
-        assertEq(ForkableBridge(child1).isClaimed(index), false);
-        assertEq(ForkableBridge(child2).isClaimed(index), true);
-
-        forkableBridge.setClaimedBit(index);
-
-        assertEq(ForkableBridge(child1).isClaimed(index), true);
-        assertEq(ForkableBridge(child2).isClaimed(index), true);
-    }
-
-    function testIsClaimedOnParentIsConsideringLastDepositUpdate() public {
-        uint256 index = 1;
-
-        address secondBridgeImplementation = address(
-            new ForkableBridgeWrapper()
-        );
-        ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
-        vm.mockCall(
-            address(_globalExitRootManager),
-            abi.encodeWithSelector(
-                exitRoot.updateExitRoot.selector,
-                bytes32("0")
-            ),
-            ""
-        );
-        vm.prank(forkableBridge.forkmanager());
-        (address child1, address child2) = forkableBridge.createChildren(
-            secondBridgeImplementation
-        );
-
-        // initialize the child contracts to set the parent contract
-        ForkableBridgeWrapper(child1).initialize(
-            forkmanager,
-            address(forkableBridge),
-            networkID,
-            _globalExitRootManager,
-            polygonZkEVMaddress,
-            gasTokenAddress,
-            isDeployedOnL2,
-            hardAssetManger,
-            uint32(index + 10),
-            depositTree
-        );
-        ForkableBridgeWrapper(child2).initialize(
-            forkmanager,
-            address(forkableBridge),
-            networkID,
-            _globalExitRootManager,
-            polygonZkEVMaddress,
-            gasTokenAddress,
-            isDeployedOnL2,
-            hardAssetManger,
-            uint32(index + 10),
-            depositTree
-        );
-        assertEq(forkableBridge.isClaimed(index), false);
-        assertEq(ForkableBridge(child1).isClaimed(index), false);
-        assertEq(ForkableBridge(child2).isClaimed(index), false);
-
-        uint32 nonReachedIndexInParent = 3;
-        forkableBridge.setClaimedBit(nonReachedIndexInParent);
-        assertEq(
-            ForkableBridge(child1).isClaimed(nonReachedIndexInParent),
-            false
-        );
-        assertEq(
-            ForkableBridge(child2).isClaimed(nonReachedIndexInParent),
-            false
-        );
-
-        ForkableBridgeWrapper(child2).setClaimedBit(nonReachedIndexInParent);
-        assertEq(
-            ForkableBridge(child2).isClaimed(nonReachedIndexInParent),
-            true
-        );
-    }
-
-    function test_SetAndCheckClaimed() public {
-        uint256 index = 1;
-
-        address secondBridgeImplementation = address(
-            new ForkableBridgeWrapper()
-        );
-        ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
-        vm.mockCall(
-            address(_globalExitRootManager),
-            abi.encodeWithSelector(
-                exitRoot.updateExitRoot.selector,
-                bytes32("0")
-            ),
-            ""
-        );
-        vm.prank(forkableBridge.forkmanager());
-        (address child1, address child2) = forkableBridge.createChildren(
-            secondBridgeImplementation
-        );
-
-        // initialize the child contracts to set the parent contract
-        ForkableBridge(child1).initialize(
-            forkmanager,
-            address(forkableBridge),
-            networkID,
-            _globalExitRootManager,
-            polygonZkEVMaddress,
-            gasTokenAddress,
-            isDeployedOnL2,
-            hardAssetManger,
-            forkableBridge.lastUpdatedDepositCount() + uint32(index),
-            depositTree
-        );
-        ForkableBridge(child2).initialize(
-            forkmanager,
-            address(forkableBridge),
-            networkID,
-            _globalExitRootManager,
-            polygonZkEVMaddress,
-            gasTokenAddress,
-            isDeployedOnL2,
-            hardAssetManger,
-            forkableBridge.lastUpdatedDepositCount() + uint32(index),
-            depositTree
-        );
-
-        assertEq(forkableBridge.isClaimed(index), false);
-        assertEq(ForkableBridge(child1).isClaimed(index), false);
-        assertEq(ForkableBridge(child2).isClaimed(index), false);
-
-        forkableBridge.setClaimedBit(index);
-
-        bytes4 selector = bytes4(keccak256("AlreadyClaimed()"));
-        vm.expectRevert(selector);
-        forkableBridge.setAndCheckClaimed(index);
-        vm.expectRevert(selector);
-        ForkableBridgeWrapper(child1).setAndCheckClaimed(index);
-        vm.expectRevert(selector);
-        ForkableBridgeWrapper(child2).setAndCheckClaimed(index);
-    }
 
     function testManageHardAssets() public {
         ERC20PresetMinterPauser erc20Token = new ERC20PresetMinterPauser(
@@ -809,5 +621,229 @@ contract ForkableBridgeTest is Test {
             IERC20(forkonomicToken2).balanceOf(child2),
             initialBridgeBalance
         );
+    }
+}
+
+contract ForkableBridgeWrapperTest is Test {
+    ForkableBridgeWrapper public forkableBridge;
+    IERC20Upgradeable public token = IERC20Upgradeable(address(0x987654));
+
+    address public forkmanager = address(0x123);
+    address public parentContract = address(0);
+    address public polygonZkEVMaddress = address(0x789);
+    address public gasTokenAddress = address(0xabc);
+    uint32 public networkID = 11;
+    bool public isDeployedOnL2 = true;
+    IBasePolygonZkEVMGlobalExitRoot _globalExitRootManager =
+        IBasePolygonZkEVMGlobalExitRoot(address(0xdef));
+    address hardAssetManger = address(0xde34f);
+    bytes32[32] depositTree;
+
+    function setUp() public {
+        address bridgeImplementation = address(new ForkableBridgeWrapper());
+        forkableBridge = ForkableBridgeWrapper(
+            address(new ERC1967Proxy(bridgeImplementation, ""))
+        );
+        forkableBridge.initialize(
+            forkmanager,
+            parentContract,
+            networkID,
+            _globalExitRootManager,
+            polygonZkEVMaddress,
+            gasTokenAddress,
+            isDeployedOnL2,
+            hardAssetManger,
+            2,
+            depositTree
+        );
+    }
+
+    function testIsClaimedOnParent() public {
+        uint256 index = 1;
+
+        address secondBridgeImplementation = address(
+            new ForkableBridgeWrapper()
+        );
+        ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
+        vm.mockCall(
+            address(_globalExitRootManager),
+            abi.encodeWithSelector(
+                exitRoot.updateExitRoot.selector,
+                bytes32("0")
+            ),
+            ""
+        );
+        vm.prank(forkableBridge.forkmanager());
+        (address child1, address child2) = forkableBridge.createChildren(
+            secondBridgeImplementation
+        );
+
+        // initialize the child contracts to set the parent contract
+        ForkableBridge(child1).initialize(
+            forkmanager,
+            address(forkableBridge),
+            networkID,
+            _globalExitRootManager,
+            polygonZkEVMaddress,
+            gasTokenAddress,
+            isDeployedOnL2,
+            hardAssetManger,
+            forkableBridge.lastUpdatedDepositCount() + uint32(index),
+            depositTree
+        );
+        ForkableBridge(child2).initialize(
+            forkmanager,
+            address(forkableBridge),
+            networkID,
+            _globalExitRootManager,
+            polygonZkEVMaddress,
+            gasTokenAddress,
+            isDeployedOnL2,
+            hardAssetManger,
+            forkableBridge.lastUpdatedDepositCount() + uint32(index),
+            depositTree
+        );
+        assertEq(forkableBridge.isClaimed(index), false);
+        assertEq(ForkableBridge(child1).isClaimed(index), false);
+        assertEq(ForkableBridge(child2).isClaimed(index), false);
+
+        ForkableBridgeWrapper(child2).setClaimedBit(index);
+
+        assertEq(forkableBridge.isClaimed(index), false);
+        assertEq(ForkableBridge(child1).isClaimed(index), false);
+        assertEq(ForkableBridge(child2).isClaimed(index), true);
+
+        forkableBridge.setClaimedBit(index);
+
+        assertEq(ForkableBridge(child1).isClaimed(index), true);
+        assertEq(ForkableBridge(child2).isClaimed(index), true);
+    }
+
+    function testIsClaimedOnParentIsConsideringLastDepositUpdate() public {
+        uint256 index = 1;
+
+        address secondBridgeImplementation = address(
+            new ForkableBridgeWrapper()
+        );
+        ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
+        vm.mockCall(
+            address(_globalExitRootManager),
+            abi.encodeWithSelector(
+                exitRoot.updateExitRoot.selector,
+                bytes32("0")
+            ),
+            ""
+        );
+        vm.prank(forkableBridge.forkmanager());
+        (address child1, address child2) = forkableBridge.createChildren(
+            secondBridgeImplementation
+        );
+
+        // initialize the child contracts to set the parent contract
+        ForkableBridgeWrapper(child1).initialize(
+            forkmanager,
+            address(forkableBridge),
+            networkID,
+            _globalExitRootManager,
+            polygonZkEVMaddress,
+            gasTokenAddress,
+            isDeployedOnL2,
+            hardAssetManger,
+            uint32(index + 10),
+            depositTree
+        );
+        ForkableBridgeWrapper(child2).initialize(
+            forkmanager,
+            address(forkableBridge),
+            networkID,
+            _globalExitRootManager,
+            polygonZkEVMaddress,
+            gasTokenAddress,
+            isDeployedOnL2,
+            hardAssetManger,
+            uint32(index + 10),
+            depositTree
+        );
+        assertEq(forkableBridge.isClaimed(index), false);
+        assertEq(ForkableBridge(child1).isClaimed(index), false);
+        assertEq(ForkableBridge(child2).isClaimed(index), false);
+
+        uint32 nonReachedIndexInParent = 3;
+        forkableBridge.setClaimedBit(nonReachedIndexInParent);
+        assertEq(
+            ForkableBridge(child1).isClaimed(nonReachedIndexInParent),
+            false
+        );
+        assertEq(
+            ForkableBridge(child2).isClaimed(nonReachedIndexInParent),
+            false
+        );
+
+        ForkableBridgeWrapper(child2).setClaimedBit(nonReachedIndexInParent);
+        assertEq(
+            ForkableBridge(child2).isClaimed(nonReachedIndexInParent),
+            true
+        );
+    }
+
+    function testSetAndCheckClaimed() public {
+        uint256 index = 1;
+
+        address secondBridgeImplementation = address(
+            new ForkableBridgeWrapper()
+        );
+        ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
+        vm.mockCall(
+            address(_globalExitRootManager),
+            abi.encodeWithSelector(
+                exitRoot.updateExitRoot.selector,
+                bytes32("0")
+            ),
+            ""
+        );
+        vm.prank(forkableBridge.forkmanager());
+        (address child1, address child2) = forkableBridge.createChildren(
+            secondBridgeImplementation
+        );
+
+        // initialize the child contracts to set the parent contract
+        ForkableBridge(child1).initialize(
+            forkmanager,
+            address(forkableBridge),
+            networkID,
+            _globalExitRootManager,
+            polygonZkEVMaddress,
+            gasTokenAddress,
+            isDeployedOnL2,
+            hardAssetManger,
+            forkableBridge.lastUpdatedDepositCount() + uint32(index),
+            depositTree
+        );
+        ForkableBridge(child2).initialize(
+            forkmanager,
+            address(forkableBridge),
+            networkID,
+            _globalExitRootManager,
+            polygonZkEVMaddress,
+            gasTokenAddress,
+            isDeployedOnL2,
+            hardAssetManger,
+            forkableBridge.lastUpdatedDepositCount() + uint32(index),
+            depositTree
+        );
+
+        assertEq(forkableBridge.isClaimed(index), false);
+        assertEq(ForkableBridge(child1).isClaimed(index), false);
+        assertEq(ForkableBridge(child2).isClaimed(index), false);
+
+        forkableBridge.setClaimedBit(index);
+
+        bytes4 selector = bytes4(keccak256("AlreadyClaimed()"));
+        vm.expectRevert(selector);
+        forkableBridge.setAndCheckClaimed(index);
+        vm.expectRevert(selector);
+        ForkableBridgeWrapper(child1).setAndCheckClaimed(index);
+        vm.expectRevert(selector);
+        ForkableBridgeWrapper(child2).setAndCheckClaimed(index);
     }
 }
