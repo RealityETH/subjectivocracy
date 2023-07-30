@@ -2,7 +2,6 @@ pragma solidity ^0.8.17;
 
 import {ForkableBridge} from "../../development/contracts/ForkableBridge.sol";
 import {IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
-
 import {PolygonZkEVMBridge, IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
@@ -37,6 +36,7 @@ contract ForkableBridgeWrapper is ForkableBridge {
             lastUpdatedDepositCount,
             depositTreeHashes
         );
+        _hardAssetManger = hardAssetManger;
         _setupRole(HARD_ASSET_MANAGER_ROLE, hardAssetManger);
     }
 
