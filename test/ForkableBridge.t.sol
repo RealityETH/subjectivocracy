@@ -442,8 +442,7 @@ contract ForkableBridgeTest is Test {
         );
     }
 
-
-    function testManageHardAssets() public {
+    function testtransferHardAssetsToChild() public {
         ERC20PresetMinterPauser erc20Token = new ERC20PresetMinterPauser(
             "Test",
             "TST"
@@ -462,7 +461,11 @@ contract ForkableBridgeTest is Test {
         );
         vm.expectRevert("only after fork");
         vm.prank(hardAssetManger);
-        forkableBridge.manageHardAssets(address(erc20Token), amount, to);
+        forkableBridge.transferHardAssetsToChild(
+            address(erc20Token),
+            amount,
+            to
+        );
 
         address secondBridgeImplementation = address(
             new ForkableBridgeWrapper()
@@ -508,11 +511,15 @@ contract ForkableBridgeTest is Test {
         );
 
         vm.expectRevert("Not authorized");
-        forkableBridge.manageHardAssets(address(erc20Token), amount, to);
+        forkableBridge.transferHardAssetsToChild(
+            address(erc20Token),
+            amount,
+            to
+        );
 
         vm.expectRevert("Invalid to address");
         vm.prank(hardAssetManger);
-        forkableBridge.manageHardAssets(
+        forkableBridge.transferHardAssetsToChild(
             address(erc20Token),
             amount,
             address(0x23453465)
@@ -520,7 +527,11 @@ contract ForkableBridgeTest is Test {
         assertEq(erc20Token.balanceOf(address(forkableBridge)), amount);
 
         vm.prank(hardAssetManger);
-        forkableBridge.manageHardAssets(address(erc20Token), amount, child2);
+        forkableBridge.transferHardAssetsToChild(
+            address(erc20Token),
+            amount,
+            child2
+        );
 
         assertEq(erc20Token.balanceOf(child2), amount);
         assertEq(erc20Token.balanceOf(address(forkableBridge)), 0);
