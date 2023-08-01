@@ -45,7 +45,7 @@ contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
      * @param amount Amount of tokens to transfer
      * @param to Address to transfer the tokens to
      */
-    function manageHardAssets(
+    function transferHardAssetsToChild(
         address token,
         uint256 amount,
         address to
