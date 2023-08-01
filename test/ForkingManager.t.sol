@@ -28,8 +28,6 @@ contract ForkingManagerTest is Test {
     bytes32 internal constant _IMPLEMENTATION_SLOT =
         0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
-    address public governer =
-        address(0x1234567890123456789012345678901234567891);
     IBasePolygonZkEVMGlobalExitRoot public globalExitMock =
         IBasePolygonZkEVMGlobalExitRoot(
             0x1234567890123456789012345678901234567892

@@ -15,7 +15,7 @@ contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
 
     // @dev Address of the hard asset manager that can send
     // tokens to the children-bridge contracts
-    address internal _hardAssetManger;
+    address internal _hardAssetManager;
 
     // @inheritdoc IForkableBridge
     function initialize(
@@ -26,7 +26,7 @@ contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
         address _polygonZkEVMaddress,
         address _gasTokenAddress,
         bool _isDeployedOnL2,
-        address hardAssetMangerInput,
+        address hardAssetManager,
         uint32 lastUpdatedDepositCount,
         bytes32[_DEPOSIT_CONTRACT_TREE_DEPTH] calldata depositTreeHashes
     ) public virtual initializer {
@@ -40,8 +40,8 @@ contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
             lastUpdatedDepositCount,
             depositTreeHashes
         );
-        _hardAssetManger = hardAssetMangerInput;
-        _setupRole(HARD_ASSET_MANAGER_ROLE, hardAssetMangerInput);
+        _hardAssetManager = hardAssetManager;
+        _setupRole(HARD_ASSET_MANAGER_ROLE, hardAssetManager);
     }
 
     /**
@@ -330,8 +330,8 @@ contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
     /// View functions
     ////////////////////////////////
 
-    function getHardAssetManger() external view returns (address) {
-        return _hardAssetManger;
+    function getHardAssetManager() external view returns (address) {
+        return _hardAssetManager;
     }
 
     function getLastUpdatedDepositCount() external view returns (uint32) {

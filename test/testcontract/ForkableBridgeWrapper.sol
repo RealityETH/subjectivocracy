@@ -36,7 +36,7 @@ contract ForkableBridgeWrapper is ForkableBridge {
             lastUpdatedDepositCount,
             depositTreeHashes
         );
-        _hardAssetManger = hardAssetManger;
+        _hardAssetManager = hardAssetManger;
         _setupRole(HARD_ASSET_MANAGER_ROLE, hardAssetManger);
     }
 

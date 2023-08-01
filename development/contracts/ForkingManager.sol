@@ -210,7 +210,7 @@ contract ForkingManager is IForkingManager, ForkableUUPS {
             address(newInstances.zkEVM.two),
             address(newInstances.forkonomicToken.one),
             false,
-            IForkableBridge(bridge).getHardAssetManger(),
+            IForkableBridge(bridge).getHardAssetManager(),
             IForkableBridge(bridge).getLastUpdatedDepositCount(),
             depositBranch
         );
@@ -222,7 +222,7 @@ contract ForkingManager is IForkingManager, ForkableUUPS {
             address(newInstances.zkEVM.two),
             address(newInstances.forkonomicToken.two),
             false,
-            IForkableBridge(bridge).getHardAssetManger(),
+            IForkableBridge(bridge).getHardAssetManager(),
             IForkableBridge(bridge).getLastUpdatedDepositCount(),
             depositBranch
         );

@@ -29,7 +29,7 @@ interface IForkableBridge is IPolygonZkEVMBridge {
         bytes32[32] calldata depositTreeHashes
     ) external;
 
-    function getHardAssetManger() external view returns (address);
+    function getHardAssetManager() external view returns (address);
 
     function getLastUpdatedDepositCount() external view returns (uint32);
 
