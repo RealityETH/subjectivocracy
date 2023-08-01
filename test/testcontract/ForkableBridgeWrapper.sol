@@ -23,7 +23,7 @@ contract ForkableBridgeWrapper is ForkableBridge {
         bool _isDeployedOnL2,
         address hardAssetManger,
         uint32 lastUpdatedDepositCount,
-        bytes32[_DEPOSIT_CONTRACT_TREE_DEPTH] calldata depositTree
+        bytes32[_DEPOSIT_CONTRACT_TREE_DEPTH] calldata depositTreeHashes
     ) public override initializer {
         // The following code is copied from the ForkableBridge contract
         // ForkableBridge.initialize() is avoided to make ForkableBridge.initialize() an initializer
@@ -35,7 +35,7 @@ contract ForkableBridgeWrapper is ForkableBridge {
             _gasTokenAddress,
             _isDeployedOnL2,
             lastUpdatedDepositCount,
-            depositTree
+            depositTreeHashes
         );
         _setupRole(HARD_ASSET_MANAGER_ROLE, hardAssetManger);
     }

@@ -26,7 +26,7 @@ interface IForkableBridge is IPolygonZkEVMBridge {
         bool _isDeployedOnL2,
         address hardAssetManger,
         uint32 lastUpdatedDepositCount,
-        bytes32[32] calldata depositTree
+        bytes32[32] calldata depositTreeHashes
     ) external;
 
     /**

@@ -27,7 +27,7 @@ contract ForkableBridgeTest is Test {
     IBasePolygonZkEVMGlobalExitRoot public _globalExitRootManager =
         IBasePolygonZkEVMGlobalExitRoot(address(0xdef));
     address public hardAssetManger = address(0xde34f);
-    bytes32[32] public depositTree;
+    bytes32[32] public depositTreeHashes;
 
     function setUp() public {
         address bridgeImplementation = address(new ForkableBridge());
@@ -44,7 +44,7 @@ contract ForkableBridgeTest is Test {
             isDeployedOnL2,
             hardAssetManger,
             2,
-            depositTree
+            depositTreeHashes
         );
     }
 
@@ -250,7 +250,7 @@ contract ForkableBridgeTest is Test {
             isDeployedOnL2,
             hardAssetManger,
             0,
-            depositTree
+            depositTreeHashes
         );
         ForkableBridge(child2).initialize(
             forkmanager,
@@ -262,7 +262,7 @@ contract ForkableBridgeTest is Test {
             isDeployedOnL2,
             hardAssetManger,
             0,
-            depositTree
+            depositTreeHashes
         );
 
         // splitting fails, if sender does not have the funds
@@ -324,7 +324,7 @@ contract ForkableBridgeTest is Test {
             tokenInfoHash
         );
         for (uint i = 0; i < 32; i++) {
-            depositTree[i] = forkableBridge.branch(i);
+            depositTreeHashes[i] = forkableBridge.branch(i);
         }
         // initialize the child contracts to set the parent contract
         ForkableBridge(child1).initialize(
@@ -337,7 +337,7 @@ contract ForkableBridgeTest is Test {
             isDeployedOnL2,
             hardAssetManger,
             forkableBridge.lastUpdatedDepositCount(),
-            depositTree
+            depositTreeHashes
         );
         ForkableBridge(child2).initialize(
             forkmanager,
@@ -349,7 +349,7 @@ contract ForkableBridgeTest is Test {
             isDeployedOnL2,
             hardAssetManger,
             forkableBridge.lastUpdatedDepositCount(),
-            depositTree
+            depositTreeHashes
         );
 
         // Split the token
@@ -495,7 +495,7 @@ contract ForkableBridgeTest is Test {
             isDeployedOnL2,
             hardAssetManger,
             forkableBridge.lastUpdatedDepositCount(),
-            depositTree
+            depositTreeHashes
         );
         ForkableBridge(child2).initialize(
             forkmanager,
@@ -507,7 +507,7 @@ contract ForkableBridgeTest is Test {
             isDeployedOnL2,
             hardAssetManger,
             forkableBridge.lastUpdatedDepositCount(),
-            depositTree
+            depositTreeHashes
         );
 
         vm.expectRevert("Not authorized");
@@ -563,7 +563,7 @@ contract ForkableBridgeTest is Test {
             isDeployedOnL2,
             hardAssetManger,
             2,
-            depositTree
+            depositTreeHashes
         );
         // Let's start by minting some tokens to our contract
         uint256 mintAmount = 1000 * (10 ** 18);
@@ -648,7 +648,7 @@ contract ForkableBridgeWrapperTest is Test {
     IBasePolygonZkEVMGlobalExitRoot public _globalExitRootManager =
         IBasePolygonZkEVMGlobalExitRoot(address(0xdef));
     address public hardAssetManger = address(0xde34f);
-    bytes32[32] public depositTree;
+    bytes32[32] public depositTreeHashes;
 
     function setUp() public {
         address bridgeImplementation = address(new ForkableBridgeWrapper());
@@ -665,7 +665,7 @@ contract ForkableBridgeWrapperTest is Test {
             isDeployedOnL2,
             hardAssetManger,
             2,
-            depositTree
+            depositTreeHashes
         );
     }
 
@@ -700,7 +700,7 @@ contract ForkableBridgeWrapperTest is Test {
             isDeployedOnL2,
             hardAssetManger,
             forkableBridge.lastUpdatedDepositCount() + uint32(index),
-            depositTree
+            depositTreeHashes
         );
         ForkableBridge(child2).initialize(
             forkmanager,
@@ -712,7 +712,7 @@ contract ForkableBridgeWrapperTest is Test {
             isDeployedOnL2,
             hardAssetManger,
             forkableBridge.lastUpdatedDepositCount() + uint32(index),
-            depositTree
+            depositTreeHashes
         );
         assertEq(forkableBridge.isClaimed(index), false);
         assertEq(ForkableBridge(child1).isClaimed(index), false);
@@ -761,7 +761,7 @@ contract ForkableBridgeWrapperTest is Test {
             isDeployedOnL2,
             hardAssetManger,
             uint32(index + 10),
-            depositTree
+            depositTreeHashes
         );
         ForkableBridgeWrapper(child2).initialize(
             forkmanager,
@@ -773,7 +773,7 @@ contract ForkableBridgeWrapperTest is Test {
             isDeployedOnL2,
             hardAssetManger,
             uint32(index + 10),
-            depositTree
+            depositTreeHashes
         );
         assertEq(forkableBridge.isClaimed(index), false);
         assertEq(ForkableBridge(child1).isClaimed(index), false);
@@ -828,7 +828,7 @@ contract ForkableBridgeWrapperTest is Test {
             isDeployedOnL2,
             hardAssetManger,
             forkableBridge.lastUpdatedDepositCount() + uint32(index),
-            depositTree
+            depositTreeHashes
         );
         ForkableBridge(child2).initialize(
             forkmanager,
@@ -840,7 +840,7 @@ contract ForkableBridgeWrapperTest is Test {
             isDeployedOnL2,
             hardAssetManger,
             forkableBridge.lastUpdatedDepositCount() + uint32(index),
-            depositTree
+            depositTreeHashes
         );
 
         assertEq(forkableBridge.isClaimed(index), false);

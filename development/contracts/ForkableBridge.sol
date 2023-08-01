@@ -24,7 +24,7 @@ contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
         bool _isDeployedOnL2,
         address hardAssetManger,
         uint32 lastUpdatedDepositCount,
-        bytes32[_DEPOSIT_CONTRACT_TREE_DEPTH] calldata depositTree
+        bytes32[_DEPOSIT_CONTRACT_TREE_DEPTH] calldata depositTreeHashes
     ) public virtual initializer {
         ForkableUUPS.initialize(_forkmanager, _parentContract, msg.sender);
         PolygonZkEVMBridge.initialize(
@@ -34,7 +34,7 @@ contract ForkableBridge is IForkableBridge, ForkableUUPS, PolygonZkEVMBridge {
             _gasTokenAddress,
             _isDeployedOnL2,
             lastUpdatedDepositCount,
-            depositTree
+            depositTreeHashes
         );
         _setupRole(HARD_ASSET_MANAGER_ROLE, hardAssetManger);
     }
