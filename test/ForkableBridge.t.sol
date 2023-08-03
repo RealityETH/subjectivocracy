@@ -10,9 +10,13 @@ import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {PolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
-import {ForkableGlobalExitRoot} from "./ForkableGlobalExitRoot.t.sol";
 import {IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
 import {ERC20PresetMinterPauser} from "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
+import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
+import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import {IVerifierRollup} from "@RealityETH/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
+import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
 
 contract ForkableBridgeTest is Test {
     ForkableBridge public forkableBridge;
@@ -442,7 +446,7 @@ contract ForkableBridgeTest is Test {
         );
     }
 
-    function testtransferHardAssetsToChild() public {
+    function testTransferHardAssetsToChild() public {
         ERC20PresetMinterPauser erc20Token = new ERC20PresetMinterPauser(
             "Test",
             "TST"

@@ -2,7 +2,6 @@ pragma solidity ^0.8.17;
 
 import {ForkableBridge} from "../../development/contracts/ForkableBridge.sol";
 import {IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
-
 import {PolygonZkEVMBridge, IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
@@ -21,7 +20,7 @@ contract ForkableBridgeWrapper is ForkableBridge {
         address _polygonZkEVMaddress,
         address _gasTokenAddress,
         bool _isDeployedOnL2,
-        address hardAssetManger,
+        address hardAssetManager,
         uint32 lastUpdatedDepositCount,
         bytes32[_DEPOSIT_CONTRACT_TREE_DEPTH] calldata depositTreeHashes
     ) public override initializer {
@@ -37,7 +36,8 @@ contract ForkableBridgeWrapper is ForkableBridge {
             lastUpdatedDepositCount,
             depositTreeHashes
         );
-        _setupRole(HARD_ASSET_MANAGER_ROLE, hardAssetManger);
+        _hardAssetManager = hardAssetManager;
+        _setupRole(HARD_ASSET_MANAGER_ROLE, hardAssetManager);
     }
 
     function setAndCheckClaimed(uint256 index) public {
