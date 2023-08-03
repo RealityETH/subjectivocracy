@@ -20,7 +20,7 @@ contract ForkableBridgeWrapper is ForkableBridge {
         address _polygonZkEVMaddress,
         address _gasTokenAddress,
         bool _isDeployedOnL2,
-        address hardAssetManger,
+        address hardAssetManager,
         uint32 lastUpdatedDepositCount,
         bytes32[_DEPOSIT_CONTRACT_TREE_DEPTH] calldata depositTreeHashes
     ) public override initializer {
@@ -36,8 +36,8 @@ contract ForkableBridgeWrapper is ForkableBridge {
             lastUpdatedDepositCount,
             depositTreeHashes
         );
-        _hardAssetManager = hardAssetManger;
-        _setupRole(HARD_ASSET_MANAGER_ROLE, hardAssetManger);
+        _hardAssetManager = hardAssetManager;
+        _setupRole(HARD_ASSET_MANAGER_ROLE, hardAssetManager);
     }
 
     function setAndCheckClaimed(uint256 index) public {
