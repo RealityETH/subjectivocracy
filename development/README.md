@@ -11,8 +11,9 @@ Compiled bytecode and ABIs are stored under *bytecode/* and *abi/* respectively.
 
 Contract tests use python3.
 
+`python3 -m venv venv`  
+`source ./venv/bin/activate`
 `$ cd tests/python`
-
 `$ pip install -r requirements.txt`
 
 You can then test the version in question with, eg
