@@ -83,9 +83,7 @@ library BridgeAssetOperations {
 
     /**
      * @notice Function to send tokens into children-bridge contracts by the admin
-     * @param token Address of the token
-     * @param amount Amount of tokens to transfer
-     * @param tokenInfo Information about the token
+     * @param gasTokenAddress Address of the token
      * @param child0 Address of the first child-bridge contract
      * @param child1 Address of the second child-bridge contract
      */
