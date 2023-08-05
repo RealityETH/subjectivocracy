@@ -9,7 +9,7 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 import {TokenWrapped} from "@RealityETH/zkevm-contracts/contracts/lib/TokenWrapped.sol";
 import {IForkableBridge} from "../../development/contracts/interfaces/IForkableBridge.sol";
 import {IForkonomicToken} from "../../development/contracts/interfaces/IForkonomicToken.sol";
-import {ForkableUUPS} from "../../development/contracts/mixin/ForkableUUPS.sol";
+import {ForkableStructure} from "../../development/contracts/mixin/ForkableStructure.sol";
 
 contract ForkableBridgeWrapper is ForkableBridge {
     function initialize(
@@ -26,7 +26,7 @@ contract ForkableBridgeWrapper is ForkableBridge {
     ) public override initializer {
         // The following code is copied from the ForkableBridge contract
         // ForkableBridge.initialize() is avoided to make ForkableBridge.initialize() an initializer
-        ForkableUUPS.initialize(_forkmanager, _parentContract, msg.sender);
+        ForkableStructure.initialize(_forkmanager, _parentContract);
         PolygonZkEVMBridge.initialize(
             _networkID,
             _globalExitRootManager,
@@ -37,7 +37,6 @@ contract ForkableBridgeWrapper is ForkableBridge {
             depositTreeHashes
         );
         _hardAssetManager = hardAssetManager;
-        _setupRole(HARD_ASSET_MANAGER_ROLE, hardAssetManager);
     }
 
     function setAndCheckClaimed(uint256 index) public {

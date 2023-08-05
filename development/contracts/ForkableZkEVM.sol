@@ -8,9 +8,9 @@ import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfa
 import {TokenWrapped} from "@RealityETH/zkevm-contracts/contracts/lib/TokenWrapped.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import {IForkableZkEVM} from "./interfaces/IForkableZkEVM.sol";
-import {ForkableUUPS} from "./mixin/ForkableUUPS.sol";
+import {ForkableStructure} from "./mixin/ForkableStructure.sol";
 
-contract ForkableZkEVM is ForkableUUPS, IForkableZkEVM, PolygonZkEVM {
+contract ForkableZkEVM is ForkableStructure, IForkableZkEVM, PolygonZkEVM {
     // @inheritdoc IForkableZkEVM
     function initialize(
         address _forkmanager,
@@ -25,7 +25,7 @@ contract ForkableZkEVM is ForkableUUPS, IForkableZkEVM, PolygonZkEVM {
         IVerifierRollup _rollupVerifier,
         IPolygonZkEVMBridge _bridgeAddress
     ) external initializer {
-        ForkableUUPS.initialize(_forkmanager, _parentContract, msg.sender);
+        ForkableStructure.initialize(_forkmanager, _parentContract);
         PolygonZkEVM.initialize(
             initializePackedParameters,
             genesisRoot,

@@ -215,7 +215,7 @@ contract ForkableBridgeTest is Test {
         );
 
         // Testing revert if children are not yet created
-        vm.expectRevert(bytes("Children not created yet"));
+        vm.expectRevert(bytes("onlyAfterForking"));
         forkableBridge.splitTokenIntoChildTokens(address(token), amount);
 
         address secondBridgeImplementation = address(
@@ -360,7 +360,7 @@ contract ForkableBridgeTest is Test {
         forkableBridge.splitTokenIntoChildTokens(forkableToken, amount);
 
         // Only parent can merge
-        vm.expectRevert(bytes("Children not created yet"));
+        vm.expectRevert(bytes("onlyAfterForking"));
         ForkableBridge(child1).mergeChildTokens(forkableToken, amount + 1);
 
         // Merge the token
@@ -463,7 +463,7 @@ contract ForkableBridgeTest is Test {
             false,
             ""
         );
-        vm.expectRevert("only after fork");
+        vm.expectRevert("onlyAfterForking");
         vm.prank(hardAssetManger);
         forkableBridge.transferHardAssetsToChild(
             address(erc20Token),
@@ -574,7 +574,7 @@ contract ForkableBridgeTest is Test {
         erc20GasToken.mint(address(forkableBridge2), mintAmount);
 
         // Now, call the function as the forkmanager
-        vm.expectRevert(bytes("Children not created yet"));
+        vm.expectRevert(bytes("onlyAfterForking"));
         vm.prank(forkmanager);
         forkableBridge2.sendForkonomicTokensToChildren();
 
@@ -611,15 +611,15 @@ contract ForkableBridgeTest is Test {
             .createChildren(forkonomicTokenImplementation);
         ForkonomicToken(forkonomicToken1).initialize(
             forkmanager,
-            address(erc20GasToken),
             address(this),
+            address(erc20GasToken),
             "ForkonomicToken",
             "FTK"
         );
         ForkonomicToken(forkonomicToken2).initialize(
             forkmanager,
-            address(erc20GasToken),
             address(this),
+            address(erc20GasToken),
             "ForkonomicToken",
             "FTK"
         );
