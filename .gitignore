@@ -32,3 +32,8 @@ stats.json
 .stylelintcache
 cache/
 out/
+.env
+deployment/deploy_parameters.json
+artifacts/*
+cache_hardhat/
+
