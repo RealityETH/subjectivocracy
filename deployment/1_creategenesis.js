@@ -145,18 +145,6 @@ async function main() {
         ],
     );
     
-    // function initialize(
-    //     address _forkmanager,
-    //     address _parentContract,
-    //     uint32 _networkID,
-    //     IBasePolygonZkEVMGlobalExitRoot _globalExitRootManager,
-    //     address _polygonZkEVMaddress,
-    //     address _gasTokenAddress,
-    //     bool _isDeployedOnL2,
-    //     address hardAssetManager,
-    //     uint32 lastUpdatedDepositCount,
-    //     bytes32[_DEPOSIT_CONTRACT_TREE_DEPTH] calldata depositTreeHashes
-    // ) public virtual initializer {
     const [proxyBridgeAddress] = await create2Deployment(zkEVMDeployerContract, salt, deployTransactionProxy, dataCallProxy, deployer);
 
     // Import OZ manifest the deployed contracts, its enough to import just the proyx, the rest are imported automatically ( admin/impl)
