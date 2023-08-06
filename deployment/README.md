@@ -25,7 +25,7 @@ See below for more information about the `deploy_parameters.json`
 
 The first step is deploying and verifying the `PolygonZkEVMDeployer`, this will be the factory for deterministic contracts, the address of the contracts will depend on the `salt` and the `initialZkEVMDeployerOwner`
 
-This contrat is deployed using a keyless deployment, therefore the gasPrice is hardcoded.
+This contract is deployed using a keyless deployment, therefore the gasPrice is hardcoded.
 The value is on `100 gweis`, if it's necessary to update it go to `helpers/deployment-helpers.js` and update the `gasPriceKeylessDeployment` constant.
 Note that this operation will change all the deterministic address deployed.
 
@@ -86,3 +86,26 @@ A new folder will be created witth the following name `deployments/${network}_$(
 - Since there are deterministic address you cannot deploy twice on the same network using the same `salt` and `initialZkEVMDeployerOwner`. Changing one of them is enough to make a new deployment.
 - It's mandatory to delete the `.openzeppelin` upgradebility information in order to make a new deployment
 - `genesis.json` has been generated using the tool: `1_createGenesis`, this script depends on the `deploy_parameters` aswell.
+
+
+## Manual deployment for forkonomic project on goerli:
+
+Fill `.env` with your `MNEMONIC` and `INFURA_PROJECT_ID`
+If you want to verify the contracts also fill the `ETHERSCAN_API_KEY`
+
+```
+cd deployment
+cp deploy_parameters.json.example deploy_parameters.json
+```
+
+
+Change HARDHAT_NETWORK=goerli
+run
+```
+yarn hardhat run deployment/0_deployforkableToken.js
+```
+
+Change HARDHAT_NETWORK=hardhat
+```
+yarn hardhat run deployment/1_creategenesis.js
+```
