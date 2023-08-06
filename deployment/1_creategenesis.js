@@ -80,11 +80,34 @@ async function main() {
     const dataCallAdmin = proxyAdminFactory.interface.encodeFunctionData('transferOwnership', [deployer.address]);
     const [proxyAdminAddress] = await create2Deployment(zkEVMDeployerContract, salt, deployTransactionAdmin, dataCallAdmin, deployer);
 
-    // Deploy implementation PolygonZkEVMBridg
-    const polygonZkEVMBridgeFactory = await ethers.getContractFactory('ForkableBridge', deployer);
+    // Deploy implementation PolygonZkEVMBridge
+    const createChildrenLib = await ethers.getContractFactory('CreateChildren', deployer);
+    const createChildrenLibDeployTransaction = (createChildrenLib.getDeployTransaction()).data;
+    const overrideGasLimit = ethers.BigNumber.from(6500000);
+    const [createChildrenImplementationAddress] = await create2Deployment(
+        zkEVMDeployerContract,
+        salt,
+        createChildrenLibDeployTransaction,
+        null,
+        deployer,
+        overrideGasLimit,
+    );
+    const bridgeOperationLib = await ethers.getContractFactory('BridgeAssetOperations', deployer);
+    const bridgeOperationLibDeployTransaction = (bridgeOperationLib.getDeployTransaction()).data;
+    const [bridgeOperationImplementationAddress] = await create2Deployment(
+        zkEVMDeployerContract,
+        salt,
+        bridgeOperationLibDeployTransaction,
+        null,
+        deployer,
+        overrideGasLimit,
+    );
+    const polygonZkEVMBridgeFactory = await ethers.getContractFactory('ForkableBridge',{libraries: {
+        CreateChildren: createChildrenImplementationAddress,
+        BridgeAssetOperations: bridgeOperationImplementationAddress,
+      }}, deployer);
     const deployTransactionBridge = (polygonZkEVMBridgeFactory.getDeployTransaction()).data;
     // Mandatory to override the gasLimit since the estimation with create are mess up D:
-    const overrideGasLimit = ethers.BigNumber.from(6500000);
     const [bridgeImplementationAddress] = await create2Deployment(
         zkEVMDeployerContract,
         salt,
@@ -107,17 +130,33 @@ async function main() {
     )).data;
 
     const dataCallProxy = polygonZkEVMBridgeFactory.interface.encodeFunctionData(
-        'initialize',
+        'initialize(address,address,uint32,address,address,address,bool,address,uint32, bytes32[32])',
         [
+            ethers.constants.AddressZero, // for the variable address _forkmanager,
+            ethers.constants.AddressZero, // for the variable address _parentContract,
             networkIDL2,
             globalExitRootL2Address,
             zkevmAddressL2,
             gasTokenAddress,
             true, // for the variable bool _isDeployedOnL2,
+            ethers.constants.AddressZero, // for the variable address _hardAssetManager,
             0,
-            new Array(32).fill(""), // for the variable bytes32[] _depositTreeHashes,
+            new Array(32).fill(ethers.constants.HashZero), // for the variable bytes32[] _depositTreeHashes,
         ],
     );
+    
+    // function initialize(
+    //     address _forkmanager,
+    //     address _parentContract,
+    //     uint32 _networkID,
+    //     IBasePolygonZkEVMGlobalExitRoot _globalExitRootManager,
+    //     address _polygonZkEVMaddress,
+    //     address _gasTokenAddress,
+    //     bool _isDeployedOnL2,
+    //     address hardAssetManager,
+    //     uint32 lastUpdatedDepositCount,
+    //     bytes32[_DEPOSIT_CONTRACT_TREE_DEPTH] calldata depositTreeHashes
+    // ) public virtual initializer {
     const [proxyBridgeAddress] = await create2Deployment(zkEVMDeployerContract, salt, deployTransactionProxy, dataCallProxy, deployer);
 
     // Import OZ manifest the deployed contracts, its enough to import just the proyx, the rest are imported automatically ( admin/impl)
