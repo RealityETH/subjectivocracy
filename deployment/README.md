@@ -92,7 +92,7 @@ A new folder will be created witth the following name `deployments/${network}_$(
 
 Fill `.env` with your `MNEMONIC` and `INFURA_PROJECT_ID`
 If you want to verify the contracts also fill the `ETHERSCAN_API_KEY`
-
+Prefill deploy_parameters where possible
 ```
 cd deployment
 cp deploy_parameters.json.example deploy_parameters.json
@@ -109,3 +109,4 @@ Change HARDHAT_NETWORK=hardhat
 ```
 yarn hardhat run deployment/1_creategenesis.js
 ```
+This will fill your maticTokenAddress in deploy_parameters.
