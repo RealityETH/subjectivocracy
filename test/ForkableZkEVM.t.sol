@@ -84,9 +84,6 @@ contract ForkableZkEVMTest is Test {
     function testInitialize() public {
         assertEq(forkableZkEVM.forkmanager(), forkmanager);
         assertEq(forkableZkEVM.parentContract(), parentContract);
-        assertTrue(
-            forkableZkEVM.hasRole(forkableZkEVM.UPDATER(), address(this))
-        );
     }
 
     function testCreateChildren() public {

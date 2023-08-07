@@ -11,14 +11,14 @@ import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20
 import {IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
 import {IVerifierRollup} from "@RealityETH/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
-import {ForkableUUPS} from "./mixin/ForkableUUPS.sol";
+import {ForkableStructure} from "./mixin/ForkableStructure.sol";
 import {IForkableBridge} from "./interfaces/IForkableBridge.sol";
 import {IForkableZkEVM} from "./interfaces/IForkableZkEVM.sol";
 import {IForkingManager} from "./interfaces/IForkingManager.sol";
 import {IForkonomicToken} from "./interfaces/IForkonomicToken.sol";
 import {IForkableGlobalExitRoot} from "./interfaces/IForkableGlobalExitRoot.sol";
 
-contract ForkingManager is IForkingManager, ForkableUUPS {
+contract ForkingManager is IForkingManager, ForkableStructure {
     using SafeERC20 for IERC20;
 
     // The depth of the deposit contract tree
@@ -82,8 +82,7 @@ contract ForkingManager is IForkingManager, ForkableUUPS {
         parentContract = _parentContract;
         globalExitRoot = _globalExitRoot;
         arbitrationFee = _arbitrationFee;
-        ForkableUUPS.initialize(address(this), _parentContract, msg.sender);
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        ForkableStructure.initialize(address(this), _parentContract);
     }
 
     /**

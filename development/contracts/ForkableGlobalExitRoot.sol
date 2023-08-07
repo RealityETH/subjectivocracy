@@ -3,13 +3,13 @@ pragma solidity ^0.8.17;
 import {PolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMGlobalExitRoot.sol";
 import {TokenWrapped} from "@RealityETH/zkevm-contracts/contracts/lib/TokenWrapped.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import {ForkableUUPS} from "./mixin/ForkableUUPS.sol";
+import {ForkableStructure} from "./mixin/ForkableStructure.sol";
 import {ForkableStructure} from "./mixin/ForkableStructure.sol";
 import {IForkableGlobalExitRoot} from "./interfaces/IForkableGlobalExitRoot.sol";
 
 contract ForkableGlobalExitRoot is
     IForkableGlobalExitRoot,
-    ForkableUUPS,
+    ForkableStructure,
     PolygonZkEVMGlobalExitRoot
 {
     /// @dev Initializting function
@@ -23,9 +23,8 @@ contract ForkableGlobalExitRoot is
         address _rollupAddress,
         address _bridgeAddress
     ) public initializer {
-        ForkableUUPS.initialize(_forkmanager, _parentContract, msg.sender);
+        ForkableStructure.initialize(_forkmanager, _parentContract);
         PolygonZkEVMGlobalExitRoot.initialize(_rollupAddress, _bridgeAddress);
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     /// @dev Overrites the other initialize functions from ForkableStructure and PolygonZkEVMGlobalExitRoot

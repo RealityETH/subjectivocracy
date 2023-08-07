@@ -37,12 +37,6 @@ contract ForkableGlobalExitRootTest is Test {
     function testInitialize() public {
         assertEq(forkableGlobalExitRoot.forkmanager(), forkmanager);
         assertEq(forkableGlobalExitRoot.parentContract(), parentContract);
-        assertTrue(
-            forkableGlobalExitRoot.hasRole(
-                forkableGlobalExitRoot.DEFAULT_ADMIN_ROLE(),
-                address(this)
-            )
-        );
     }
 
     function testCreateChildren() public {

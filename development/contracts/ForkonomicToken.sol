@@ -3,9 +3,15 @@ pragma solidity ^0.8.17;
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import {ForkableStructure} from "./mixin/ForkableStructure.sol";
 import {IForkonomicToken} from "./interfaces/IForkonomicToken.sol";
-import {ForkableUUPS} from "./mixin/ForkableUUPS.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {ForkableStructure} from "./mixin/ForkableStructure.sol";
 
-contract ForkonomicToken is IForkonomicToken, ERC20Upgradeable, ForkableUUPS {
+contract ForkonomicToken is
+    IForkonomicToken,
+    ERC20Upgradeable,
+    ForkableStructure,
+    AccessControlUpgradeable
+{
     /// @dev The role that allows minting new tokens
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
@@ -17,7 +23,7 @@ contract ForkonomicToken is IForkonomicToken, ERC20Upgradeable, ForkableUUPS {
         string calldata name,
         string calldata symbol
     ) external initializer {
-        ForkableUUPS.initialize(_forkmanager, _parentContract, msg.sender);
+        ForkableStructure.initialize(_forkmanager, _parentContract);
         _setupRole(MINTER_ROLE, minter);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         __ERC20_init(name, symbol);
@@ -43,7 +49,6 @@ contract ForkonomicToken is IForkonomicToken, ERC20Upgradeable, ForkableUUPS {
     /// @param amount The amount of tokens to split
     function splitTokensIntoChildTokens(uint256 amount) external {
         require(children[0] != address(0), "Children not created yet");
-        require(children[1] != address(0), "Children not created yet");
         _burn(msg.sender, amount);
         IForkonomicToken(children[0]).mint(msg.sender, amount);
         IForkonomicToken(children[1]).mint(msg.sender, amount);
