@@ -2,12 +2,15 @@ pragma solidity ^0.8.17;
 
 import {Test} from "forge-std/Test.sol";
 import {ForkableStructureWrapper} from "./testcontract/ForkableStructureWrapper.sol";
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {Util} from "./utils/Util.sol";
 
 contract ForkStructureTest is Test {
     bytes32 internal constant _IMPLEMENTATION_SLOT =
         0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+
+    bytes32 internal constant _ADMIN_SLOT =
+        0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
 
     ForkableStructureWrapper public forkStructure;
 
@@ -15,6 +18,7 @@ contract ForkStructureTest is Test {
 
     address public forkmanager = address(0x123);
     address public parentContract = address(0x456);
+    address public admin = address(0xad);
 
     function setUp() public {
         forkStructure = new ForkableStructureWrapper();
@@ -43,7 +47,13 @@ contract ForkStructureTest is Test {
             new ForkableStructureWrapper()
         );
         forkStructure = ForkableStructureWrapper(
-            address(new ERC1967Proxy(forkableStructureImplementation, ""))
+            address(
+                new TransparentUpgradeableProxy(
+                    forkableStructureImplementation,
+                    admin,
+                    ""
+                )
+            )
         );
         forkStructure.initialize(forkmanager, parentContract);
         address secondForkableStructureImplementation = address(
@@ -66,6 +76,14 @@ contract ForkStructureTest is Test {
         assertEq(
             Util.bytesToAddress(vm.load(address(child2), _IMPLEMENTATION_SLOT)),
             secondForkableStructureImplementation
+        );
+        assertEq(
+            Util.bytesToAddress(vm.load(address(child1), _ADMIN_SLOT)),
+            admin
+        );
+        assertEq(
+            Util.bytesToAddress(vm.load(address(child2), _ADMIN_SLOT)),
+            admin
         );
     }
 }

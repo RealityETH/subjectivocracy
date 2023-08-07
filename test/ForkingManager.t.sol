@@ -11,7 +11,7 @@ import {IVerifierRollup} from "@RealityETH/zkevm-contracts/contracts/interfaces/
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC20Upgradeable.sol";
 import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract ForkingManagerTest is Test {
     ForkableBridge public bridge;
@@ -39,7 +39,6 @@ contract ForkingManagerTest is Test {
     uint64 public forkID = 3;
     uint64 public chainID = 4;
     uint32 public networkID = 10;
-    address public admin = address(0x1234567890123456789012345678901234567890);
     uint64 public pendingStateTimeout = 123;
     uint64 public trustedAggregatorTimeout = 124235;
     address public hardAssetManger =
@@ -52,6 +51,7 @@ contract ForkingManagerTest is Test {
         IVerifierRollup(0x1234567890123456789012345678901234567893);
     uint256 public arbitrationFee = 1020;
     bytes32[32] public depositTree;
+    address public admin = address(0xad);
 
     event Transfer(address indexed from, address indexed to, uint256 tokenId);
 
@@ -62,23 +62,45 @@ contract ForkingManagerTest is Test {
     function setUp() public {
         bridgeImplementation = address(new ForkableBridge());
         bridge = ForkableBridge(
-            address(new ERC1967Proxy(bridgeImplementation, ""))
+            address(
+                new TransparentUpgradeableProxy(bridgeImplementation, admin, "")
+            )
         );
         forkmanagerImplementation = address(new ForkingManager());
         forkmanager = ForkingManager(
-            address(new ERC1967Proxy(forkmanagerImplementation, ""))
+            address(
+                new TransparentUpgradeableProxy(
+                    forkmanagerImplementation,
+                    admin,
+                    ""
+                )
+            )
         );
         zkevmImplementation = address(new ForkableZkEVM());
         zkevm = ForkableZkEVM(
-            address(new ERC1967Proxy(zkevmImplementation, ""))
+            address(
+                new TransparentUpgradeableProxy(zkevmImplementation, admin, "")
+            )
         );
         forkonomicTokenImplementation = address(new ForkonomicToken());
         forkonomicToken = ForkonomicToken(
-            address(new ERC1967Proxy(forkonomicTokenImplementation, ""))
+            address(
+                new TransparentUpgradeableProxy(
+                    forkonomicTokenImplementation,
+                    admin,
+                    ""
+                )
+            )
         );
         globalExitRootImplementation = address(new ForkableGlobalExitRoot());
         globalExitRoot = ForkableGlobalExitRoot(
-            address(new ERC1967Proxy(globalExitRootImplementation, ""))
+            address(
+                new TransparentUpgradeableProxy(
+                    globalExitRootImplementation,
+                    admin,
+                    ""
+                )
+            )
         );
         globalExitRoot.initialize(
             address(forkmanager),
