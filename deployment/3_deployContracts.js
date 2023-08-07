@@ -15,6 +15,7 @@ const deployParameters = require('./deploy_parameters.json');
 const genesis = require('./genesis.json');
 
 const pathOZUpgradability = path.join(__dirname, `../.openzeppelin/${process.env.HARDHAT_NETWORK}.json`);
+const parentContract = ethers.constants.AddressZero
 
 async function main() {
     // Check that there's no previous OZ deployment
@@ -120,6 +121,8 @@ async function main() {
         [deployer] = (await ethers.getSigners());
     }
 
+    let forkingManagerAddress = ethers.constants.AddressZero;
+
     // Load zkEVM deployer
     const PolgonZKEVMDeployerFactory = await ethers.getContractFactory('PolygonZkEVMDeployer', deployer);
     const zkEVMDeployerContract = PolgonZKEVMDeployerFactory.attach(zkEVMDeployerAddress);
@@ -179,11 +182,35 @@ async function main() {
     }
 
     // Deploy implementation PolygonZkEVMBridge
-    const polygonZkEVMBridgeFactory = await ethers.getContractFactory('PolygonZkEVMBridge', deployer);
+    const createChildrenLib = await ethers.getContractFactory('CreateChildren', deployer);
+    const createChildrenLibDeployTransaction = (createChildrenLib.getDeployTransaction()).data;
+    const overrideGasLimit = ethers.BigNumber.from(6500000);
+    const [createChildrenImplementationAddress] = await create2Deployment(
+        zkEVMDeployerContract,
+        salt,
+        createChildrenLibDeployTransaction,
+        null,
+        deployer,
+        overrideGasLimit,
+    );
+    const bridgeOperationLib = await ethers.getContractFactory('BridgeAssetOperations', deployer);
+    const bridgeOperationLibDeployTransaction = (bridgeOperationLib.getDeployTransaction()).data;
+    const [bridgeOperationImplementationAddress] = await create2Deployment(
+        zkEVMDeployerContract,
+        salt,
+        bridgeOperationLibDeployTransaction,
+        null,
+        deployer,
+        overrideGasLimit,
+    );
+    const polygonZkEVMBridgeFactory = await ethers.getContractFactory('ForkableBridge',{libraries: {
+        CreateChildren: createChildrenImplementationAddress,
+        BridgeAssetOperations: bridgeOperationImplementationAddress,
+      }}, deployer);
+    
     const deployTransactionBridge = (polygonZkEVMBridgeFactory.getDeployTransaction()).data;
     const dataCallNull = null;
     // Mandatory to override the gasLimit since the estimation with create are mess up D:
-    const overrideGasLimit = ethers.BigNumber.from(5500000);
     const [bridgeImplementationAddress, isBridgeImplDeployed] = await create2Deployment(
         zkEVMDeployerContract,
         salt,
@@ -239,9 +266,15 @@ async function main() {
     const dataCallProxy = polygonZkEVMBridgeFactory.interface.encodeFunctionData(
         'initialize',
         [
+            forkingManagerAddress,
+            parentContract,
             networkIDMainnet,
             precalculateGLobalExitRootAddress,
             precalculateZkevmAddress,
+            false, 
+            maticTokenAddress,
+            0,
+            Array(32).fill(ethers.constants.HashZero)
         ],
     );
     const [proxyBridgeAddress, isBridgeProxyDeployed] = await create2Deployment(
@@ -279,13 +312,13 @@ async function main() {
      *Deployment Global exit root manager
      */
     let polygonZkEVMGlobalExitRoot;
-    const PolygonZkEVMGlobalExitRootFactory = await ethers.getContractFactory('PolygonZkEVMGlobalExitRoot', deployer);
+    const PolygonZkEVMGlobalExitRootFactory = await ethers.getContractFactory('ForkableGlobalExitRoot', deployer);
     if (!ongoingDeployment.polygonZkEVMGlobalExitRoot) {
         for (let i = 0; i < attemptsDeployProxy; i++) {
             try {
                 polygonZkEVMGlobalExitRoot = await upgrades.deployProxy(PolygonZkEVMGlobalExitRootFactory, [], {
-                    initializer: false,
-                    constructorArgs: [precalculateZkevmAddress, proxyBridgeAddress],
+                    initializer: true,
+                    constructorArgs: [forkingManagerAddress, parentContract, precalculateZkevmAddress, proxyBridgeAddress],
                     unsafeAllow: ['constructor', 'state-variable-immutable'],
                 });
                 break;
