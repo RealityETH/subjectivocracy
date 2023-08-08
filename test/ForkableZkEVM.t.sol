@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 import {Test} from "forge-std/Test.sol";
 import {PolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVM.sol";
 import {ForkableZkEVM} from "../development/contracts/ForkableZkEVM.sol";
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {IPolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
 import {IVerifierRollup} from "@RealityETH/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
@@ -53,7 +53,13 @@ contract ForkableZkEVMTest is Test {
     function setUp() public {
         forkableZkEVMImplementation = address(new ForkableZkEVM());
         forkableZkEVM = ForkableZkEVM(
-            address(new ERC1967Proxy(forkableZkEVMImplementation, ""))
+            address(
+                new TransparentUpgradeableProxy(
+                    forkableZkEVMImplementation,
+                    admin,
+                    ""
+                )
+            )
         );
         IPolygonZkEVM.InitializePackedParameters
             memory initializePackedParameters = IPolygonZkEVM

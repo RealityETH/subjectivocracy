@@ -4,7 +4,7 @@ import {Test} from "forge-std/Test.sol";
 import {ForkonomicToken} from "../development/contracts/ForkonomicToken.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC20Upgradeable.sol";
 import {IForkonomicToken} from "../development/contracts/interfaces/IForkonomicToken.sol";
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {Util} from "./utils/Util.sol";
 
 contract ForkonomicTokenTest is Test {
@@ -17,11 +17,18 @@ contract ForkonomicTokenTest is Test {
     address public parentContract = address(0x456);
     address public minter = address(0x789);
     address public forkonomicTokenImplementation;
+    address public admin = address(0xad);
 
     function setUp() public {
         forkonomicTokenImplementation = address(new ForkonomicToken());
         forkonomicToken = ForkonomicToken(
-            address(new ERC1967Proxy(forkonomicTokenImplementation, ""))
+            address(
+                new TransparentUpgradeableProxy(
+                    forkonomicTokenImplementation,
+                    admin,
+                    ""
+                )
+            )
         );
         forkonomicToken.initialize(
             forkmanager,

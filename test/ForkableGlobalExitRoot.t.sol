@@ -2,7 +2,7 @@ pragma solidity ^0.8.17;
 
 import {Test} from "forge-std/Test.sol";
 import {ForkableGlobalExitRoot} from "../development/contracts/ForkableGlobalExitRoot.sol";
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {Util} from "./utils/Util.sol";
 
 contract ForkableGlobalExitRootTest is Test {
@@ -18,13 +18,20 @@ contract ForkableGlobalExitRootTest is Test {
     address public rollupAddress = address(0x789);
     address public bridgeAddress = address(0xabc);
     address public forkableGlobalExitRootImplementation;
+    address public admin = address(0xad);
 
     function setUp() public {
         forkableGlobalExitRootImplementation = address(
             new ForkableGlobalExitRoot()
         );
         forkableGlobalExitRoot = ForkableGlobalExitRoot(
-            address(new ERC1967Proxy(forkableGlobalExitRootImplementation, ""))
+            address(
+                new TransparentUpgradeableProxy(
+                    forkableGlobalExitRootImplementation,
+                    admin,
+                    ""
+                )
+            )
         );
         forkableGlobalExitRoot.initialize(
             forkmanager,

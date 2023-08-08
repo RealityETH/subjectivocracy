@@ -8,7 +8,7 @@ import {IForkonomicToken} from "../development/contracts/interfaces/IForkonomicT
 import {ForkableGlobalExitRoot} from "../development/contracts/ForkableGlobalExitRoot.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC20Upgradeable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {PolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
 import {IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
 import {ERC20PresetMinterPauser} from "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
@@ -26,6 +26,7 @@ contract ForkableBridgeTest is Test {
     address public parentContract = address(0);
     address public polygonZkEVMaddress = address(0x789);
     address public gasTokenAddress = address(0xabc);
+    address public admin = address(0xad);
     uint32 public networkID = 11;
     bool public isDeployedOnL2 = true;
     IBasePolygonZkEVMGlobalExitRoot public _globalExitRootManager =
@@ -36,7 +37,9 @@ contract ForkableBridgeTest is Test {
     function setUp() public {
         address bridgeImplementation = address(new ForkableBridge());
         forkableBridge = ForkableBridge(
-            address(new ERC1967Proxy(bridgeImplementation, ""))
+            address(
+                new TransparentUpgradeableProxy(bridgeImplementation, admin, "")
+            )
         );
         forkableBridge.initialize(
             forkmanager,
@@ -544,7 +547,13 @@ contract ForkableBridgeTest is Test {
     function testSendForkonomicTokensToChildren() public {
         address forkonomicTokenImplementation = address(new ForkonomicToken());
         ForkonomicToken erc20GasToken = ForkonomicToken(
-            address(new ERC1967Proxy(forkonomicTokenImplementation, ""))
+            address(
+                new TransparentUpgradeableProxy(
+                    forkonomicTokenImplementation,
+                    admin,
+                    ""
+                )
+            )
         );
         erc20GasToken.initialize(
             forkmanager,
@@ -555,7 +564,9 @@ contract ForkableBridgeTest is Test {
         );
         address bridgeImplementation = address(new ForkableBridgeWrapper());
         ForkableBridgeWrapper forkableBridge2 = ForkableBridgeWrapper(
-            address(new ERC1967Proxy(bridgeImplementation, ""))
+            address(
+                new TransparentUpgradeableProxy(bridgeImplementation, admin, "")
+            )
         );
         forkableBridge2.initialize(
             forkmanager,
@@ -653,11 +664,14 @@ contract ForkableBridgeWrapperTest is Test {
         IBasePolygonZkEVMGlobalExitRoot(address(0xdef));
     address public hardAssetManger = address(0xde34f);
     bytes32[32] public depositTreeHashes;
+    address public admin = address(0xad);
 
     function setUp() public {
         address bridgeImplementation = address(new ForkableBridgeWrapper());
         forkableBridge = ForkableBridgeWrapper(
-            address(new ERC1967Proxy(bridgeImplementation, ""))
+            address(
+                new TransparentUpgradeableProxy(bridgeImplementation, admin, "")
+            )
         );
         forkableBridge.initialize(
             forkmanager,
