@@ -87,8 +87,38 @@ A new folder will be created witth the following name `deployments/${network}_$(
 - It's mandatory to delete the `.openzeppelin` upgradebility information in order to make a new deployment
 - `genesis.json` has been generated using the tool: `1_createGenesis`, this script depends on the `deploy_parameters` aswell.
 
+# Manual deployment for forkonomic project on hardhat network:
+
+start a node by running:
+```
+npx hardhat node
+```
+Prefill deploy_parameters where possible
+```
+cd deployment
+cp deploy_parameters.json.example deploy_parameters.json
+```
+make sure to put a pre-funded address for: `initialZkEVMDeployerOwner` from the npx hardhat node output into the deploy_parameters.json.
+
+Then run:
+```
+yarn hardhat run deployment/1_deployforkableToken.js --network hardhat
+```
+This will fill your maticTokenAddress in deploy_parameters.
+
+```
+yarn hardhat run deployment/2_creategenesis.js --network hardhat
+```
+
+```
+rm .openzeppelin/$HARDHAT_NETWORK.json
+yarn hardhat run deployment/3_deployContracts.js --network hardhat
+```
+
+If precalculated addresses are not correct, its due to false nonces. Make sure to delete the deploy_ongoing.json and restart the process and the nonce situation should clear itself or adopt the nonces.
 
 ## Manual deployment for forkonomic project on goerli:
+
 
 Fill `.env` with your `MNEMONIC` and `INFURA_PROJECT_ID`
 If you want to verify the contracts also fill the `ETHERSCAN_API_KEY`
@@ -98,15 +128,23 @@ cd deployment
 cp deploy_parameters.json.example deploy_parameters.json
 ```
 
-
 Change HARDHAT_NETWORK=goerli
 run
 ```
-yarn hardhat run deployment/0_deployforkableToken.js
-```
-
-Change HARDHAT_NETWORK=hardhat
-```
-yarn hardhat run deployment/1_creategenesis.js
+yarn hardhat run deployment/1_deployforkableToken.js
 ```
 This will fill your maticTokenAddress in deploy_parameters.
+
+```
+yarn hardhat run deployment/2_creategenesis.js --network hardhat
+```
+
+```
+rm .openzeppelin/$HARDHAT_NETWORK.json
+yarn hardhat run deployment/3_deployContracts.js
+```
+
+and verify all contracts by:
+```
+yarn hardhat run verifyContracts.js
+```
