@@ -1,8 +1,8 @@
 /* eslint-disable no-await-in-loop, no-use-before-define, no-lonely-if, no-restricted-syntax */
 /* eslint-disable no-console, no-inner-declarations, no-undef, import/no-unresolved */
-const { ethers } = require('hardhat');
 const path = require('path');
 const fs = require('fs');
+const { ethers } = require('hardhat');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 const pathDeployParameters = path.join(__dirname, '../deploy_parameters.json');

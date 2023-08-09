@@ -37,4 +37,5 @@ out/
 deployment/deploy_parameters.json
 artifacts/*
 cache_hardhat/
+.openzeppelin/
 

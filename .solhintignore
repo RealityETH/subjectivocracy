@@ -24,3 +24,4 @@ development/contracts/TokenBridge.sol
 development/contracts/ERC20.sol
 development/contracts/BridgeToL2.sol
 development/contracts/AMB.sol
+development/contracts/dependencies/*
