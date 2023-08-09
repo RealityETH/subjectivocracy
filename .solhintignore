@@ -18,3 +18,4 @@ development/contracts/interfaces/IArbitratorForeignProxy.sol
 development/contracts/ERC20Mint.sol
 development/contracts/TokenBridge.sol
 development/contracts/ERC20.sol
+development/contracts/dependencies/*
