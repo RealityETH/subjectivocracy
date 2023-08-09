@@ -1,8 +1,8 @@
 /* eslint-disable no-await-in-loop, no-use-before-define, no-lonely-if, import/no-dynamic-require */
 /* eslint-disable no-console, no-inner-declarations, no-undef, import/no-unresolved, no-restricted-syntax */
-const { expect } = require('chai');
 const path = require('path');
 const fs = require('fs');
+const { expect } = require('chai');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const { argv } = require('yargs');
 
@@ -42,7 +42,7 @@ async function main() {
         'minDelayTimelock',
         'salt',
         'initialZkEVMDeployerOwner',
-        'maticTokenAddress' // This will actually be the gas token address
+        'maticTokenAddress', // This will actually be the gas token address
     ];
 
     for (const parameterName of mandatoryDeploymentParameters) {
@@ -102,10 +102,12 @@ async function main() {
         deployer,
         overrideGasLimit,
     );
-    const polygonZkEVMBridgeFactory = await ethers.getContractFactory('ForkableBridge',{libraries: {
-        CreateChildren: createChildrenImplementationAddress,
-        BridgeAssetOperations: bridgeOperationImplementationAddress,
-      }}, deployer);
+    const polygonZkEVMBridgeFactory = await ethers.getContractFactory('ForkableBridge', {
+        libraries: {
+            CreateChildren: createChildrenImplementationAddress,
+            BridgeAssetOperations: bridgeOperationImplementationAddress,
+        },
+    }, deployer);
     const deployTransactionBridge = (polygonZkEVMBridgeFactory.getDeployTransaction()).data;
     // Mandatory to override the gasLimit since the estimation with create are mess up D:
     const [bridgeImplementationAddress] = await create2Deployment(
@@ -144,7 +146,7 @@ async function main() {
             new Array(32).fill(ethers.constants.HashZero), // for the variable bytes32[] _depositTreeHashes,
         ],
     );
-    
+
     const [proxyBridgeAddress] = await create2Deployment(zkEVMDeployerContract, salt, deployTransactionProxy, dataCallProxy, deployer);
 
     // Import OZ manifest the deployed contracts, its enough to import just the proyx, the rest are imported automatically ( admin/impl)
