@@ -71,6 +71,26 @@ async function main() {
 
     expect(deployer.address).to.be.equal(await zkEVMDeployerContract.owner());
 
+
+    const proxyAdminFactory = await ethers.getContractFactory('ProxyAdmin', deployer);
+    const deployTransactionAdmin = (proxyAdminFactory.getDeployTransaction()).data;
+    const dataCallAdmin = proxyAdminFactory.interface.encodeFunctionData('transferOwnership', [deployer.address]);
+    const [proxyAdminAddress, isProxyAdminDeployed] = await create2Deployment(
+        zkEVMDeployerContract,
+        salt,
+        deployTransactionAdmin,
+        dataCallAdmin,
+        deployer,
+    );
+
+    if(isProxyAdminDeployed) {
+        console.log('#######################\n');
+        console.log('proxyAdmin deployed on: ', proxyAdminAddress);
+    } else {
+        console.log('#######################\n');
+        console.log('proxyAdmin already deployed on: ', proxyAdminAddress);
+    }
+
     // Deploy implementation PolygonZkEVMBridge
     const createChildrenLib = await ethers.getContractFactory('CreateChildren', deployer);
     const createChildrenLibDeployTransaction = (createChildrenLib.getDeployTransaction()).data;
@@ -100,12 +120,14 @@ async function main() {
         constructorArgs: [],
         unsafeAllowLinkedLibraries: true,
     });
+    await upgrades.forceImport(forkonomicTokenProxy.address, forkonomicTokenFactory, 'transparent');
 
     console.log(
         `Token is uninitialized deployed here ${forkonomicTokenProxy.address}. Use it instead of the matic token in the next steps.`,
     );
 
     // append the new address to the deploy_parameters.json file as the maticTokenAddress, even though we use it as native token
+    deployParameters.proxyAdminAddress = proxyAdminAddress;
     deployParameters.maticTokenAddress = forkonomicTokenProxy.address;
     deployParameters.createChildrenImplementationAddress = createChildrenImplementationAddress;
     deployParameters.zkEVMDeployerAddress = zkEVMDeployerContract.address;
