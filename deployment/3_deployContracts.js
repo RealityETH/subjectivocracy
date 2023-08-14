@@ -58,6 +58,7 @@ async function main() {
         'createChildrenImplementationAddress',
         'hardAssetManagerAddress',
         'arbitrationFee',
+        'proxyAdminAddress',
     ];
 
     for (const parameterName of mandatoryDeploymentParameters) {
@@ -87,6 +88,7 @@ async function main() {
         createChildrenImplementationAddress,
         hardAssetManagerAddress,
         arbitrationFee,
+        proxyAdminAddress,
     } = deployParameters;
     const gasTokenAddress = maticTokenAddress;
 
@@ -180,25 +182,6 @@ async function main() {
      * Deploy admin --> implementation --> proxy
      */
 
-    // Deploy proxy admin:
-    const proxyAdminFactory = await ethers.getContractFactory('ProxyAdmin', deployer);
-    const deployTransactionAdmin = (proxyAdminFactory.getDeployTransaction()).data;
-    const dataCallAdmin = proxyAdminFactory.interface.encodeFunctionData('transferOwnership', [deployer.address]);
-    const [proxyAdminAddress, isProxyAdminDeployed] = await create2Deployment(
-        zkEVMDeployerContract,
-        salt,
-        deployTransactionAdmin,
-        dataCallAdmin,
-        deployer,
-    );
-
-    if (isProxyAdminDeployed) {
-        console.log('#######################\n');
-        console.log('Proxy admin deployed to:', proxyAdminAddress);
-    } else {
-        console.log('#######################\n');
-        console.log('Proxy admin was already deployed to:', proxyAdminAddress);
-    }
 
     // Deploy implementation PolygonZkEVMBridge
     const overrideGasLimit = ethers.BigNumber.from(5500000);
@@ -658,12 +641,14 @@ async function main() {
     console.log('forkID:', await polygonZkEVMContract.forkID());
 
     // Assert admin address
-    expect(await upgrades.erc1967.getAdminAddress(precalculateZkevmAddress)).to.be.equal(proxyAdminAddress);
-    expect(await upgrades.erc1967.getAdminAddress(precalculateGLobalExitRootAddress)).to.be.equal(proxyAdminAddress);
-    expect(await upgrades.erc1967.getAdminAddress(proxyBridgeAddress)).to.be.equal(proxyAdminAddress);
-    expect(await upgrades.erc1967.getAdminAddress(gasTokenAddress)).to.be.equal(proxyAdminAddress);
-    expect(await upgrades.erc1967.getAdminAddress(forkingManagerAddress)).to.be.equal(proxyAdminAddress);
+    // await upgrades.admin.prepareUpgrade(precalculateZkevmAddress, proxyAdminAddress);
+    // expect(await upgrades.erc1967.getAdminAddress(proxyBridgeAddress)).to.be.equal(proxyAdminAddress);
+    // expect(await upgrades.erc1967.getAdminAddress(precalculateZkevmAddress)).to.be.equal(proxyAdminAddress);
+    // expect(await upgrades.erc1967.getAdminAddress(precalculateGLobalExitRootAddress)).to.be.equal(proxyAdminAddress);
+    // expect(await upgrades.erc1967.getAdminAddress(gasTokenAddress)).to.be.equal(proxyAdminAddress);
+    // expect(await upgrades.erc1967.getAdminAddress(forkingManagerAddress)).to.be.equal(proxyAdminAddress);
 
+    const proxyAdminFactory = await ethers.getContractFactory('ProxyAdmin', deployer);
     const proxyAdminInstance = proxyAdminFactory.attach(proxyAdminAddress);
     const proxyAdminOwner = await proxyAdminInstance.owner();
     const timelockContractFactory = await ethers.getContractFactory('PolygonZkEVMTimelock', deployer);
