@@ -52,6 +52,6 @@ jobs:
           node-version: 16
           cache: 'npm'
           cache-dependency-path: ./package-lock.json
-      - run: npm --frozen-lockfile
-      - run: npm lint
-      - run: npm fmt:check
+      - run: npm install
+      - run: npm run lint
+      - run: npm run fmt:check
