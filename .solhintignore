@@ -19,3 +19,4 @@ development/contracts/ERC20Mint.sol
 development/contracts/TokenBridge.sol
 development/contracts/ERC20.sol
 development/contracts/dependencies/*
+lib/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol
