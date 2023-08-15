@@ -1,0 +1,23 @@
+{
+ "polygonZkEVMAddress": "0x8FcE191935B0701d5e77D82a6fF082342FB0400D",
+ "polygonZkEVMBridgeAddress": "0x19f15e229f3187c7443F474Ec40Bc6B8F4f8992A",
+ "polygonZkEVMGlobalExitRootAddress": "0xA829e2c3d797236eDB9C0E93421aEE16C7cc2f25",
+ "forkingManager": "0x39B1584E52418C2ae1Efca734E6E8F4165d54dF1",
+ "maticTokenAddress": "0x0Ea91C666E6076d5C6c1A059b104f8b30F2434f2",
+ "verifierAddress": "0xDa865eb61B81eFdd487e8876D72db2C758b60684",
+ "zkEVMDeployerContract": "0x2320e679797B57bB2818Fa6518a28A51dDD6E48b",
+ "deployerAddress": "0x25F2d1651B631BE5334e2E5ebf29842b64aca361",
+ "timelockContractAddress": "0x14c64ce65d29b0733dFD0Fa02F49506F743CF0D0",
+ "deploymentBlockNumber": 9521617,
+ "genesisRoot": "0x4f5030601151b9086f0d8e13a3a27fb050b82f8b04078dd5cf556ceb940485ed",
+ "trustedSequencer": "0x740a98F8f4fAe0986FB3264Fe4aaCf94ac1EE96f",
+ "trustedSequencerURL": "http://zkevm-json-rpc:8123",
+ "chainID": 10101012,
+ "networkName": "fzkevm",
+ "admin": "0x25F2d1651B631BE5334e2E5ebf29842b64aca361",
+ "trustedAggregator": "0x740a98F8f4fAe0986FB3264Fe4aaCf94ac1EE96f",
+ "proxyAdminAddress": "0x11F947B132d98Ff482ef92df48852aE031aB798F",
+ "forkID": 1,
+ "salt": "0x0000000000000000000000000000000000000000000000000000000000000001",
+ "version": "0.0.1"
+}
