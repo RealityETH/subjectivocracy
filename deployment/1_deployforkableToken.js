@@ -13,6 +13,7 @@ const deployParameters = require('./deploy_parameters.json');
 const pathDeployParameters = path.join(__dirname, './deploy_parameters.json');
 
 async function main() {
+    const attemptsDeployProxy = 5;
     // Load provider
     let currentProvider = ethers.provider;
     if (deployParameters.multiplierGas || deployParameters.maxFeePerGas) {
@@ -71,7 +72,6 @@ async function main() {
 
     expect(deployer.address).to.be.equal(await zkEVMDeployerContract.owner());
 
-
     const proxyAdminFactory = await ethers.getContractFactory('ProxyAdmin', deployer);
     const deployTransactionAdmin = (proxyAdminFactory.getDeployTransaction()).data;
     const dataCallAdmin = proxyAdminFactory.interface.encodeFunctionData('transferOwnership', [deployer.address]);
@@ -83,7 +83,7 @@ async function main() {
         deployer,
     );
 
-    if(isProxyAdminDeployed) {
+    if (isProxyAdminDeployed) {
         console.log('#######################\n');
         console.log('proxyAdmin deployed on: ', proxyAdminAddress);
     } else {
@@ -111,19 +111,31 @@ async function main() {
         signer: deployer,
         libraries: { CreateChildren: createChildrenImplementationAddress },
     });
+    for (let i = 0; i < attemptsDeployProxy; i++) {
+        try {
+            forkonomicTokenProxy = await upgrades.deployProxy(forkonomicTokenFactory, [], {
+                initializer: false,
+                libraries: {
+                    CreateChildren: createChildrenImplementationAddress,
+                },
+                constructorArgs: [],
+                unsafeAllowLinkedLibraries: true,
+            });
+            break;
+        } catch (error) {
+            console.log(`attempt ${i}`);
+            console.log('upgrades.deployProxy of forkonomicToken ', error.message);
+        }
 
-    forkonomicTokenProxy = await upgrades.deployProxy(forkonomicTokenFactory, [], {
-        initializer: false,
-        libraries: {
-            CreateChildren: createChildrenImplementationAddress,
-        },
-        constructorArgs: [],
-        unsafeAllowLinkedLibraries: true,
-    });
-    await upgrades.forceImport(forkonomicTokenProxy.address, forkonomicTokenFactory, 'transparent');
-
+        // reach limits of attempts
+        if (i + 1 === attemptsDeployProxy) {
+            throw new Error('forkonomicToken contract has not been deployed');
+        }
+    }
+    console.log('#######################\n');
+    console.log('forkonomicToken deployed on: ', forkonomicTokenProxy.address);
     console.log(
-        `Token is uninitialized deployed here ${forkonomicTokenProxy.address}. Use it instead of the matic token in the next steps.`,
+        ' Use this forkonomic token instead of the matic token in the next steps.',
     );
 
     // append the new address to the deploy_parameters.json file as the maticTokenAddress, even though we use it as native token
