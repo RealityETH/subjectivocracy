@@ -131,19 +131,6 @@ async function main() {
     }
     console.log('using deployer: ', deployer.address);
 
-    const ForkingManagerFactory = await ethers.getContractFactory('ForkingManager', {
-        signer: deployer,
-        libraries: { CreateChildren: createChildrenImplementationAddress },
-        unsafeAllowLinkedLibraries: true,
-    });
-    forkingManagerContract = await upgrades.deployProxy(ForkingManagerFactory, [], {
-        initializer: false,
-        constructorArgs: [],
-        unsafeAllowLinkedLibraries: true,
-    });
-    const forkingManagerAddress = forkingManagerContract.address;
-    console.log('ForkingManager deployed at: ', forkingManagerAddress);
-
     // Load zkEVM deployer
     const PolgonZKEVMDeployerFactory = await ethers.getContractFactory('PolygonZkEVMDeployer', deployer);
     const zkEVMDeployerContract = PolgonZKEVMDeployerFactory.attach(zkEVMDeployerAddress);
@@ -153,6 +140,49 @@ async function main() {
         throw new Error('zkEVM deployer contract is not deployed');
     }
     expect(deployer.address).to.be.equal(await zkEVMDeployerContract.owner());
+
+    const ForkingManagerFactory = await ethers.getContractFactory('ForkingManager', {
+        signer: deployer,
+        libraries: { CreateChildren: createChildrenImplementationAddress },
+        unsafeAllowLinkedLibraries: true,
+    });
+
+    if (!ongoingDeployment.forkingManager) {
+        for (let i = 0; i < attemptsDeployProxy; i++) {
+            try {
+                forkingManagerContract = await upgrades.deployProxy(ForkingManagerFactory, [], {
+                    initializer: false,
+                    constructorArgs: [],
+                    unsafeAllowLinkedLibraries: true,
+                });
+                break;
+            } catch (error) {
+                console.log(`attempt ${i}`);
+                console.log('upgrades.deployProxy of polygonZkEVMGlobalExitRoot ', error.message);
+            }
+
+            // reach limits of attempts
+            if (i + 1 === attemptsDeployProxy) {
+                throw new Error('polygonZkEVMGlobalExitRoot contract has not been deployed');
+            }
+        }
+
+        console.log('#######################\n');
+        console.log('forkingManager deployed to:', forkingManagerContract.address);
+
+        // save an ongoing deployment
+        ongoingDeployment.forkingManager = forkingManagerContract.address;
+        fs.writeFileSync(pathOngoingDeploymentJson, JSON.stringify(ongoingDeployment, null, 1));
+    } else {
+        // Expect the precalculate address matches the ongoing deployment
+        forkingManagerContract = ForkingManagerFactory.attach(ongoingDeployment.forkingManager);
+
+        console.log('#######################\n');
+        console.log('forkingManager already deployed on: ', ongoingDeployment.forkingManager);
+
+        // Import OZ manifest the deployed contracts, its enough to import just the proyx, the rest are imported automatically (admin/impl)
+        await upgrades.forceImport(ongoingDeployment.forkingManagerContract, ForkingManagerFactory, 'transparent');
+    }
 
     let verifierContract;
     if (!ongoingDeployment.verifierContract) {
@@ -181,7 +211,6 @@ async function main() {
      * Deploy Bridge
      * Deploy admin --> implementation --> proxy
      */
-
 
     // Deploy implementation PolygonZkEVMBridge
     const overrideGasLimit = ethers.BigNumber.from(5500000);
@@ -236,12 +265,12 @@ async function main() {
     )).data;
 
     // Nonce globalExitRoot: currentNonce + 1 (deploy bridge proxy) + 1(impl globalExitRoot) = +2
-    const nonceProxyGlobalExitRoot = Number((await ethers.provider.getTransactionCount(deployer.address))) + 1;
+    const nonceProxyGlobalExitRoot = Number((await ethers.provider.getTransactionCount(deployer.address))) + 2;
 
     console.log('nonceProxyGlobalExitRoot', nonceProxyGlobalExitRoot);
 
     // nonceProxyZkevm :Nonce globalExitRoot + 1 (proxy globalExitRoot) + 1 (impl Zkevm) = +2
-    const nonceProxyZkevm = nonceProxyGlobalExitRoot + 2;
+    const nonceProxyZkevm = nonceProxyGlobalExitRoot + 3;
     console.log('nonceProxyZkevm', nonceProxyZkevm);
 
     let precalculateGLobalExitRootAddress;
@@ -265,7 +294,7 @@ async function main() {
     const dataCallProxy = polygonZkEVMBridgeFactory.interface.encodeFunctionData(
         'initialize(address,address,uint32,address,address,address,bool,address,uint32, bytes32[32])',
         [
-            forkingManagerAddress,
+            forkingManagerContract.address,
             parentContract,
             networkIDMainnet,
             precalculateGLobalExitRootAddress,
@@ -296,6 +325,7 @@ async function main() {
         // If it was already deployed, check that the initialized calldata matches the actual deployment
         expect(precalculateGLobalExitRootAddress).to.be.equal(await polygonZkEVMBridgeContract.globalExitRootManager());
         expect(precalculateZkevmAddress).to.be.equal(await polygonZkEVMBridgeContract.polygonZkEVMaddress());
+        expect(forkingManagerContract.address).to.be.equal(await polygonZkEVMBridgeContract.forkingManager());
     }
 
     console.log('\n#######################');
@@ -339,36 +369,42 @@ async function main() {
                 throw new Error('polygonZkEVMGlobalExitRoot contract has not been deployed');
             }
         }
-        console.log('Actual nonce', polygonZkEVMGlobalExitRoot.deployTransaction.nonce);
+        console.log('Actual nonce for globalExitRoot deployment', polygonZkEVMGlobalExitRoot.deployTransaction.nonce);
 
-        /*
-         * Initialization:
-         * Unfortunately, normal initilziation would throw an error: Function initialize not found
-         * await polygonZkEVMGlobalExitRoot.initialize(
-         *     forkingManagerAddress,
-         *     parentContract,
-         *     precalculateZkevmAddress,
-         *     proxyBridgeAddress,
-         * );
-         * Hence we go with the custom initialization
-         */
-        const iface = new ethers.utils.Interface([
-            'function initialize(address,address,address,address)',
-        ]);
-        const dataCallInitialize = iface.encodeFunctionData(
-            'initialize(address,address,address,address)',
-            [
-                forkingManagerAddress,
-                parentContract,
-                precalculateZkevmAddress,
-                proxyBridgeAddress,
-            ],
-        );
-        await deployer.sendTransaction({
-            to: polygonZkEVMGlobalExitRoot.address,
-            value: ethers.utils.parseEther('0'),
-            data: dataCallInitialize,
-        });
+        try {
+            /*
+             * Initialization:
+             * Unfortunately, normal initilziation would throw an error: Function initialize not found
+             * await polygonZkEVMGlobalExitRoot.initialize(
+             *     forkingManagerContract.address,
+             *     parentContract,
+             *     precalculateZkevmAddress,
+             *     proxyBridgeAddress,
+             * );
+             * Hence we go with the custom initialization
+             */
+            const iface = new ethers.utils.Interface([
+                'function initialize(address,address,address,address)',
+            ]);
+            const dataCallInitialize = iface.encodeFunctionData(
+                'initialize(address,address,address,address)',
+                [
+                    forkingManagerContract.address,
+                    parentContract,
+                    precalculateZkevmAddress,
+                    proxyBridgeAddress,
+                ],
+            );
+            const globalExitRootInitializationTx = await deployer.sendTransaction({
+                to: polygonZkEVMGlobalExitRoot.address,
+                value: ethers.utils.parseEther('0'),
+                data: dataCallInitialize,
+                gasLimit: overrideGasLimit,
+            });
+            await globalExitRootInitializationTx.wait();
+        } catch (error) {
+            console.log('polygonZkEVMGlobalExitRoot initialization error', error.message);
+        }
 
         expect(precalculateGLobalExitRootAddress).to.be.equal(polygonZkEVMGlobalExitRoot.address);
 
@@ -456,62 +492,69 @@ async function main() {
                 throw new Error('PolygonZkEVM contract has not been deployed');
             }
         }
-        const iface2 = new ethers.utils.Interface([
-            'function initialize(address,address,(address,address,uint64,address,uint64,uint64,uint64),bytes32,string,string,string,address,address,address,address)',
-        ]);
-        const dataCallInitialize2 = iface2.encodeFunctionData(
-            'initialize(address,address,(address,address,uint64,address,uint64,uint64,uint64),bytes32,string,string,string,address,address,address,address)',
-            [
-                forkingManagerAddress,
-                parentContract,
-                [
-                    admin,
-                    trustedSequencer,
-                    pendingStateTimeout,
-                    trustedAggregator,
-                    trustedAggregatorTimeout,
-                    chainID,
-                    forkID,
-                ],
-                genesisRootHex,
-                trustedSequencerURL,
-                networkName,
-                version,
-                polygonZkEVMGlobalExitRoot.address,
-                gasTokenAddress,
-                verifierContract.address,
-                polygonZkEVMBridgeContract.address,
-            ],
-        );
-        await deployer.sendTransaction({
-            to: polygonZkEVMContract.address,
-            value: ethers.utils.parseEther('0'),
-            data: dataCallInitialize2,
-        });
 
-        /*
-         * polygonZkEVMContract.initialize(
-         *     forkingManagerAddress,
-         *     parentContract,
-         *     {
-         *         admin,
-         *         trustedSequencer,
-         *         pendingStateTimeout,
-         *         trustedAggregator,
-         *         trustedAggregatorTimeout,
-         *         chainID,
-         *         forkID,
-         *     },
-         *     genesisRootHex,
-         *     trustedSequencerURL,
-         *     networkName,
-         *     version,
-         *     polygonZkEVMGlobalExitRoot.address,
-         *     gasTokenAddress,
-         *     verifierContract.address,
-         *     polygonZkEVMBridgeContract.address,
-         * );
-         */
+        try {
+            /*
+             * polygonZkEVMContract.initialize(
+             *     forkingManagerContract.address,
+             *     parentContract,
+             *     {
+             *         admin,
+             *         trustedSequencer,
+             *         pendingStateTimeout,
+             *         trustedAggregator,
+             *         trustedAggregatorTimeout,
+             *         chainID,
+             *         forkID,
+             *     },
+             *     genesisRootHex,
+             *     trustedSequencerURL,
+             *     networkName,
+             *     version,
+             *     polygonZkEVMGlobalExitRoot.address,
+             *     gasTokenAddress,
+             *     verifierContract.address,
+             *     polygonZkEVMBridgeContract.address,
+             * );
+             */
+            const iface2 = new ethers.utils.Interface([
+                'function initialize(address,address,(address,address,uint64,address,uint64,uint64,uint64),bytes32,string,string,string,address,address,address,address)',
+            ]);
+            const dataCallInitialize2 = iface2.encodeFunctionData(
+                'initialize(address,address,(address,address,uint64,address,uint64,uint64,uint64),bytes32,string,string,string,address,address,address,address)',
+                [
+                    forkingManagerContract.address,
+                    parentContract,
+                    [
+                        admin,
+                        trustedSequencer,
+                        pendingStateTimeout,
+                        trustedAggregator,
+                        trustedAggregatorTimeout,
+                        chainID,
+                        forkID,
+                    ],
+                    genesisRootHex,
+                    trustedSequencerURL,
+                    networkName,
+                    version,
+                    polygonZkEVMGlobalExitRoot.address,
+                    gasTokenAddress,
+                    verifierContract.address,
+                    polygonZkEVMBridgeContract.address,
+                ],
+            );
+            const zkEVMInitializationTx = await deployer.sendTransaction({
+                to: polygonZkEVMContract.address,
+                value: ethers.utils.parseEther('0'),
+                data: dataCallInitialize2,
+                gasLimit: overrideGasLimit,
+            });
+            await zkEVMInitializationTx.wait();
+        } catch (error) {
+            console.log('polygonZkEVMContract initialize threw some error', error.message);
+        }
+
         expect(precalculateZkevmAddress).to.be.equal(polygonZkEVMContract.address);
 
         console.log('#######################\n');
@@ -549,37 +592,42 @@ async function main() {
         }
         deploymentBlockNumber = 0;
     }
+    try {
+        /*
+         * forkingManagerContract.initialize(
+         *     polygonZkEVMContract.address,
+         *     polygonZkEVMBridgeContract.address,
+         *     gasTokenAddress,
+         *     parentContract,
+         *     polygonZkEVMGlobalExitRoot.address,
+         *     arbitrationFee,
+         * );
+         */
 
-    const ifaceForkingManager = new ethers.utils.Interface([
-        'function initialize(address,address,address,address,address,uint256)',
-    ]);
-    const dataCallInitializeForkingManager = ifaceForkingManager.encodeFunctionData(
-        'initialize(address,address,address,address,address,uint256)',
-        [
-            polygonZkEVMContract.address,
-            polygonZkEVMBridgeContract.address,
-            gasTokenAddress,
-            parentContract,
-            polygonZkEVMGlobalExitRoot.address,
-            arbitrationFee,
-        ],
-    );
-    await deployer.sendTransaction({
-        to: forkingManagerContract.address,
-        value: ethers.utils.parseEther('0'),
-        data: dataCallInitializeForkingManager,
-    });
-
-    /*
-     * forkingManagerContract.initialize(
-     *     polygonZkEVMContract.address,
-     *     polygonZkEVMBridgeContract.address,
-     *     gasTokenAddress,
-     *     parentContract,
-     *     polygonZkEVMGlobalExitRoot.address,
-     *     arbitrationFee,
-     * );
-     */
+        const ifaceForkingManager = new ethers.utils.Interface([
+            'function initialize(address,address,address,address,address,uint256)',
+        ]);
+        const dataCallInitializeForkingManager = ifaceForkingManager.encodeFunctionData(
+            'initialize(address,address,address,address,address,uint256)',
+            [
+                polygonZkEVMContract.address,
+                polygonZkEVMBridgeContract.address,
+                gasTokenAddress,
+                parentContract,
+                polygonZkEVMGlobalExitRoot.address,
+                arbitrationFee,
+            ],
+        );
+        const forkingManagerInitializationTx = await deployer.sendTransaction({
+            to: forkingManagerContract.address,
+            value: ethers.utils.parseEther('0'),
+            data: dataCallInitializeForkingManager,
+            gasLimit: overrideGasLimit,
+        });
+        await forkingManagerInitializationTx.wait();
+    } catch (e) {
+        console.log(`ForkingManager likely already initialized. Following error was received ${e}`);
+    }
 
     const forkonomicTokenContract = await hre.ethers.getContractAt(
         'ForkonomicToken',
@@ -589,36 +637,40 @@ async function main() {
         'function initialize(address,address,address,string,string)',
     ]);
 
-    const minter = deployer.address;
-    console.log('using minter: ', minter, 'for the forkable token');
-    const dataCallInitializeForkonomicToken = ifaceForkonomicToken.encodeFunctionData(
-        'initialize(address,address,address,string,string)',
-        [
-            forkingManagerAddress,
-            parentContract,
-            minter,
-            'Forkonomic Token',
-            'FORK',
-        ],
-    );
     try {
-        await deployer.sendTransaction({
-            to: forkonomicTokenContract.address,
-            value: ethers.utils.parseEther('0'),
-            data: dataCallInitializeForkonomicToken,
-        });
+        if (forkonomicTokenContract.forkingManager() !== ethers.constants.AddressZero) {
+            /*
+             * await forkonomicTokenContract.initialize(
+             *     forkingManagerContract.address,
+             *     parentContract,
+             *     deployer,
+             *     'Forkonomic Token',
+             *     'FORK',
+             * );
+             */
+            const minter = deployer.address;
+            console.log('using minter: ', minter, 'for the forkable token');
+            const dataCallInitializeForkonomicToken = ifaceForkonomicToken.encodeFunctionData(
+                'initialize(address,address,address,string,string)',
+                [
+                    forkingManagerContract.address,
+                    parentContract,
+                    minter,
+                    'Forkonomic Token',
+                    'FORK',
+                ],
+            );
+            const forkonomicTokenInitializationTx = await deployer.sendTransaction({
+                to: forkonomicTokenContract.address,
+                value: ethers.utils.parseEther('0'),
+                data: dataCallInitializeForkonomicToken,
+                gasLimit: overrideGasLimit,
+            });
+            await forkonomicTokenInitializationTx.wait();
+        }
     } catch (e) {
         console.log('error deploying forkonomic token', e);
     }
-    /*
-     * await forkonomicTokenContract.initialize(
-     *     forkingManagerAddress,
-     *     parentContract,
-     *     deployer,
-     *     'Forkonomic Token',
-     *     'FORK',
-     * );
-     */
     console.log('\n#######################');
     console.log('#####    Checks  PolygonZkEVM  #####');
     console.log('#######################');
@@ -640,20 +692,20 @@ async function main() {
     console.log('owner:', await polygonZkEVMContract.owner());
     console.log('forkID:', await polygonZkEVMContract.forkID());
 
-    // Assert admin address
-    // await upgrades.admin.prepareUpgrade(precalculateZkevmAddress, proxyAdminAddress);
-    // expect(await upgrades.erc1967.getAdminAddress(proxyBridgeAddress)).to.be.equal(proxyAdminAddress);
-    // expect(await upgrades.erc1967.getAdminAddress(precalculateZkevmAddress)).to.be.equal(proxyAdminAddress);
-    // expect(await upgrades.erc1967.getAdminAddress(precalculateGLobalExitRootAddress)).to.be.equal(proxyAdminAddress);
-    // expect(await upgrades.erc1967.getAdminAddress(gasTokenAddress)).to.be.equal(proxyAdminAddress);
-    // expect(await upgrades.erc1967.getAdminAddress(forkingManagerAddress)).to.be.equal(proxyAdminAddress);
+    /*
+     * Todo: set admin addresses correct from the start. Right now, they are differing, due to the split of the deployment script
+     * and the deletion of .openzepplin/network.json file mentioned in the readme.
+     * expect(await upgrades.erc1967.getAdminAddress(proxyBridgeAddress)).to.be.equal(proxyAdminAddress);
+     * expect(await upgrades.erc1967.getAdminAddress(precalculateZkevmAddress)).to.be.equal(proxyAdminAddress);
+     * expect(await upgrades.erc1967.getAdminAddress(precalculateGLobalExitRootAddress)).to.be.equal(proxyAdminAddress);
+     * expect(await upgrades.erc1967.getAdminAddress(gasTokenAddress)).to.be.equal(proxyAdminAddress);
+     * expect(await upgrades.erc1967.getAdminAddress(forkingManagerContract.address)).to.be.equal(proxyAdminAddress);
+     */
 
     const proxyAdminFactory = await ethers.getContractFactory('ProxyAdmin', deployer);
     const proxyAdminInstance = proxyAdminFactory.attach(proxyAdminAddress);
     const proxyAdminOwner = await proxyAdminInstance.owner();
     const timelockContractFactory = await ethers.getContractFactory('PolygonZkEVMTimelock', deployer);
-
-    // TODO test stop here
 
     let timelockContract;
     if (proxyAdminOwner !== deployer.address) {
@@ -702,7 +754,7 @@ async function main() {
         polygonZkEVMAddress: polygonZkEVMContract.address,
         polygonZkEVMBridgeAddress: polygonZkEVMBridgeContract.address,
         polygonZkEVMGlobalExitRootAddress: polygonZkEVMGlobalExitRoot.address,
-        forkingManager: forkingManagerAddress,
+        forkingManager: forkingManagerContract.address,
         maticTokenAddress,
         verifierAddress: verifierContract.address,
         zkEVMDeployerContract: zkEVMDeployerContract.address,

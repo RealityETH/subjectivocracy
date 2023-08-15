@@ -85,11 +85,11 @@ A new folder will be created witth the following name `deployments/${network}_$(
 
 - Since there are deterministic address you cannot deploy twice on the same network using the same `salt` and `initialZkEVMDeployerOwner`. Changing one of them is enough to make a new deployment.
 - It's mandatory to delete the `.openzeppelin` upgradebility information in order to make a new deployment
-- `genesis.json` has been generated using the tool: `1_createGenesis`, this script depends on the `deploy_parameters` aswell.
+- `genesis.json` has been generated using the tool: `1_createGenesis`, this script depends on the `deploy_parameters` as well.
 
 # Manual deployment for forkonomic project on hardhat network:
 
-start a node by running:
+Start a node by running:
 ```
 npx hardhat node
 ```
@@ -128,10 +128,10 @@ cd deployment
 cp deploy_parameters.json.example deploy_parameters.json
 ```
 
-Change HARDHAT_NETWORK=goerli
+
 run
 ```
-yarn hardhat run deployment/1_deployforkableToken.js
+yarn hardhat run deployment/1_deployforkableToken.js --network goerli
 ```
 This will fill your maticTokenAddress in deploy_parameters.
 
@@ -141,10 +141,10 @@ yarn hardhat run deployment/2_creategenesis.js --network hardhat
 
 ```
 rm .openzeppelin/$HARDHAT_NETWORK.json
-yarn hardhat run deployment/3_deployContracts.js
+yarn hardhat run deployment/3_deployContracts.js --network goerli
 ```
 
 and verify all contracts by:
 ```
-yarn hardhat run verifyContracts.js
+yarn hardhat run verifyContracts.js --network goerli
 ```

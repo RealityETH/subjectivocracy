@@ -90,10 +90,6 @@ async function main() {
             'verify:verify',
             {
                 address: deployOutputParameters.polygonZkEVMGlobalExitRootAddress,
-                constructorArguments: [
-                    deployOutputParameters.polygonZkEVMAddress,
-                    deployOutputParameters.polygonZkEVMBridgeAddress,
-                ],
             },
         );
     } catch (error) {
