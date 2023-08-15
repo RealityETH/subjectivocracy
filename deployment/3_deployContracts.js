@@ -638,7 +638,7 @@ async function main() {
     ]);
 
     try {
-        if (forkonomicTokenContract.forkingManager() === ethers.constants.AddressZero) {
+        if (forkonomicTokenContract.forkmanager() === ethers.constants.AddressZero) {
             /*
              * await forkonomicTokenContract.initialize(
              *     forkingManagerContract.address,
