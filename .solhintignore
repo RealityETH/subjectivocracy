@@ -25,3 +25,4 @@ development/contracts/ERC20.sol
 development/contracts/BridgeToL2.sol
 development/contracts/AMB.sol
 development/contracts/dependencies/*
+lib/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol
