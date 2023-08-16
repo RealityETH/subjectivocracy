@@ -214,17 +214,26 @@ async function main() {
 
     // Deploy implementation PolygonZkEVMBridge
     const overrideGasLimit = ethers.BigNumber.from(5500000);
+    let bridgeOperationImplementationAddress;
+    if (!ongoingDeployment.bridgeOperationImplementationAddress) {
+        const bridgeOperationLib = await ethers.getContractFactory('BridgeAssetOperations', deployer);
+        const bridgeOperationLibDeployTransaction = (bridgeOperationLib.getDeployTransaction()).data;
+        [bridgeOperationImplementationAddress] = await create2Deployment(
+            zkEVMDeployerContract,
+            salt,
+            bridgeOperationLibDeployTransaction,
+            null,
+            deployer,
+            overrideGasLimit,
+        );
+        console.log('#######################\n');
+        console.log('bridgeOperationImplementationAddress deployed to:', bridgeOperationImplementationAddress);
+        ongoingDeployment.bridgeOperationImplementationAddress = bridgeOperationImplementationAddress;
+        fs.writeFileSync(pathOngoingDeploymentJson, JSON.stringify(ongoingDeployment, null, 1));
+    } else {
+        console.log('bridgeOperationImplementation already deployed on: ', ongoingDeployment.bridgeOperationImplementation);
+    }
 
-    const bridgeOperationLib = await ethers.getContractFactory('BridgeAssetOperations', deployer);
-    const bridgeOperationLibDeployTransaction = (bridgeOperationLib.getDeployTransaction()).data;
-    const [bridgeOperationImplementationAddress] = await create2Deployment(
-        zkEVMDeployerContract,
-        salt,
-        bridgeOperationLibDeployTransaction,
-        null,
-        deployer,
-        overrideGasLimit,
-    );
     const polygonZkEVMBridgeFactory = await ethers.getContractFactory('ForkableBridge', {
         libraries: {
             CreateChildren: createChildrenImplementationAddress,
