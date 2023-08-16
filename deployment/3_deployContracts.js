@@ -646,6 +646,7 @@ async function main() {
         'function initialize(address,address,address,string,string)',
     ]);
 
+    const minter = deployer.address;
     try {
         if (await forkonomicTokenContract.forkmanager() === ethers.constants.AddressZero) {
             /*
@@ -657,7 +658,6 @@ async function main() {
              *     'FORK',
              * );
              */
-            const minter = deployer.address;
             console.log('using minter: ', minter, 'for the forkable token');
             const dataCallInitializeForkonomicToken = ifaceForkonomicToken.encodeFunctionData(
                 'initialize(address,address,address,string,string)',
@@ -765,6 +765,8 @@ async function main() {
         polygonZkEVMGlobalExitRootAddress: polygonZkEVMGlobalExitRoot.address,
         forkingManager: forkingManagerContract.address,
         maticTokenAddress,
+        createChildrenImplementationAddress,
+        bridgeImplementationAddress,
         verifierAddress: verifierContract.address,
         zkEVMDeployerContract: zkEVMDeployerContract.address,
         deployerAddress: deployer.address,
@@ -781,6 +783,7 @@ async function main() {
         forkID,
         salt,
         version,
+        minter,
     };
     fs.writeFileSync(pathOutputJson, JSON.stringify(outputJson, null, 1));
 
