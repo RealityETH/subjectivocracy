@@ -5,7 +5,7 @@ pragma solidity ^0.8.17;
 import "./interfaces/IArbitrator.sol";
 import "./interfaces/IRealityETH.sol";
 import "./interfaces/IERC20.sol";
-import "./Owned.sol";
+import "./mixin/Owned.sol";
 
 contract Arbitrator is Owned, IArbitrator {
     IRealityETH public realitio;

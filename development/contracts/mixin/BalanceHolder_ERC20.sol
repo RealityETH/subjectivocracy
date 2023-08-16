@@ -2,9 +2,12 @@
 
 pragma solidity ^0.8.17;
 
-import "./interfaces/IBalanceHolder.sol";
+import "../interfaces/IERC20.sol";
+import "../interfaces/IBalanceHolder_ERC20.sol";
 
-contract BalanceHolder is IBalanceHolder {
+contract BalanceHolder_ERC20 is IBalanceHolder_ERC20 {
+    IERC20 public token;
+
     mapping(address => uint256) public balanceOf;
 
     event LogWithdraw(address indexed user, uint256 amount);
@@ -12,7 +15,7 @@ contract BalanceHolder is IBalanceHolder {
     function withdraw() public {
         uint256 bal = balanceOf[msg.sender];
         balanceOf[msg.sender] = 0;
-        payable(msg.sender).transfer(bal);
+        require(token.transfer(msg.sender, bal));
         emit LogWithdraw(msg.sender, bal);
     }
 }

@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.17;
 
-import "./BalanceHolder.sol";
+import "./mixin/BalanceHolder.sol";
 
-import "./RealityETH_ERC20-3.0.sol";
+import "./interfaces/IRealityETH_ERC20.sol";
 
 import "./interfaces/IArbitrator.sol";
 import "./interfaces/IAMB.sol";
@@ -76,7 +76,7 @@ contract WhitelistArbitrator is BalanceHolder {
     // List of arbitrators that are currently being challenged
     mapping(address => bool) public frozen_arbitrators;
 
-    RealityETH_ERC20_v3_0 public realityETH;
+    IRealityETH_ERC20 public realityETH;
 
     uint256 public dispute_fee;
 
@@ -107,7 +107,7 @@ contract WhitelistArbitrator is BalanceHolder {
         IAMB _bridge,
         address[] memory _initial_arbitrators
     ) {
-        realityETH = RealityETH_ERC20_v3_0(_realityETH);
+        realityETH = IRealityETH_ERC20(_realityETH);
         dispute_fee = _dispute_fee;
         bridge = _bridge;
         for (uint256 i = 0; i < _initial_arbitrators.length; i++) {
