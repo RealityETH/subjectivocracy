@@ -12,31 +12,22 @@ async function main() {
      * Check deploy parameters
      * Check that every necessary parameter is fullfilled
      */
-    const mandatoryDeploymentParameters = [
-        'maticTokenAddress',
-        'createChildrenImplementationAddress',
-    ];
-
-    for (const parameterName of mandatoryDeploymentParameters) {
-        if (deployParameters[parameterName] === undefined || deployParameters[parameterName] === '') {
-            throw new Error(`Missing parameter: ${parameterName}`);
-        }
-    }
 
     const mandatoryDeploymentOutput = [
         'polygonZkEVMBridgeAddress',
+        'bridgeImplementationAddress',
+        'maticTokenAddress',
+        'createChildrenImplementationAddress',
+
     ];
     for (const parameterName of mandatoryDeploymentOutput) {
         if (deploymentOutput[parameterName] === undefined || deploymentOutput[parameterName] === '') {
             throw new Error(`Missing parameter: ${parameterName}`);
         }
     }
-
-    const {
-        maticTokenAddress,
-    } = deployParameters;
     const {
         polygonZkEVMBridgeAddress,
+        maticTokenAddress,
     } = deploymentOutput;
 
     const forkonomicTokenAddress = maticTokenAddress;
@@ -72,13 +63,15 @@ async function main() {
     if (deployParameters.deployerPvtKey) {
         deployer = new ethers.Wallet(deployParameters.deployerPvtKey, currentProvider);
         console.log('Using pvtKey deployer with address: ', deployer.address);
+    } else if (process.env.PK) {
+        deployer = new ethers.Wallet(process.env.PK, currentProvider);
+        console.log('Using PK deployer with address: ', deployer.address); 
     } else if (process.env.MNEMONIC) {
         deployer = ethers.Wallet.fromMnemonic(process.env.MNEMONIC, 'm/44\'/60\'/0\'/0/0').connect(currentProvider);
         console.log('Using MNEMONIC deployer with address: ', deployer.address);
     } else {
         [deployer] = (await ethers.getSigners());
     }
-    console.log('using deployer: ', deployer.address);
 
     const bridge = await hre.ethers.getContractAt(
         'ForkableBridge',
@@ -89,12 +82,11 @@ async function main() {
         'ForkonomicToken',
         forkonomicTokenAddress,
     );
-
     const depositAmount = ethers.utils.parseEther('10');
-    await forkonomicToken.approve(polygonZkEVMBridgeAddress, depositAmount);
+    await forkonomicToken.connect(deployer).approve(polygonZkEVMBridgeAddress, depositAmount, { gasLimit: 500000 });
     console.log('Approved bridge to spend forkonomic tokens');
 
-    await bridge.bridgeAsset(
+    await bridge.connect(deployer).bridgeAsset(
         1,
         deployer.address,
         depositAmount,
