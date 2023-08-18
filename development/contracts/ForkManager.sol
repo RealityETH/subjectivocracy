@@ -367,7 +367,7 @@ contract ForkManager is Arbitrator, IERC20, ERC20 {
         supplyAtFork = totalSupply;
 
         auction = new Auction_ERC20();
-        auction.init(fork_cost, forkTS);
+        auction.init(address(this), fork_cost, forkTS);
 
         // As of the forkTS, anybody will be able to call deployFork
         // TODO: Can we deploy these ahead of the scheduled time and only initialize them when we're ready?

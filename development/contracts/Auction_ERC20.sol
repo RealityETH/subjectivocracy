@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
+
+import "./interfaces/IERC20.sol";
+
 /*
 There's a gas token on L2.
 This is bridged to an ERC20 on L1, called ForkManager.
@@ -20,6 +23,7 @@ contract Auction_ERC20 {
     uint256 public bonus;
     uint256 public forkTimestamp;
     address public forkmanager;
+    address public token;
 
     struct Bid {
         address owner;
@@ -73,11 +77,12 @@ contract Auction_ERC20 {
 
     // ForkManager should call this on deployment and credit this contract with the bonus amount
     // Todo: maybe this should be a constructor?
-    function init(uint256 _bonus, uint256 _forkTimestamp) external {
+    function init(address _token, uint256 _bonus, uint256 _forkTimestamp) external {
         require(forkmanager == address(0), "Already initialized");
-        forkmanager = msg.sender;
+        token = _token;
         bonus = _bonus;
         forkTimestamp = _forkTimestamp;
+        forkmanager = msg.sender;
     }
 
     // ForkManager should lock the tokens before calling this
@@ -85,13 +90,16 @@ contract Auction_ERC20 {
         address owner,
         uint8 _bid,
         uint256 _amount
-    ) external beforeFork onlyForkManager {
+    ) external beforeFork {
         require(_bid <= MAX_SLOTS);
         require(owner != address(0), "Owner not set");
 
         bidCounter = bidCounter + 1;
         bids[bidCounter] = Bid(owner, _bid, _amount);
         cumulativeBids[_bid] = cumulativeBids[_bid] + _amount;
+
+        require(IERC20(token).transferFrom(msg.sender, address(this), _amount));
+
         emit LogBid(bidCounter, owner, _bid, _amount);
     }
 
