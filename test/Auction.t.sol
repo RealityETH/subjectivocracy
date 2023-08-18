@@ -2,8 +2,7 @@ pragma solidity ^0.8.17;
 import {Test} from "forge-std/Test.sol";
 import {Auction_ERC20} from "../development/contracts/Auction_ERC20.sol";
 
-import {IERC20} from "../development/contracts/interfaces/IERC20.sol";
-import {ERC20Mint} from "../development/contracts/ERC20Mint.sol";
+import {ForkonomicToken} from "../development/contracts/ForkonomicToken.sol";
 
 contract AuctionTest is Test {
 
@@ -15,13 +14,15 @@ contract AuctionTest is Test {
     address bidder1 = address(0xbabe01);
     address bidder2 = address(0xbabe02);
 
-    ERC20Mint tokenMock;
+    ForkonomicToken tokenMock;
 
     function setUp() public {
         skip(1000000);
 
-        vm.prank(minter);
-        tokenMock = new ERC20Mint();
+        vm.startPrank(minter);
+        tokenMock = new ForkonomicToken();
+        tokenMock.initialize(address(0), address(0), minter, "F0", "F0");
+
         tokenMock.mint(bidder1, 100000);
         tokenMock.mint(bidder2, 200000);
 
