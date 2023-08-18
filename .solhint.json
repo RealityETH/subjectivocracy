@@ -3,6 +3,7 @@
   "plugins": ["prettier"],
   "rules": {
     "compiler-version": "off",
-    "max-states-count": "off"
+    "max-states-count": "off",
+    "not-rely-on-time": "off"
   }
 }

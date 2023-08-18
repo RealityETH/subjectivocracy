@@ -7,14 +7,14 @@ import {ForkonomicToken} from "../development/contracts/ForkonomicToken.sol";
 contract AuctionTest is Test {
 
     Auction_ERC20 public auc;
-    uint256 startTs;
-    uint256 constant forkPeriod = 86400;
+    uint256 internal startTs;
+    uint256 internal constant FORK_PERIOD = 86400;
 
-    address minter = address(0x789);
-    address bidder1 = address(0xbabe01);
-    address bidder2 = address(0xbabe02);
+    address internal minter = address(0x789);
+    address internal bidder1 = address(0xbabe01);
+    address internal bidder2 = address(0xbabe02);
 
-    ForkonomicToken tokenMock;
+    ForkonomicToken internal tokenMock;
 
     function setUp() public {
         skip(1000000);
@@ -28,7 +28,7 @@ contract AuctionTest is Test {
 
         startTs = uint256(block.timestamp);
         auc = new Auction_ERC20();
-        auc.init(address(tokenMock), 100000, startTs + forkPeriod);
+        auc.init(address(tokenMock), 100000, startTs + FORK_PERIOD);
     }
 
     function _enterBids(bool yesOrNo) internal {
@@ -56,12 +56,12 @@ contract AuctionTest is Test {
         assertEq(address(auc.token()), address(tokenMock), "should be expected token");
     }
 
-    function testFail_UnapprovedBid() public {
+    function testFailUnapprovedBid() public {
         vm.startPrank(bidder1);
         auc.bid(bidder1, 50, 100);
     }
 
-    function testFail_CalculatePriceBeforeFork() public {
+    function testFailCalculatePriceBeforeFork() public {
         auc.calculatePrice();
     }
 
@@ -69,7 +69,7 @@ contract AuctionTest is Test {
 
         _enterBids(true);
 
-        vm.warp(startTs + forkPeriod + 1);
+        vm.warp(startTs + FORK_PERIOD + 1);
         auc.calculatePrice();
 
         assertEq(true, auc.isCalculationDone(), "should be done");
@@ -94,7 +94,7 @@ contract AuctionTest is Test {
  
         _enterBids(true);
 
-        vm.warp(startTs + forkPeriod + 1);
+        vm.warp(startTs + FORK_PERIOD + 1);
         auc.calculatePrice();
 
         assertEq(auc.winner(), true);
@@ -105,7 +105,7 @@ contract AuctionTest is Test {
  
         _enterBids(false);
 
-        vm.warp(startTs + forkPeriod + 1);
+        vm.warp(startTs + FORK_PERIOD + 1);
         auc.calculatePrice();
 
         assertEq(auc.winner(), false);
