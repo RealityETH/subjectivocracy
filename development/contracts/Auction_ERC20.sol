@@ -17,7 +17,7 @@ pragma solidity ^0.8.17;
 
 contract Auction_ERC20 {
     // todo: rething the name: actually there are 101 slots
-    uint256 constant MAX_SLOTS = 100;
+    uint8 constant MAX_SLOTS = 100;
     uint256 public bidCounter;
 
     uint256 public bonus;
@@ -45,6 +45,7 @@ contract Auction_ERC20 {
     uint256 public tiedNoTokensRemain;
 
     event LogBid(uint256 bidCounter, address payee, uint8 bid, uint256 value);
+    event LogCumulative(uint8 bid, uint256 ttl, uint256 tokensNeeded);
 
     event LogChangeBid(
         uint256 bidCounter,
@@ -138,9 +139,21 @@ contract Auction_ERC20 {
         */
 
         sumBids = cumulativeBids[0];
-        for (uint8 i = 1; i <= MAX_SLOTS; i++) {
+
+        for (uint8 i = MAX_SLOTS; i >=0; i--) {
             sumBids = sumBids + cumulativeBids[i];
-            uint256 tokensNeeded = ((sumBids * MAX_SLOTS) / i);
+            if (sumBids == 0) {
+               continue;
+            }
+
+            // With 100 tokens:
+            // At 50/50 you would get 200 tokens. (100/50)
+            // At 10/90 you would get 1000 tokens (100/10)
+            // At 90/10 you would get 11.1 tokens (100/90)
+            uint256 tokensNeeded = (MAX_SLOTS * sumBids / i); 
+
+            emit LogCumulative(i, sumBids, tokensNeeded);
+
             if (tokensNeeded >= totalBids) {
                 finalPrice = i;
                 isCalculationDone = true;
@@ -151,11 +164,10 @@ contract Auction_ERC20 {
                 */
 
                 uint256 excess = tokensNeeded - totalBids;
-                uint256 tokensNeededForThisBidPrice = ((cumulativeBids[i] *
-                    MAX_SLOTS) / i);
+                uint256 tokensNeededForThisBidPrice = ((cumulativeBids[i] * MAX_SLOTS) / i);
 
                 tiedNoTokensRemain = excess;
-                tiedYesTokensRemain = tokensNeededForThisBidPrice - excess;
+                tiedYesTokensRemain = excess - tokensNeededForThisBidPrice;
                 break;
             }
         }
@@ -164,7 +176,7 @@ contract Auction_ERC20 {
     // todo: deal with the case where the price is 50% and both are winners?
     // maybe a function called: IsMajorityWinner() might more appropriated
     function winner() external view afterForkAfterCalculation returns (bool) {
-        return (finalPrice * 2 > MAX_SLOTS);
+        return (finalPrice * 2 < MAX_SLOTS);
     }
 
     // Call settleAuction(bid, yesOrNo) against the ForkManager
