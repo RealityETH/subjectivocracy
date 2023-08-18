@@ -16,6 +16,10 @@ contract AuctionTest is Test {
 
     ForkonomicToken internal tokenMock;
 
+    // Test constants
+    uint256 internal bidder1Bal = 100000;
+    uint256 internal bidder2Bal = 200000;
+
     function setUp() public {
         skip(1000000);
 
@@ -23,31 +27,32 @@ contract AuctionTest is Test {
         tokenMock = new ForkonomicToken();
         tokenMock.initialize(address(0), address(0), minter, "F0", "F0");
 
-        tokenMock.mint(bidder1, 100000);
-        tokenMock.mint(bidder2, 200000);
+        tokenMock.mint(bidder1, bidder1Bal);
+        tokenMock.mint(bidder2, bidder2Bal);
 
         startTs = uint256(block.timestamp);
         auc = new Auction_ERC20();
-        auc.init(address(tokenMock), 100000, startTs + FORK_PERIOD);
+        auc.init(address(tokenMock), 98765, startTs + FORK_PERIOD);
     }
 
     function _enterBids(bool yesOrNo) internal {
 
+        uint256 bid10 = yesOrNo ? 10 : 90;
+        uint256 bid40 = yesOrNo ? 40 : 60;
+        uint256 bid50 = 50;
+
         vm.startPrank(bidder1);
 
         tokenMock.approve(address(auc), 1000);
-        auc.bid(bidder1, 50, 100);
+        auc.bid(bidder1, uint8(bid50), 100);
 
         vm.startPrank(bidder2);
         tokenMock.approve(address(auc), 333);
 
-        uint256 bid10 = yesOrNo ? 10 : 90;
-        uint256 bid40 = yesOrNo ? 40 : 60;
-
         auc.bid(bidder2, uint8(bid10), 126);
 
         vm.startPrank(bidder1);
-        auc.bid(bidder1, 50, 10);
+        auc.bid(bidder1, uint8(bid50), 10);
         auc.bid(bidder1, uint8(bid40), 20);
 
     }
@@ -115,12 +120,12 @@ contract AuctionTest is Test {
     function testBidding() public {
 
         uint256 bal = tokenMock.balanceOf(bidder1);
-        assertEq(bal, 100000);
+        assertEq(bal, bidder1Bal);
 
         _enterBids(true);
 
         uint256 newBal = tokenMock.balanceOf(bidder1);
-        assertEq(newBal, 100000-100-10-20);
+        assertEq(newBal, bidder1Bal-100-10-20);
 
         uint256 ttl2 = auc.getTotalBids();
         assertEq(ttl2, 100+126+10+20);
