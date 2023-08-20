@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {PolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVM.sol";
@@ -128,7 +128,10 @@ contract ForkableZkEVMTest is Test {
             abi.encodePacked("newLocalExitRoot")
         );
         bytes32 newStateRoot = keccak256(abi.encodePacked("newStateRoot"));
-        bytes memory proof = abi.encodePacked("proof");
+        bytes32[24] memory proof;
+        for (uint i = 0; i < 24; i++) {
+            proof[i] = bytes32(abi.encodePacked("proof", i));
+        }
 
         vm.prank(forkableZkEVM.forkmanager());
         forkableZkEVM.createChildren(forkableZkEVMImplementation);
@@ -151,6 +154,11 @@ contract ForkableZkEVMTest is Test {
         vm.expectRevert("No changes after forking");
         forkableZkEVM.consolidatePendingState(10);
 
+        bytes32[24] memory proof;
+        for (uint i = 0; i < 24; i++) {
+            proof[i] = bytes32("0x"); // Whatever initialization value you want
+        }
+
         vm.expectRevert("No changes after forking");
         forkableZkEVM.overridePendingState(
             10,
@@ -159,7 +167,7 @@ contract ForkableZkEVMTest is Test {
             10,
             bytes32("0x"),
             bytes32("0x"),
-            ""
+            proof
         );
 
         vm.expectRevert("No changes after forking");
