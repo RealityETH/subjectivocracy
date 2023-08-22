@@ -10,11 +10,15 @@ contract AuctionTest is Test {
     uint256 internal startTs;
     uint256 internal constant FORK_PERIOD = 86400;
 
+    // This would normally be a ForkingManager contract but we'll simulate it with a regular address
+    address internal forkManager = address(0xabab01);
+
     address internal minter = address(0x789);
     address internal bidder1 = address(0xbabe01);
     address internal bidder2 = address(0xbabe02);
 
     ForkonomicToken internal tokenMock;
+    ForkonomicToken internal newTokenImpl;
 
     // Test constants
     uint256 internal bidder1Bal = 100000;
@@ -25,10 +29,12 @@ contract AuctionTest is Test {
 
         vm.startPrank(minter);
         tokenMock = new ForkonomicToken();
-        tokenMock.initialize(address(0), address(0), minter, "F0", "F0");
+        tokenMock.initialize(forkManager, address(0), minter, "F0", "F0");
 
         tokenMock.mint(bidder1, bidder1Bal);
         tokenMock.mint(bidder2, bidder2Bal);
+
+        newTokenImpl = new ForkonomicToken();
 
         startTs = uint256(block.timestamp);
         auc = new Auction_ERC20();
@@ -75,6 +81,15 @@ contract AuctionTest is Test {
         _enterBids(true);
 
         vm.warp(startTs + FORK_PERIOD + 1);
+
+        // Do the fork
+        // We'll use the current token as the new implementation. Really we should probably get the implementation behind the current token, or a new one.
+        vm.startPrank(forkManager);
+        tokenMock.createChildren(address(newTokenImpl));
+
+
+        // Anybody can call this when it's time. We'll use one of the bidders.
+        vm.startPrank(bidder2);
         auc.calculatePrice();
 
         assertEq(true, auc.isCalculationDone(), "should be done");

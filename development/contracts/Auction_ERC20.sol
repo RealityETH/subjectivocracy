@@ -2,6 +2,8 @@
 
 
 import "./interfaces/IERC20.sol";
+import {IForkonomicToken} from "./interfaces/IForkonomicToken.sol";
+
 
 /*
 There's a gas token on L2.
@@ -122,6 +124,7 @@ contract Auction_ERC20 {
         }
     }
 
+
     function calculatePrice() public afterForkBeforeCalculation {
         uint256 totalBids = getTotalBids();
 
@@ -171,6 +174,10 @@ contract Auction_ERC20 {
                 break;
             }
         }
+
+        uint256 gotBal = IForkonomicToken(forkmanager).balanceOf(address(this));
+        IForkonomicToken(forkmanager).splitTokensIntoChildTokens(gotBal);
+
     }
 
     // todo: deal with the case where the price is 50% and both are winners?
