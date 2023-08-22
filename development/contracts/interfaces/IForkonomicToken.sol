@@ -2,8 +2,9 @@
 pragma solidity ^0.8.17;
 
 import {IForkableStructure} from "./IForkableStructure.sol";
+import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
-interface IForkonomicToken is IForkableStructure {
+interface IForkonomicToken is IForkableStructure, IERC20Upgradeable {
     /**
      * @notice Allows the forkmanager to initialize the contract
      * @param _forkmanager The address of the forkmanager
