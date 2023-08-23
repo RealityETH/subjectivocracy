@@ -3,6 +3,8 @@
 
 import "./interfaces/IERC20.sol";
 import {IForkonomicToken} from "./interfaces/IForkonomicToken.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+
 
 
 /*
@@ -26,6 +28,10 @@ contract Auction_ERC20 {
     uint256 public forkTimestamp;
     address public forkmanager;
     address public token;
+
+    // We'll copy this over from our token after the fork. Keeping it in storage should claims use slightly less gas.
+    address public childToken0;
+    address public childToken1;
 
     struct Bid {
         address owner;
@@ -175,8 +181,10 @@ contract Auction_ERC20 {
             }
         }
 
-        uint256 gotBal = IForkonomicToken(forkmanager).balanceOf(address(this));
-        IForkonomicToken(forkmanager).splitTokensIntoChildTokens(gotBal);
+        (childToken0, childToken1) = IForkonomicToken(token).getChildren();
+
+        uint256 gotBal = IForkonomicToken(token).balanceOf(address(this));
+        IForkonomicToken(token).splitTokensIntoChildTokens(gotBal);
 
     }
 
@@ -186,21 +194,22 @@ contract Auction_ERC20 {
         return (finalPrice * 2 < MAX_SLOTS);
     }
 
-    // Call settleAuction(bid, yesOrNo) against the ForkManager
     // This will read the amount that needs to be paid out, clear it so it isn't paid twice, and mint the tokens in the appropriate token.
     // Usually this would be called by whoever made the bid, but anyone is allowed to call it.
-    // There's usually only one option for yesOrNo that won't revert, unless you bid exactly at the setotalBidsement price in which case you may be able to choose.
-    function clearAndReturnPayout(
+    // There's usually only one option for yesOrNo that won't revert, unless you bid exactly at the clearing price in which case you may have some of each.
+    // TODO: It would probably be safe to be able to set the user address and pay out any user
+    function payoutBid(
         uint256 _bidCounter,
         bool yesOrNo
     )
         public
-        onlyForkManager
         afterForkAfterCalculation
-        returns (address, uint256)
     {
         require(bids[_bidCounter].owner != address(0), "Bid not found");
         uint256 bidAmount = bids[_bidCounter].bid;
+
+        require(bidAmount > 0, "Bid amount should be positive");
+
         uint256 due;
         address payee = bids[_bidCounter].owner;
 
@@ -244,7 +253,12 @@ contract Auction_ERC20 {
             delete (bids[_bidCounter]);
         }
 
-        due = due + (due / bonusRatio);
-        return (payee, due);
+        if (bonusRatio > 0) {
+            due = due + (due / bonusRatio);
+        }
+
+        address child = yesOrNo ? childToken1 : childToken0;
+        IForkonomicToken(child).transfer(payee, due);
+
     }
 }
