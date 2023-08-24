@@ -35,38 +35,10 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     // Fee that needs to be paid to initiate a fork
     uint256 public arbitrationFee;
 
-    // Dispute contract and call to identify the dispute
-    // that will be used to initiate/justify the fork
-    struct DisputeData {
-        address disputeContract;
-        bytes disputeCall;
-    }
-    DisputeData public disputeData;
-
-    // Struct containing the addresses of the new implementations
-    struct NewImplementations {
-        address bridgeImplementation;
-        address zkEVMImplementation;
-        address forkonomicTokenImplementation;
-        address forkingManagerImplementation;
-        address globalExitRootImplementation;
-        address verifier;
-    }
-
-    // Struct that holds an address pair used to store the new child contracts
-    struct AddressPair {
-        address one;
-        address two;
-    }
-
-    // Struct containing the addresses of the new instances
-    struct NewInstances {
-        AddressPair forkingManager;
-        AddressPair bridge;
-        AddressPair zkEVM;
-        AddressPair forkonomicToken;
-        AddressPair globalExitRoot;
-    }
+    // Counter for new proposals to fork
+    uint256 public proposalCounter = 0;
+    // mapping to store the fork proposal data
+    mapping(uint256 => ForkProposal) public forkProposals;
 
     /// @inheritdoc IForkingManager
     function initialize(
@@ -75,7 +47,8 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         address _forkonomicToken,
         address _parentContract,
         address _globalExitRoot,
-        uint256 _arbitrationFee
+        uint256 _arbitrationFee,
+        ForkProposal[] memory proposals
     ) external initializer {
         zkEVM = _zkEVM;
         bridge = _bridge;
@@ -84,24 +57,54 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         globalExitRoot = _globalExitRoot;
         arbitrationFee = _arbitrationFee;
         ForkableStructure.initialize(address(this), _parentContract);
+        for (uint i = 0; i < proposals.length; i++) {
+            forkProposals[i] = proposals[i];
+        }
+        proposalCounter = proposals.length;
     }
 
     /**
-     * @notice function to initiate and execute the fork
-     * @param _disputeData the dispute contract and call to identify the dispute
+     * @notice function to initiate and schedule the fork
+     * @param disputeData the dispute contract and call to identify the dispute
      * @param newImplementations the addresses of the new implementations that will
-     * be used to create the second children of the contracts
+     * @param preparationTime is the duration until when the fork can be executed
+     * @return counter: A index of the fork proposal
      */
     function initiateFork(
-        DisputeData memory _disputeData,
-        NewImplementations calldata newImplementations
-    ) external onlyBeforeForking {
+        DisputeData memory disputeData,
+        NewImplementations calldata newImplementations,
+        uint256 preparationTime
+    ) external onlyBeforeForking returns (uint256) {
         // Charge the forking fee
         IERC20(forkonomicToken).safeTransferFrom(
             msg.sender,
             address(this),
             arbitrationFee
         );
+        uint256 counter = proposalCounter;
+        // Store the dispute contract and call to identify the dispute
+        forkProposals[counter] = ForkProposal({
+            disputeData: disputeData,
+            proposedImplementations: newImplementations,
+            executionTime: block.timestamp + preparationTime
+        });
+        proposalCounter = counter + 1;
+        return counter;
+    }
+
+    /**
+     * @dev function that executes a fork proposal
+     * @param counter the counter that was given while creating the fork proposal
+     */
+    function executeFork(uint256 counter) external onlyBeforeForking {
+        require(
+            forkProposals[counter].executionTime != 0 &&
+                forkProposals[counter].executionTime <= block.timestamp,
+            "ForkingManager: fork not ready"
+        );
+        NewImplementations memory newImplementations = forkProposals[counter]
+            .proposedImplementations;
+
         // Create the children of each contract
         NewInstances memory newInstances;
         (
@@ -228,13 +231,24 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         );
 
         //Initialize the forking manager contracts
+        ForkProposal[] memory proposals = new ForkProposal[](
+            proposalCounter - 1
+        );
+        uint256 skipAddition = 0;
+        for (uint i = 0; i < proposalCounter - 1; i++) {
+            if (i == counter) {
+                skipAddition = 1;
+            }
+            proposals[i] = forkProposals[i + skipAddition];
+        }
         IForkingManager(newInstances.forkingManager.one).initialize(
             newInstances.zkEVM.one,
             newInstances.bridge.one,
             newInstances.forkonomicToken.one,
             address(this),
             newInstances.globalExitRoot.one,
-            arbitrationFee
+            arbitrationFee,
+            proposals
         );
         IForkingManager(newInstances.forkingManager.two).initialize(
             newInstances.zkEVM.two,
@@ -242,7 +256,8 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             newInstances.forkonomicToken.two,
             address(this),
             newInstances.globalExitRoot.two,
-            arbitrationFee
+            arbitrationFee,
+            proposals
         );
 
         //Initialize the global exit root contracts
@@ -258,8 +273,5 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             newInstances.zkEVM.two,
             newInstances.bridge.two
         );
-
-        // Store the dispute contract and call to identify the dispute
-        disputeData = _disputeData;
     }
 }
