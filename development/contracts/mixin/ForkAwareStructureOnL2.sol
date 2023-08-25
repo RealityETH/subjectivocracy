@@ -1,20 +1,20 @@
-pragma ^0.8.17;
+pragma solidity ^0.8.17;
 
 contract ForkAwareStructureOnL2 {
-    uint256 public  chainId;
+    uint256 public chainId;
 
     modifier onlyFirstTxAfterFork() {
-        require(chainId != block.chainid, "ForkAwareStructureOnL2: Not on fork");
+        require(chainId != block.chainid, "Not on new fork");
         _;
         chainId = block.chainid;
     }
 
     modifier everyButFirstTxAfterFork() {
-        require(chainId == block.chainid, "ForkAwareStructureOnL2: On fork");
+        require(chainId == block.chainid, "On new fork");
         _;
     }
 
-    constructor(uint256 _chainId) {
-        chainId = _chainId;
+    constructor() {
+        chainId = block.chainid;
     }
 }
