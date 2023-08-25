@@ -35,7 +35,7 @@ interface IForkingManager is IForkableStructure {
         AddressPair forkonomicToken;
         AddressPair globalExitRoot;
     }
-    
+
     // Struct containing the data for the paid fork
     struct ForkProposal {
         DisputeData disputeData;

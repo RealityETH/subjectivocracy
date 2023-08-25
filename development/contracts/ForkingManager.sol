@@ -86,6 +86,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         forkProposals[counter] = ForkProposal({
             disputeData: disputeData,
             proposedImplementations: newImplementations,
+            // solhint-disable-next-line not-rely-on-time
             executionTime: block.timestamp + preparationTime
         });
         proposalCounter = counter + 1;
@@ -99,6 +100,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     function executeFork(uint256 counter) external onlyBeforeForking {
         require(
             forkProposals[counter].executionTime != 0 &&
+                // solhint-disable-next-line not-rely-on-time
                 forkProposals[counter].executionTime <= block.timestamp,
             "ForkingManager: fork not ready"
         );
