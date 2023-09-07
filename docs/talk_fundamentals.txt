@@ -191,11 +191,21 @@ At that point we run the whole game again on layer 1.
 OK, so that's the process. 
 
 
+> Bridges
 
 You may be wondering what happens with bridged assets. We can still manage those, but the base layer isn't going to fork for us. So anything that's locked up in a bridge contract needs to be able to work out which of the forks it's going to follow. Now, if you've just got some money locked in a wallet on the Layer 2 then it doesn't matter which fork it follows, you can get it out either way. But if you've got something that's depending on this issue that we just forked over then the bridge is going to have to make a decision. 
 
-If this was a bridge to an alt-chain then you might have a multisig or something deciding when to unlock stuff. You could still make a bridge like this. But we have another option here because this bridge can see everything that's going on here. It knows the fork happened, it knows what token split into what other token, and it can also measure the value of the assets on each chain. So we can make this bridge automatically pick the most valuable fork. Now, this is only economic security not subjective security, so for bridged assets you do have the economic security bound back. If you spent enough money you could fake the value of one of these forks.
+> How to choose 1
 
+So how do you do that? Well, one if this was a bridge to an alt-chain then you might have a multisig or token voting governance or something deciding when to unlock stuff.  You could still make a bridge like this. 
+
+> How to choose 2
+
+But we have another option here because this bridge can see everything that's going on here. It knows the fork happened, it knows what token split into what other token, and it can also measure the value of the assets on each chain. So we can make this bridge automatically pick the most valuable fork. Now, this is only economic security not subjective security, so for bridged assets you do have the economic security bound back. If you spent enough money you could fake the value of one of these forks. And what we plan to do is to take some of the fees from forking that we collected earlier and use those to subsidize an auction so you have a nice price-finding mechanism and you can see how the tokens are trading against each other.
+
+So one more option is don't do that, instead of storing stuff in bridges you can make synthetic assets on the L2.
+
+> Value
 
 So the point of this is, as long as you do your transactions in assets issued on this layer2 ledger, it's secure for any amount of money. It has no security bound. Someone can spend a lot of money making a system give the wrong decision, and then the whole chain forks in two and everyone ignores the ledger where they've made a profit.
 
