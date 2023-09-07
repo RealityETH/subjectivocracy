@@ -209,16 +209,11 @@ So one more option is don't do that, instead of storing stuff in bridges you can
 
 So the point of this is, as long as you do your transactions in assets issued on this layer2 ledger, it's secure for any amount of money. It has no security bound. Someone can spend a lot of money making a system give the wrong decision, and then the whole chain forks in two and everyone ignores the ledger where they've made a profit.
 
-
+> Links
 
 If you've got a contract that needs an oracle or needs governance you can deploy on the layer 2 and code it to use reality.eth or some other contract that escalates like this, and all this stuff will happen underneath you. And forks may not happen a lot, they may never happen, but you have this backstop that makes your voting mechanic and your schelling game mechanics more secure.
 
+OK, so if you're interested in this stuff I've put up a couple of links. Alex Herrman who's working on this wrote a piece on ethresear.ch about how you can design stablecoins so that they'll work better in an environment that may fork. He's talking about that tomorrow on the main stage so please check that out.
 
-I don't really have time to talk about asset bridging and stablecoins and stuff but I'll put up a couple of links. Alex Herrman who's working on this wrote a piece on ethresear.ch about how you can design stablecoins so that they'll work better in an environment that may fork.
-
-If you're interested in collaborating on this project or you're interested in deploying to a chain where everything isn't game-theoretically broken then please take a look.
-I've put some links at 
-
-> reality.eth.limo/bos
 
 
