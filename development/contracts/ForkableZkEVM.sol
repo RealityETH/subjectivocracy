@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.20;
 
 import {PolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVM.sol";
 import {IPolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
@@ -58,7 +58,7 @@ contract ForkableZkEVM is ForkableStructure, IForkableZkEVM, PolygonZkEVM {
         uint64 finalNewBatch,
         bytes32 newLocalExitRoot,
         bytes32 newStateRoot,
-        bytes calldata proof
+        bytes32[24] calldata proof
     ) public override onlyBeforeForking {
         PolygonZkEVM.verifyBatches(
             pendingStateNum,
@@ -76,7 +76,7 @@ contract ForkableZkEVM is ForkableStructure, IForkableZkEVM, PolygonZkEVM {
         uint64 finalNewBatch,
         bytes32 newLocalExitRoot,
         bytes32 newStateRoot,
-        bytes calldata proof
+        bytes32[24] calldata proof
     ) public override onlyBeforeForking {
         PolygonZkEVM.verifyBatchesTrustedAggregator(
             pendingStateNum,
@@ -101,7 +101,7 @@ contract ForkableZkEVM is ForkableStructure, IForkableZkEVM, PolygonZkEVM {
         uint64 finalNewBatch,
         bytes32 newLocalExitRoot,
         bytes32 newStateRoot,
-        bytes calldata proof
+        bytes32[24] calldata proof
     ) public override onlyBeforeForking {
         PolygonZkEVM.overridePendingState(
             initPendingStateNum,
