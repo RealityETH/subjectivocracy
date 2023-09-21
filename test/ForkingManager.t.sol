@@ -9,6 +9,7 @@ import {ForkableGlobalExitRoot} from "../development/contracts/ForkableGlobalExi
 import {IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
 import {IVerifierRollup} from "@RealityETH/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
+import {PolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC20Upgradeable.sol";
 import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
@@ -326,6 +327,16 @@ contract ForkingManagerTest is Test {
                 ),
                 newZkevmImplementation
             );
+            (address childBridge1, address childBridge2) = bridge.getChildren();
+            assertEq(
+                ForkableBridge(childBridge1).polygonZkEVMaddress(),
+                childZkevm1
+            );
+            assertEq(
+                ForkableBridge(childBridge2).polygonZkEVMaddress(),
+                childZkevm2
+            );
+
         }
         {
             // Fetch the children from the ForkonomicToken contract

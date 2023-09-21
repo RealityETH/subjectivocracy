@@ -207,7 +207,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             bridge,
             0, // network identifiers will always be 0 on mainnet and 1 on L2
             IBasePolygonZkEVMGlobalExitRoot(newInstances.globalExitRoot.one),
-            address(newInstances.zkEVM.two),
+            address(newInstances.zkEVM.one),
             address(newInstances.forkonomicToken.one),
             false,
             IForkableBridge(bridge).getHardAssetManager(),
