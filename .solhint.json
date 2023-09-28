@@ -3,6 +3,8 @@
   "plugins": ["prettier"],
   "rules": {
     "compiler-version": "off",
-    "max-states-count": "off"
+    "max-states-count": "off",
+    "no-empty-blocks": "off",
+    "func-visibility": ["warn",{"ignoreConstructors":true}]
   }
 }
