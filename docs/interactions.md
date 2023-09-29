@@ -31,7 +31,7 @@ ForkArbitrator
 
 ### Make a crowdfund            
 ```
-    Alice   L2  question_id = RealityETH.askQuestion(recipient=Bob, arbitrator=WhitelistArbitrator)
+    Alice   L2  question_id = RealityETH.askQuestion(recipient=Bob, arbitrator=AdjudicationFramework)
     Alice   L2  Crowdfunder.createCrowdFund(question_id, value=1234)
 ```
 
@@ -66,16 +66,16 @@ Next step:
 
 ### Contest an answer
 ```
-    Bob     L2  WhitelistArbitrator.requestArbitration(question_id, value=1000000)
+    Bob     L2  AdjudicationFramework.requestArbitration(question_id, value=1000000)
 ```
 
 ### Handle an arbitration           
 ```
     Dave    L2  ArbitratorA.requestArbitration(question_id, value=500000)
-                    WhitelistArbitrator.notifyOfArbitrationRequest(question_id, Dave)
+                    AdjudicationFramework.notifyOfArbitrationRequest(question_id, Dave)
 
     Arby    L2  ArbitratorA.submitAnswerByArbitrator(question_id, 1, Dave)
-                    WhitelistArbitrator.submitAnswerByArbitrator(question_id, 1, Bob)
+                    AdjudicationFramework.submitAnswerByArbitrator(question_id, 1, Bob)
 ```
 Next step:
 * Uncontested arbitration after 1 week? [Execute an arbitration](#execute-an-arbitration)
@@ -83,7 +83,7 @@ Next step:
 
 ### Execute an arbitration         
 ```
-    Dave    L2  WhitelistArbitrator.executeArbitration(question_id)
+    Dave    L2  AdjudicationFramework.executeArbitration(question_id)
                     NativeGasToken.transfer(Dave, 1000000)
                     RealityETH.submitAnswerByArbitrator(question_id, 1, Bob)
 ```
@@ -93,10 +93,10 @@ Next step:
                                                 
 ### Contest an arbitration          
 ```
-    Charlie L2  WhitelistArbitrator.beginRemoveArbitrator(address arbitrator_to_remove) 
+    Charlie L2  AdjudicationFramework.beginRemoveArbitrator(address arbitrator_to_remove) 
                 contest_question_id = RealityETH.askQuestion("should we delist ArbitratorA?")
     Charlie L2  RealityETH.submitAnswer(contest_question_id, 1, value=2000000)
-    Charlie L2  WhitelistArbitrator.freezeArbitrator(contest_question_id)
+    Charlie L2  AdjudicationFramework.freezeArbitrator(contest_question_id)
                     RealityETH.getBestAnswer(contest_question_id)
                     RealityETH.getBond(contest_question_id)
 ```
@@ -116,7 +116,7 @@ Next step:
 
 ### Execute an arbitrator removal   
 ```
-    Charlie L2  WhitelistArbitrator.removeArbitrator(contest_question_id) 
+    Charlie L2  AdjudicationFramework.removeArbitrator(contest_question_id) 
                     RealityETH.resultFor(contest_question_id)
 
 Next step:
@@ -125,7 +125,7 @@ Next step:
 ### Propose an arbitrator addition
 ```
     Charlie L2  ForkManager.beginAddArbitratorToWhitelist(whitelist_arbitrator, ArbitratorA) 
-                    contest_question_id = RealityETH.askQuestion("should we add ArbitratorA to WhitelistArbitrator?")
+                    contest_question_id = RealityETH.askQuestion("should we add ArbitratorA to AdjudicationFramework?")
     Charlie L2  RealityETH.submitAnswer(contest_question_id, 1, value=2000000)
 ```
 Next step:
@@ -269,27 +269,27 @@ Next step:
 ### Buy Accumulated Tokens by burning GovTokens
 ```
     Eric    L2  NativeGasToken.approve(deposit)
-    Eric    L2  orderer_id = WhitelistArbitrator.reserveTokens(num, min_price, deposit)
+    Eric    L2  orderer_id = AdjudicationFramework.reserveTokens(num, min_price, deposit)
                     NativeGasToken.transferFrom(Eric, self, deposit)
 
-    Eric    L1  ForkManager.executeTokenSale(WhitelistArbitrator, reservation_id, num_gov_tokens_paid)
+    Eric    L1  ForkManager.executeTokenSale(AdjudicationFramework, reservation_id, num_gov_tokens_paid)
                     # Burn own GovTokens
-                    BridgeToL2.sendMessage("WhitelistArbitrator.executeTokenSale", reservation_id, num_gov_tokens_paid)
+                    BridgeToL2.sendMessage("AdjudicationFramework.executeTokenSale", reservation_id, num_gov_tokens_paid)
 
     [bot]   L2  BridgeFromL1.processQueue() # or similar
-                    WhitelistArbitrator.executeTokenSale(reservation_id)
+                    AdjudicationFramework.executeTokenSale(reservation_id)
                         NativeGasToken.transfer(Eric, deposit+num)
 ```
 
 ### Unlock funds from a timed-out sale
 ```
-    Frank   L2  WhitelistArbitrator.cancelTimedOutOrder(order_id)
+    Frank   L2  AdjudicationFramework.cancelTimedOutOrder(order_id)
                     # Makes funds reserved for Eric and his deposit available for someone else to order
 ```
 
 ### Outbid a low reservation
 ```
-    Frank   L2  WhitelistArbitrator.outBidReservation(num, price, nonce, resid)
+    Frank   L2  AdjudicationFramework.outBidReservation(num, price, nonce, resid)
                     # Replace a bid
 ```
 
