@@ -107,7 +107,7 @@ Next step:
 
 ### Cancel an arbitrator removal
 ```
-   Bob     L2  ForkManager.unfreezeArbitrator(contest_question_id)
+   Bob     L2  AdjudicationFramework.unfreezeArbitrator(contest_question_id)
                     RealityETH.resultFor(contest_question_id)
 
 ```
