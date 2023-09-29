@@ -19,7 +19,7 @@ To Reality.eth it looks like a normal arbitrator, implementing the Arbitrator in
 To the normal Arbitrator contracts that does its arbitration jobs, it looks like Reality.eth.
 */
 
-contract WhitelistArbitrator is BalanceHolder {
+contract AdjudicationFramework is BalanceHolder {
     // From RealityETH_ERC20
     struct Question {
         bytes32 content_hash;
@@ -70,7 +70,7 @@ contract WhitelistArbitrator is BalanceHolder {
     mapping(bytes32 => TokenReservation) public token_reservations;
     uint256 public reserved_tokens;
 
-    // Whitelist of acceptable arbitrators
+    // Allowlist of acceptable arbitrators
     mapping(address => bool) public arbitrators;
 
     // List of arbitrators that are currently being challenged
