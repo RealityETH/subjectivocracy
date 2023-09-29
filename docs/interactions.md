@@ -91,7 +91,7 @@ Next step:
 * Arbitration contested? [Contest an arbitration](#contest-an-arbitration)
 * Arbitration uncontested? [Settle a crowdfund](#settle-a-crowdfund)
                                                 
-### Contest an arbitration          
+### Contest an arbitration. (An AdjudicationFramework could do something different here.)
 ```
     Charlie L2  AdjudicationFramework.beginRemoveArbitrator(address arbitrator_to_remove) 
                 contest_question_id = RealityETH.askQuestion("should we delist ArbitratorA?")
@@ -124,7 +124,7 @@ Next step:
 
 ### Propose an arbitrator addition
 ```
-    Charlie L2  ForkManager.beginAddArbitratorToWhitelist(whitelist_arbitrator, ArbitratorA) 
+    Charlie L2  ForkArbitrator.beginAddArbitratorToAllowlist(whitelist_arbitrator, ArbitratorA) 
                     contest_question_id = RealityETH.askQuestion("should we add ArbitratorA to AdjudicationFramework?")
     Charlie L2  RealityETH.submitAnswer(contest_question_id, 1, value=2000000)
 ```
@@ -136,20 +136,33 @@ Next step:
 ### Execute  an arbitrator addition
 ```
     Charlie L2  RealityETH.finalizeQuestion(add_question_id)
-    Charlie L2  ForkManager.addArbitrator(add_question_id) 
+    Charlie L2  ForkArbitrator.addArbitrator(add_question_id) 
                     RealityETH.resultFor(add_question_id)
 
 ```
 
-### Challenge an arbitration or governance result
+
+[consumer] calls -> [reality.eth] requests arbitration from [adjudicationframework] request fulfillment from -> [arbitrator]  (above)
+[objector] calls -> [adjudicationframework] calls -> [reality.eth] requests arbitration from -> 
+  [forkarbitrator] -> 
+    - informs [reality.eth], freezing question
+    - informs [adjudicationframework], freezing arbitrator (also possible during escalation)
+    - calls L1.ForkingManager, transferring fee
+
+
+### Challenge an arbitrator addition or removal
 ```
     Bob     L2  ForkArbitrator.requestArbitration(contest_question_id, uint256 max_previous, ...)
                     # Marks this question done and freezes everything else
                     RealityETH.notifyOfArbitrationRequest(contest_question_id, msg.sender, max_previous, value=999999);
-                    L2.IncentivizedMarket = createIncentivizedMarket() 
-                    Bridge.requestFork()
 
-    [bot]   L1  ForkManager.startFork()
+                    # TODO: Do we need to tell the AdjudicationFramework about this? Guess not as the freezing can be handled based on reality.eth bonds
+
+                    # TODO: If the contracts that can requestFork() are permissioned, this needs to be managed by some intermediate contract, or by the ForkingManager having its own list
+                    BridgeFromL2.sendMessage(ForkingManager.requestFork(value=999999))
+
+    [bot]   L1  ForkManager.startFork(value=999999)
+                    L2.IncentivizedMarket = createIncentivizedMarket() 
 
     Bob     L1  ForkManager.deployFork(false, contested question data)
                 # Clones ForkManager
@@ -194,10 +207,6 @@ Next step:
     
 
 ```
-
-
-
-
 
 ### Propose a routine governance change
 ```
@@ -261,37 +270,6 @@ It's its own transaction on the forkable version because forking for one questio
 Next step:
 * If the question is still relevant it can be begun again on either chain or both.
 
-
--> DELETE ALL THE ACCUMULATED TOKEN STUFF AND JUST BURN THE TOKENS?
-   Alternatively, move them over via the bridge
-
-
-### Buy Accumulated Tokens by burning GovTokens
-```
-    Eric    L2  NativeGasToken.approve(deposit)
-    Eric    L2  orderer_id = AdjudicationFramework.reserveTokens(num, min_price, deposit)
-                    NativeGasToken.transferFrom(Eric, self, deposit)
-
-    Eric    L1  ForkManager.executeTokenSale(AdjudicationFramework, reservation_id, num_gov_tokens_paid)
-                    # Burn own GovTokens
-                    BridgeToL2.sendMessage("AdjudicationFramework.executeTokenSale", reservation_id, num_gov_tokens_paid)
-
-    [bot]   L2  BridgeFromL1.processQueue() # or similar
-                    AdjudicationFramework.executeTokenSale(reservation_id)
-                        NativeGasToken.transfer(Eric, deposit+num)
-```
-
-### Unlock funds from a timed-out sale
-```
-    Frank   L2  AdjudicationFramework.cancelTimedOutOrder(order_id)
-                    # Makes funds reserved for Eric and his deposit available for someone else to order
-```
-
-### Outbid a low reservation
-```
-    Frank   L2  AdjudicationFramework.outBidReservation(num, price, nonce, resid)
-                    # Replace a bid
-```
 
 ### Moving tokens to L2
 ```
