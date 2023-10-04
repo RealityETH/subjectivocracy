@@ -101,6 +101,7 @@ contract AdjudicationFramework is BalanceHolder {
         _;
     }
 
+    // TODO: Create the templates here?
     constructor(
         address _realityETH,
         uint256 _dispute_fee,
@@ -342,99 +343,10 @@ contract AdjudicationFramework is BalanceHolder {
         arbitrators[arbitrator] = false;
     }
 
-    function _numUnreservedTokens() internal view returns (uint256) {
-        return address(this).balance - reserved_tokens;
-    }
-
-    function reserveTokens(uint256 num, uint256 price, uint256 nonce) public {
-        bytes32 resid = keccak256(abi.encodePacked(msg.sender, nonce));
-        require(
-            token_reservations[resid].reserved_ts == 0,
-            "Nonce already used"
-        );
-
-        require(_numUnreservedTokens() > num, "Not enough tokens unreserved");
-
-        uint256 deposit = (num * price) / TOKEN_RESERVATION_DEPOSIT;
-        payable(msg.sender).transfer(deposit);
-
-        token_reservations[resid] = TokenReservation(
-            msg.sender,
-            num,
-            price,
-            block.timestamp
-        );
-        reserved_tokens = reserved_tokens + num;
-    }
-
-    function outBidReservation(
-        uint256 num,
-        uint256 price,
-        uint256 nonce,
-        bytes32 resid
-    ) external {
-        require(
-            token_reservations[resid].reserved_ts > 0,
-            "Reservation you want to outbid does not exist"
-        );
-        uint256 age = block.timestamp - token_reservations[resid].reserved_ts;
-        require(
-            age < TOKEN_RESERVATION_BIDDING_PERIOD,
-            "Bidding period has passed"
-        );
-
-        require(
-            token_reservations[resid].num >= num,
-            "More tokens requested than remain in the reservation"
-        );
-        require(
-            price > (token_reservations[resid].price * 101) / 100,
-            "You must bid at least 1% more than the previous bid"
-        );
-
-        uint256 deposit_return = (num * token_reservations[resid].price) /
-            TOKEN_RESERVATION_DEPOSIT;
-
-        payable(token_reservations[resid].reserver).transfer(deposit_return);
-        reserved_tokens = reserved_tokens - num;
-
-        if (num == token_reservations[resid].num) {
-            delete (token_reservations[resid]);
-        } else {
-            token_reservations[resid].num = token_reservations[resid].num - num;
-        }
-
-        return reserveTokens(num, price, nonce);
-    }
-
-    function cancelTimedOutReservation(bytes32 resid) external {
-        uint256 age = block.timestamp - token_reservations[resid].reserved_ts;
-        require(age > TOKEN_RESERVATION_CLAIM_TIMEOUT, "Not timed out yet");
-        reserved_tokens = reserved_tokens - token_reservations[resid].num;
-        delete (token_reservations[resid]);
-    }
-
-    function executeTokenSale(
-        bytes32 resid,
-        uint256 gov_tokens_paid
-    ) external l1_forkmanager_only {
-        uint256 age = block.timestamp - token_reservations[resid].reserved_ts;
-        require(
-            age > TOKEN_RESERVATION_BIDDING_PERIOD,
-            "Bidding period has not yet passed"
-        );
-
-        uint256 num = token_reservations[resid].num;
-        uint256 price = token_reservations[resid].price;
-        uint256 cost = price * num;
-        require(gov_tokens_paid >= cost, "Insufficient gov tokens sent");
-        reserved_tokens = reserved_tokens - num;
-        payable(token_reservations[resid].reserver).transfer(num);
-
-        delete (token_reservations[resid]);
-    }
-
     function realitio() external view returns (address) {
         return address(realityETH);
     }
+
+
+
 }
