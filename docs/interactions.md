@@ -124,7 +124,7 @@ Next step:
 
 ### Propose an arbitrator addition
 ```
-    Charlie L2  ForkArbitrator.beginAddArbitratorToAllowlist(whitelist_arbitrator, ArbitratorA) 
+    Charlie L2  ForkArbitrator.beginAddArbitratorToAllowlist(ArbitratorA) 
                     contest_question_id = RealityETH.askQuestion("should we add ArbitratorA to AdjudicationFramework?")
     Charlie L2  RealityETH.submitAnswer(contest_question_id, 1, value=2000000)
 ```
