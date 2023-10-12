@@ -1,7 +1,7 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {ForkableGlobalExitRoot} from "../development/contracts/ForkableGlobalExitRoot.sol";
+import {ForkableGlobalExitRoot} from "../contracts/ForkableGlobalExitRoot.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {Util} from "./utils/Util.sol";
 

@@ -1,9 +1,9 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {ForkonomicToken} from "../development/contracts/ForkonomicToken.sol";
+import {ForkonomicToken} from "../contracts/ForkonomicToken.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC20Upgradeable.sol";
-import {IForkonomicToken} from "../development/contracts/interfaces/IForkonomicToken.sol";
+import {IForkonomicToken} from "../contracts/interfaces/IForkonomicToken.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {Util} from "./utils/Util.sol";
 
