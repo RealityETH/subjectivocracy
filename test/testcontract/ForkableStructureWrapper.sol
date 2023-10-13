@@ -1,6 +1,6 @@
 pragma solidity ^0.8.20;
 
-import {ForkableStructure} from "../../development/contracts/mixin/ForkableStructure.sol";
+import {ForkableStructure} from "../../contracts/mixin/ForkableStructure.sol";
 
 contract ForkableStructureWrapper is ForkableStructure {
     function initialize(

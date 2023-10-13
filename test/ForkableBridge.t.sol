@@ -1,11 +1,11 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {ForkableBridge} from "../development/contracts/ForkableBridge.sol";
+import {ForkableBridge} from "../contracts/ForkableBridge.sol";
 import {ForkableBridgeWrapper} from "./testcontract/ForkableBridgeWrapper.sol";
-import {ForkonomicToken} from "../development/contracts/ForkonomicToken.sol";
-import {IForkonomicToken} from "../development/contracts/interfaces/IForkonomicToken.sol";
-import {ForkableGlobalExitRoot} from "../development/contracts/ForkableGlobalExitRoot.sol";
+import {ForkonomicToken} from "../contracts/ForkonomicToken.sol";
+import {IForkonomicToken} from "../contracts/interfaces/IForkonomicToken.sol";
+import {ForkableGlobalExitRoot} from "../contracts/ForkableGlobalExitRoot.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC20Upgradeable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
