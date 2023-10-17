@@ -1,0 +1,106 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
+pragma solidity ^0.8.20;
+
+import {IForkingManager} from "./interfaces/IForkingManager.sol";
+import {IForkableBridge} from "./interfaces/IForkableBridge.sol";
+import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
+
+
+/*
+    // Struct that holds an address pair used to store the new child contracts
+    struct AddressPair {
+        address one;
+        address two;
+    }
+
+    // Struct containing the addresses of the new instances
+    struct NewInstances {
+        AddressPair forkingManager;
+        AddressPair bridge;
+        AddressPair zkEVM;
+        AddressPair forkonomicToken;
+        AddressPair globalExitRoot;
+    }
+
+    function bridgeMessage(
+        uint32 destinationNetwork,
+        address destinationAddress,
+        bool forceUpdateGlobalExitRoot,
+        bytes calldata metadata
+    ) external payable;
+
+*/
+
+contract L1GlobalRouter {
+    
+    mapping(uint256 chainId => address forkManager) chainIDToForkManager;
+    mapping(uint256 bridge => address forkManager) bridgeToForkManager;
+
+    uint256 lastChainId;
+
+    constructor(uint256 _initialChainId, IForkingManager _initialForkManager, IForkingManager _initialParentForkManager) {
+        l2s[_initialChainId] = _initialForkManager;
+    }
+
+    function issueChainId(IForkingManager fm) external {
+        lastChainId = lastChainId + 1; 
+        chainIDToForkManager[lastChainId] = fm;
+        return lastChainId;
+    }
+
+    function addChildren(uint256 _parentChainId) {
+        IForkingManager fm = l2s[chainID];
+        (address child1, address child2) = fm.getChildren();
+
+        require(address(child1) != address(0), "child1 not created");
+
+        // They should probably always be created at the same time so this second check is redundant
+        // TODO: Check malicious upgrade cases
+        require(address(child2) != address(0), "child2 not created"); 
+
+    }
+
+    function tellMeMyBranch(IForkableBridge _bridge, address someL2Contract) {
+        // Ask the bridge its forkmanager
+        // TODO: ForkableStructure has this but IForkableStructure doesn't
+        IForkingManager fm = IForkingManager(_bridge.forkmanager());
+        // Ask the parent forkmanager which side this forkmanager is  
+        IForkingManager parentFm = IForkingManager(fm.parentContract());
+        uint2 forkResult = 0;
+        if (parentFm != address(0)) {
+            (address child1, address child2) = fm.getChildren();
+            if (child1 == address(fm)) {
+                forkResult = 1;
+            } else if (child2 == address(fm)) {
+                forkResult = 2;
+            } else {
+                revert("Unexpected child address");
+            }
+        }
+        // Fork results: 0 for the genesis, 1 for yes, 2 for no 
+        _bridge.sendMessage(TODO);
+        
+    }
+
+    function forwardToForkManager(uint256 chainId, bytes data) onlyOwner {
+        IForkingManager fm = 
+        address bridge = fm.bridge();
+        if (!fm.call.value(value)(data)) {
+            throw;
+        }
+        Forwarded(destination, value, data);
+    }}
+
+    // Tell any contract what the l1 addresses of its forkmanager, bridge etc are.
+    // It can check if the chainId is correct by calling its local EVM method
+    function notifyL2(address _whoToNotify, uint256 chainID) external {
+        IForkingManager fm = l2s[chainID];
+        address zkEVM = fm.zkEVM();
+        address forkonomicToken = fm.forkonomicToken();
+        address globalExitRoot = fm.globalExitRoot();
+        IPolygonZkEVMBridge(bridge).bridgeMessage(uint32(chainID), _whoToNotify, false, 
+        abi.encodeWithSelector(
+    }
+
+}
