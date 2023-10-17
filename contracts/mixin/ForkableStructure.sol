@@ -3,7 +3,6 @@ pragma solidity ^0.8.20;
 
 import {IForkableStructure} from "../interfaces/IForkableStructure.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {ForkableStructure} from "./ForkableStructure.sol";
 import {CreateChildren} from "../lib/CreateChildren.sol";
 
 contract ForkableStructure is IForkableStructure, Initializable {
