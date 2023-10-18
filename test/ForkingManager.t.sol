@@ -13,6 +13,8 @@ import {PolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/inherite
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC20Upgradeable.sol";
 import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ChainIdManager} from "../contracts/ChainIdManager.sol";
+import {ForkableZkEVM} from "../contracts/ForkableZkEVM.sol";
 
 contract ForkingManagerTest is Test {
     ForkableBridge public bridge;
@@ -26,6 +28,7 @@ contract ForkingManagerTest is Test {
     address public zkevmImplementation;
     address public forkonomicTokenImplementation;
     address public globalExitRootImplementation;
+    address public chainIdManager;
     bytes32 internal constant _IMPLEMENTATION_SLOT =
         0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
@@ -53,6 +56,8 @@ contract ForkingManagerTest is Test {
     uint256 public arbitrationFee = 1020;
     bytes32[32] public depositTree;
     address public admin = address(0xad);
+    uint64 public firstChainId = 1;
+    uint64 public secondChainId = 2;
 
     event Transfer(address indexed from, address indexed to, uint256 tokenId);
 
@@ -103,6 +108,11 @@ contract ForkingManagerTest is Test {
                 )
             )
         );
+
+        chainIdManager = address(new ChainIdManager());
+
+        ChainIdManager(chainIdManager).addChainId(firstChainId);
+        ChainIdManager(chainIdManager).addChainId(secondChainId);
         globalExitRoot.initialize(
             address(forkmanager),
             address(0x0),
@@ -152,7 +162,8 @@ contract ForkingManagerTest is Test {
             address(forkonomicToken),
             address(0x0),
             address(globalExitRoot),
-            arbitrationFee
+            arbitrationFee,
+            chainIdManager
         );
         forkonomicToken.initialize(
             address(forkmanager),
@@ -336,6 +347,8 @@ contract ForkingManagerTest is Test {
                 ForkableBridge(childBridge2).polygonZkEVMaddress(),
                 childZkevm2
             );
+            assertEq(ForkableZkEVM(childZkevm1).chainID(), firstChainId);
+            assertEq(ForkableZkEVM(childZkevm2).chainID(), secondChainId);
         }
         {
             // Fetch the children from the ForkonomicToken contract
@@ -399,6 +412,16 @@ contract ForkingManagerTest is Test {
             // Assert the dispute contract and call stored in the ForkingManager match the ones we provided
             assertEq(receivedDisputeContract, disputeContract);
             assertEq(receivedDisputeCall, disputeCall);
+        }
+        {
+            assertEq(
+                chainIdManager,
+                ForkingManager(childForkmanager1).chainIdManager()
+            );
+            assertEq(
+                chainIdManager,
+                ForkingManager(childForkmanager2).chainIdManager()
+            );
         }
     }
 }

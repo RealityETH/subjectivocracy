@@ -18,6 +18,7 @@ import {IForkableZkEVM} from "./interfaces/IForkableZkEVM.sol";
 import {IForkingManager} from "./interfaces/IForkingManager.sol";
 import {IForkonomicToken} from "./interfaces/IForkonomicToken.sol";
 import {IForkableGlobalExitRoot} from "./interfaces/IForkableGlobalExitRoot.sol";
+import {ChainIdManager} from "./ChainIdManager.sol";
 
 contract ForkingManager is IForkingManager, ForkableStructure {
     using SafeERC20 for IERC20;
@@ -31,6 +32,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     address public bridge;
     address public forkonomicToken;
     address public globalExitRoot;
+    address public chainIdManager;
 
     // Fee that needs to be paid to initiate a fork
     uint256 public arbitrationFee;
@@ -41,6 +43,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         address disputeContract;
         bytes disputeCall;
     }
+
     DisputeData public disputeData;
 
     // Struct containing the addresses of the new implementations
@@ -75,7 +78,8 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         address _forkonomicToken,
         address _parentContract,
         address _globalExitRoot,
-        uint256 _arbitrationFee
+        uint256 _arbitrationFee,
+        address _chainIdManager
     ) external initializer {
         zkEVM = _zkEVM;
         bridge = _bridge;
@@ -83,6 +87,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         parentContract = _parentContract;
         globalExitRoot = _globalExitRoot;
         arbitrationFee = _arbitrationFee;
+        chainIdManager = _chainIdManager;
         ForkableStructure.initialize(address(this), _parentContract);
     }
 
@@ -149,7 +154,8 @@ contract ForkingManager is IForkingManager, ForkableStructure {
                     trustedAggregator: IPolygonZkEVM(zkEVM).trustedAggregator(),
                     trustedAggregatorTimeout: IPolygonZkEVM(zkEVM)
                         .trustedAggregatorTimeout(),
-                    chainID: (IPolygonZkEVM(zkEVM).chainID() / 2) * 2 + 3,
+                    chainID: ChainIdManager(chainIdManager)
+                        .getNextUsableChainId(),
                     forkID: (IPolygonZkEVM(zkEVM).chainID() / 2) * 2 + 3
                 });
             IForkableZkEVM(newInstances.zkEVM.one).initialize(
@@ -165,7 +171,8 @@ contract ForkingManager is IForkingManager, ForkableStructure {
                 IForkableZkEVM(zkEVM).rollupVerifier(),
                 IPolygonZkEVMBridge(newInstances.bridge.one)
             );
-            initializePackedParameters.chainID += 1;
+            initializePackedParameters.chainID = ChainIdManager(chainIdManager)
+                .getNextUsableChainId();
             initializePackedParameters.forkID += 1;
             IForkableZkEVM(newInstances.zkEVM.two).initialize(
                 newInstances.forkingManager.two,
@@ -234,7 +241,8 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             newInstances.forkonomicToken.one,
             address(this),
             newInstances.globalExitRoot.one,
-            arbitrationFee
+            arbitrationFee,
+            chainIdManager
         );
         IForkingManager(newInstances.forkingManager.two).initialize(
             newInstances.zkEVM.two,
@@ -242,7 +250,8 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             newInstances.forkonomicToken.two,
             address(this),
             newInstances.globalExitRoot.two,
-            arbitrationFee
+            arbitrationFee,
+            chainIdManager
         );
 
         //Initialize the global exit root contracts

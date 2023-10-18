@@ -2,7 +2,7 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol"; // Hypothetical test library
 import {ChainIdManager} from "../contracts/ChainIdManager.sol"; // Path to the ChainIdManager contract
-import {Utils} from "./utils/Util.sol"; // Hypothetical utilities for testing
+import {Util} from "./utils/Util.sol"; // Hypothetical utilities for testing
 
 contract ChainIdManagerTest is Test {
     ChainIdManager public chainIdManager;
@@ -17,7 +17,7 @@ contract ChainIdManagerTest is Test {
 
     function testAddChainId() public {
         vm.prank(owner);
-        uint256 newChainId = 1;
+        uint64 newChainId = 1;
         chainIdManager.addChainId(newChainId);
 
         assertEq(
@@ -39,7 +39,7 @@ contract ChainIdManagerTest is Test {
 
     function testAddChainIds() public {
         vm.prank(owner);
-        uint256[] memory newChainIds = new uint256[](2);
+        uint64[] memory newChainIds = new uint64[](2);
         newChainIds[0] = 1;
         newChainIds[1] = 2;
         chainIdManager.addChainIds(newChainIds);
@@ -67,7 +67,7 @@ contract ChainIdManagerTest is Test {
         vm.prank(owner);
         chainIdManager.addChainId(2);
 
-        uint256 nextChainId = chainIdManager.getNextUsableChainId();
+        uint64 nextChainId = chainIdManager.getNextUsableChainId();
         assertEq(
             nextChainId,
             1,

@@ -8,7 +8,7 @@ contract ChainIdManager is Owned {
     uint256 public usedChainIdCounter = 0;
     // Counter for the number of Chain IDs
     uint256 public chainIdCounter = 0;
-    mapping(uint256 => uint256) public usableChainIds;
+    mapping(uint256 => uint64) public usableChainIds;
 
     constructor() Owned() {}
 
@@ -16,7 +16,7 @@ contract ChainIdManager is Owned {
      * @dev Adds a Chain ID
      * @param chainId The Chain ID to add
      */
-    function addChainId(uint256 chainId) public onlyOwner {
+    function addChainId(uint64 chainId) public onlyOwner {
         usableChainIds[chainIdCounter] = chainId;
         chainIdCounter++;
     }
@@ -25,7 +25,7 @@ contract ChainIdManager is Owned {
      * @dev Adds multiple Chain IDs
      * @param chainIds The Chain IDs to add
      */
-    function addChainIds(uint256[] memory chainIds) public onlyOwner {
+    function addChainIds(uint64[] memory chainIds) public onlyOwner {
         for (uint256 i = 0; i < chainIds.length; i++) {
             addChainId(chainIds[i]);
         }
@@ -35,7 +35,7 @@ contract ChainIdManager is Owned {
      * @dev Returns the next usable Chain ID
      * @return chainId The next usable Chain ID
      */
-    function getNextUsableChainId() public returns (uint256 chainId) {
+    function getNextUsableChainId() public returns (uint64 chainId) {
         // Todo: Add a ddos protection: Probably charging gas. But for now,
         // the owner can counter ddos attacks by readding unused chainIds
         chainId = usableChainIds[usedChainIdCounter];
