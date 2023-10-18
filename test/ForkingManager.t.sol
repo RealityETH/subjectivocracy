@@ -336,7 +336,6 @@ contract ForkingManagerTest is Test {
                 ForkableBridge(childBridge2).polygonZkEVMaddress(),
                 childZkevm2
             );
-
         }
         {
             // Fetch the children from the ForkonomicToken contract

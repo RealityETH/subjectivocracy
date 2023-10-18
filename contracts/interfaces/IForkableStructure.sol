@@ -3,7 +3,6 @@
 pragma solidity ^0.8.20;
 
 interface IForkableStructure {
-
     function forkmanager() external view returns (address);
 
     function parentContract() external view returns (address);
