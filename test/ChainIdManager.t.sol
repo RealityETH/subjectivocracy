@@ -1,8 +1,8 @@
 pragma solidity ^0.8.20;
 
-import "forge-std/Test.sol"; // Hypothetical test library
-import "../contracts/ChainIdManager.sol"; // Path to the ChainIdManager contract
-import "./utils/Util.sol"; // Hypothetical utilities for testing
+import {Test} from "forge-std/Test.sol"; // Hypothetical test library
+import {ChainIdManager} from "../contracts/ChainIdManager.sol"; // Path to the ChainIdManager contract
+import {Utils} from "./utils/Util.sol"; // Hypothetical utilities for testing
 
 contract ChainIdManagerTest is Test {
     ChainIdManager public chainIdManager;
