@@ -8,8 +8,5 @@ contract InitializeChainWrapper is InitializeChain {
 
     function onlyChainUninitializedWrapper() public onlyChainUninitialized {}
 
-    function onlyChainInitializedWrapper()
-        public
-        onlyChainInitialized
-    {}
+    function onlyChainInitializedWrapper() public onlyChainInitialized {}
 }
