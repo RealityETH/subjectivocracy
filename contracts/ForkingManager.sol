@@ -54,6 +54,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         address forkingManagerImplementation;
         address globalExitRootImplementation;
         address verifier;
+        uint64 forkID;
     }
 
     // Struct that holds an address pair used to store the new child contracts
@@ -173,6 +174,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             );
             initializePackedParameters.chainID = ChainIdManager(chainIdManager)
                 .getNextUsableChainId();
+            initializePackedParameters.forkID = newImplementations.forkID;
             IForkableZkEVM(newInstances.zkEVM.two).initialize(
                 newInstances.forkingManager.two,
                 zkEVM,
