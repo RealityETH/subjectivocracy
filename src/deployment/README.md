@@ -117,7 +117,7 @@ Then run:
 yarn hardhat run src/deployment/1_deployforkableToken.js --network localhost
 ```
 
-This will fill your forkonomic(=maticTokenAddress) in deploy_parameters.
+This will fill your forkonomic(= maticTokenAddress) in deploy_parameters.
 
 Then create the genesis agains the hardhat network (its required to be run to another network than the localhost, this creates a new chain-status, the L2 status)
 
