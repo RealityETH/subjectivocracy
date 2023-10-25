@@ -1,6 +1,7 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
+import {IForkingManager} from "../contracts/interfaces/IForkingManager.sol";
 import {ForkingManager} from "../contracts/ForkingManager.sol";
 import {ForkableBridge} from "../contracts/ForkableBridge.sol";
 import {ForkableZkEVM} from "../contracts/ForkableZkEVM.sol";
@@ -187,11 +188,11 @@ contract ForkingManagerTest is Test {
         // Call the initiateFork function to create a new fork
         vm.expectRevert(bytes("ERC20: insufficient allowance"));
         forkmanager.initiateFork(
-            ForkingManager.DisputeData({
+            IForkingManager.DisputeData({
                 disputeContract: disputeContract,
                 disputeCall: disputeCall
             }),
-            ForkingManager.NewImplementations({
+            IForkingManager.NewImplementations({
                 bridgeImplementation: newBridgeImplementation,
                 zkEVMImplementation: newZkevmImplementation,
                 forkonomicTokenImplementation: newForkonomicTokenImplementation,
@@ -214,11 +215,11 @@ contract ForkingManagerTest is Test {
         );
 
         forkmanager.initiateFork(
-            ForkingManager.DisputeData({
+            IForkingManager.DisputeData({
                 disputeContract: disputeContract,
                 disputeCall: disputeCall
             }),
-            ForkingManager.NewImplementations({
+            IForkingManager.NewImplementations({
                 bridgeImplementation: newBridgeImplementation,
                 zkEVMImplementation: newZkevmImplementation,
                 forkonomicTokenImplementation: newForkonomicTokenImplementation,
@@ -255,7 +256,7 @@ contract ForkingManagerTest is Test {
         vm.prank(address(this));
         forkonomicToken.mint(address(this), arbitrationFee);
 
-        ForkingManager.DisputeData memory disputeData = ForkingManager
+        IForkingManager.DisputeData memory disputeData = IForkingManager
             .DisputeData({
                 disputeContract: disputeContract,
                 disputeCall: disputeCall
@@ -264,7 +265,7 @@ contract ForkingManagerTest is Test {
         // Call the initiateFork function to create a new fork
         forkmanager.initiateFork(
             disputeData,
-            ForkingManager.NewImplementations({
+            IForkingManager.NewImplementations({
                 bridgeImplementation: newBridgeImplementation,
                 zkEVMImplementation: newZkevmImplementation,
                 forkonomicTokenImplementation: newForkonomicTokenImplementation,

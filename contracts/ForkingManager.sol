@@ -34,24 +34,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
 
     // Fee that needs to be paid to initiate a fork
     uint256 public arbitrationFee;
-
-    // Dispute contract and call to identify the dispute
-    // that will be used to initiate/justify the fork
-    struct DisputeData {
-        address disputeContract;
-        bytes disputeCall;
-    }
     DisputeData public disputeData;
-
-    // Struct containing the addresses of the new implementations
-    struct NewImplementations {
-        address bridgeImplementation;
-        address zkEVMImplementation;
-        address forkonomicTokenImplementation;
-        address forkingManagerImplementation;
-        address globalExitRootImplementation;
-        address verifier;
-    }
 
     // Struct that holds an address pair used to store the new child contracts
     struct AddressPair {
