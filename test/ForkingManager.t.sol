@@ -41,6 +41,7 @@ contract ForkingManagerTest is Test {
             0x827a9240c96ccb855e4943cc9bc49a50b1e91ba087007441a1ae5f9df8d1c57c
         );
     uint64 public forkID = 3;
+    uint64 public newForkID = 4;
     uint64 public chainID = 4;
     uint32 public networkID = 10;
     uint64 public pendingStateTimeout = 123;
@@ -208,7 +209,8 @@ contract ForkingManagerTest is Test {
                 forkonomicTokenImplementation: newForkonomicTokenImplementation,
                 forkingManagerImplementation: newForkmanagerImplementation,
                 globalExitRootImplementation: newGlobalExitRootImplementation,
-                verifier: newVerifierImplementation
+                verifier: newVerifierImplementation,
+                forkID: newForkID
             })
         );
 
@@ -235,7 +237,8 @@ contract ForkingManagerTest is Test {
                 forkonomicTokenImplementation: newForkonomicTokenImplementation,
                 forkingManagerImplementation: newForkmanagerImplementation,
                 globalExitRootImplementation: newGlobalExitRootImplementation,
-                verifier: newVerifierImplementation
+                verifier: newVerifierImplementation,
+                forkID: newForkID
             })
         );
     }
@@ -281,7 +284,8 @@ contract ForkingManagerTest is Test {
                 forkonomicTokenImplementation: newForkonomicTokenImplementation,
                 forkingManagerImplementation: newForkmanagerImplementation,
                 globalExitRootImplementation: newGlobalExitRootImplementation,
-                verifier: newVerifierImplementation
+                verifier: newVerifierImplementation,
+                forkID: newForkID
             })
         );
 
@@ -349,6 +353,11 @@ contract ForkingManagerTest is Test {
             );
             assertEq(ForkableZkEVM(childZkevm1).chainID(), firstChainId);
             assertEq(ForkableZkEVM(childZkevm2).chainID(), secondChainId);
+            assertEq(
+                ForkableZkEVM(childZkevm1).forkID(),
+                ForkableZkEVM(zkevm).forkID()
+            );
+            assertEq(ForkableZkEVM(childZkevm2).forkID(), newForkID);
         }
         {
             // Fetch the children from the ForkonomicToken contract
