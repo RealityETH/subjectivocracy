@@ -22,6 +22,7 @@ contract L2ChainInfo is IBridgeMessageReceiver{
 
     uint256 internal chainId;
     address internal forkonomicToken; // Not needed for reality.eth/arbitration stuff but it seems useful to have on L2
+    address internal forkingManager; // Likewise
     uint256 internal forkFee;
     // uint256 internal totalSupply;
 
@@ -59,41 +60,22 @@ contract L2ChainInfo is IBridgeMessageReceiver{
 	return forkQuestionResults[questionId];
     }
 
-    // From polygon-zkevm-messenger-l1-to-l2-example
-    function onMessageReceived(address _originAddress, uint32 _originNetwork, bytes memory _data) external payable isUpToDate {
-      require(msg.sender == l2bridge, "not the expected bridge");
-      require(_originAddress == l1globalRouter, "only l1globalRouter can call us");
-      require(_originNetwork == originNetwork, "wrong origin network");
+    function onMessageReceived(address _originAddress, uint32 _originNetwork, bytes memory _data) external payable isNotUpToDate {
 
-      // As we only accept the one message we do the check for the caller here instead of in the handling function
-      // caller = originAddress;
-      (bool success, ) = address(this).call(_data);
-      if (!success) {
-        revert('onMessageReceived execution failed');
-      }
-      // caller = address(0);
-    }
+        require(msg.sender == l2bridge, "not the expected bridge");
+        require(_originAddress == l1globalRouter, "only l1globalRouter can call us");
+        require(_originNetwork == originNetwork, "wrong origin network");
 
-    // NB This is external but it gets called by ourselves
-    function updateChainInfo(
-        address _forkonomicToken,
-        uint256 _forkFee,
-        bytes32 _questionId, 
-        bytes32 _result 
-    ) isNotUpToDate external {
-        require(msg.sender == address(this), "Message should come via bridge, then be relayed by ourselves");
+        bytes32 _questionId; 
+        bytes32 _result;
 
-	// No need to check the caller as this is done in onMessageReceived
-
-	// TODO: We could also send forkmanager and stuff
-        forkonomicToken = _forkonomicToken;
-        forkFee = _forkFee;
+        (forkingManager, forkonomicToken, forkFee, _questionId, _result) = abi.decode(_data, (address, address, uint256, bytes32, bytes32));
         chainId = block.chainid;
 
         // TODO: Make sure these questionIDs can't overlap.
         // Reality.eth won't make overlapping questions but in theory we allow things other than reality.eth.
         forkQuestionResults[_questionId] = _result;
-        
+    
     }
 
 }

@@ -39,9 +39,8 @@ contract L1GlobalRouter {
         // TODO: Should we pass the token's total supply?
 
         // Fork results: 0 for the genesis, 1 for yes, 2 for no 
-        bytes4 methodSelector = L2ChainInfo(_l2ChainInfo).updateChainInfo.selector;
         bytes32 dispute; // TODO: Get this from somewhere
-        bytes memory data = abi.encodeWithSelector(methodSelector, fm, address(l1Token), arbitrationFee, dispute, forkResult);
+        bytes memory data = abi.encode(fm, address(l1Token), arbitrationFee, dispute, forkResult);
 
         IPolygonZkEVMBridge(_bridge).bridgeMessage(
             uint32(chainId),

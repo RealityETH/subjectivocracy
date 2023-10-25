@@ -94,7 +94,7 @@ contract L2ForkArbitrator {
 	emit LogRequestArbitration(question_id, msg.value, msg.sender, 0);
 
         if (!is_fork_in_progress) {
-            requestActivateFork(question_id); 
+           requestActivateFork(question_id); 
         }
 
 	return true;
@@ -109,7 +109,11 @@ contract L2ForkArbitrator {
         require(status == RequestStatus.QUEUED || status == RequestStatus.REQUEST_FAILED, "question was not awaiting activation");
 	arbitration_requests[question_id].status = RequestStatus.FORK_REQUESTED;
         // TODO: Send a message via the bridge, along with the payment
-        IPolygonZkEVMBridge bridge = IPolygonZkEVMBridge(chainInfo.l2bridge());
+
+        address l2bridge = chainInfo.l2bridge();
+        require(l2bridge != address(0), "l2bridge not set");
+
+        IPolygonZkEVMBridge bridge = IPolygonZkEVMBridge(l2bridge);
 
         bytes memory qdata = bytes.concat(question_id);
         bridge.bridgeMessage(

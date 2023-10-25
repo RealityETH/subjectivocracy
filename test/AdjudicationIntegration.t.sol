@@ -15,6 +15,8 @@ import {L2ForkArbitrator} from "../contracts/L2ForkArbitrator.sol";
 import {L1GlobalRouter} from "../contracts/L1GlobalRouter.sol";
 import {L2ChainInfo} from "../contracts/L2ChainInfo.sol";
 
+import {MockPolygonZkEVMBridge} from "../contracts/MockPolygonZkEVMBridge.sol";
+
 contract AdjudicationIntegrationTest is Test {
     Arbitrator public govArb;
 
@@ -67,15 +69,28 @@ contract AdjudicationIntegrationTest is Test {
     uint32 constant REALITY_ETH_TIMEOUT = 86400;
 
     // dummy addresses for things we message on l1
-    address l2Bridge = address(0xbabe11);
+    MockPolygonZkEVMBridge l2Bridge;
     address l1GlobalRouter = address(0xbabe12);
     address l1ForkingManager = address(0xbabe13);
     address l1Token = address(0xbabe14);
 
+    uint32 l1chainId = 1;
+
+    uint256 constant forkingFee = 5000; // Should ultimately come from l1 forkingmanager
+
     function setUp() public {
+
+        l2Bridge = new MockPolygonZkEVMBridge();
 
         // For now the values of the l1 contracts are all made up
         // Ultimately our tests should include a deployment on l1
+        l2ChainInfo = new L2ChainInfo(l1chainId, address(l2Bridge), l1GlobalRouter);
+
+        bytes memory fakeMessageData = abi.encode(address(l1ForkingManager), address(l1Token), uint256(forkingFee), bytes32(0x0), bytes32(0x0));
+        l2Bridge.fakeClaimMessage(address(l1GlobalRouter), uint32(l1chainId), address(l2ChainInfo), fakeMessageData, uint256(0));
+
+        // Triggers:
+        // l2ChainInfo.onMessageReceived(l1GlobalRouter, l1chainId, fakeMessageData);
 
         l1realityEth = new ForkableRealityETH_ERC20();
         l1realityEth.init(tokenMock, address(0), bytes32(0));
@@ -99,7 +114,6 @@ contract AdjudicationIntegrationTest is Test {
         // NB we're modelling this on the same chain but it should really be the l2
         l2realityEth = new RealityETH_v3_0();
 
-        uint256 forkingFee = 5000; // TODO
         l2forkArbitrator = new L2ForkArbitrator(IRealityETH(l2realityEth), L2ChainInfo(l2ChainInfo), L1GlobalRouter(l1GlobalRouter), forkingFee);
 
         // TODO: Make it possible to pass initial arbitrators in the constructor
@@ -301,15 +315,9 @@ contract AdjudicationIntegrationTest is Test {
         assertEq(address(l2forkArbitrator), l2realityEth.getArbitrator(removalQuestionId), "Arbitrator of the removalQuestionId is l2forkArbitrator");
 
         uint256 forkFee = l2forkArbitrator.getDisputeFee(removalQuestionId);
-        return;
         l2forkArbitrator.requestArbitration{value: forkFee}(removalQuestionId, 0);
 
-        vm.expectRevert("question must be finalized");
-        adjudicationFramework1.executeRemoveArbitratorFromAllowList(removalQuestionId);
-
-        skip(86401);
-
-        adjudicationFramework1.executeRemoveArbitratorFromAllowList(removalQuestionId);
+        assertTrue(l2realityEth.isPendingArbitration(removalQuestionId));
 
     }
 
