@@ -163,5 +163,5 @@ yarn hardhat run src/deployment/3_deployContracts.js --network goerli
 and verify all contracts by:
 
 ```sh
-yarn hardhat run verifyContracts.js --network goerli
+yarn hardhat run src/deployment/verifyContracts.js --network goerli
 ```
