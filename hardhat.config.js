@@ -51,7 +51,7 @@ module.exports = {
     }),
   },
   paths: {
-    sources: "./development/contracts/",
+    sources: "./contracts/",
     cache: "./cache_hardhat",
     artifacts: "./out/ForkonomicToken.sol"
   },

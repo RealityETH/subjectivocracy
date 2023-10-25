@@ -1,6 +1,12 @@
+
+## Upfront information
+
+Many deployment scripts are copied over from the polygon zk project. One find their source here:
+https://github.com/0xPolygonHermez/zkevm-contracts
+
 ## Requirements
 
-- node version: 14.x
+- node version: 16.x
 - npm version: 7.x
 
 ## Deployment
@@ -87,64 +93,75 @@ A new folder will be created witth the following name `deployments/${network}_$(
 - It's mandatory to delete the `.openzeppelin` upgradebility information in order to make a new deployment
 - `genesis.json` has been generated using the tool: `1_createGenesis`, this script depends on the `deploy_parameters` as well.
 
-# Manual deployment for forkonomic project on hardhat network:
+# Manual deployment for forkonomic project on hardhat network
 
 Start a node by running:
-```
+
+```sh
 npx hardhat node
 ```
+
 Prefill deploy_parameters where possible
-```
-cd deployment
+
+```sh
+cd src/deployment
 cp deploy_parameters.json.example deploy_parameters.json
 ```
-make sure to put a pre-funded address for: `initialZkEVMDeployerOwner` from the npx hardhat node output into the deploy_parameters.json.
+
+make sure to put a pre-funded address for: `initialZkEVMDeployerOwner` from the npx hardhat node output into the deploy_parameters.json. 
+You can just take the first address from the output of `npx hardhat node`
 
 Then run:
-```
-yarn hardhat run deployment/1_deployforkableToken.js --network hardhat
-```
-This will fill your maticTokenAddress in deploy_parameters.
 
-```
-yarn hardhat run deployment/2_creategenesis.js --network hardhat
+```sh
+yarn hardhat run src/deployment/1_deployforkableToken.js --network localhost
 ```
 
+This will fill your forkonomic(=maticTokenAddress) in deploy_parameters.
+
+Then create the genesis agains the hardhat network (its required to be run to another network than the localhost, this creates a new chain-status, the L2 status)
+
+```sh
+yarn hardhat run src/deployment/2_creategenesis.js --network hardhat
 ```
+
+```sh
 rm .openzeppelin/$HARDHAT_NETWORK.json
-yarn hardhat run deployment/3_deployContracts.js --network hardhat
+yarn hardhat run src/deployment/3_deployContracts.js --network localhost
 ```
 
 If precalculated addresses are not correct, its due to false nonces. Make sure to delete the deploy_ongoing.json and restart the process and the nonce situation should clear itself or adopt the nonces.
 
-## Manual deployment for forkonomic project on goerli:
-
+## Manual deployment for forkonomic project on goerli
 
 Fill `.env` with your `MNEMONIC` and `INFURA_PROJECT_ID`
 If you want to verify the contracts also fill the `ETHERSCAN_API_KEY`
 Prefill deploy_parameters where possible
-```
-cd deployment
+
+```sh
+cd src/deployment
 cp deploy_parameters.json.example deploy_parameters.json
 ```
 
-
 run
+
+```sh
+yarn hardhat run src/deployment/1_deployforkableToken.js --network goerli
 ```
-yarn hardhat run deployment/1_deployforkableToken.js --network goerli
-```
+
 This will fill your maticTokenAddress in deploy_parameters.
 
-```
-yarn hardhat run deployment/2_creategenesis.js --network hardhat
+```sh
+yarn hardhat run src/deployment/2_creategenesis.js --network hardhat
 ```
 
-```
+```sh
 rm .openzeppelin/$HARDHAT_NETWORK.json
-yarn hardhat run deployment/3_deployContracts.js --network goerli
+yarn hardhat run src/deployment/3_deployContracts.js --network goerli
 ```
 
 and verify all contracts by:
-```
+
+```sh
 yarn hardhat run verifyContracts.js --network goerli
 ```

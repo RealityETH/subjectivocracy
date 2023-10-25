@@ -137,9 +137,29 @@ async function main() {
 
     // check deployer is the owner of the deployer
     if (await deployer.provider.getCode(zkEVMDeployerContract.address) === '0x') {
-        throw new Error('zkEVM deployer contract is not deployed');
+        throw new Error('zkEVM deployer contract is not deployed at {zkEVMDeployerContract.address}');
     }
     expect(deployer.address).to.be.equal(await zkEVMDeployerContract.owner());
+
+    const ChainIdManagerFactory = await ethers.getContractFactory('ChainIdManager', {
+        signer: deployer,
+    });
+
+    if (!ongoingDeployment.chainIdManager) {
+        chainIdManagerContract = await ChainIdManagerFactory.deploy();
+        console.log('#######################\n');
+        console.log('chainIdManager deployed to:', chainIdManagerContract.address);
+
+        // save an ongoing deployment
+        ongoingDeployment.chainIdManager = chainIdManagerContract.address;
+        fs.writeFileSync(pathOngoingDeploymentJson, JSON.stringify(ongoingDeployment, null, 1));
+    } else {
+        // Expect the precalculate address matches the ongoing deployment
+        chainIdManagerContract = ChainIdManagerFactory.attach(ongoingDeployment.chainIdManager);
+
+        console.log('#######################\n');
+        console.log('chainIdManager already deployed on: ', ongoingDeployment.chainIdManager);
+    }
 
     const ForkingManagerFactory = await ethers.getContractFactory('ForkingManager', {
         signer: deployer,
@@ -614,10 +634,10 @@ async function main() {
          */
 
         const ifaceForkingManager = new ethers.utils.Interface([
-            'function initialize(address,address,address,address,address,uint256)',
+            'function initialize(address,address,address,address,address,uint256,address)',
         ]);
         const dataCallInitializeForkingManager = ifaceForkingManager.encodeFunctionData(
-            'initialize(address,address,address,address,address,uint256)',
+            'initialize(address,address,address,address,address,uint256,address)',
             [
                 polygonZkEVMContract.address,
                 polygonZkEVMBridgeContract.address,
@@ -625,6 +645,7 @@ async function main() {
                 parentContract,
                 polygonZkEVMGlobalExitRoot.address,
                 arbitrationFee,
+                chainIdManagerContract.address,
             ],
         );
         const forkingManagerInitializationTx = await deployer.sendTransaction({
