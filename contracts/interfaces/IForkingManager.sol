@@ -33,7 +33,8 @@ interface IForkingManager is IForkableStructure {
         address _forkonomicToken,
         address _parentContract,
         address _globalExitRoot,
-        uint256 _arbitrationFee
+        uint256 _arbitrationFee,
+        address _chainIdManager
     ) external;
 
     function initiateFork(

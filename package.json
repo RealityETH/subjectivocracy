@@ -6,8 +6,8 @@
   "author": "josojo <josojo@hotmail.de>",
   "license": "MIT",
   "scripts": {
-    "fmt": "prettier 'development/contracts/**/*.sol' -w && prettier 'test/**/*.sol' -w",
-    "lint": "solhint 'development/contracts/**/*.sol' 'test/**/*.sol'"
+    "fmt": "prettier 'contracts/**/*.sol' -w && prettier 'test/**/*.sol' -w",
+    "lint": "solhint 'contracts/**/*.sol' 'test/**/*.sol'"
   },
   "dependencies": {
     "forge": "^2.3.0"
