@@ -126,6 +126,7 @@ contract AdjudicationFramework is BalanceHolder {
         realityETH = IRealityETH(_realityETH);
         dispute_fee = _dispute_fee;
         forkArbitrator = _forkArbitrator;
+
 /*
         for (uint256 i = 0; i < _initial_arbitrators.length; i++) {
             arbitrators[_initial_arbitrators[i]] = true;
@@ -354,7 +355,7 @@ contract AdjudicationFramework is BalanceHolder {
     function beginAddArbitratorToAllowList(address arbitrator_to_add)
     external returns (bytes32) {
         string memory question = _toString(abi.encodePacked(address(this), QUESTION_DELIM, arbitrator_to_add));
-        bytes32 question_id = realityETH.askQuestionWithMinBond(TEMPLATE_ID_ADD_ARBITRATOR, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0, REALITY_ETH_BOND_ARBITRATOR_ADD);
+        bytes32 question_id = realityETH.askQuestionWithMinBond(TEMPLATE_ID_ADD_ARBITRATOR, question, forkArbitrator, REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0, REALITY_ETH_BOND_ARBITRATOR_ADD);
         require(propositions[question_id].proposition_type == PropositionType.NONE, "Proposition already exists");
         propositions[question_id] = ArbitratorProposition(PropositionType.ADD_ARBITRATOR, arbitrator_to_add);
         return question_id;
@@ -363,7 +364,7 @@ contract AdjudicationFramework is BalanceHolder {
     function beginRemoveArbitratorFromAllowList(address arbitrator_to_remove)
     external returns (bytes32) {
         string memory question = _toString(abi.encodePacked(address(this), QUESTION_DELIM, arbitrator_to_remove));
-        bytes32 question_id = realityETH.askQuestionWithMinBond(TEMPLATE_ID_REMOVE_ARBITRATOR, question, address(this), REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0, REALITY_ETH_BOND_ARBITRATOR_REMOVE);
+        bytes32 question_id = realityETH.askQuestionWithMinBond(TEMPLATE_ID_REMOVE_ARBITRATOR, question, forkArbitrator, REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0, REALITY_ETH_BOND_ARBITRATOR_REMOVE);
         require(propositions[question_id].proposition_type == PropositionType.NONE, "Proposition already exists");
         propositions[question_id] = ArbitratorProposition(PropositionType.REMOVE_ARBITRATOR, arbitrator_to_remove);
 
@@ -385,6 +386,8 @@ contract AdjudicationFramework is BalanceHolder {
         require(propositions[question_id].proposition_type == PropositionType.REMOVE_ARBITRATOR, "Wrong Proposition type");
         address arbitrator = propositions[question_id].arbitrator;
         require(arbitrators[arbitrator], "Arbitrator not on allowlist in the first place");
+        bytes32 realityEthResult = realityETH.resultFor(question_id);
+        require(realityEthResult == bytes32(uint256(1)), "Result was not 1");
         frozen_arbitrators[arbitrator] = false;
         delete(propositions[question_id]);
         arbitrators[arbitrator] = false;
