@@ -44,7 +44,7 @@ jobs:
         node-version: [16.x]
         os: [ubuntu-latest]
     name: Code linting
-    runs-on: ${{ matrix.os }}
+    runs-on: 16
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
