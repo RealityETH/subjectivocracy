@@ -44,19 +44,19 @@ jobs:
         node-version: [16.x]
         os: [ubuntu-latest]
     name: Code linting
-    runs-on: ${{ matrix.os }}
+    runs-on: 16
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-            node-version: ${{ matrix.os }}
+          node-version: 16
       - id: yarn-cache
         run: echo "::set-output name=dir::$(yarn cache dir)"
       - uses: actions/cache@v2
         with:
-            path: ${{ steps.yarn-cache.outputs.dir }}
-            key: ${{ matrix.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-            restore-keys: |
-                ${{ matrix.os }}-yarn-
+          path: ${{ steps.yarn-cache.outputs.dir }}
+          key: 16-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            16-yarn-
       - run: yarn --frozen-lockfile
       - run: yarn lint
