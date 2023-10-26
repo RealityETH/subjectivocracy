@@ -106,18 +106,6 @@ contract AdjudicationFramework is BalanceHolder {
 
     mapping(bytes32 => ArbitrationRequest) public question_arbitrations;
 
-    /*
-    // TODO: Work out how this is implemented in xdai or whatever we use
-    modifier l1_forkmanager_only() {
-        require(msg.sender == address(bridge), "Message must come from bridge");
-        require(
-            bridge.messageSender() == FORK_MANAGER_SPECIAL_ADDRESS,
-            "Message must come from L1 ForkManager"
-        );
-        _;
-    }
-    */
-
     // TODO: Create the templates here?
     constructor(
         address _realityETH,
