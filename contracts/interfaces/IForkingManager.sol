@@ -19,6 +19,7 @@ interface IForkingManager is IForkableStructure {
         address forkingManagerImplementation;
         address globalExitRootImplementation;
         address verifier;
+        uint64 forkID;
     }
 
     function zkEVM() external returns (address);
