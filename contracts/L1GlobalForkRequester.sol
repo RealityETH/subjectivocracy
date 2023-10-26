@@ -15,8 +15,6 @@ import {L2ChainInfo} from "./L2ChainInfo.sol";
 // We record the dispute they were forking over
 contract L1GlobalForkRequester {
 
-    address public caller;
-    
     // Any bridge (or any contract pretending to be a bridge) can call this.
     // We'll look up its ForkingManager and ask it for a fork.
     // TODO: It might make more sense if this contract requested the chain ID then kept a record of it.
