@@ -15,7 +15,7 @@ import {L2ForkArbitrator} from "../contracts/L2ForkArbitrator.sol";
 import {L1GlobalRouter} from "../contracts/L1GlobalRouter.sol";
 import {L2ChainInfo} from "../contracts/L2ChainInfo.sol";
 
-import {MockPolygonZkEVMBridge} from "../contracts/MockPolygonZkEVMBridge.sol";
+import {MockPolygonZkEVMBridge} from "./testcontract/MockPolygonZkEVMBridge.sol";
 
 contract AdjudicationIntegrationTest is Test {
     Arbitrator public govArb;
