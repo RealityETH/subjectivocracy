@@ -68,9 +68,6 @@ contract AdjudicationFramework is BalanceHolder {
     // AllowList of acceptable arbitrators
     mapping(address => bool) public arbitrators;
 
-    // List of arbitrators that are currently being challenged
-    mapping(address => bool) public frozen_arbitrators;
-
     // TODO: Check if we need this, if we do put it in a shareable place to go with the l1 realityeth
     enum PropositionType {
         NONE,
@@ -83,8 +80,13 @@ contract AdjudicationFramework is BalanceHolder {
     struct ArbitratorProposition{
         PropositionType proposition_type;
         address arbitrator;
+        bool isFrozen;
     }
-    mapping(bytes32 => ArbitratorProposition) propositions;
+    mapping(bytes32 => ArbitratorProposition) public propositions;
+
+    // Keep a count of active propositions that freeze an arbitrator. 
+    // When they're all cleared they can be unfrozen.
+    mapping(address => uint256) public countArbitratorFreezePropositions;
 
     IRealityETH public realityETH;
 
@@ -301,7 +303,7 @@ contract AdjudicationFramework is BalanceHolder {
 
         require(arbitrators[arbitrator], "Arbitrator must be allowlisted");
         require(
-            !frozen_arbitrators[arbitrator],
+            countArbitratorFreezePropositions[arbitrator] == 0,
             "Arbitrator must not be under dispute"
         );
 
@@ -357,7 +359,7 @@ contract AdjudicationFramework is BalanceHolder {
         string memory question = _toString(abi.encodePacked(address(this), QUESTION_DELIM, arbitrator_to_add));
         bytes32 question_id = realityETH.askQuestionWithMinBond(TEMPLATE_ID_ADD_ARBITRATOR, question, forkArbitrator, REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0, REALITY_ETH_BOND_ARBITRATOR_ADD);
         require(propositions[question_id].proposition_type == PropositionType.NONE, "Proposition already exists");
-        propositions[question_id] = ArbitratorProposition(PropositionType.ADD_ARBITRATOR, arbitrator_to_add);
+        propositions[question_id] = ArbitratorProposition(PropositionType.ADD_ARBITRATOR, arbitrator_to_add, false);
         return question_id;
     }
 
@@ -366,30 +368,42 @@ contract AdjudicationFramework is BalanceHolder {
         string memory question = _toString(abi.encodePacked(address(this), QUESTION_DELIM, arbitrator_to_remove));
         bytes32 question_id = realityETH.askQuestionWithMinBond(TEMPLATE_ID_REMOVE_ARBITRATOR, question, forkArbitrator, REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0, REALITY_ETH_BOND_ARBITRATOR_REMOVE);
         require(propositions[question_id].proposition_type == PropositionType.NONE, "Proposition already exists");
-        propositions[question_id] = ArbitratorProposition(PropositionType.REMOVE_ARBITRATOR, arbitrator_to_remove);
+        propositions[question_id] = ArbitratorProposition(PropositionType.REMOVE_ARBITRATOR, arbitrator_to_remove, false);
 
-        // TODO: Should we automatically do a freeze here if the bond is high enough?
+        // Freeze can be done by calling freezeArbitrator if the bond is high enough
+        // TODO should we call that here?
 
         return question_id;
     }
 
     function executeAddArbitratorToAllowList(bytes32 question_id) external {
+
         require(propositions[question_id].proposition_type == PropositionType.ADD_ARBITRATOR, "Wrong Proposition type");
         address arbitrator = propositions[question_id].arbitrator;
         require(!arbitrators[arbitrator], "Arbitrator already on allowlist");
         require(realityETH.resultFor(question_id) == bytes32(uint256(1)), "Question did not return yes");
         delete(propositions[question_id]);
+
+        // NB They may still be in a frozen state because of some other proposition
         arbitrators[arbitrator] = true;
     }
 
     function executeRemoveArbitratorFromAllowList(bytes32 question_id) external {
+
         require(propositions[question_id].proposition_type == PropositionType.REMOVE_ARBITRATOR, "Wrong Proposition type");
+
+        // NB This will run even if the arbitrator has already been removed by another proposition.
+        // This is needed so that the freeze can be cleared if the arbitrator is then reinstated.
+
         address arbitrator = propositions[question_id].arbitrator;
-        require(arbitrators[arbitrator], "Arbitrator not on allowlist in the first place");
         bytes32 realityEthResult = realityETH.resultFor(question_id);
         require(realityEthResult == bytes32(uint256(1)), "Result was not 1");
-        frozen_arbitrators[arbitrator] = false;
+
+        if (propositions[question_id].isFrozen) {
+            countArbitratorFreezePropositions[arbitrator] = countArbitratorFreezePropositions[arbitrator] - 1;
+        }
         delete(propositions[question_id]);
+
         arbitrators[arbitrator] = false;
     }
 
@@ -404,7 +418,7 @@ contract AdjudicationFramework is BalanceHolder {
             arbitrators[arbitrator],
             "Arbitrator not allowlisted in the first place"
         );
-        require(!frozen_arbitrators[arbitrator], "Arbitrator already frozen");
+        require(!propositions[question_id].isFrozen, "Arbitrator already frozen");
 
         // Require a bond of at least the specified level
         // This is only relevant if REALITY_ETH_BOND_ARBITRATOR_FREEZE is higher than REALITY_ETH_BOND_ARBITRATOR_REMOVE
@@ -414,28 +428,21 @@ contract AdjudicationFramework is BalanceHolder {
         // Otherwise need a history to prove that the answer was given earlier with this bond
         require(realityETH.getBestAnswer(question_id) == bytes32(uint256(1)), "Best answer is not yes");
 
-        frozen_arbitrators[arbitrator] = true;
+        propositions[question_id].isFrozen = true;
+        countArbitratorFreezePropositions[arbitrator] = countArbitratorFreezePropositions[arbitrator] + 1;
     }
 
-    // TODO: We may need to restructure the data to allow the unfreeze
-    // Think about how possible multiple propositions should work
-    function unfreezeArbitrator(address arbitrator) public {
-        require(
-            arbitrators[arbitrator],
-            "Arbitrator not allowlisted in the first place"
-        );
-        require(
-            frozen_arbitrators[arbitrator],
-            "Arbitrator not already frozen"
-        );
-        frozen_arbitrators[arbitrator] = false;
+    function clearFailedProposition(bytes32 question_id) public {
+        address arbitrator = propositions[question_id].arbitrator;
+        require(arbitrator != address(0), "Proposition not found");
+        if (propositions[question_id].isFrozen) {
+            countArbitratorFreezePropositions[arbitrator] = countArbitratorFreezePropositions[arbitrator] - 1;
+        }
+        delete(propositions[question_id]);
     }
-
 
     function realitio() external view returns (address) {
         return address(realityETH);
     }
-
-
 
 }

@@ -241,6 +241,7 @@ contract AdjudicationIntegrationTest is Test {
 
         l2realityEth.submitAnswer{value: 20000}(removalQuestionId, bytes32(uint256(1)), 0);
         adjudicationFramework1.freezeArbitrator(removalQuestionId);
+        assertEq(adjudicationFramework1.countArbitratorFreezePropositions(address(l2Arbitrator1)), uint256(1));
 
         //skip(86401);
         //vm.expectRevert("Arbitrator must not be under dispute");
@@ -295,8 +296,9 @@ contract AdjudicationIntegrationTest is Test {
         vm.expectRevert("Result was not 1");
         adjudicationFramework1.executeRemoveArbitratorFromAllowList(removalQuestionId);
 
-        // TODO: Do the unfreeze (needs some more code)    
-        // adjudicationFramework1.
+        assertEq(adjudicationFramework1.countArbitratorFreezePropositions(address(l2Arbitrator1)), uint256(1));
+        adjudicationFramework1.clearFailedProposition(removalQuestionId);
+        assertEq(adjudicationFramework1.countArbitratorFreezePropositions(address(l2Arbitrator1)), uint256(0));
 
     }
 
