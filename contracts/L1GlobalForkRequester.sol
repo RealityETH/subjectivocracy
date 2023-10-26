@@ -27,10 +27,10 @@ contract L1GlobalForkRequester {
       // The chain ID should always be the chain ID expected by the ForkingManager.
       // It shouldn't be possible for it to be anything else but we'll check it anyhow.
       IPolygonZkEVM zkevm = IPolygonZkEVM(fm.zkEVM());
-      require(uint64(_originNetwork) == zkevm.chainID(), "Unexpected _originNetwork, this should not happen");
+      require(uint64(_originNetwork) == zkevm.chainID(), "Bad _originNetwork, WTF");
     
       // We also check in the opposite direction to make sure the ForkingManager thinks the bridge is its bridge
-      require(address(fm.bridge()) == msg.sender, "ForkingManager disagrees with the bridge about who is whose bridge");
+      require(address(fm.bridge()) == msg.sender, "Bridge mismatch, WTF");
 
       // TODO: The whitepaper implies a whitelist about who is allowed to fork us.
       // Currently anybody can as long as they pay.

@@ -47,7 +47,7 @@ contract L2ChainInfo is IBridgeMessageReceiver{
     }
 
     modifier isNotUpToDate {
-        require(block.chainid != chainId, "Chain ID must have changed since last update");
+        require(block.chainid != chainId, "Chain ID must be changed");
         _;
     }
 
