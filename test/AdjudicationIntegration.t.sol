@@ -1,6 +1,6 @@
 pragma solidity ^0.8.20;
 import {Test} from "forge-std/Test.sol";
-import {Arbitrator} from "../contracts/Arbitrator.sol";
+import {Arbitrator} from "../contracts/lib/reality-eth/Arbitrator.sol";
 
 // TODO: Replace this with whatever zkEVM or whatever platform we're on uses
 import {IAMB} from "../contracts/interfaces/IAMB.sol";
@@ -8,7 +8,7 @@ import {IAMB} from "../contracts/interfaces/IAMB.sol";
 import {IRealityETH} from "../contracts/interfaces/IRealityETH.sol";
 import {IERC20} from "../contracts/interfaces/IERC20.sol";
 import {ForkableRealityETH_ERC20} from "../contracts/ForkableRealityETH_ERC20.sol";
-import {RealityETH_v3_0} from "../contracts/RealityETH-3.0.sol";
+import {RealityETH_v3_0} from "../contracts/lib/reality-eth/RealityETH-3.0.sol";
 import {AdjudicationFramework} from "../contracts/AdjudicationFramework.sol";
 
 import {L2ForkArbitrator} from "../contracts/L2ForkArbitrator.sol";
