@@ -50,13 +50,4 @@ contract L1GlobalRouter {
         );
     }
     
-    // TODO: Maybe separate this into a different contract?
-    function forwardToForkManager(bytes memory data) external payable {
-        ForkableBridge bridge = ForkableBridge(msg.sender);
-        IForkingManager fm = IForkingManager(bridge.forkmanager());
-        require(address(bridge) != address(this), "No funny bridge tricks please");
-        (bool result,) = address(fm).call{value: msg.value}(data);
-        require(result, "call failed");
-    }
-
 }

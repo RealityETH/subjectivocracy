@@ -17,15 +17,6 @@ contract L1GlobalForkRequester {
 
     address public caller;
     
-    // TODO: Maybe separate this into a different contract?
-    function forwardToForkManager(bytes memory data) external payable {
-        ForkableBridge bridge = ForkableBridge(msg.sender);
-        IForkingManager fm = IForkingManager(bridge.forkmanager());
-        require(address(bridge) != address(this), "No funny bridge tricks please");
-        (bool result,) = address(fm).call{value: msg.value}(data);
-        require(result, "call failed");
-    }
- 
     // Any bridge (or any contract pretending to be a bridge) can call this.
     // We'll look up its ForkingManager and ask it for a fork.
     // TODO: It might make more sense if this contract requested the chain ID then kept a record of it.
