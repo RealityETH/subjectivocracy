@@ -68,11 +68,20 @@ contract AdjudicationIntegrationTest is Test {
 
     uint32 constant REALITY_ETH_TIMEOUT = 86400;
 
-    // dummy addresses for things we message on l1
+    // Dummy addresses for things we message on l1
+    // The following should be the same on all forks
     MockPolygonZkEVMBridge l2Bridge;
     address l1GlobalRouter = address(0xbabe12);
+
+    // The following will change when we fork so we fake multiple versions here
     address l1ForkingManager = address(0xbabe13);
     address l1Token = address(0xbabe14);
+
+    address l1ForkingManagerF1 = address(0x1abe13);
+    address l1TokenF1 = address(0x1abe14);
+
+    address l1ForkingManagerF2 = address(0x2abe13);
+    address l1TokenF2 = address(0x2abe14);
 
     uint32 l1chainId = 1;
 
@@ -86,11 +95,12 @@ contract AdjudicationIntegrationTest is Test {
         // Ultimately our tests should include a deployment on l1
         l2ChainInfo = new L2ChainInfo(l1chainId, address(l2Bridge), l1GlobalRouter);
 
-        bytes memory fakeMessageData = abi.encode(address(l1ForkingManager), address(l1Token), uint256(forkingFee), bytes32(0x0), bytes32(0x0));
-        l2Bridge.fakeClaimMessage(address(l1GlobalRouter), uint32(l1chainId), address(l2ChainInfo), fakeMessageData, uint256(0));
-
+        // Pretend to send the initial setup to the l2 directory via the bridge
         // Triggers:
         // l2ChainInfo.onMessageReceived(l1GlobalRouter, l1chainId, fakeMessageData);
+        // In reality this would originate on L1.
+        bytes memory fakeMessageData = abi.encode(address(l1ForkingManager), address(l1Token), uint256(forkingFee), bytes32(0x0), bytes32(0x0));
+        l2Bridge.fakeClaimMessage(address(l1GlobalRouter), uint32(l1chainId), address(l2ChainInfo), fakeMessageData, uint256(0));
 
         l1realityEth = new ForkableRealityETH_ERC20();
         l1realityEth.init(tokenMock, address(0), bytes32(0));
@@ -220,7 +230,7 @@ contract AdjudicationIntegrationTest is Test {
 
     }
 
-    function _setupContestedArbitration() internal returns (bytes32 questionId, bytes32 removalQuestionId) {
+    function _setupContestedArbitration() internal returns (bytes32 questionId, bytes32 removalQuestionId, bytes32 lastHistoryHash, bytes32 lastAnswer, address lastAnswerer) {
 
         bytes32 qid = _setupContestableQuestion();
         _setupArbitratedQuestion(qid);
@@ -239,6 +249,8 @@ contract AdjudicationIntegrationTest is Test {
         vm.expectRevert("Bond too low to freeze");
         adjudicationFramework1.freezeArbitrator(removalQuestionId);
 
+        bytes32 lastHistoryHash = l2realityEth.getHistoryHash(removalQuestionId);
+        vm.prank(user2);
         l2realityEth.submitAnswer{value: 20000}(removalQuestionId, bytes32(uint256(1)), 0);
         adjudicationFramework1.freezeArbitrator(removalQuestionId);
         assertEq(adjudicationFramework1.countArbitratorFreezePropositions(address(l2Arbitrator1)), uint256(1));
@@ -253,13 +265,13 @@ contract AdjudicationIntegrationTest is Test {
             c) Make a fork request on L2, get the response via the bridge
         */
 
-        return (qid, removalQuestionId);
+        return (qid, removalQuestionId, lastHistoryHash, bytes32(uint256(1)), user2);
 
     }
 
     function testArbitrationContestPassedWithoutFork() public {
 
-        (bytes32 qid, bytes32 removalQuestionId) = _setupContestedArbitration();
+        (bytes32 qid, bytes32 removalQuestionId, bytes32 lastHistoryHash, bytes32 lastAnswer, address lastAnswerer) = _setupContestedArbitration();
 
         // Currently in the "yes" state, so once it times out we can complete the removal 
 
@@ -278,7 +290,7 @@ contract AdjudicationIntegrationTest is Test {
 
     function testArbitrationContestRejectedWithoutFork() public {
 
-        (bytes32 qid, bytes32 removalQuestionId) = _setupContestedArbitration();
+        (bytes32 qid, bytes32 removalQuestionId, bytes32 lastHistoryHash, bytes32 lastAnswer, address lastAnswerer) = _setupContestedArbitration();
 
         // Put the proposition to remove the arbitrator into the "no" state
         l2realityEth.submitAnswer{value: 40000}(removalQuestionId, bytes32(uint256(0)), 0);
@@ -304,7 +316,7 @@ contract AdjudicationIntegrationTest is Test {
 
     function testArbitrationContestPassedWithFork() public {
 
-        (bytes32 qid, bytes32 removalQuestionId) = _setupContestedArbitration();
+        (bytes32 qid, bytes32 removalQuestionId, bytes32 lastHistoryHash, bytes32 lastAnswer, address lastAnswerer) = _setupContestedArbitration();
 
         // Currently in the "yes" state, so once it times out we can complete the removal 
 
@@ -319,9 +331,82 @@ contract AdjudicationIntegrationTest is Test {
         uint256 forkFee = l2forkArbitrator.getDisputeFee(removalQuestionId);
         l2forkArbitrator.requestArbitration{value: forkFee}(removalQuestionId, 0);
 
+        // IMAGINE THE FORK HAPPENED HERE
+        // There are now two L2s, each with a different chain ID
+        uint256 newChainId1 = 123;
+        vm.chainId(newChainId1);
+
+        // TODO: Adjust the forkingFee as the total supply has changed a bit
+        bytes memory fakeMessageData = abi.encode(address(l1ForkingManagerF1), address(l1TokenF1), uint256(forkingFee), removalQuestionId, bytes32(uint256(1)));
+        l2Bridge.fakeClaimMessage(address(l1GlobalRouter), uint32(l1chainId), address(l2ChainInfo), fakeMessageData, uint256(0));
+
         assertTrue(l2realityEth.isPendingArbitration(removalQuestionId));
+        l2forkArbitrator.handleCompletedFork(removalQuestionId, lastHistoryHash, lastAnswer, lastAnswerer);
+
+        assertFalse(l2realityEth.isPendingArbitration(removalQuestionId));
+
+        assertEq(adjudicationFramework1.countArbitratorFreezePropositions(address(l2Arbitrator1)), 1);
+        assertTrue(adjudicationFramework1.arbitrators(address(l2Arbitrator1)));
+        adjudicationFramework1.executeRemoveArbitratorFromAllowList(removalQuestionId);
+        assertFalse(adjudicationFramework1.arbitrators(address(l2Arbitrator1)));
+        assertEq(adjudicationFramework1.countArbitratorFreezePropositions(address(l2Arbitrator1)), 0);
+
+        // TODO: Retry the arbitration with a new arbitrator
 
     }
+
+    function testArbitrationContestRejectedWithFork() public {
+
+        (bytes32 qid, bytes32 removalQuestionId, bytes32 lastHistoryHash, bytes32 lastAnswer, address lastAnswerer) = _setupContestedArbitration();
+
+        // Currently in the "yes" state, so once it times out we can complete the removal 
+
+        // Now wait for the timeout and settle the proposition
+        vm.expectRevert("question must be finalized");
+        bytes32 result = l2realityEth.resultFor(removalQuestionId);
+
+        assertEq(address(l2forkArbitrator.realitio()), address(l2realityEth), "l2forkArbitrator expects to arbitrate our l2realityEth");
+        assertEq(address(adjudicationFramework1.realityETH()), address(l2realityEth), "adjudicationFramework1 expects to use our l2realityEth");
+        assertEq(address(l2forkArbitrator), l2realityEth.getArbitrator(removalQuestionId), "Arbitrator of the removalQuestionId is l2forkArbitrator");
+
+        uint256 forkFee = l2forkArbitrator.getDisputeFee(removalQuestionId);
+        l2forkArbitrator.requestArbitration{value: forkFee}(removalQuestionId, 0);
+
+        // IMAGINE THE FORK HAPPENED HERE
+        // There are now two L2s, each with a different chain ID
+        uint256 newChainId1 = 124;
+        vm.chainId(newChainId1);
+
+        // TODO: Adjust the forkingFee as the total supply has changed a bit
+        bytes memory fakeMessageData = abi.encode(address(l1ForkingManagerF1), address(l1TokenF1), uint256(forkingFee), removalQuestionId, bytes32(uint256(0)));
+        l2Bridge.fakeClaimMessage(address(l1GlobalRouter), uint32(l1chainId), address(l2ChainInfo), fakeMessageData, uint256(0));
+
+        assertTrue(l2realityEth.isPendingArbitration(removalQuestionId));
+        l2forkArbitrator.handleCompletedFork(removalQuestionId, lastHistoryHash, lastAnswer, lastAnswerer);
+
+        assertFalse(l2realityEth.isPendingArbitration(removalQuestionId));
+
+        assertEq(adjudicationFramework1.countArbitratorFreezePropositions(address(l2Arbitrator1)), 1);
+        assertTrue(adjudicationFramework1.arbitrators(address(l2Arbitrator1)));
+
+        vm.expectRevert("Result was not 1");
+        adjudicationFramework1.executeRemoveArbitratorFromAllowList(removalQuestionId);
+
+        adjudicationFramework1.clearFailedProposition(removalQuestionId);
+
+        assertTrue(adjudicationFramework1.arbitrators(address(l2Arbitrator1)));
+        assertEq(adjudicationFramework1.countArbitratorFreezePropositions(address(l2Arbitrator1)), 0);
+
+    }
+
+
+    /*
+    // TODO:
+    If the fork failed because the fee changed or something else forked first (does this happen???), we may need to clearFailedForkAttempt()
+    function testArbitrationContestForkFailed() public {
+
+    }
+    */
 
     /*
     function testL1RequestGovernanceArbitration() public {

@@ -9,6 +9,8 @@ We made it for the ForkArbitrator to get the result after a fork.
 Other contracts may also find it useful.
 It must be called after a fork until it's updated.
 Queries against it will revert until the update is done.
+
+TODO: Should we somehow make it updateable even if you miss the fork window?
 */
 
 import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
@@ -26,7 +28,12 @@ contract L2ChainInfo is IBridgeMessageReceiver{
     uint256 internal forkFee;
     // uint256 internal totalSupply;
 
-    mapping(bytes32=>bytes32) internal forkQuestionResults;
+    mapping(bytes32=>bytes32) public forkQuestionResults;
+
+    // We need a mapping of question to something to know if we have a result
+    // Use chainId as it seems like it may be useful elsewhere
+    // Another option would be to map the fork results to 1/2 instead of 0/1
+    mapping(bytes32=>uint256) public questionToChainID;
 
     constructor(uint32 _originNetwork, address _l2bridge, address _l1globalRouter) {
 	originNetwork = _originNetwork;
@@ -71,6 +78,8 @@ contract L2ChainInfo is IBridgeMessageReceiver{
 
         (forkingManager, forkonomicToken, forkFee, _questionId, _result) = abi.decode(_data, (address, address, uint256, bytes32, bytes32));
         chainId = block.chainid;
+
+        questionToChainID[_questionId] = chainId;
 
         // TODO: Make sure these questionIDs can't overlap.
         // Reality.eth won't make overlapping questions but in theory we allow things other than reality.eth.

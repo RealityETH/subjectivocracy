@@ -19,7 +19,7 @@ If there is already a dispute in progress (ie another fork has been requested bu
 // TODO: Would be good to make a stripped-down IArbitrator that only has the essential functions
 contract L2ForkArbitrator {
 
-    bool is_fork_in_progress;
+    bool isForkInProgress;
     IRealityETH public realitio;
 
     enum RequestStatus {
@@ -44,7 +44,7 @@ contract L2ForkArbitrator {
         uint256 remaining
     );
 
-    mapping(bytes32 => ArbitrationRequest) arbitration_requests;
+    mapping(bytes32 => ArbitrationRequest) arbitrationRequests;
 
     L2ChainInfo chainInfo;
     L1GlobalRouter router;
@@ -65,8 +65,6 @@ contract L2ForkArbitrator {
         return disputeFee;
     }
 
-
-
     /// @notice Request arbitration, freezing the question until we send submitAnswerByArbitrator
     /// @dev The bounty can be paid only in part, in which case the last person to pay will be considered the payer
     /// Will trigger an error if the notification fails, eg because the question has already been finalized
@@ -82,9 +80,9 @@ contract L2ForkArbitrator {
             "The arbitrator must have set a non-zero fee for the question"
         );
 
-        require(arbitration_requests[question_id].status == RequestStatus.NONE, "Already requested");
+        require(arbitrationRequests[question_id].status == RequestStatus.NONE, "Already requested");
 
-        arbitration_requests[question_id] = ArbitrationRequest(RequestStatus.QUEUED, payable(msg.sender), msg.value, bytes32(0));
+        arbitrationRequests[question_id] = ArbitrationRequest(RequestStatus.QUEUED, payable(msg.sender), msg.value, bytes32(0));
 
 	realitio.notifyOfArbitrationRequest(
 	    question_id,
@@ -93,7 +91,7 @@ contract L2ForkArbitrator {
 	);
 	emit LogRequestArbitration(question_id, msg.value, msg.sender, 0);
 
-        if (!is_fork_in_progress) {
+        if (!isForkInProgress) {
            requestActivateFork(question_id); 
         }
 
@@ -105,9 +103,9 @@ contract L2ForkArbitrator {
     function requestActivateFork(
         bytes32 question_id
     ) public {
-        RequestStatus status = arbitration_requests[question_id].status;
+        RequestStatus status = arbitrationRequests[question_id].status;
         require(status == RequestStatus.QUEUED || status == RequestStatus.REQUEST_FAILED, "question was not awaiting activation");
-	arbitration_requests[question_id].status = RequestStatus.FORK_REQUESTED;
+	arbitrationRequests[question_id].status = RequestStatus.FORK_REQUESTED;
         // TODO: Send a message via the bridge, along with the payment
 
         address l2bridge = chainInfo.l2bridge();
@@ -122,7 +120,7 @@ contract L2ForkArbitrator {
             false, // TODO: Work out if we need forceUpdateGlobalExitRoot
             qdata
         );
-        is_fork_in_progress = true;
+        isForkInProgress = true;
     }
 
     /// @notice Submit the arbitrator's answer to a question, assigning the winner automatically.
@@ -137,22 +135,24 @@ contract L2ForkArbitrator {
         address last_answerer
     ) external {
 
-        // TODO: Get this from L1 somehow
-	//bytes32 answer = l1Directory.resultFor(question_id);
-	bytes32 answer = bytes32("0x0");
-        require(is_fork_in_progress, "No fork in progress to report");
-
         // Read from directory what the result was
-        RequestStatus status = arbitration_requests[question_id].status;
+        RequestStatus status = arbitrationRequests[question_id].status;
         require(status == RequestStatus.FORK_REQUESTED, "question was not in fork requested state");
 
-	arbitration_requests[question_id].status = RequestStatus.FORK_COMPLETED;
-	is_fork_in_progress = false;
+        require(chainInfo.questionToChainID(question_id) > 0, "Dispute not found in ChainInfo");
+
+        // We get the fork result from the L2ChainInfo contract
+        // One answer is assigned to each fork
+        // TODO: Is this best, or is it better to bridge it directly?
+        bytes32 answer = chainInfo.forkQuestionResults(question_id);
+
+	arbitrationRequests[question_id].status = RequestStatus.FORK_COMPLETED;
+	isForkInProgress = false;
 
         realitio.assignWinnerAndSubmitAnswerByArbitrator(
             question_id,
             answer,
-            arbitration_requests[question_id].payer,
+            arbitrationRequests[question_id].payer,
             last_history_hash,
             last_answer_or_commitment_id,
             last_answerer
@@ -163,12 +163,12 @@ contract L2ForkArbitrator {
     function clearFailedForkAttempt(
         bytes32 question_id
     ) external {
-        RequestStatus status = arbitration_requests[question_id].status;
-        require(is_fork_in_progress, "No fork in progress to clear");
+        RequestStatus status = arbitrationRequests[question_id].status;
+        require(isForkInProgress, "No fork in progress to clear");
         require(status == RequestStatus.FORK_REQUESTED, "No attempt to clear for specified question");
         // Confirm from the bridge that the previous call failed
         // TODO: Do we need a contract on L2 that has this information?
-        is_fork_in_progress = false;
+        isForkInProgress = false;
     }
 
     /// @notice Cancel a previous arbitration request
@@ -176,11 +176,11 @@ contract L2ForkArbitrator {
     /// @dev In our cases it should only happen if the fee is not up-to-date or a too-low fee was paid.
     /// @param question_id The question in question
     function cancelArbitration(bytes32 question_id) external {
-        RequestStatus status = arbitration_requests[question_id].status;
-        address payable payer = arbitration_requests[question_id].payer;
+        RequestStatus status = arbitrationRequests[question_id].status;
+        address payable payer = arbitrationRequests[question_id].payer;
         require(status == RequestStatus.REQUEST_FAILED, "question was not in fork failed state");
         realitio.cancelArbitration(question_id);
-        payer.transfer(arbitration_requests[question_id].paid);
+        payer.transfer(arbitrationRequests[question_id].paid);
     }
 
 }
