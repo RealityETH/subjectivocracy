@@ -22,6 +22,7 @@ contract MockPolygonZkEVMBridge {
                 (originAddress, originNetwork, metadata)
             )
         );
+        require(success, "Call failed");
     }
 
 }

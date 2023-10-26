@@ -60,12 +60,6 @@ contract AdjudicationIntegrationTest is Test {
     TODO: Consider whether we should gate the realityeth instance to approved AdjudicationFramework contracts (via bridge) and an upgrade manager contract.
     */
 
-    // TODO: In an earlier version these were special hard-coded values at the top end of the ID range.
-    // Consider whether we should do that, or call createTemplate() when we set up the realityeth contract.
-    uint256 constant TEMPLATE_ID_ADD_ARBITRATOR = 1;
-    uint256 constant TEMPLATE_ID_REMOVE_ARBITRATOR = 2;
-    uint256 constant TEMPLATE_ID_SWITCH_FORKMANAGER = 3;
-
     uint32 constant REALITY_ETH_TIMEOUT = 86400;
 
     // Dummy addresses for things we message on l1
@@ -85,7 +79,7 @@ contract AdjudicationIntegrationTest is Test {
 
     uint32 l1chainId = 1;
 
-    uint256 constant forkingFee = 5000; // Should ultimately come from l1 forkingmanager
+    uint256 forkingFee = 5000; // Should ultimately come from l1 forkingmanager
 
     function setUp() public {
 
@@ -153,7 +147,7 @@ contract AdjudicationIntegrationTest is Test {
         l2realityEth.submitAnswer{value: 10000}(addArbitratorQID1, bytes32(uint256(1)), 0);
 
         uint32 to = l2realityEth.getTimeout(addArbitratorQID1);
-        assertEq(to, 86400);
+        assertEq(to, REALITY_ETH_TIMEOUT);
 
         uint32 finalizeTs = l2realityEth.getFinalizeTS(addArbitratorQID1);
         assertTrue(finalizeTs > block.timestamp, "finalization ts should be passed block ts");
@@ -422,18 +416,5 @@ contract AdjudicationIntegrationTest is Test {
     }
     */
 
-    function _toString(bytes memory data)
-    internal pure returns(string memory) {
-        bytes memory alphabet = "0123456789abcdef";
-
-        bytes memory str = new bytes(2 + data.length * 2);
-        str[0] = '0';
-        str[1] = 'x';
-        for (uint i = 0; i < data.length; i++) {
-                str[2+i*2] = alphabet[uint(uint8(data[i] >> 4))];
-                str[3+i*2] = alphabet[uint(uint8(data[i] & 0x0f))];
-        }
-        return string(str);
-    }
 
 }
