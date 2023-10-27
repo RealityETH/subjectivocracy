@@ -1,4 +1,8 @@
 pragma solidity ^0.8.20;
+
+/* solhint-disable not-rely-on-time */
+/* solhint-disable reentrancy */
+
 import {Test} from "forge-std/Test.sol";
 import {Arbitrator} from "../contracts/lib/reality-eth/Arbitrator.sol";
 
@@ -50,7 +54,7 @@ contract AdjudicationIntegrationTest is Test {
     address payable internal user1 = payable(address(0xbabe09));
     address payable internal user2 = payable(address(0xbabe10));
 
-    string internal QUESTION_DELIM = "\u241f";
+    string internal constant QUESTION_DELIM = "\u241f";
 
     /*
     Flow: 
@@ -60,26 +64,26 @@ contract AdjudicationIntegrationTest is Test {
     TODO: Consider whether we should gate the realityeth instance to approved AdjudicationFramework contracts (via bridge) and an upgrade manager contract.
     */
 
-    uint32 constant REALITY_ETH_TIMEOUT = 86400;
+    uint32 constant internal REALITY_ETH_TIMEOUT = 86400;
 
     // Dummy addresses for things we message on l1
     // The following should be the same on all forks
-    MockPolygonZkEVMBridge l2Bridge;
-    address l1GlobalRouter = address(0xbabe12);
+    MockPolygonZkEVMBridge internal l2Bridge;
+    address internal l1GlobalRouter = address(0xbabe12);
 
     // The following will change when we fork so we fake multiple versions here
-    address l1ForkingManager = address(0xbabe13);
-    address l1Token = address(0xbabe14);
+    address internal l1ForkingManager = address(0xbabe13);
+    address internal l1Token = address(0xbabe14);
 
-    address l1ForkingManagerF1 = address(0x1abe13);
-    address l1TokenF1 = address(0x1abe14);
+    address internal l1ForkingManagerF1 = address(0x1abe13);
+    address internal l1TokenF1 = address(0x1abe14);
 
-    address l1ForkingManagerF2 = address(0x2abe13);
-    address l1TokenF2 = address(0x2abe14);
+    address internal l1ForkingManagerF2 = address(0x2abe13);
+    address internal l1TokenF2 = address(0x2abe14);
 
-    uint32 l1chainId = 1;
+    uint32 internal l1chainId = 1;
 
-    uint256 forkingFee = 5000; // Should ultimately come from l1 forkingmanager
+    uint256 internal forkingFee = 5000; // Should ultimately come from l1 forkingmanager
 
     function setUp() public {
 
@@ -153,7 +157,7 @@ contract AdjudicationIntegrationTest is Test {
         assertTrue(finalizeTs > block.timestamp, "finalization ts should be passed block ts");
         
         vm.expectRevert("question must be finalized");
-        bytes32 r = l2realityEth.resultFor(addArbitratorQID1);
+        l2realityEth.resultFor(addArbitratorQID1);
         assertTrue(finalizeTs > block.timestamp, "finalization ts should be passed block ts");
 
         vm.expectRevert("question must be finalized");
@@ -193,15 +197,15 @@ contract AdjudicationIntegrationTest is Test {
 
     }
 
-    function _setupArbitratedQuestion(bytes32 question_id) 
+    function _setupArbitratedQuestion(bytes32 questionId) 
     internal {
 
         // request adjudication from the framework
         vm.prank(user1);
-        assertTrue(adjudicationFramework1.requestArbitration{value: 500000}(question_id, 0));
+        assertTrue(adjudicationFramework1.requestArbitration{value: 500000}(questionId, 0));
 
         vm.expectRevert("Arbitrator must be on the allowlist");
-        l2Arbitrator2.requestArbitration{value: 500000}(question_id, 0);
+        l2Arbitrator2.requestArbitration{value: 500000}(questionId, 0);
 
     }
 
@@ -265,13 +269,14 @@ contract AdjudicationIntegrationTest is Test {
 
     function testArbitrationContestPassedWithoutFork() public {
 
-        (bytes32 qid, bytes32 removalQuestionId, bytes32 lastHistoryHash, bytes32 lastAnswer, address lastAnswerer) = _setupContestedArbitration();
+        // (bytes32 qid, bytes32 removalQuestionId, bytes32 lastHistoryHash, bytes32 lastAnswer, address lastAnswerer) = _setupContestedArbitration();
+        (, bytes32 removalQuestionId, , , ) = _setupContestedArbitration();
 
         // Currently in the "yes" state, so once it times out we can complete the removal 
 
         // Now wait for the timeout and settle the proposition
         vm.expectRevert("question must be finalized");
-        bytes32 result = l2realityEth.resultFor(removalQuestionId);
+        l2realityEth.resultFor(removalQuestionId);
 
         vm.expectRevert("question must be finalized");
         adjudicationFramework1.executeRemoveArbitratorFromAllowList(removalQuestionId);
@@ -284,7 +289,8 @@ contract AdjudicationIntegrationTest is Test {
 
     function testArbitrationContestRejectedWithoutFork() public {
 
-        (bytes32 qid, bytes32 removalQuestionId, bytes32 lastHistoryHash, bytes32 lastAnswer, address lastAnswerer) = _setupContestedArbitration();
+        //(bytes32 qid, bytes32 removalQuestionId, bytes32 lastHistoryHash, bytes32 lastAnswer, address lastAnswerer) = _setupContestedArbitration();
+        (, bytes32 removalQuestionId, , , ) = _setupContestedArbitration();
 
         // Put the proposition to remove the arbitrator into the "no" state
         l2realityEth.submitAnswer{value: 40000}(removalQuestionId, bytes32(uint256(0)), 0);
@@ -292,7 +298,7 @@ contract AdjudicationIntegrationTest is Test {
         // Now wait for the timeout and settle the proposition
 
         vm.expectRevert("question must be finalized");
-        bytes32 result = l2realityEth.resultFor(removalQuestionId);
+        l2realityEth.resultFor(removalQuestionId);
 
         vm.expectRevert("question must be finalized");
         adjudicationFramework1.executeRemoveArbitratorFromAllowList(removalQuestionId);
@@ -310,13 +316,14 @@ contract AdjudicationIntegrationTest is Test {
 
     function testArbitrationContestPassedWithFork() public {
 
-        (bytes32 qid, bytes32 removalQuestionId, bytes32 lastHistoryHash, bytes32 lastAnswer, address lastAnswerer) = _setupContestedArbitration();
+        // (bytes32 qid, bytes32 removalQuestionId, bytes32 lastHistoryHash, bytes32 lastAnswer, address lastAnswerer) = _setupContestedArbitration();
+        (, bytes32 removalQuestionId, bytes32 lastHistoryHash, bytes32 lastAnswer, address lastAnswerer) = _setupContestedArbitration();
 
         // Currently in the "yes" state, so once it times out we can complete the removal 
 
         // Now wait for the timeout and settle the proposition
         vm.expectRevert("question must be finalized");
-        bytes32 result = l2realityEth.resultFor(removalQuestionId);
+        l2realityEth.resultFor(removalQuestionId);
 
         assertEq(address(l2forkArbitrator.realitio()), address(l2realityEth), "l2forkArbitrator expects to arbitrate our l2realityEth");
         assertEq(address(adjudicationFramework1.realityETH()), address(l2realityEth), "adjudicationFramework1 expects to use our l2realityEth");
@@ -351,13 +358,15 @@ contract AdjudicationIntegrationTest is Test {
 
     function testArbitrationContestRejectedWithFork() public {
 
-        (bytes32 qid, bytes32 removalQuestionId, bytes32 lastHistoryHash, bytes32 lastAnswer, address lastAnswerer) = _setupContestedArbitration();
+        //(bytes32 qid, bytes32 removalQuestionId, bytes32 lastHistoryHash, bytes32 lastAnswer, address lastAnswerer) = _setupContestedArbitration();
+        (, bytes32 removalQuestionId, bytes32 lastHistoryHash, bytes32 lastAnswer, address lastAnswerer) = _setupContestedArbitration();
 
         // Currently in the "yes" state, so once it times out we can complete the removal 
 
         // Now wait for the timeout and settle the proposition
         vm.expectRevert("question must be finalized");
         bytes32 result = l2realityEth.resultFor(removalQuestionId);
+        assertEq(result, bytes32(uint256(0)));
 
         assertEq(address(l2forkArbitrator.realitio()), address(l2realityEth), "l2forkArbitrator expects to arbitrate our l2realityEth");
         assertEq(address(adjudicationFramework1.realityETH()), address(l2realityEth), "adjudicationFramework1 expects to use our l2realityEth");

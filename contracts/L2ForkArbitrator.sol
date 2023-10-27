@@ -2,6 +2,9 @@
 
 pragma solidity ^0.8.20;
 
+// Allow mixed-case variables for compatibility with reality.eth, eg it uses question_id not questionId
+/* solhint-disable var-name-mixedcase */
+
 // import {Arbitrator} from "./Arbitrator.sol";
 import {L2ChainInfo} from "./L2ChainInfo.sol";
 import {L1GlobalRouter} from "./L1GlobalRouter.sol";
@@ -19,7 +22,7 @@ If there is already a dispute in progress (ie another fork has been requested bu
 // TODO: Would be good to make a stripped-down IArbitrator that only has the essential functions
 contract L2ForkArbitrator {
 
-    bool isForkInProgress;
+    bool public isForkInProgress;
     IRealityETH public realitio;
 
     enum RequestStatus {
@@ -44,10 +47,10 @@ contract L2ForkArbitrator {
         uint256 remaining
     );
 
-    mapping(bytes32 => ArbitrationRequest) arbitrationRequests;
+    mapping(bytes32 => ArbitrationRequest) public arbitrationRequests;
 
-    L2ChainInfo chainInfo;
-    L1GlobalRouter router;
+    L2ChainInfo public chainInfo;
+    L1GlobalRouter public router;
 
     uint256 public disputeFee; // The dispute fee should generally only go down
     uint256 public chainId;
@@ -77,7 +80,7 @@ contract L2ForkArbitrator {
         uint256 arbitration_fee = getDisputeFee(question_id);
         require(
             arbitration_fee > 0,
-            "The arbitrator must have set a non-zero fee for the question"
+            "fee must be positive"
         );
 
         require(arbitrationRequests[question_id].status == RequestStatus.NONE, "Already requested");
@@ -104,7 +107,7 @@ contract L2ForkArbitrator {
         bytes32 question_id
     ) public {
         RequestStatus status = arbitrationRequests[question_id].status;
-        require(status == RequestStatus.QUEUED || status == RequestStatus.REQUEST_FAILED, "question was not awaiting activation");
+        require(status == RequestStatus.QUEUED || status == RequestStatus.REQUEST_FAILED, "not awaiting activation");
 	arbitrationRequests[question_id].status = RequestStatus.FORK_REQUESTED;
         // TODO: Send a message via the bridge, along with the payment
 
@@ -137,7 +140,7 @@ contract L2ForkArbitrator {
 
         // Read from directory what the result was
         RequestStatus status = arbitrationRequests[question_id].status;
-        require(status == RequestStatus.FORK_REQUESTED, "question was not in fork requested state");
+        require(status == RequestStatus.FORK_REQUESTED, "not in fork-requested state");
 
         require(chainInfo.questionToChainID(question_id) > 0, "Dispute not found in ChainInfo");
 
@@ -165,7 +168,7 @@ contract L2ForkArbitrator {
     ) external {
         RequestStatus status = arbitrationRequests[question_id].status;
         require(isForkInProgress, "No fork in progress to clear");
-        require(status == RequestStatus.FORK_REQUESTED, "No attempt to clear for specified question");
+        require(status == RequestStatus.FORK_REQUESTED, "Nothing to clear");
         // Confirm from the bridge that the previous call failed
         // TODO: Do we need a contract on L2 that has this information?
         isForkInProgress = false;
@@ -178,7 +181,7 @@ contract L2ForkArbitrator {
     function cancelArbitration(bytes32 question_id) external {
         RequestStatus status = arbitrationRequests[question_id].status;
         address payable payer = arbitrationRequests[question_id].payer;
-        require(status == RequestStatus.REQUEST_FAILED, "question was not in fork failed state");
+        require(status == RequestStatus.REQUEST_FAILED, "Not in fork-failed state");
         realitio.cancelArbitration(question_id);
         payer.transfer(arbitrationRequests[question_id].paid);
     }
