@@ -28,7 +28,7 @@ interface IForkingManager is IForkableStructure {
     function forkonomicToken() external returns (address);
     function globalExitRoot() external returns (address);
     function arbitrationFee() external returns (uint256);
-    function disputeData() external returns (DisputeData memory);
+    function disputeData() external returns (bool isL1, address disputeContract, bytes32 disputeContent);
 
     function initialize(
         address _zkEVM,

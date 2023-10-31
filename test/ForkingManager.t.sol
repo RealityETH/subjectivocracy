@@ -419,12 +419,12 @@ contract ForkingManagerTest is Test {
             );
         }
         {
-            IForkingManager.DisputeData memory receivedDD = ForkingManager(forkmanager).disputeData();
+            (bool receivedIsL1, address receivedDisputeContract, bytes32 receivedDisputeContent) = ForkingManager(forkmanager).disputeData();
 
             // Assert the dispute contract and call stored in the ForkingManager match the ones we provided
-            assertEq(receivedDD.isL1, isL1);
-            //assertEq(receivedDisputeContract, disputeContract);
-            //assertEq(receivedDisputeContent, disputeContent);
+            assertEq(receivedIsL1, isL1);
+            assertEq(receivedDisputeContract, disputeContract);
+            assertEq(receivedDisputeContent, disputeContent);
         }
         {
             assertEq(

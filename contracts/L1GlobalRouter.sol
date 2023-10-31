@@ -36,11 +36,11 @@ contract L1GlobalRouter {
 
         uint256 arbitrationFee = fm.arbitrationFee();
 
-        IForkingManager.DisputeData memory dd = fm.disputeData();
+        (bool isL1, address disputeContract, bytes32 disputeContent) = fm.disputeData();
 
         // TODO: Can we put the disputeData in ForkingManager in a bytes32?
         // Fork results: 0 for the genesis, 1 for yes, 2 for no 
-        bytes memory data = abi.encode(fm, arbitrationFee, dd.isL1, dd.disputeContract, dd.disputeContent, forkResult);
+        bytes memory data = abi.encode(fm, arbitrationFee, isL1, disputeContract, disputeContent, forkResult);
 
         IPolygonZkEVMBridge(_bridge).bridgeMessage(
             uint32(chainId),
