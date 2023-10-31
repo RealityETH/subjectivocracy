@@ -142,12 +142,12 @@ contract L2ForkArbitrator {
         RequestStatus status = arbitrationRequests[question_id].status;
         require(status == RequestStatus.FORK_REQUESTED, "not in fork-requested state");
 
-        require(chainInfo.questionToChainID(question_id) > 0, "Dispute not found in ChainInfo");
+        require(chainInfo.questionToChainID(false, address(this), question_id) > 0, "Dispute not found in ChainInfo");
 
         // We get the fork result from the L2ChainInfo contract
         // One answer is assigned to each fork
         // TODO: Is this best, or is it better to bridge it directly?
-        bytes32 answer = chainInfo.forkQuestionResults(question_id);
+        bytes32 answer = chainInfo.forkQuestionResults(false, address(this), question_id);
 
 	arbitrationRequests[question_id].status = RequestStatus.FORK_COMPLETED;
 	isForkInProgress = false;

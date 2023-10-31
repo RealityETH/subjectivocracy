@@ -36,7 +36,8 @@ contract ForkingManager is IForkingManager, ForkableStructure {
 
     // Fee that needs to be paid to initiate a fork
     uint256 public arbitrationFee;
-    DisputeData public disputeData;
+
+    DisputeData internal myDisputeData;
 
     // Struct that holds an address pair used to store the new child contracts
     struct AddressPair {
@@ -251,6 +252,12 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         );
 
         // Store the dispute contract and call to identify the dispute
-        disputeData = _disputeData;
+        myDisputeData = _disputeData;
     }
+
+    function disputeData() external returns (DisputeData memory) {
+        return myDisputeData;
+    }
+
+    
 }

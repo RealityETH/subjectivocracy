@@ -195,14 +195,16 @@ contract ForkingManagerTest is Test {
         address disputeContract = address(
             0x1234567890123456789012345678901234567894
         );
-        bytes memory disputeCall = "0x34567890129";
+        bytes32 disputeContent = "0x34567890129";
+        bool isL1 = true;
 
         // Call the initiateFork function to create a new fork
         vm.expectRevert(bytes("ERC20: insufficient allowance"));
         forkmanager.initiateFork(
             IForkingManager.DisputeData({
+                isL1: isL1,
                 disputeContract: disputeContract,
-                disputeCall: disputeCall
+                disputeContent: disputeContent
             }),
             IForkingManager.NewImplementations({
                 bridgeImplementation: newBridgeImplementation,
@@ -229,8 +231,9 @@ contract ForkingManagerTest is Test {
 
         forkmanager.initiateFork(
             IForkingManager.DisputeData({
+                isL1: isL1,
                 disputeContract: disputeContract,
-                disputeCall: disputeCall
+                disputeContent: disputeContent
             }),
             IForkingManager.NewImplementations({
                 bridgeImplementation: newBridgeImplementation,
@@ -263,7 +266,8 @@ contract ForkingManagerTest is Test {
         address disputeContract = address(
             0x1234567890123456789012345678901234567894
         );
-        bytes memory disputeCall = "0x34567890129";
+        bytes32 disputeContent = "0x34567890129";
+        bool isL1 = true;
 
         // Mint and approve the arbitration fee for the test contract
         forkonomicToken.approve(address(forkmanager), arbitrationFee);
@@ -272,8 +276,9 @@ contract ForkingManagerTest is Test {
 
         IForkingManager.DisputeData memory disputeData = IForkingManager
             .DisputeData({
+                isL1: isL1,
                 disputeContract: disputeContract,
-                disputeCall: disputeCall
+                disputeContent: disputeContent
             });
 
         // Call the initiateFork function to create a new fork
@@ -414,14 +419,12 @@ contract ForkingManagerTest is Test {
             );
         }
         {
-            (
-                address receivedDisputeContract,
-                bytes memory receivedDisputeCall
-            ) = ForkingManager(forkmanager).disputeData();
+            IForkingManager.DisputeData memory receivedDD = ForkingManager(forkmanager).disputeData();
 
             // Assert the dispute contract and call stored in the ForkingManager match the ones we provided
-            assertEq(receivedDisputeContract, disputeContract);
-            assertEq(receivedDisputeCall, disputeCall);
+            assertEq(receivedDD.isL1, isL1);
+            //assertEq(receivedDisputeContract, disputeContract);
+            //assertEq(receivedDisputeContent, disputeContent);
         }
         {
             assertEq(

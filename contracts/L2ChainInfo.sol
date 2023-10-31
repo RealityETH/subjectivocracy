@@ -23,17 +23,14 @@ contract L2ChainInfo is IBridgeMessageReceiver{
     uint32 public originNetwork;
 
     uint256 internal chainId;
-    address internal forkonomicToken; // Not needed for reality.eth/arbitration stuff but it seems useful to have on L2
-    address internal forkingManager; // Likewise
+    address internal forkingManager;
     uint256 internal forkFee;
     // uint256 internal totalSupply;
 
-    mapping(bytes32=>bytes32) public forkQuestionResults;
-
-    // We need a mapping of question to something to know if we have a result
-    // Use chainId as it seems like it may be useful elsewhere
-    // Another option would be to map the fork results to 1/2 instead of 0/1
-    mapping(bytes32=>uint256) public questionToChainID;
+    // Questions are stored by isL2->forker->id
+    // The forker is assumed to have created a unique id within itself for the dispute it's forking over
+    mapping(bool=>mapping(address=>mapping(bytes32=>bytes32))) public forkQuestionResults;
+    mapping(bool=>mapping(address=>mapping(bytes32=>uint256))) public questionToChainID;
 
     constructor(uint32 _originNetwork, address _l2bridge, address _l1globalRouter) {
 	originNetwork = _originNetwork;
@@ -55,16 +52,12 @@ contract L2ChainInfo is IBridgeMessageReceiver{
 	return chainId;
     }
 
-    function getForkonomicToken() external view isUpToDate returns(address) {
-	return forkonomicToken;
-    }
-
     function getForkFee() external view isUpToDate returns(uint256) {
 	return forkFee;
     }
 
-    function getForkQuestionResult(bytes32 questionId) external view isUpToDate returns(bytes32) {
-	return forkQuestionResults[questionId];
+    function getForkQuestionResult(bool isL1, address forker, bytes32 questionId) external view isUpToDate returns(bytes32) {
+	return forkQuestionResults[isL1][forker][questionId];
     }
 
     function onMessageReceived(address _originAddress, uint32 _originNetwork, bytes memory _data) external payable isNotUpToDate {
@@ -73,18 +66,18 @@ contract L2ChainInfo is IBridgeMessageReceiver{
         require(_originAddress == l1globalRouter, "only l1globalRouter can call us");
         require(_originNetwork == originNetwork, "wrong origin network");
 
-        bytes32 _questionId; 
-        bytes32 _result;
+        bool isL1;
+        address forker; 
+        bytes32 questionId;
+        bytes32 result;
 
-        (forkingManager, forkonomicToken, forkFee, _questionId, _result) = abi.decode(_data, (address, address, uint256, bytes32, bytes32));
+        (forkingManager, forkFee, isL1, forker, questionId, result) = abi.decode(_data, (address, uint256, bool, address, bytes32, bytes32));
+
         chainId = block.chainid;
 
-        questionToChainID[_questionId] = chainId;
+        questionToChainID[isL1][forker][questionId] = chainId;
+        forkQuestionResults[isL1][forker][questionId] = result;
 
-        // TODO: Make sure these questionIDs can't overlap.
-        // Reality.eth won't make overlapping questions but in theory we allow things other than reality.eth.
-        forkQuestionResults[_questionId] = _result;
-    
     }
 
 }

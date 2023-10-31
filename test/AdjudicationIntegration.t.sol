@@ -97,7 +97,7 @@ contract AdjudicationIntegrationTest is Test {
         // Triggers:
         // l2ChainInfo.onMessageReceived(l1GlobalRouter, l1chainId, fakeMessageData);
         // In reality this would originate on L1.
-        bytes memory fakeMessageData = abi.encode(address(l1ForkingManager), address(l1Token), uint256(forkingFee), bytes32(0x0), bytes32(0x0));
+        bytes memory fakeMessageData = abi.encode(address(l1ForkingManager), uint256(forkingFee), false, address(l2forkArbitrator), bytes32(0x0), bytes32(0x0));
         l2Bridge.fakeClaimMessage(address(l1GlobalRouter), uint32(l1chainId), address(l2ChainInfo), fakeMessageData, uint256(0));
 
         l1realityEth = new ForkableRealityETH_ERC20();
@@ -338,7 +338,7 @@ contract AdjudicationIntegrationTest is Test {
         vm.chainId(newChainId1);
 
         // TODO: Adjust the forkingFee as the total supply has changed a bit
-        bytes memory fakeMessageData = abi.encode(address(l1ForkingManagerF1), address(l1TokenF1), uint256(forkingFee), removalQuestionId, bytes32(uint256(1)));
+        bytes memory fakeMessageData = abi.encode(address(l1ForkingManagerF1), uint256(forkingFee), false, address(l2forkArbitrator),  removalQuestionId, bytes32(uint256(1)));
         l2Bridge.fakeClaimMessage(address(l1GlobalRouter), uint32(l1chainId), address(l2ChainInfo), fakeMessageData, uint256(0));
 
         assertTrue(l2realityEth.isPendingArbitration(removalQuestionId));
@@ -381,7 +381,7 @@ contract AdjudicationIntegrationTest is Test {
         vm.chainId(newChainId1);
 
         // TODO: Adjust the forkingFee as the total supply has changed a bit
-        bytes memory fakeMessageData = abi.encode(address(l1ForkingManagerF1), address(l1TokenF1), uint256(forkingFee), removalQuestionId, bytes32(uint256(0)));
+        bytes memory fakeMessageData = abi.encode(address(l1ForkingManagerF1), uint256(forkingFee), false, address(l2forkArbitrator), removalQuestionId, bytes32(uint256(0)));
         l2Bridge.fakeClaimMessage(address(l1GlobalRouter), uint32(l1chainId), address(l2ChainInfo), fakeMessageData, uint256(0));
 
         assertTrue(l2realityEth.isPendingArbitration(removalQuestionId));
