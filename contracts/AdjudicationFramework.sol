@@ -101,6 +101,10 @@ contract AdjudicationFramework is BalanceHolder {
 
     mapping(bytes32 => ArbitrationRequest) public question_arbitrations;
 
+    /// @param _realityETH The reality.eth instance we adjudicate for
+    /// @param _dispute_fee The dispute fee we charge reality.eth users
+    /// @param _forkArbitrator The arbitrator contract that escalates to an L1 fork, used for our governance
+    /// @param _initialArbitrators Arbitrator contracts we initially support
     constructor(
         address _realityETH,
         uint256 _dispute_fee,
