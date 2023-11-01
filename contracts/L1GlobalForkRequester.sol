@@ -8,7 +8,7 @@ pragma solidity ^0.8.20;
    We record the dispute they were forking over
 */
 
-// TODO: An alternative would be to look up the ForkingManager direct from L2ChainInfo and call it directly.
+// TODO: An alternative would be to look up the ForkingManager on L2ChainInfo and call it directly.
 // TODO: We could use this to manage the dispute data, in which case we could gate initiateFork() to only be callable by us.
 // TODO: The whitepaper implies a whitelist about who is allowed to fork us. Currently anybody can as long as they pay.
 
@@ -40,9 +40,12 @@ contract L1GlobalForkRequester {
       // We also check in the opposite direction to make sure the ForkingManager thinks the bridge is its bridge
       require(address(fm.bridge()) == msg.sender, "Bridge mismatch, WTF");
 
+      // TODO:
+      // 1) Work out what happens if this reverts.
+      // 2) Work out how the fee is handled
+
       // Assume the data contains the questionId and pass it directly to the forkmanager in the fork request
       IForkingManager.NewImplementations memory ni;
-      // TODO: check what _originAddress should be
       IForkingManager.DisputeData memory dd = IForkingManager.DisputeData(false, _originAddress, bytes32(_data));
       fm.initiateFork(dd, ni);
 
