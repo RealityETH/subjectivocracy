@@ -346,8 +346,8 @@ contract AdjudicationFramework is BalanceHolder {
         str[0] = '0';
         str[1] = 'x';
         for (uint i = 0; i < data.length; i++) {
-                str[2+i*2] = alphabet[uint(uint8(data[i] >> 4))];
-                str[3+i*2] = alphabet[uint(uint8(data[i] & 0x0f))];
+            str[2+i*2] = alphabet[uint(uint8(data[i] >> 4))];
+            str[3+i*2] = alphabet[uint(uint8(data[i] & 0x0f))];
         }
         return string(str);
     }
