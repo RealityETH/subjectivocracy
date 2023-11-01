@@ -104,8 +104,8 @@ contract AdjudicationFramework is BalanceHolder {
     constructor(
         address _realityETH,
         uint256 _dispute_fee,
-        address _forkArbitrator
-        //address[] memory _initial_arbitrators
+        address _forkArbitrator,
+        address[] memory _initialArbitrators
     ) {
         realityETH = IRealityETH(_realityETH);
         dispute_fee = _dispute_fee;
@@ -125,11 +125,10 @@ contract AdjudicationFramework is BalanceHolder {
         templateIdAddArbitrator = realityETH.createTemplate(addTemplate);
         templateIdRemoveArbitrator = realityETH.createTemplate(removeTemplate);
 
-/*
-        for (uint256 i = 0; i < _initial_arbitrators.length; i++) {
-            arbitrators[_initial_arbitrators[i]] = true;
+        for (uint256 i = 0; i < _initialArbitrators.length; i++) {
+           arbitrators[_initialArbitrators[i]] = true;
         }
-*/
+
     }
 
     /// @notice Return the dispute fee for the specified question. 0 indicates that we won't arbitrate it.

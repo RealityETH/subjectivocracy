@@ -45,6 +45,9 @@ contract AdjudicationIntegrationTest is Test {
     Arbitrator internal l2Arbitrator1;
     Arbitrator internal l2Arbitrator2;
 
+    address internal initialArbitrator1 = address(0xbeeb01);
+    address internal initialArbitrator2 = address(0xbeeb02);
+
     address internal removeArbitrator1 = address(0xbabe05);
     address internal removeArbitrator2 = address(0xbabe06);
 
@@ -124,14 +127,12 @@ contract AdjudicationIntegrationTest is Test {
 
         l2forkArbitrator = new L2ForkArbitrator(IRealityETH(l2realityEth), L2ChainInfo(l2ChainInfo), L1GlobalRouter(l1GlobalRouter), forkingFee);
 
-        // TODO: Make it possible to pass initial arbitrators in the constructor
-        // address arbAddr = address(l2Arbitrator1);
-        // address[] memory initialArbs;
-        // initialArbs[0] = arbAddr;
-
         // The adjudication framework can act like a regular reality.eth arbitrator.
         // It will also use reality.eth to arbitrate its own governance, using the L2ForkArbitrator which makes L1 fork requests.
-        adjudicationFramework1 = new AdjudicationFramework(address(l2realityEth), 123, address(l2forkArbitrator));
+        address[] memory initialArbitrators = new address[](2);
+        initialArbitrators[0] = initialArbitrator1;
+        initialArbitrators[1] = initialArbitrator2;
+        adjudicationFramework1 = new AdjudicationFramework(address(l2realityEth), 123, address(l2forkArbitrator), initialArbitrators);
 
         l2Arbitrator1 = new Arbitrator();
         // NB The adjudication framework looks to individual arbitrators like a reality.eth question, so they can use it without being changed.
@@ -168,6 +169,14 @@ contract AdjudicationIntegrationTest is Test {
 
         assertTrue(adjudicationFramework1.arbitrators(address(l2Arbitrator1)));
 
+    }
+
+    function testInitialArbitrators() internal {
+        // Initial arbitrators from the contructor should be added
+        assertTrue(adjudicationFramework1.arbitrators(initialArbitrator1));
+        assertTrue(adjudicationFramework1.arbitrators(initialArbitrator2));
+        // Arbitrators we use in adding tests with won't be added until we pass propositions for them
+        assertFalse(adjudicationFramework1.arbitrators(address(l2Arbitrator1)));
     }
 
     function testContestedAddArbitrator()
