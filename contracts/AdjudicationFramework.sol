@@ -49,9 +49,8 @@ contract AdjudicationFramework is BalanceHolder {
     uint32 constant REALITY_ETH_BOND_ARBITRATOR_REMOVE = 10000;
     uint32 constant REALITY_ETH_BOND_ARBITRATOR_FREEZE = 20000;
 
-    string constant QUESTION_DELIM = "\u241f";
-    uint256 constant TEMPLATE_ID_ADD_ARBITRATOR = 1;
-    uint256 constant TEMPLATE_ID_REMOVE_ARBITRATOR = 2;
+    uint256 public templateIdAddArbitrator;
+    uint256 public templateIdRemoveArbitrator;
 
     event LogRequestArbitration(
         bytes32 indexed question_id,
@@ -106,7 +105,6 @@ contract AdjudicationFramework is BalanceHolder {
 
     mapping(bytes32 => ArbitrationRequest) public question_arbitrations;
 
-    // TODO: Create the templates here?
     constructor(
         address _realityETH,
         uint256 _dispute_fee,
@@ -116,6 +114,20 @@ contract AdjudicationFramework is BalanceHolder {
         realityETH = IRealityETH(_realityETH);
         dispute_fee = _dispute_fee;
         forkArbitrator = _forkArbitrator;
+
+        // Create reality.eth templates for our add and remove questions
+        // We'll identify ourselves in the template so we only need a single parameter for questions, the arbitrator in question.
+        // TODO: We may want to specify a document with the terms that guide this decision here, rather than just leaving it implicit.
+
+        string memory templatePrefixAdd = '{"title": "Should we add arbitrator %s to the framework ';
+        string memory templatePrefixRemove = '{"title": "Should we remove arbitrator %s from the framework ';
+        string memory templateSuffix = '?", "type": "bool", "category": "adjudication", "lang": "en"}';
+
+        string memory addTemplate = _toString(abi.encodePacked(templatePrefixAdd, address(this), templateSuffix));
+        string memory removeTemplate = _toString(abi.encodePacked(templatePrefixRemove, address(this), templateSuffix));
+
+        templateIdAddArbitrator = realityETH.createTemplate(addTemplate);
+        templateIdRemoveArbitrator = realityETH.createTemplate(removeTemplate);
 
 /*
         for (uint256 i = 0; i < _initial_arbitrators.length; i++) {
@@ -317,8 +329,7 @@ contract AdjudicationFramework is BalanceHolder {
         realityETH.submitAnswerByArbitrator(question_id, answer, answerer);
     }
 
-
-    // Governance (including adding and removing arbitrators from the allowlist) has two steps:
+    // Governance (specifically adding and removing arbitrators from the allowlist) has two steps:
     // 1) Create question
     // 2) Complete operation (if proposition succeeded) or nothing if it failed
 
@@ -341,11 +352,10 @@ contract AdjudicationFramework is BalanceHolder {
         return string(str);
     }
 
-
     function beginAddArbitratorToAllowList(address arbitrator_to_add)
     external returns (bytes32) {
-        string memory question = _toString(abi.encodePacked(address(this), QUESTION_DELIM, arbitrator_to_add));
-        bytes32 question_id = realityETH.askQuestionWithMinBond(TEMPLATE_ID_ADD_ARBITRATOR, question, forkArbitrator, REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0, REALITY_ETH_BOND_ARBITRATOR_ADD);
+        string memory question = _toString(abi.encodePacked(arbitrator_to_add));
+        bytes32 question_id = realityETH.askQuestionWithMinBond(templateIdAddArbitrator, question, forkArbitrator, REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0, REALITY_ETH_BOND_ARBITRATOR_ADD);
         require(propositions[question_id].proposition_type == PropositionType.NONE, "Proposition already exists");
         propositions[question_id] = ArbitratorProposition(PropositionType.ADD_ARBITRATOR, arbitrator_to_add, false);
         return question_id;
@@ -353,8 +363,8 @@ contract AdjudicationFramework is BalanceHolder {
 
     function beginRemoveArbitratorFromAllowList(address arbitrator_to_remove)
     external returns (bytes32) {
-        string memory question = _toString(abi.encodePacked(address(this), QUESTION_DELIM, arbitrator_to_remove));
-        bytes32 question_id = realityETH.askQuestionWithMinBond(TEMPLATE_ID_REMOVE_ARBITRATOR, question, forkArbitrator, REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0, REALITY_ETH_BOND_ARBITRATOR_REMOVE);
+        string memory question = _toString(abi.encodePacked(arbitrator_to_remove));
+        bytes32 question_id = realityETH.askQuestionWithMinBond(templateIdRemoveArbitrator, question, forkArbitrator, REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0, REALITY_ETH_BOND_ARBITRATOR_REMOVE);
         require(propositions[question_id].proposition_type == PropositionType.NONE, "Proposition already exists");
         propositions[question_id] = ArbitratorProposition(PropositionType.REMOVE_ARBITRATOR, arbitrator_to_remove, false);
 
