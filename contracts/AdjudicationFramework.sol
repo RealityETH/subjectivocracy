@@ -40,10 +40,6 @@ contract AdjudicationFramework is BalanceHolder {
     uint256 public constant ARB_DISPUTE_TIMEOUT = 86400;
     uint256 public constant QUESTION_UNHANDLED_TIMEOUT = 86400;
 
-    uint256 public constant TOKEN_RESERVATION_BIDDING_PERIOD = 86400; // After you make a bid, people have 1 day to outbid you
-    uint256 public constant TOKEN_RESERVATION_CLAIM_TIMEOUT = 864000; // After a bid is accepted, you have 9 days to complete it or you can lose your deposit
-    uint256 public constant TOKEN_RESERVATION_DEPOSIT = 10; // 1/10, ie 10%
-
     uint32 constant REALITY_ETH_TIMEOUT = 86400;
     uint32 constant REALITY_ETH_BOND_ARBITRATOR_ADD = 10000;
     uint32 constant REALITY_ETH_BOND_ARBITRATOR_REMOVE = 10000;
