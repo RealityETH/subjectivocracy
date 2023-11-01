@@ -135,7 +135,7 @@ contract AdjudicationFramework is BalanceHolder {
     /// @notice Return the dispute fee for the specified question. 0 indicates that we won't arbitrate it.
     /// @dev Uses a general default, but can be over-ridden on a question-by-question basis.
     function getDisputeFee(bytes32) public view returns (uint256) {
-        // Todo: make it depend on the question
+        // TODO: Should we have a governance process to change this?
         return dispute_fee;
     }
 
