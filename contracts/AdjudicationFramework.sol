@@ -27,22 +27,6 @@ contract AdjudicationFramework is BalanceHolder {
     uint256 public constant ARB_DISPUTE_TIMEOUT = 86400;
     uint256 public constant QUESTION_UNHANDLED_TIMEOUT = 86400;
 
-    // From RealityETH
-    struct Question {
-        bytes32 content_hash;
-        address arbitrator;
-        uint32 opening_ts;
-        uint32 timeout;
-        uint32 finalize_ts;
-        bool is_pending_arbitration;
-        uint256 bounty;
-        bytes32 best_answer;
-        bytes32 history_hash;
-        uint256 bond;
-        uint256 min_bond;
-    }
-
-    mapping(bytes32 => Question) public questions;
     uint32 public constant REALITY_ETH_TIMEOUT = 86400;
     uint32 public constant REALITY_ETH_BOND_ARBITRATOR_ADD = 10000;
     uint32 public constant REALITY_ETH_BOND_ARBITRATOR_REMOVE = 10000;
