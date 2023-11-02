@@ -110,8 +110,9 @@ contract AdjudicationFramework is BalanceHolder {
         string memory templatePrefixRemove = '{"title": "Should we remove arbitrator %s from the framework ';
         string memory templateSuffix = '?", "type": "bool", "category": "adjudication", "lang": "en"}';
 
-        string memory addTemplate = _toString(abi.encodePacked(templatePrefixAdd, address(this), templateSuffix));
-        string memory removeTemplate = _toString(abi.encodePacked(templatePrefixRemove, address(this), templateSuffix));
+        string memory thisContractStr = _toString(abi.encodePacked(address(this)));
+        string memory addTemplate = string.concat(templatePrefixAdd, thisContractStr, templateSuffix);
+        string memory removeTemplate = string.concat(templatePrefixRemove, thisContractStr, templateSuffix);
 
         templateIdAddArbitrator = realityETH.createTemplate(addTemplate);
         templateIdRemoveArbitrator = realityETH.createTemplate(removeTemplate);

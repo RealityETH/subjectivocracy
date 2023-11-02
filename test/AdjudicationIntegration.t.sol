@@ -2,6 +2,9 @@ pragma solidity ^0.8.20;
 
 /* solhint-disable not-rely-on-time */
 /* solhint-disable reentrancy */
+/* solhint-disable quotes */
+
+import { Vm } from 'forge-std/Vm.sol';
 
 import {Test} from "forge-std/Test.sol";
 import {Arbitrator} from "../contracts/lib/reality-eth/Arbitrator.sol";
@@ -22,6 +25,13 @@ import {L2ChainInfo} from "../contracts/L2ChainInfo.sol";
 import {MockPolygonZkEVMBridge} from "./testcontract/MockPolygonZkEVMBridge.sol";
 
 contract AdjudicationIntegrationTest is Test {
+
+    struct Log {
+      bytes32[] topics;
+      bytes data;
+      address emitter;
+    }
+
     Arbitrator public govArb;
 
     IERC20 internal tokenMock = IERC20(0x1234567890123456789012345678901234567890);
@@ -171,16 +181,15 @@ contract AdjudicationIntegrationTest is Test {
 
     }
 
-    function testInitialArbitrators() internal {
+    function testInitialArbitrators() public {
         // Initial arbitrators from the contructor should be added
         assertTrue(adjudicationFramework1.arbitrators(initialArbitrator1));
         assertTrue(adjudicationFramework1.arbitrators(initialArbitrator2));
-        // Arbitrators we use in adding tests with won't be added until we pass propositions for them
-        assertFalse(adjudicationFramework1.arbitrators(address(l2Arbitrator1)));
+        // This arbitrator may be added in other tests by creating a proposition
+        assertFalse(adjudicationFramework1.arbitrators(address(l2Arbitrator2)));
     }
 
-    function testContestedAddArbitrator()
-    internal {
+    function testContestedAddArbitrator() public {
 
         addArbitratorQID2 = adjudicationFramework1.beginAddArbitratorToAllowList(address(l2Arbitrator2));
         l2realityEth.submitAnswer{value: 10000}(addArbitratorQID2, bytes32(uint256(1)), 0);
@@ -411,6 +420,25 @@ contract AdjudicationIntegrationTest is Test {
 
     }
 
+    function testAdjudicationFrameworkTemplateCreation() public {
+        address[] memory initialArbs;
+        vm.recordLogs();
+
+        // Creates 2 templates, each with a log entry from reality.eth
+        new AdjudicationFramework(address(l2realityEth), 123, address(l2forkArbitrator), initialArbs);
+
+        // NB The length and indexes of this may change if we add unrelated log entries to the AdjudicationFramework constructor
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        assertEq(entries.length, 2);
+
+        // TODO: Not sure if this contract address will change when we do other stuff
+
+        string memory addLog = '{"title": "Should we add arbitrator %s to the framework 0xd6bbde9174b1cdaa358d2cf4d57d1a9f7178fbff?", "type": "bool", "category": "adjudication", "lang": "en"}';
+        string memory removeLog = '{"title": "Should we remove arbitrator %s from the framework 0xd6bbde9174b1cdaa358d2cf4d57d1a9f7178fbff?", "type": "bool", "category": "adjudication", "lang": "en"}';
+        assertEq(abi.decode(entries[0].data, (string)), string(addLog));
+        assertEq(abi.decode(entries[1].data, (string)), string(removeLog));
+
+    }
 
     /*
     // TODO:
@@ -433,6 +461,7 @@ contract AdjudicationIntegrationTest is Test {
         assertEq(govArb.arbitration_bounties(questionId), 50);
     }
     */
+
 
 
 }
