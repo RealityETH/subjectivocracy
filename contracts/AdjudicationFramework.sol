@@ -2,12 +2,16 @@
 
 pragma solidity ^0.8.20;
 
-import "./lib/reality-eth/BalanceHolder.sol";
+/* solhint-disable var-name-mixedcase */
+/* solhint-disable quotes */
+/* solhint-disable not-rely-on-time */
+/* solhint-disable reason-string */
 
-import "./interfaces/IRealityETH.sol";
+import {BalanceHolder} from "./lib/reality-eth/BalanceHolder.sol";
 
-import "./interfaces/IArbitrator.sol";
-import "./interfaces/IERC20.sol";
+import {IRealityETH} from "./interfaces/IRealityETH.sol";
+import {IArbitrator} from "./interfaces/IArbitrator.sol";
+import {IERC20} from "./interfaces/IERC20.sol";
 
 /*
 This contract sits between a Reality.eth instance and an Arbitrator.
@@ -19,6 +23,9 @@ To the normal Arbitrator contracts that does its arbitration jobs, it looks like
 */
 
 contract AdjudicationFramework is BalanceHolder {
+
+    uint256 public constant ARB_DISPUTE_TIMEOUT = 86400;
+    uint256 public constant QUESTION_UNHANDLED_TIMEOUT = 86400;
 
     // From RealityETH
     struct Question {
@@ -36,14 +43,10 @@ contract AdjudicationFramework is BalanceHolder {
     }
 
     mapping(bytes32 => Question) public questions;
-
-    uint256 public constant ARB_DISPUTE_TIMEOUT = 86400;
-    uint256 public constant QUESTION_UNHANDLED_TIMEOUT = 86400;
-
-    uint32 constant REALITY_ETH_TIMEOUT = 86400;
-    uint32 constant REALITY_ETH_BOND_ARBITRATOR_ADD = 10000;
-    uint32 constant REALITY_ETH_BOND_ARBITRATOR_REMOVE = 10000;
-    uint32 constant REALITY_ETH_BOND_ARBITRATOR_FREEZE = 20000;
+    uint32 public constant REALITY_ETH_TIMEOUT = 86400;
+    uint32 public constant REALITY_ETH_BOND_ARBITRATOR_ADD = 10000;
+    uint32 public constant REALITY_ETH_BOND_ARBITRATOR_REMOVE = 10000;
+    uint32 public constant REALITY_ETH_BOND_ARBITRATOR_FREEZE = 20000;
 
     uint256 public templateIdAddArbitrator;
     uint256 public templateIdRemoveArbitrator;
@@ -155,7 +158,7 @@ contract AdjudicationFramework is BalanceHolder {
             arbitration_fee > 0,
             "The arbitrator must have set a non-zero fee for the question"
         );
-        require(msg.value >= arbitration_fee);
+        require(msg.value >= arbitration_fee, "Insufficient fee");
 
         realityETH.notifyOfArbitrationRequest(
             question_id,
