@@ -20,7 +20,9 @@ import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IP
 //  Error (5005): Linearization of inheritance graph impossible
 import {ForkableBridge} from "./ForkableBridge.sol";
 
-contract L1GlobalForkRequester {
+import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
+
+contract L1GlobalForkRequester is IBridgeMessageReceiver {
 
     // Any bridge (or any contract pretending to be a bridge) can call this.
     // We'll look up its ForkingManager and ask it for a fork.
