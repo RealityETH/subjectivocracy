@@ -20,6 +20,9 @@ import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IP
 //  Error (5005): Linearization of inheritance graph impossible
 import {ForkableBridge} from "./ForkableBridge.sol";
 
+// TODO: Is this the right IERC20 interface? We have lots.
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 
 contract L1GlobalForkRequester is IBridgeMessageReceiver {
@@ -29,6 +32,7 @@ contract L1GlobalForkRequester is IBridgeMessageReceiver {
     // TODO: It might make more sense if this contract requested the chain ID then kept a record of it.
     // ...then the ForkingManager would be locked to only fork based on our request.
 
+    // Presumably this automatically has the tokens in its balance at this point, although we still need to test this.
     function onMessageReceived(address _originAddress, uint32 _originNetwork, bytes memory _data) external payable {
 
       ForkableBridge bridge = ForkableBridge(msg.sender);
@@ -46,10 +50,52 @@ contract L1GlobalForkRequester is IBridgeMessageReceiver {
       // 1) Work out what happens if this reverts.
       // 2) Work out how the fee is handled
 
+      uint256 fee = forkingManager.arbitrationFee();
+      IERC20 token = IERC20(forkingManager.forkonomicToken());
+
+      bool isFailed = false;
+
+      // Fee must be supplied
+      // TODO: Check how the bridge works. This doesn't require a separate call to claim the asset does it?
+      //       If so, do we need to revert here so it can be called again?
+      if (!isFailed && token.balanceOf(address(this)) <= fee) {
+        isFailed = true;
+      }
+      // Shouldn't fail but who knows
+      if (!isFailed && !token.approve(address(forkingManager), fee)) {
+        isFailed = true;
+      }
+ 
+      // TODO: Add this to ForkingManager
+      // if (!isFailed && !forkingManager.canForkNow()) {
+      //   isFailed = true;
+      // }
+    
+      // TODO: Do we need to check anything about _originNetwork? 
+      if (isFailed) {
+        _handleFail(_originAddress, _originNetwork, _data);
+      }
+
       // Assume the data contains the questionId and pass it directly to the forkmanager in the fork request
       IForkingManager.NewImplementations memory newImplementations;
       IForkingManager.DisputeData memory disputeData = IForkingManager.DisputeData(false, _originAddress, bytes32(_data));
+
+      // This shouldn't be able to revert
       forkingManager.initiateFork(disputeData, newImplementations);
+
+
+    }
+
+    // If this fails, send the funds back across the bridge to the contract that requested it.
+    function _handleFail(address _originAddress, uint32 _originNetwork, bytes memory _data) internal {
+        
+        ForkableBridge bridge = ForkableBridge(msg.sender);
+        bridge.bridgeMessage(
+            _originNetwork,
+            _originAddress,
+            false, // TODO: Work out if we need forceUpdateGlobalExitRoot
+            _data
+        );
 
     }
 

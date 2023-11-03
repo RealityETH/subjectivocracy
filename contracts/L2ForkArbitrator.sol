@@ -11,6 +11,7 @@ import {L1GlobalRouter} from "./L1GlobalRouter.sol";
 import {IRealityETH} from "./interfaces/IRealityETH.sol";
 
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
+import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 
 /*
 This contract is the arbitrator used by governance propositions for AdjudicationFramework contracts.
@@ -30,13 +31,14 @@ contract L2ForkArbitrator {
         QUEUED,
         FORK_REQUESTED, // Fork is happening
         FORK_COMPLETED,  // Fork has happened
-        REQUEST_FAILED   // TODO: Check if we need this or if we can just put it back to QUEUED
+        FORK_FAILED   // TODO: Check if we need this or if we can just put it back to QUEUED
     }
 
     struct ArbitrationRequest {
         RequestStatus status; 
 	address payable payer;
         uint256 paid;
+        uint256 returned;
 	bytes32 result;
     } 
 
@@ -85,7 +87,7 @@ contract L2ForkArbitrator {
 
         require(arbitrationRequests[question_id].status == RequestStatus.NONE, "Already requested");
 
-        arbitrationRequests[question_id] = ArbitrationRequest(RequestStatus.QUEUED, payable(msg.sender), msg.value, bytes32(0));
+        arbitrationRequests[question_id] = ArbitrationRequest(RequestStatus.QUEUED, payable(msg.sender), msg.value, 0, bytes32(0));
 
 	realitio.notifyOfArbitrationRequest(
 	    question_id,
@@ -107,7 +109,7 @@ contract L2ForkArbitrator {
         bytes32 question_id
     ) public {
         RequestStatus status = arbitrationRequests[question_id].status;
-        require(status == RequestStatus.QUEUED || status == RequestStatus.REQUEST_FAILED, "not awaiting activation");
+        require(status == RequestStatus.QUEUED || status == RequestStatus.FORK_FAILED, "not awaiting activation");
 	arbitrationRequests[question_id].status = RequestStatus.FORK_REQUESTED;
         // TODO: Send a message via the bridge, along with the payment
 
@@ -163,17 +165,6 @@ contract L2ForkArbitrator {
 
     }
 
-    function clearFailedForkAttempt(
-        bytes32 question_id
-    ) external {
-        RequestStatus status = arbitrationRequests[question_id].status;
-        require(isForkInProgress, "No fork in progress to clear");
-        require(status == RequestStatus.FORK_REQUESTED, "Nothing to clear");
-        // Confirm from the bridge that the previous call failed
-        // TODO: Do we need a contract on L2 that has this information?
-        isForkInProgress = false;
-    }
-
     /// @notice Cancel a previous arbitration request
     /// @dev This is intended for situations where the arbitration is happening non-atomically and the fee or something changes.
     /// @dev In our cases it should only happen if the fee is not up-to-date or a too-low fee was paid.
@@ -181,9 +172,39 @@ contract L2ForkArbitrator {
     function cancelArbitration(bytes32 question_id) external {
         RequestStatus status = arbitrationRequests[question_id].status;
         address payable payer = arbitrationRequests[question_id].payer;
-        require(status == RequestStatus.REQUEST_FAILED, "Not in fork-failed state");
+        require(status == RequestStatus.FORK_FAILED, "Not in fork-failed state");
         realitio.cancelArbitration(question_id);
-        payer.transfer(arbitrationRequests[question_id].paid);
+        payer.transfer(arbitrationRequests[question_id].returned);
+        delete(arbitrationRequests[question_id]);
+    }
+
+    function retryArbitration(bytes32 question_id) external {
+
+    }
+
+    // We only get a message back if the fork failed
+    // This may happen if the fee wasn't enough, or if there was another fork in progress
+    function onMessageReceived(address _originAddress, uint32 _originNetwork, bytes memory _data) external payable {
+
+        bytes32 question_id = bytes32(_data);        
+
+        address l2bridge = chainInfo.l2bridge();
+        require(l2bridge != address(0), "l2bridge not set");
+
+        require(msg.sender == l2bridge, "not the expected bridge");
+        require(_originAddress == address(router), "only l1globalRouter can call us");
+
+        // TODO: Should we check this? We could get it from ChainInfo
+        // require(_originNetwork == originNetwork, "wrong origin network");
+
+        RequestStatus status = arbitrationRequests[question_id].status;
+        require(isForkInProgress, "No fork in progress to clear");
+        require(status == RequestStatus.FORK_REQUESTED, "Nothing to clear");
+
+        isForkInProgress = false;
+        arbitrationRequests[question_id].returned = msg.value;
+        arbitrationRequests[question_id].status = RequestStatus.FORK_FAILED;
+
     }
 
 }
