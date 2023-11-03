@@ -5,7 +5,6 @@ pragma solidity ^0.8.20;
 /* solhint-disable var-name-mixedcase */
 /* solhint-disable quotes */
 /* solhint-disable not-rely-on-time */
-/* solhint-disable reason-string */
 
 import {BalanceHolder} from "./lib/reality-eth/BalanceHolder.sol";
 
@@ -141,7 +140,7 @@ contract AdjudicationFramework is BalanceHolder {
         uint256 arbitration_fee = getDisputeFee(question_id);
         require(
             arbitration_fee > 0,
-            "The arbitrator must have set a non-zero fee for the question"
+            "Question must have fee" // "The arbitrator must have set a non-zero fee for the question"
         );
         require(msg.value >= arbitration_fee, "Insufficient fee");
 
@@ -176,17 +175,17 @@ contract AdjudicationFramework is BalanceHolder {
         address requester,
         uint256
     ) external {
-        require(arbitrators[msg.sender], "Arbitrator must be on the allowlist");
+        require(arbitrators[msg.sender], "Arbitrator not allowlisted");
         require(
             question_arbitrations[question_id].bounty > 0,
-            "Question must be in the arbitration queue"
+            "Not in queue" // Question must be in the arbitration queue
         );
 
         // The only time you can pick up a question that's already being arbitrated is if it's been removed from the allowlist
         if (question_arbitrations[question_id].arbitrator != address(0)) {
             require(
                 !arbitrators[question_arbitrations[question_id].arbitrator],
-                "Question already taken, and the arbitrator who took it is still active"
+                "Question under arbitration" // Question already taken, and the arbitrator who took it is still active
             );
 
             // Clear any in-progress data from the arbitrator that has now been removed
@@ -209,7 +208,7 @@ contract AdjudicationFramework is BalanceHolder {
         require(old_arbitrator != address(0), "No arbitrator to remove");
         require(
             !arbitrators[old_arbitrator],
-            "Arbitrator must no longer be on the allowlist"
+            "Arbitrator not removed" // Arbitrator must no longer be on the allowlist
         );
 
         question_arbitrations[question_id].arbitrator = address(0);
@@ -229,11 +228,11 @@ contract AdjudicationFramework is BalanceHolder {
 
         require(
             question_arbitrations[question_id].arbitrator == address(0),
-            "Question already accepted by an arbitrator"
+            "Already under arbitration" // Question already accepted by an arbitrator
         );
         require(
             block.timestamp - last_action_ts > QUESTION_UNHANDLED_TIMEOUT,
-            "You can only cancel questions that no arbitrator has accepted in a reasonable time"
+            "Too soon to cancel" // You can only cancel questions that no arbitrator has accepted in a reasonable time
         );
 
         // Refund the arbitration bounty
@@ -260,11 +259,11 @@ contract AdjudicationFramework is BalanceHolder {
     ) public {
         require(
             question_arbitrations[question_id].arbitrator == msg.sender,
-            "An arbitrator can only submit their own arbitration result"
+            "Sender not the arbitrator" // An arbitrator can only submit their own arbitration result
         );
         require(
             question_arbitrations[question_id].bounty > 0,
-            "Question must be in the arbitration queue"
+            "Question not in queue"
         );
 
         bytes32 data_hash = keccak256(
@@ -290,7 +289,7 @@ contract AdjudicationFramework is BalanceHolder {
         require(arbitrators[arbitrator], "Arbitrator must be allowlisted");
         require(
             countArbitratorFreezePropositions[arbitrator] == 0,
-            "Arbitrator must not be under dispute"
+            "Arbitrator under dispute"
         );
 
         bytes32 data_hash = keccak256(
@@ -298,14 +297,14 @@ contract AdjudicationFramework is BalanceHolder {
         );
         require(
             question_arbitrations[question_id].msg_hash == data_hash,
-            "You must resubmit the parameters previously sent"
+            "Resubmit previous parameters"
         );
 
         uint256 finalize_ts = question_arbitrations[question_id].finalize_ts;
         require(finalize_ts > 0, "Submission must have been queued");
         require(
             finalize_ts < block.timestamp,
-            "Challenge deadline must have passed"
+            "Challenge deadline not passed"
         );
 
         balanceOf[question_arbitrations[question_id].payer] =
@@ -400,7 +399,7 @@ contract AdjudicationFramework is BalanceHolder {
 
         require(
             arbitrators[arbitrator],
-            "Arbitrator not allowlisted in the first place"
+            "Arbitrator not allowlisted" // Not allowlisted in the first place
         );
         require(!propositions[question_id].isFrozen, "Arbitrator already frozen");
 
