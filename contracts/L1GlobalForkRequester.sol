@@ -30,24 +30,24 @@ contract L1GlobalForkRequester {
     function onMessageReceived(address _originAddress, uint32 _originNetwork, bytes memory _data) external payable {
 
       ForkableBridge bridge = ForkableBridge(msg.sender);
-      IForkingManager fm = IForkingManager(bridge.forkmanager());
+      IForkingManager forkingManager = IForkingManager(bridge.forkmanager());
 
       // The chain ID should always be the chain ID expected by the ForkingManager.
       // It shouldn't be possible for it to be anything else but we'll check it anyhow.
-      IPolygonZkEVM zkevm = IPolygonZkEVM(fm.zkEVM());
+      IPolygonZkEVM zkevm = IPolygonZkEVM(forkingManager.zkEVM());
       require(uint64(_originNetwork) == zkevm.chainID(), "Bad _originNetwork, WTF");
     
       // We also check in the opposite direction to make sure the ForkingManager thinks the bridge is its bridge
-      require(address(fm.bridge()) == msg.sender, "Bridge mismatch, WTF");
+      require(address(forkingManager.bridge()) == msg.sender, "Bridge mismatch, WTF");
 
       // TODO:
       // 1) Work out what happens if this reverts.
       // 2) Work out how the fee is handled
 
       // Assume the data contains the questionId and pass it directly to the forkmanager in the fork request
-      IForkingManager.NewImplementations memory ni;
-      IForkingManager.DisputeData memory dd = IForkingManager.DisputeData(false, _originAddress, bytes32(_data));
-      fm.initiateFork(dd, ni);
+      IForkingManager.NewImplementations memory newImplementations;
+      IForkingManager.DisputeData memory disputeData = IForkingManager.DisputeData(false, _originAddress, bytes32(_data));
+      forkingManager.initiateFork(disputeData, newImplementations);
 
     }
 
