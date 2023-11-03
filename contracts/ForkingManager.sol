@@ -37,10 +37,9 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     // Fee that needs to be paid to initiate a fork
     uint256 public arbitrationFee;
 
-    // variable store the fork proposal data
     ForkProposal public forkProposal;
 
-    uint256 public immutable forkPreparationTime = 60 * 60 * 24 * 7;
+    uint256 public immutable forkPreparationTime = 1 weeks;
 
     /// @inheritdoc IForkingManager
     function initialize(
@@ -81,7 +80,6 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             address(this),
             arbitrationFee
         );
-        // Store the dispute contract and call to identify the dispute
         forkProposal = ForkProposal({
             disputeData: disputeData,
             proposedImplementations: newImplementations,
@@ -231,7 +229,6 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         );
 
         //Initialize the forking manager contracts
-
         IForkingManager(newInstances.forkingManager.one).initialize(
             newInstances.zkEVM.one,
             newInstances.bridge.one,
