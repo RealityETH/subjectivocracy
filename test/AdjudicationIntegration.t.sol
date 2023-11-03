@@ -222,7 +222,7 @@ contract AdjudicationIntegrationTest is Test {
         vm.prank(user1);
         assertTrue(adjudicationFramework1.requestArbitration{value: 500000}(questionId, 0));
 
-        vm.expectRevert("Arbitrator must be on the allowlist");
+        vm.expectRevert("Arbitrator not allowlisted");
         l2Arbitrator2.requestArbitration{value: 500000}(questionId, 0);
 
     }
@@ -236,7 +236,7 @@ contract AdjudicationIntegrationTest is Test {
         assertTrue(l2Arbitrator1.requestArbitration{value: 500000}(qid, 0));
         l2Arbitrator1.submitAnswerByArbitrator(qid, bytes32(uint256(1)), user1);
 
-        vm.expectRevert("Challenge deadline must have passed");
+        vm.expectRevert("Challenge deadline not passed");
         adjudicationFramework1.completeArbitration(qid, bytes32(uint256(1)), user1);
         
         skip(86401);
@@ -256,7 +256,7 @@ contract AdjudicationIntegrationTest is Test {
         assertTrue(l2Arbitrator1.requestArbitration{value: 500000}(qid, 0));
         l2Arbitrator1.submitAnswerByArbitrator(qid, bytes32(uint256(1)), user1);
 
-        vm.expectRevert("Challenge deadline must have passed");
+        vm.expectRevert("Challenge deadline not passed");
         adjudicationFramework1.completeArbitration(qid, bytes32(uint256(1)), user1);
 
         // now before we can complete this somebody challenges it
