@@ -37,40 +37,10 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     // Fee that needs to be paid to initiate a fork
     uint256 public arbitrationFee;
 
-    // Dispute contract and call to identify the dispute
-    // that will be used to initiate/justify the fork
-    struct DisputeData {
-        address disputeContract;
-        bytes disputeCall;
-    }
+    // variable store the fork proposal data
+    ForkProposal public forkProposal;
 
-    DisputeData public disputeData;
-
-    // Struct containing the addresses of the new implementations
-    struct NewImplementations {
-        address bridgeImplementation;
-        address zkEVMImplementation;
-        address forkonomicTokenImplementation;
-        address forkingManagerImplementation;
-        address globalExitRootImplementation;
-        address verifier;
-        uint64 forkID;
-    }
-
-    // Struct that holds an address pair used to store the new child contracts
-    struct AddressPair {
-        address one;
-        address two;
-    }
-
-    // Struct containing the addresses of the new instances
-    struct NewInstances {
-        AddressPair forkingManager;
-        AddressPair bridge;
-        AddressPair zkEVM;
-        AddressPair forkonomicToken;
-        AddressPair globalExitRoot;
-    }
+    uint256 public immutable forkPreparationTime = 60 * 60 * 24 * 7;
 
     /// @inheritdoc IForkingManager
     function initialize(
@@ -93,21 +63,46 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     }
 
     /**
-     * @notice function to initiate and execute the fork
-     * @param _disputeData the dispute contract and call to identify the dispute
+     * @notice function to initiate and schedule the fork
+     * @param disputeData the dispute contract and call to identify the dispute
      * @param newImplementations the addresses of the new implementations that will
-     * be used to create the second children of the contracts
      */
     function initiateFork(
-        DisputeData memory _disputeData,
+        DisputeData memory disputeData,
         NewImplementations calldata newImplementations
     ) external onlyBeforeForking {
+        require(
+            forkProposal.executionTime == 0,
+            "ForkingManager: fork pending"
+        );
         // Charge the forking fee
         IERC20(forkonomicToken).safeTransferFrom(
             msg.sender,
             address(this),
             arbitrationFee
         );
+        // Store the dispute contract and call to identify the dispute
+        forkProposal = ForkProposal({
+            disputeData: disputeData,
+            proposedImplementations: newImplementations,
+            // solhint-disable-next-line not-rely-on-time
+            executionTime: (block.timestamp + forkPreparationTime)
+        });
+    }
+
+    /**
+     * @dev function that executes a fork proposal
+     */
+    function executeFork() external onlyBeforeForking {
+        require(
+            forkProposal.executionTime != 0 &&
+                // solhint-disable-next-line not-rely-on-time
+                forkProposal.executionTime <= block.timestamp,
+            "ForkingManager: fork not ready"
+        );
+        NewImplementations memory newImplementations = forkProposal
+            .proposedImplementations;
+
         // Create the children of each contract
         NewInstances memory newInstances;
         (
@@ -236,6 +231,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         );
 
         //Initialize the forking manager contracts
+
         IForkingManager(newInstances.forkingManager.one).initialize(
             newInstances.zkEVM.one,
             newInstances.bridge.one,
@@ -268,8 +264,5 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             newInstances.zkEVM.two,
             newInstances.bridge.two
         );
-
-        // Store the dispute contract and call to identify the dispute
-        disputeData = _disputeData;
     }
 }
