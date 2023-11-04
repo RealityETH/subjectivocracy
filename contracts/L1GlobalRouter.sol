@@ -45,7 +45,7 @@ contract L1GlobalRouter {
         IPolygonZkEVMBridge(_bridge).bridgeMessage(
             uint32(chainId),
             _l2ChainInfo,
-            false, // TODO: Work out if we need forceUpdateGlobalExitRoot
+            true,
             data
         );
     }

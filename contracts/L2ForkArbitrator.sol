@@ -120,7 +120,7 @@ contract L2ForkArbitrator {
         bridge.bridgeMessage(
             uint32(chainInfo.originNetwork()),
             address(router), // TODO: Use the fork requesting contract instead?
-            false, // TODO: Work out if we need forceUpdateGlobalExitRoot
+            true,
             qdata
         );
         isForkInProgress = true;
