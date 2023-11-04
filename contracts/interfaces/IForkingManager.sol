@@ -37,13 +37,6 @@ interface IForkingManager is IForkableStructure {
         AddressPair globalExitRoot;
     }
 
-    // Struct containing the data for the paid fork
-    struct ForkProposal {
-        DisputeData disputeData;
-        NewImplementations proposedImplementations;
-        uint256 executionTime;
-    }
-
     function initialize(
         address _zkEVM,
         address _bridge,

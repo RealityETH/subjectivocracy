@@ -37,7 +37,10 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     // Fee that needs to be paid to initiate a fork
     uint256 public arbitrationFee;
 
-    ForkProposal public forkProposal;
+    // Following variables are defined during the fork proposal
+    DisputeData public disputeData;
+    NewImplementations public proposedImplementations;
+    uint256 public executionTimeForProposal = 0;
 
     uint256 public immutable forkPreparationTime = 1 weeks;
 
@@ -63,29 +66,25 @@ contract ForkingManager is IForkingManager, ForkableStructure {
 
     /**
      * @notice function to initiate and schedule the fork
-     * @param disputeData the dispute contract and call to identify the dispute
-     * @param newImplementations the addresses of the new implementations that will
+     * @param _disputeData the dispute contract and call to identify the dispute
+     * @param _newImplementations the addresses of the new implementations that will
      */
     function initiateFork(
-        DisputeData memory disputeData,
-        NewImplementations calldata newImplementations
+        DisputeData memory _disputeData,
+        NewImplementations calldata _newImplementations
     ) external onlyBeforeForking {
-        require(
-            forkProposal.executionTime == 0,
-            "ForkingManager: fork pending"
-        );
+        require(executionTimeForProposal == 0, "ForkingManager: fork pending");
         // Charge the forking fee
         IERC20(forkonomicToken).safeTransferFrom(
             msg.sender,
             address(this),
             arbitrationFee
         );
-        forkProposal = ForkProposal({
-            disputeData: disputeData,
-            proposedImplementations: newImplementations,
-            // solhint-disable-next-line not-rely-on-time
-            executionTime: (block.timestamp + forkPreparationTime)
-        });
+
+        disputeData = _disputeData;
+        proposedImplementations = _newImplementations;
+        // solhint-disable-next-line not-rely-on-time
+        executionTimeForProposal = (block.timestamp + forkPreparationTime);
     }
 
     /**
@@ -93,13 +92,12 @@ contract ForkingManager is IForkingManager, ForkableStructure {
      */
     function executeFork() external onlyBeforeForking {
         require(
-            forkProposal.executionTime != 0 &&
+            executionTimeForProposal != 0 &&
                 // solhint-disable-next-line not-rely-on-time
-                forkProposal.executionTime <= block.timestamp,
+                executionTimeForProposal <= block.timestamp,
             "ForkingManager: fork not ready"
         );
-        NewImplementations memory newImplementations = forkProposal
-            .proposedImplementations;
+        NewImplementations memory newImplementations = proposedImplementations;
 
         // Create the children of each contract
         NewInstances memory newInstances;

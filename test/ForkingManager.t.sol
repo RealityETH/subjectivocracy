@@ -426,14 +426,15 @@ contract ForkingManagerTest is Test {
         forkmanager.executeFork();
 
         (
-            ForkingManager.DisputeData memory receivedDisputeData,
-            ,
-            uint256 receivedExecutionTime
-        ) = ForkingManager(forkmanager).forkProposal();
+            address receivedDisputeContract,
+            bytes memory receivedDisputeCall
+        ) = ForkingManager(forkmanager).disputeData();
+        uint256 receivedExecutionTime = ForkingManager(forkmanager)
+            .executionTimeForProposal();
 
         // Assert the dispute contract and call stored in the ForkingManager match the ones we provided
-        assertEq(receivedDisputeData.disputeContract, disputeContract);
-        assertEq(receivedDisputeData.disputeCall, disputeCall);
+        assertEq(receivedDisputeContract, disputeContract);
+        assertEq(receivedDisputeCall, disputeCall);
         assertEq(
             receivedExecutionTime,
             testTimestamp + forkmanager.forkPreparationTime()
