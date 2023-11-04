@@ -9,90 +9,79 @@ contract ChainIdManagerTest is Test {
 
     address public owner = address(0xabc);
     address public nonOwner = address(0xdef);
+    uint64 public initialChainId = 10;
 
     function setUp() public {
-        chainIdManager = new ChainIdManager();
+        chainIdManager = new ChainIdManager(initialChainId);
         chainIdManager.transferOwnership(owner);
     }
 
     function testAddChainId() public {
         vm.prank(owner);
-        uint64 newChainId = 1;
-        chainIdManager.addChainId(newChainId);
+        uint64 newChainId = 10;
+        chainIdManager.denyListChainId(newChainId);
 
         assertEq(
-            chainIdManager.chainIdCounter(),
-            1,
-            "Chain ID counter did not increment"
-        );
-        assertEq(
-            chainIdManager.usableChainIds(0),
-            newChainId,
+            chainIdManager.getNextUsableChainId(),
+            newChainId + 1,
             "Chain ID not correctly added"
         );
 
         // Attempt to add a ChainId by a non-owner, expect a revert
         vm.prank(nonOwner);
         vm.expectRevert(bytes("Caller is not the owner")); // Expect a revert with a specific revert message
-        chainIdManager.addChainId(2);
+        chainIdManager.denyListChainId(2);
     }
 
     function testAddChainIds() public {
         vm.prank(owner);
         uint64[] memory newChainIds = new uint64[](2);
-        newChainIds[0] = 1;
-        newChainIds[1] = 2;
-        chainIdManager.addChainIds(newChainIds);
+        newChainIds[0] = 10;
+        newChainIds[1] = 11;
+        chainIdManager.denyListChainIds(newChainIds);
 
         assertEq(
             chainIdManager.chainIdCounter(),
-            2,
+            initialChainId,
             "Chain ID counter did not increment correctly"
         );
         assertEq(
-            chainIdManager.usableChainIds(0),
-            newChainIds[0],
+            chainIdManager.getNextUsableChainId(),
+            newChainIds[1] + 1,
             "First Chain ID not correctly added"
-        );
-        assertEq(
-            chainIdManager.usableChainIds(1),
-            newChainIds[1],
-            "Second Chain ID not correctly added"
         );
     }
 
     function testGetNextUsableChainId() public {
+        uint64 firstDeniedChainId = 10;
         vm.prank(owner);
-        chainIdManager.addChainId(1);
+        chainIdManager.denyListChainId(firstDeniedChainId);
+        uint64 secondDeniedChainId = 11;
         vm.prank(owner);
-        chainIdManager.addChainId(2);
+        chainIdManager.denyListChainId(secondDeniedChainId);
 
         uint64 nextChainId = chainIdManager.getNextUsableChainId();
         assertEq(
             nextChainId,
-            1,
+            secondDeniedChainId + 1,
             "Did not get the correct next usable Chain ID"
-        );
-        assertEq(
-            chainIdManager.usedChainIdCounter(),
-            1,
-            "Used Chain ID counter did not increment"
         );
 
         nextChainId = chainIdManager.getNextUsableChainId();
         assertEq(
             nextChainId,
-            2,
+            secondDeniedChainId + 2,
             "Did not get the correct next usable Chain ID"
         );
-        assertEq(
-            chainIdManager.usedChainIdCounter(),
-            2,
-            "Used Chain ID counter did not increment"
-        );
+    }
 
-        // Assuming that there's no Chain ID left, expect a revert or a return of a default value depending on the contract's behavior
-        vm.expectRevert(bytes("No usable Chain ID available")); // Or check for a specific return value
-        chainIdManager.getNextUsableChainId();
+    function testCheckGasBurn() public {
+        uint256 initialGasLeft = gasleft();
+        chainIdManager.burnGas();
+        uint256 finalGasLeft = gasleft();
+        assert(
+            initialGasLeft - finalGasLeft >=
+            chainIdManager.gasBurnAmount()
+        );
     }
 }

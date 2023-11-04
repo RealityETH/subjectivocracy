@@ -57,6 +57,7 @@ contract ForkingManagerTest is Test {
     uint256 public arbitrationFee = 1020;
     bytes32[32] public depositTree;
     address public admin = address(0xad);
+    uint64 public initialChainId = 1;
     uint64 public firstChainId = 1;
     uint64 public secondChainId = 2;
 
@@ -110,10 +111,7 @@ contract ForkingManagerTest is Test {
             )
         );
 
-        chainIdManager = address(new ChainIdManager());
-
-        ChainIdManager(chainIdManager).addChainId(firstChainId);
-        ChainIdManager(chainIdManager).addChainId(secondChainId);
+        chainIdManager = address(new ChainIdManager(initialChainId));
         globalExitRoot.initialize(
             address(forkmanager),
             address(0x0),
