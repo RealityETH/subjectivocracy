@@ -12,6 +12,8 @@ import {IRealityETH} from "./interfaces/IRealityETH.sol";
 import {IArbitrator} from "./interfaces/IArbitrator.sol";
 import {IERC20} from "./interfaces/IERC20.sol";
 
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+
 /*
 This contract sits between a Reality.eth instance and an Arbitrator.
 It manages a allowlist of arbitrators, and makes sure questions can be sent to an arbitrator on the allowlist.
@@ -109,7 +111,7 @@ contract AdjudicationFramework is BalanceHolder {
         string memory templatePrefixRemove = '{"title": "Should we remove arbitrator %s from the framework ';
         string memory templateSuffix = '?", "type": "bool", "category": "adjudication", "lang": "en"}';
 
-        string memory thisContractStr = _toString(abi.encodePacked(address(this)));
+        string memory thisContractStr = Strings.toHexString(address(this));
         string memory addTemplate = string.concat(templatePrefixAdd, thisContractStr, templateSuffix);
         string memory removeTemplate = string.concat(templatePrefixRemove, thisContractStr, templateSuffix);
 
@@ -323,23 +325,9 @@ contract AdjudicationFramework is BalanceHolder {
     // 2) Prove sufficient bond posted, freeze
     // 3) Complete operation or Undo freeze
 
-    function _toString(bytes memory data)
-    internal pure returns(string memory) {
-        bytes memory alphabet = "0123456789abcdef";
-
-        bytes memory str = new bytes(2 + data.length * 2);
-        str[0] = '0';
-        str[1] = 'x';
-        for (uint i = 0; i < data.length; i++) {
-            str[2+i*2] = alphabet[uint(uint8(data[i] >> 4))];
-            str[3+i*2] = alphabet[uint(uint8(data[i] & 0x0f))];
-        }
-        return string(str);
-    }
-
     function beginAddArbitratorToAllowList(address arbitrator_to_add)
     external returns (bytes32) {
-        string memory question = _toString(abi.encodePacked(arbitrator_to_add));
+        string memory question = Strings.toHexString(arbitrator_to_add);
         bytes32 question_id = realityETH.askQuestionWithMinBond(templateIdAddArbitrator, question, forkArbitrator, REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0, REALITY_ETH_BOND_ARBITRATOR_ADD);
         require(propositions[question_id].proposition_type == PropositionType.NONE, "Proposition already exists");
         propositions[question_id] = ArbitratorProposition(PropositionType.ADD_ARBITRATOR, arbitrator_to_add, false);
@@ -348,7 +336,7 @@ contract AdjudicationFramework is BalanceHolder {
 
     function beginRemoveArbitratorFromAllowList(address arbitrator_to_remove)
     external returns (bytes32) {
-        string memory question = _toString(abi.encodePacked(arbitrator_to_remove));
+        string memory question = Strings.toHexString(arbitrator_to_remove);
         bytes32 question_id = realityETH.askQuestionWithMinBond(templateIdRemoveArbitrator, question, forkArbitrator, REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0, REALITY_ETH_BOND_ARBITRATOR_REMOVE);
         require(propositions[question_id].proposition_type == PropositionType.NONE, "Proposition already exists");
         propositions[question_id] = ArbitratorProposition(PropositionType.REMOVE_ARBITRATOR, arbitrator_to_remove, false);
