@@ -4,30 +4,31 @@ pragma solidity ^0.8.20;
 import {Owned} from "./mixin/Owned.sol";
 
 contract ChainIdManager is Owned {
-    // Counter for the number of used Chain IDs
-    uint256 public usedChainIdCounter = 0;
     // Counter for the number of Chain IDs
-    uint256 public chainIdCounter = 0;
-    mapping(uint256 => uint64) public usableChainIds;
+    uint64 public chainIdCounter = 0;
+    // contains a list of denied Chain IDs that should not be used as chainIds
+    // they are governed by a owner of the contract
+    mapping(uint64 => bool) public deniedChainIds;
+    // Fee to use up a Chain ID
+    uint256 public immutable gasBurnAmount = 1000000;
 
-    constructor() Owned() {}
+    constructor(uint64 _chainIdCounter) Owned() {chainIdCounter = _chainIdCounter;}
 
     /**
-     * @dev Adds a Chain ID
+     * @dev Adds a Chain ID to the deny list, this can be done if the chainId is used by another project
      * @param chainId The Chain ID to add
      */
-    function addChainId(uint64 chainId) public onlyOwner {
-        usableChainIds[chainIdCounter] = chainId;
-        chainIdCounter++;
+    function denyListChainId(uint64 chainId) public onlyOwner {
+        deniedChainIds[chainId] = true;
     }
 
     /**
-     * @dev Adds multiple Chain IDs
+     * @dev Adds multiple Chain IDs to the deny list
      * @param chainIds The Chain IDs to add
      */
-    function addChainIds(uint64[] memory chainIds) public onlyOwner {
+    function denyListChainIds(uint64[] memory chainIds) public onlyOwner {
         for (uint256 i = 0; i < chainIds.length; i++) {
-            addChainId(chainIds[i]);
+            denyListChainId(chainIds[i]);
         }
     }
 
@@ -36,10 +37,20 @@ contract ChainIdManager is Owned {
      * @return chainId The next usable Chain ID
      */
     function getNextUsableChainId() public returns (uint64 chainId) {
-        // Todo: Add a ddos protection: Probably charging gas. But for now,
-        // the owner can counter ddos attacks by readding unused chainIds
-        chainId = usableChainIds[usedChainIdCounter];
-        require(chainId != 0, "No usable Chain ID available");
-        usedChainIdCounter++;
+        // The burnGas function introduces a cost to use up chainIds. 
+        // There are uint64(2**63=9.223372e+18) chainIds minus the publicly used chainIds available.
+        // Using all of the chainIds would cost 9.223372e+18 * gasBurnAmount = 9.223372e+24 gas = 6.1489147e+17 blocks = 237226647377 years
+        burnGas();
+        while (deniedChainIds[chainIdCounter]) {
+            chainIdCounter++;
+        }
+        chainId = chainIdCounter;
+        chainIdCounter++;
+    }
+
+    function burnGas() public view {
+        uint256 counter = 0;
+        uint256 _lowestLimit = gasleft() - gasBurnAmount;
+        while(gasleft() > _lowestLimit) counter++;
     }
 }
