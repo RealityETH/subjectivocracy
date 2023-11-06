@@ -17,15 +17,22 @@ contract ForkableStructure is IForkableStructure, Initializable {
     // but this would make the initialization more complex due to proxy construction.
     mapping(uint256 => address) public children;
 
-    modifier onlyBeforeForking() {
+    modifier onlyBeforeCreatingChild1() {
         require(children[0] == address(0x0), "No changes after forking");
+        _;
+    }
+
+    modifier onlyBeforeCreatingChild2() {
+        require(children[2] == address(0x0), "No changes after forking");
         _;
     }
 
     modifier onlyAfterForking() {
         require(children[0] != address(0x0), "onlyAfterForking");
+        require(children[1] != address(0x0), "onlyAfterForking");
         _;
     }
+
     modifier onlyParent() {
         require(msg.sender == parentContract, "Only available for parent");
         _;
@@ -51,16 +58,32 @@ contract ForkableStructure is IForkableStructure, Initializable {
 
     /**
      *  @dev Internal function to create the children contracts.
+     */
+    function _createChild1() internal returns (address forkingManager1) {
+        forkingManager1 = CreateChildren.createChild1();
+        children[0] = forkingManager1;
+    }
+
+    /**
+     *  @dev Internal function to create the children contracts.
+     * @param implementation Allows to pass a different implementation contract for the second proxied child.
+     */
+    function _createChild2(
+        address implementation
+    ) internal returns (address forkingManager2) {
+        forkingManager2 = CreateChildren.createChild2(implementation);
+        children[1] = forkingManager2;
+    }
+
+    /**
+     *  @dev Internal function to create the children contracts.
      * @param implementation Allows to pass a different implementation contract for the second proxied child.
      */
     function _createChildren(
         address implementation
     ) internal returns (address forkingManager1, address forkingManager2) {
-        (forkingManager1, forkingManager2) = CreateChildren.createChildren(
-            implementation
-        );
-        children[0] = forkingManager1;
-        children[1] = forkingManager2;
+        forkingManager1 = _createChild1();
+        forkingManager2 = _createChild2(implementation);
     }
 
     function getChildren() external view returns (address, address) {

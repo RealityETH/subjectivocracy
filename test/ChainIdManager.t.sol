@@ -75,7 +75,7 @@ contract ChainIdManagerTest is Test {
         );
     }
 
-    function testCheckGasBurn() public view {
+    function testCheckGasBurn() view public {
         uint256 initialGasLeft = gasleft();
         chainIdManager.burnGas();
         uint256 finalGasLeft = gasleft();

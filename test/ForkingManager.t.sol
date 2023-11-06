@@ -313,7 +313,8 @@ contract ForkingManagerTest is Test {
             })
         );
         vm.warp(block.timestamp + forkmanager.forkPreparationTime() + 1);
-        forkmanager.executeFork();
+        forkmanager.executeFork1();
+        forkmanager.executeFork2();
 
         // Fetch the children from the ForkingManager
         (address childForkmanager1, address childForkmanager2) = forkmanager
@@ -624,7 +625,9 @@ contract ForkingManagerTest is Test {
             })
         );
         skip(forkmanager.forkPreparationTime() + 1);
-        forkmanager.executeFork();
+        forkmanager.executeFork1();
+        forkmanager.executeFork2();
+
         (
             bool receivedIsL1,
             address receivedDisputeContract,
@@ -646,7 +649,7 @@ contract ForkingManagerTest is Test {
     function testExecuteForkRespectsTime() public {
         // reverts on empty proposal list
         vm.expectRevert("ForkingManager: fork not ready");
-        forkmanager.executeFork();
+        forkmanager.executeFork1();
 
         // Mint and approve the arbitration fee for the test contract
         forkonomicToken.approve(address(forkmanager), arbitrationFee);
@@ -670,9 +673,9 @@ contract ForkingManagerTest is Test {
         );
 
         vm.expectRevert("ForkingManager: fork not ready");
-        forkmanager.executeFork();
+        forkmanager.executeFork1();
         vm.warp(testTimestamp + forkmanager.forkPreparationTime() + 1);
-        forkmanager.executeFork();
+        forkmanager.executeFork1();
     }
 
     function testExecuteForkCanOnlyExecutedOnce() public {
@@ -697,9 +700,10 @@ contract ForkingManagerTest is Test {
             })
         );
         skip(forkmanager.forkPreparationTime() + 1);
-        forkmanager.executeFork();
+        forkmanager.executeFork1();
+        forkmanager.executeFork2();
         vm.expectRevert("No changes after forking");
-        forkmanager.executeFork();
+        forkmanager.executeFork1();
     }
 
     function testRevertsSecondProposal() public {

@@ -53,6 +53,21 @@ contract ForkableGlobalExitRoot is
     }
 
     /// @dev Public interface to create children. This can only be done by the forkmanager
+    /// @return The addresses of the two children
+    function createChild1() external onlyForkManger returns (address) {
+        return _createChild1();
+    }
+
+    /// @dev Public interface to create children. This can only be done by the forkmanager
+    /// @param implementation Allows to pass a different implementation contract for the second proxied child.
+    /// @return The addresses of the two children
+    function createChild2(
+        address implementation
+    ) external onlyForkManger returns (address) {
+        return _createChild2(implementation);
+    }
+
+    /// @dev Public interface to create children. This can only be done by the forkmanager
     /// @param implementation Allows to pass a different implementation contract for the second proxied child.
     /// @return The addresses of the two children
     function createChildren(

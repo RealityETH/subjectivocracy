@@ -45,6 +45,17 @@ interface IForkableBridge is IPolygonZkEVMBridge {
     ) external returns (address, address);
 
     /**
+     *  @dev Internal function to create the children contracts.
+     */
+    function createChild1() external returns (address);
+
+    /**
+     *  @dev Internal function to create the children contracts.
+     * @param implementation Allows to pass a different implementation contract for the second proxied child.
+     */
+    function createChild2(address implementation) external returns (address);
+
+    /**
      * @dev Anyone can use their tokens to split the bridged tokens into the two corresponding children tokens
      * @param token token that should be split
      * @param amount amount of tokens to be split

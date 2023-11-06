@@ -100,6 +100,22 @@ contract ForkableBridge is
     }
 
     // @inheritdoc IForkableBridge
+    function createChild1() external onlyForkManger returns (address) {
+        // process all pending deposits/messages before coping over the state root.
+        updateGlobalExitRoot();
+        return _createChild1();
+    }
+
+    // @inheritdoc IForkableBridge
+    function createChild2(
+        address implementation
+    ) external onlyForkManger returns (address) {
+        // process all pending deposits/messages before coping over the state root.
+        updateGlobalExitRoot();
+        return _createChild2(implementation);
+    }
+
+    // @inheritdoc IForkableBridge
     function createChildren(
         address implementation
     ) external onlyForkManger returns (address, address) {
@@ -200,7 +216,7 @@ contract ForkableBridge is
         public
         payable
         override(PolygonZkEVMBridge, IPolygonZkEVMBridge)
-        onlyBeforeForking
+        onlyBeforeCreatingChild1
     {
         PolygonZkEVMBridge.bridgeAsset(
             destinationNetwork,
@@ -222,7 +238,7 @@ contract ForkableBridge is
         payable
         virtual
         override(PolygonZkEVMBridge, IPolygonZkEVMBridge)
-        onlyBeforeForking
+        onlyBeforeCreatingChild1
     {
         PolygonZkEVMBridge.bridgeMessage(
             destinationNetwork,
@@ -246,7 +262,7 @@ contract ForkableBridge is
     )
         public
         override(IPolygonZkEVMBridge, PolygonZkEVMBridge)
-        onlyBeforeForking
+        onlyBeforeCreatingChild1
     {
         PolygonZkEVMBridge.claimMessage(
             smtProof,
@@ -276,7 +292,7 @@ contract ForkableBridge is
     )
         public
         override(IPolygonZkEVMBridge, PolygonZkEVMBridge)
-        onlyBeforeForking
+        onlyBeforeCreatingChild1
     {
         PolygonZkEVMBridge.claimAsset(
             smtProof,

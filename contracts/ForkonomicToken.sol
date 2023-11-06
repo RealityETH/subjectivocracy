@@ -40,6 +40,18 @@ contract ForkonomicToken is
     }
 
     /// @inheritdoc IForkonomicToken
+    function createChild1() external onlyForkManger returns (address) {
+        return _createChild1();
+    }
+
+    /// @inheritdoc IForkonomicToken
+    function createChild2(
+        address implementation
+    ) external onlyForkManger returns (address) {
+        return _createChild2(implementation);
+    }
+
+    /// @inheritdoc IForkonomicToken
     function createChildren(
         address implementation
     ) external onlyForkManger returns (address, address) {

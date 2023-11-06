@@ -15,6 +15,10 @@ interface IForkableGlobalExitRoot is
         address _bridgeAddress
     ) external;
 
+    function createChild2(address implementation) external returns (address);
+
+    function createChild1() external returns (address);
+
     function createChildren(
         address implementation
     ) external returns (address, address);
