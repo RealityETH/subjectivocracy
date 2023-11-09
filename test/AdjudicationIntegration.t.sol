@@ -26,12 +26,6 @@ import {MockPolygonZkEVMBridge} from "./testcontract/MockPolygonZkEVMBridge.sol"
 
 contract AdjudicationIntegrationTest is Test {
 
-    struct Log {
-      bytes32[] topics;
-      bytes data;
-      address emitter;
-    }
-
     Arbitrator public govArb;
 
     IERC20 internal tokenMock = IERC20(0x1234567890123456789012345678901234567890);
@@ -260,15 +254,21 @@ contract AdjudicationIntegrationTest is Test {
         adjudicationFramework1.completeArbitration(qid, bytes32(uint256(1)), user1);
 
         // now before we can complete this somebody challenges it
-        bytes32 removalQuestionId = adjudicationFramework1.beginRemoveArbitratorFromAllowList(address(l2Arbitrator1));
+        removalQuestionId = adjudicationFramework1.beginRemoveArbitratorFromAllowList(address(l2Arbitrator1));
+        l2realityEth.submitAnswer{value: 10000}(removalQuestionId, bytes32(uint256(1)), 0);
+
+        bytes32[] memory hashes;
+        address[] memory users;
+        uint256[] memory bonds;
+        bytes32[] memory answers;
 
         vm.expectRevert("Bond too low to freeze");
-        adjudicationFramework1.freezeArbitrator(removalQuestionId);
+        adjudicationFramework1.freezeArbitrator(removalQuestionId, hashes, users, bonds, answers);
 
-        bytes32 lastHistoryHash = l2realityEth.getHistoryHash(removalQuestionId);
+        lastHistoryHash = l2realityEth.getHistoryHash(removalQuestionId);
         vm.prank(user2);
         l2realityEth.submitAnswer{value: 20000}(removalQuestionId, bytes32(uint256(1)), 0);
-        adjudicationFramework1.freezeArbitrator(removalQuestionId);
+        adjudicationFramework1.freezeArbitrator(removalQuestionId, hashes, users, bonds, answers);
         assertEq(adjudicationFramework1.countArbitratorFreezePropositions(address(l2Arbitrator1)), uint256(1));
 
         //skip(86401);

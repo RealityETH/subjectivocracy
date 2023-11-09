@@ -341,9 +341,6 @@ contract AdjudicationFramework is BalanceHolder {
         require(propositions[question_id].proposition_type == PropositionType.NONE, "Proposition already exists");
         propositions[question_id] = ArbitratorProposition(PropositionType.REMOVE_ARBITRATOR, arbitrator_to_remove, false);
 
-        // Freeze can be done by calling freezeArbitrator if the bond is high enough
-        // TODO should we call that here?
-
         return question_id;
     }
 
@@ -380,7 +377,8 @@ contract AdjudicationFramework is BalanceHolder {
 
     // When an arbitrator is listed for removal, they can be frozen given a sufficient bond
     function freezeArbitrator(
-        bytes32 question_id
+        bytes32 question_id,
+        bytes32[] memory history_hashes, address[] memory addrs, uint256[] memory bonds, bytes32[] memory answers
     ) public {
         require(propositions[question_id].proposition_type == PropositionType.REMOVE_ARBITRATOR, "Wrong Proposition type");
         address arbitrator = propositions[question_id].arbitrator;
@@ -393,11 +391,23 @@ contract AdjudicationFramework is BalanceHolder {
 
         // Require a bond of at least the specified level
         // This is only relevant if REALITY_ETH_BOND_ARBITRATOR_FREEZE is higher than REALITY_ETH_BOND_ARBITRATOR_REMOVE
-        require(realityETH.getBond(question_id) >= REALITY_ETH_BOND_ARBITRATOR_FREEZE, "Bond too low to freeze");
 
-        // TODO: Do we want this? Freeze can be prevented by changing the answer after the bond is submitted
-        // Otherwise need a history to prove that the answer was given earlier with this bond
-        require(realityETH.getBestAnswer(question_id) == bytes32(uint256(1)), "Best answer is not yes");
+        bytes32 answer;
+        uint256 bond;
+        // Normally you call this right after posting your answer so your final answer will be the current answer
+        // If someone has since submitted a different answer, you need to pass in the history from now until yours
+        if (history_hashes.length == 0) {
+            answer = realityETH.getBestAnswer(question_id);
+            bond = realityETH.getBond(question_id);
+        } else {
+            (answer, bond) = realityETH.getEarliestAnswerFromSuppliedHistoryOrRevert(question_id, history_hashes, addrs, bonds, answers);
+        }
+
+        require(answer == bytes32(uint256(1)), "Supplied answer is not yes");
+        require(bond >= REALITY_ETH_BOND_ARBITRATOR_FREEZE, "Bond too low to freeze");
+
+        // TODO: Ideally we would check the bond is for the "remove" answer. 
+        // #92
 
         propositions[question_id].isFrozen = true;
         countArbitratorFreezePropositions[arbitrator] = countArbitratorFreezePropositions[arbitrator] + 1;

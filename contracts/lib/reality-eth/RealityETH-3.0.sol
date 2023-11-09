@@ -700,6 +700,42 @@ contract RealityETH_v3_0 is BalanceHolder, IRealityETH {
         emit LogClaim(question_id, payee, value);
     }
 
+    /// @notice Returns the value of the earliest answer in the supplied history
+    /// Caller must provide the answer history, in reverse order back to the item they want to check
+    /// @dev Not necessarily the entire history
+    /// @param question_id The ID of the question
+    /// @param history_hashes Second-last-to-first, the hash of each history entry. (Final one should be empty).
+    /// @param addrs Last-to-first, the address of each answerer or commitment sender
+    /// @param bonds Last-to-first, the bond supplied with each answer or commitment
+    /// @param answers Last-to-first, each answer supplied, or commitment ID if the answer was supplied with commit->reveal
+    function getEarliestAnswerFromSuppliedHistoryOrRevert(
+        bytes32 question_id,
+        bytes32[] memory history_hashes, address[] memory addrs, uint256[] memory bonds, bytes32[] memory answers
+    )
+        stateAny()
+    external view returns (bytes32, uint256) {
+        // Go through the history reverting if any of it is wrong
+        bool is_commitment;
+        bytes32 last_history_hash = questions[question_id].history_hash;
+        uint256 i;
+        for (i = 0; i < history_hashes.length; i++) {
+            is_commitment = _verifyHistoryInputOrRevert(last_history_hash, history_hashes[i], answers[i], bonds[i], addrs[i]);
+            last_history_hash = history_hashes[i];
+        }
+
+        // When we get to the final answer, unwrap the commitment if required and return
+        uint256 last_i = history_hashes.length-1;
+        bytes32 answer_or_commitment_id = answers[last_i];
+        bytes32 answer;
+        if (is_commitment) {
+            require(commitments[answer_or_commitment_id].is_revealed, "Earliest answer is an unrevealed commitment");
+            answer = commitments[answer_or_commitment_id].revealed_answer;
+        } else {
+            answer = answer_or_commitment_id;
+        }
+        return (answer, bonds[last_i]);
+    }
+
     function _verifyHistoryInputOrRevert(
         bytes32 last_history_hash,
         bytes32 history_hash, bytes32 answer, uint256 bond, address addr
