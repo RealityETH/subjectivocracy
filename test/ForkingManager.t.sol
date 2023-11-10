@@ -1,13 +1,15 @@
 pragma solidity ^0.8.20;
 
+/* solhint-disable not-rely-on-time */
+
 import {Test} from "forge-std/Test.sol";
-import {IForkingManager} from "../contracts/interfaces/IForkingManager.sol";
 import {ForkingManager} from "../contracts/ForkingManager.sol";
 import {ForkableBridge} from "../contracts/ForkableBridge.sol";
 import {ForkableZkEVM} from "../contracts/ForkableZkEVM.sol";
 import {ForkonomicToken} from "../contracts/ForkonomicToken.sol";
 import {ForkableGlobalExitRoot} from "../contracts/ForkableGlobalExitRoot.sol";
 import {IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
+import {IForkingManager} from "../contracts/interfaces/IForkingManager.sol";
 import {IVerifierRollup} from "@RealityETH/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
 import {PolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
@@ -58,8 +60,31 @@ contract ForkingManagerTest is Test {
     uint256 public arbitrationFee = 1020;
     bytes32[32] public depositTree;
     address public admin = address(0xad);
+    uint64 public initialChainId = 1;
     uint64 public firstChainId = 1;
     uint64 public secondChainId = 2;
+
+    // Setup new implementations for the fork
+    address public newBridgeImplementation = address(new ForkableBridge());
+    address public newForkmanagerImplementation = address(new ForkingManager());
+    address public newZkevmImplementation = address(new ForkableZkEVM());
+    address public newVerifierImplementation =
+        address(0x1234567890123456789012345678901234567894);
+    address public newGlobalExitRootImplementation =
+        address(new ForkableGlobalExitRoot());
+    address public newForkonomicTokenImplementation =
+        address(new ForkonomicToken());
+    address public disputeContract =
+        address(0x1234567890123456789012345678901234567894);
+    bytes32 public disputeContent = "0x34567890129";
+    bool public isL1 = true;
+
+    ForkingManager.DisputeData public disputeData =
+        IForkingManager.DisputeData({
+            disputeContract: disputeContract,
+            disputeContent: disputeContent,
+            isL1: isL1
+        });
 
     event Transfer(address indexed from, address indexed to, uint256 tokenId);
 
@@ -111,10 +136,7 @@ contract ForkingManagerTest is Test {
             )
         );
 
-        chainIdManager = address(new ChainIdManager());
-
-        ChainIdManager(chainIdManager).addChainId(firstChainId);
-        ChainIdManager(chainIdManager).addChainId(secondChainId);
+        chainIdManager = address(new ChainIdManager(initialChainId));
         globalExitRoot.initialize(
             address(forkmanager),
             address(0x0),
@@ -177,34 +199,13 @@ contract ForkingManagerTest is Test {
     }
 
     function testInitiateForkChargesFees() public {
-        // Setup new implementations for the fork
-        address newBridgeImplementation = address(new ForkableBridge());
-        address newForkmanagerImplementation = address(new ForkingManager());
-        address newZkevmImplementation = address(new ForkableZkEVM());
-        address newVerifierImplementation = address(
-            0x1234567890123456789012345678901234567894
-        );
-
-        address newGlobalExitRootImplementation = address(
-            new ForkableGlobalExitRoot()
-        );
-        address newForkonomicTokenImplementation = address(
-            new ForkonomicToken()
-        );
-
-        address disputeContract = address(
-            0x1234567890123456789012345678901234567894
-        );
-        bytes32 disputeContent = "0x34567890129";
-        bool isL1 = true;
-
         // Call the initiateFork function to create a new fork
         vm.expectRevert(bytes("ERC20: insufficient allowance"));
         forkmanager.initiateFork(
             IForkingManager.DisputeData({
-                isL1: isL1,
                 disputeContract: disputeContract,
-                disputeContent: disputeContent
+                disputeContent: disputeContent,
+                isL1: isL1 
             }),
             IForkingManager.NewImplementations({
                 bridgeImplementation: newBridgeImplementation,
@@ -231,9 +232,9 @@ contract ForkingManagerTest is Test {
 
         forkmanager.initiateFork(
             IForkingManager.DisputeData({
-                isL1: isL1,
                 disputeContract: disputeContract,
-                disputeContent: disputeContent
+                disputeContent: disputeContent,
+                isL1: isL1
             }),
             IForkingManager.NewImplementations({
                 bridgeImplementation: newBridgeImplementation,
@@ -247,39 +248,11 @@ contract ForkingManagerTest is Test {
         );
     }
 
-    function testInitiateForkSetsCorrectImplementations() public {
-        // Setup new implementations for the fork
-        address newBridgeImplementation = address(new ForkableBridge());
-        address newForkmanagerImplementation = address(new ForkingManager());
-        address newZkevmImplementation = address(new ForkableZkEVM());
-        address newVerifierImplementation = address(
-            0x1234567890123456789012345678901234567894
-        );
-
-        address newGlobalExitRootImplementation = address(
-            new ForkableGlobalExitRoot()
-        );
-        address newForkonomicTokenImplementation = address(
-            new ForkonomicToken()
-        );
-
-        address disputeContract = address(
-            0x1234567890123456789012345678901234567894
-        );
-        bytes32 disputeContent = "0x34567890129";
-        bool isL1 = true;
-
+    function testInitiateForkAndExecuteSetsCorrectImplementations() public {
         // Mint and approve the arbitration fee for the test contract
         forkonomicToken.approve(address(forkmanager), arbitrationFee);
         vm.prank(address(this));
         forkonomicToken.mint(address(this), arbitrationFee);
-
-        IForkingManager.DisputeData memory disputeData = IForkingManager
-            .DisputeData({
-                isL1: isL1,
-                disputeContract: disputeContract,
-                disputeContent: disputeContent
-            });
 
         // Call the initiateFork function to create a new fork
         forkmanager.initiateFork(
@@ -294,6 +267,8 @@ contract ForkingManagerTest is Test {
                 forkID: newForkID
             })
         );
+        vm.warp(block.timestamp + forkmanager.forkPreparationTime() + 1);
+        forkmanager.executeFork();
 
         // Fetch the children from the ForkingManager
         (address childForkmanager1, address childForkmanager2) = forkmanager
@@ -419,14 +394,6 @@ contract ForkingManagerTest is Test {
             );
         }
         {
-            (bool receivedIsL1, address receivedDisputeContract, bytes32 receivedDisputeContent) = ForkingManager(forkmanager).disputeData();
-
-            // Assert the dispute contract and call stored in the ForkingManager match the ones we provided
-            assertEq(receivedIsL1, isL1);
-            assertEq(receivedDisputeContract, disputeContract);
-            assertEq(receivedDisputeContent, disputeContent);
-        }
-        {
             assertEq(
                 chainIdManager,
                 ForkingManager(childForkmanager1).chainIdManager()
@@ -436,5 +403,141 @@ contract ForkingManagerTest is Test {
                 ForkingManager(childForkmanager2).chainIdManager()
             );
         }
+    }
+
+    function testInitiateForkSetsDispuateDataAndExecutionTime() public {
+        // Mint and approve the arbitration fee for the test contract
+        forkonomicToken.approve(address(forkmanager), arbitrationFee);
+        vm.prank(address(this));
+        forkonomicToken.mint(address(this), arbitrationFee);
+
+        // Call the initiateFork function to create a new fork
+        uint256 testTimestamp = 123454234;
+        vm.warp(testTimestamp);
+        forkmanager.initiateFork(
+            disputeData,
+            IForkingManager.NewImplementations({
+                bridgeImplementation: newBridgeImplementation,
+                zkEVMImplementation: newZkevmImplementation,
+                forkonomicTokenImplementation: newForkonomicTokenImplementation,
+                forkingManagerImplementation: newForkmanagerImplementation,
+                globalExitRootImplementation: newGlobalExitRootImplementation,
+                verifier: newVerifierImplementation,
+                forkID: newForkID
+            })
+        );
+        skip(forkmanager.forkPreparationTime() + 1);
+        forkmanager.executeFork();
+        (
+            bool receivedIsL1,
+            address receivedDisputeContract,
+            bytes32 receivedDisputeContent
+        ) = ForkingManager(forkmanager).disputeData();
+        uint256 receivedExecutionTime = ForkingManager(forkmanager)
+            .executionTimeForProposal();
+
+        // Assert the dispute contract and call stored in the ForkingManager match the ones we provided
+        assertEq(receivedDisputeContract, disputeContract);
+        assertEq(receivedDisputeContent, disputeContent);
+        assertEq(receivedIsL1, isL1);
+        assertEq(
+            receivedExecutionTime,
+            testTimestamp + forkmanager.forkPreparationTime()
+        );
+    }
+
+    function testExecuteForkRespectsTime() public {
+        // reverts on empty proposal list
+        vm.expectRevert("ForkingManager: fork not ready");
+        forkmanager.executeFork();
+
+        // Mint and approve the arbitration fee for the test contract
+        forkonomicToken.approve(address(forkmanager), arbitrationFee);
+        vm.prank(address(this));
+        forkonomicToken.mint(address(this), arbitrationFee);
+
+        // Call the initiateFork function to create a new fork
+        uint256 testTimestamp = 12354234;
+        vm.warp(testTimestamp);
+        forkmanager.initiateFork(
+            disputeData,
+            IForkingManager.NewImplementations({
+                bridgeImplementation: newBridgeImplementation,
+                zkEVMImplementation: newZkevmImplementation,
+                forkonomicTokenImplementation: newForkonomicTokenImplementation,
+                forkingManagerImplementation: newForkmanagerImplementation,
+                globalExitRootImplementation: newGlobalExitRootImplementation,
+                verifier: newVerifierImplementation,
+                forkID: newForkID
+            })
+        );
+
+        vm.expectRevert("ForkingManager: fork not ready");
+        forkmanager.executeFork();
+        vm.warp(testTimestamp + forkmanager.forkPreparationTime() + 1);
+        forkmanager.executeFork();
+    }
+
+    function testExecuteForkCanOnlyExecutedOnce() public {
+        // Mint and approve the arbitration fee for the test contract
+        forkonomicToken.approve(address(forkmanager), arbitrationFee);
+        vm.prank(address(this));
+        forkonomicToken.mint(address(this), arbitrationFee);
+
+        // Call the initiateFork function to create a new fork
+        uint256 testTimestamp = 123454234;
+        vm.warp(testTimestamp);
+        forkmanager.initiateFork(
+            disputeData,
+            IForkingManager.NewImplementations({
+                bridgeImplementation: newBridgeImplementation,
+                zkEVMImplementation: newZkevmImplementation,
+                forkonomicTokenImplementation: newForkonomicTokenImplementation,
+                forkingManagerImplementation: newForkmanagerImplementation,
+                globalExitRootImplementation: newGlobalExitRootImplementation,
+                verifier: newVerifierImplementation,
+                forkID: newForkID
+            })
+        );
+        skip(forkmanager.forkPreparationTime() + 1);
+        forkmanager.executeFork();
+        vm.expectRevert("No changes after forking");
+        forkmanager.executeFork();
+    }
+
+    function testRevertsSecondProposal() public {
+        // Mint and approve the arbitration fee for the test contract
+        forkonomicToken.approve(address(forkmanager), 3 * arbitrationFee);
+        vm.prank(address(this));
+        forkonomicToken.mint(address(this), 3 * arbitrationFee);
+
+        // Call the initiateFork function to create a new fork
+        disputeData.disputeContent = "0x1";
+        forkmanager.initiateFork(
+            disputeData,
+            IForkingManager.NewImplementations({
+                bridgeImplementation: newBridgeImplementation,
+                zkEVMImplementation: newZkevmImplementation,
+                forkonomicTokenImplementation: newForkonomicTokenImplementation,
+                forkingManagerImplementation: newForkmanagerImplementation,
+                globalExitRootImplementation: newGlobalExitRootImplementation,
+                verifier: newVerifierImplementation,
+                forkID: newForkID
+            })
+        );
+        disputeData.disputeContent = "0x2";
+        vm.expectRevert(bytes("ForkingManager: fork pending"));
+        forkmanager.initiateFork(
+            disputeData,
+            IForkingManager.NewImplementations({
+                bridgeImplementation: newBridgeImplementation,
+                zkEVMImplementation: newZkevmImplementation,
+                forkonomicTokenImplementation: newForkonomicTokenImplementation,
+                forkingManagerImplementation: newForkmanagerImplementation,
+                globalExitRootImplementation: newGlobalExitRootImplementation,
+                verifier: newVerifierImplementation,
+                forkID: newForkID
+            })
+        );
     }
 }

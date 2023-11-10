@@ -13,6 +13,7 @@ interface IForkingManager is IForkableStructure {
         bytes32 disputeContent;
     }
 
+    // Struct containing the addresses of the new implementations
     struct NewImplementations {
         address bridgeImplementation;
         address zkEVMImplementation;
@@ -29,6 +30,21 @@ interface IForkingManager is IForkableStructure {
     function globalExitRoot() external returns (address);
     function arbitrationFee() external returns (uint256);
     function disputeData() external returns (bool isL1, address disputeContract, bytes32 disputeContent);
+
+    // Struct that holds an address pair used to store the new child contracts
+    struct AddressPair {
+        address one;
+        address two;
+    }
+
+    // Struct containing the addresses of the new instances
+    struct NewInstances {
+        AddressPair forkingManager;
+        AddressPair bridge;
+        AddressPair zkEVM;
+        AddressPair forkonomicToken;
+        AddressPair globalExitRoot;
+    }
 
     function initialize(
         address _zkEVM,

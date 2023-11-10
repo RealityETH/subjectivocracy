@@ -37,22 +37,11 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     // Fee that needs to be paid to initiate a fork
     uint256 public arbitrationFee;
 
+    // Following variables are defined during the fork proposal
     DisputeData public disputeData;
-
-    // Struct that holds an address pair used to store the new child contracts
-    struct AddressPair {
-        address one;
-        address two;
-    }
-
-    // Struct containing the addresses of the new instances
-    struct NewInstances {
-        AddressPair forkingManager;
-        AddressPair bridge;
-        AddressPair zkEVM;
-        AddressPair forkonomicToken;
-        AddressPair globalExitRoot;
-    }
+    NewImplementations public proposedImplementations;
+    uint256 public executionTimeForProposal = 0;
+    uint256 public immutable forkPreparationTime = 1 weeks;
 
     /// @inheritdoc IForkingManager
     function initialize(
@@ -75,21 +64,40 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     }
 
     /**
-     * @notice function to initiate and execute the fork
+     * @notice function to initiate and schedule the fork
      * @param _disputeData the dispute contract and call to identify the dispute
-     * @param newImplementations the addresses of the new implementations that will
-     * be used to create the second children of the contracts
+     * @param _newImplementations the addresses of the new implementations that will
      */
     function initiateFork(
         DisputeData memory _disputeData,
-        NewImplementations calldata newImplementations
+        NewImplementations calldata _newImplementations
     ) external onlyBeforeForking {
+        require(executionTimeForProposal == 0, "ForkingManager: fork pending");
         // Charge the forking fee
         IERC20(forkonomicToken).safeTransferFrom(
             msg.sender,
             address(this),
             arbitrationFee
         );
+
+        disputeData = _disputeData;
+        proposedImplementations = _newImplementations;
+        // solhint-disable-next-line not-rely-on-time
+        executionTimeForProposal = (block.timestamp + forkPreparationTime);
+    }
+
+    /**
+     * @dev function that executes a fork proposal
+     */
+    function executeFork() external onlyBeforeForking {
+        require(
+            executionTimeForProposal != 0 &&
+                // solhint-disable-next-line not-rely-on-time
+                executionTimeForProposal <= block.timestamp,
+            "ForkingManager: fork not ready"
+        );
+        NewImplementations memory newImplementations = proposedImplementations;
+
         // Create the children of each contract
         NewInstances memory newInstances;
         (
@@ -250,9 +258,6 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             newInstances.zkEVM.two,
             newInstances.bridge.two
         );
-
-        // Store the dispute contract and call to identify the dispute
-        disputeData = _disputeData;
     }
 
 }
