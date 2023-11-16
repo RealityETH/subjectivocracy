@@ -20,6 +20,7 @@ import {AdjudicationFramework} from "../contracts/AdjudicationFramework.sol";
 
 import {L2ForkArbitrator} from "../contracts/L2ForkArbitrator.sol";
 import {L1GlobalRouter} from "../contracts/L1GlobalRouter.sol";
+import {L1GlobalForkRequester} from "../contracts/L1GlobalForkRequester.sol";
 import {L2ChainInfo} from "../contracts/L2ChainInfo.sol";
 
 import {MockPolygonZkEVMBridge} from "./testcontract/MockPolygonZkEVMBridge.sol";
@@ -61,6 +62,9 @@ contract AdjudicationIntegrationTest is Test {
     address payable internal user1 = payable(address(0xbabe09));
     address payable internal user2 = payable(address(0xbabe10));
 
+    // We'll use a different address to deploy AdjudicationFramework because we want to logs with its address in
+    address payable internal adjudictionDeployer = payable(address(0xbabe11)); 
+
     string internal constant QUESTION_DELIM = "\u241f";
 
     /*
@@ -76,6 +80,7 @@ contract AdjudicationIntegrationTest is Test {
     // Dummy addresses for things we message on l1
     // The following should be the same on all forks
     MockPolygonZkEVMBridge internal l2Bridge;
+    address internal l1GlobalForkRequester = address(new L1GlobalForkRequester());
     address internal l1GlobalRouter = address(0xbabe12);
 
     // The following will change when we fork so we fake multiple versions here
@@ -129,13 +134,14 @@ contract AdjudicationIntegrationTest is Test {
         // NB we're modelling this on the same chain but it should really be the l2
         l2realityEth = new RealityETH_v3_0();
 
-        l2forkArbitrator = new L2ForkArbitrator(IRealityETH(l2realityEth), L2ChainInfo(l2ChainInfo), L1GlobalRouter(l1GlobalRouter), forkingFee);
+        l2forkArbitrator = new L2ForkArbitrator(IRealityETH(l2realityEth), L2ChainInfo(l2ChainInfo), L1GlobalForkRequester(l1GlobalForkRequester), forkingFee);
 
         // The adjudication framework can act like a regular reality.eth arbitrator.
         // It will also use reality.eth to arbitrate its own governance, using the L2ForkArbitrator which makes L1 fork requests.
         address[] memory initialArbitrators = new address[](2);
         initialArbitrators[0] = initialArbitrator1;
         initialArbitrators[1] = initialArbitrator2;
+        vm.prank(adjudictionDeployer);
         adjudicationFramework1 = new AdjudicationFramework(address(l2realityEth), 123, address(l2forkArbitrator), initialArbitrators);
 
         l2Arbitrator1 = new Arbitrator();
@@ -189,7 +195,10 @@ contract AdjudicationIntegrationTest is Test {
         l2realityEth.submitAnswer{value: 10000}(addArbitratorQID2, bytes32(uint256(1)), 0);
         l2realityEth.submitAnswer{value: 20000}(addArbitratorQID2, bytes32(uint256(0)), 0);
 
-        l2forkArbitrator.requestArbitration(addArbitratorQID2, 0);
+        l2forkArbitrator.requestArbitration{value: 500000}(addArbitratorQID2, 0);
+
+        // This talks to the bridge, we fake what happens next.
+        // TODO: Hook this up to the real bridge so we can test it properly.
 
     }
 
@@ -420,33 +429,73 @@ contract AdjudicationIntegrationTest is Test {
 
     }
 
+    function testArbitrationContestForkFailed() public {
+
+        (, bytes32 removalQuestionId, , , ) = _setupContestedArbitration();
+
+        // Currently in the "yes" state, so once it times out we can complete the removal 
+
+        // Now wait for the timeout and settle the proposition
+        vm.expectRevert("question must be finalized");
+        bytes32 result = l2realityEth.resultFor(removalQuestionId);
+        assertEq(result, bytes32(uint256(0)));
+
+        assertEq(address(l2forkArbitrator.realitio()), address(l2realityEth), "l2forkArbitrator expects to arbitrate our l2realityEth");
+        assertEq(address(adjudicationFramework1.realityETH()), address(l2realityEth), "adjudicationFramework1 expects to use our l2realityEth");
+        assertEq(address(l2forkArbitrator), l2realityEth.getArbitrator(removalQuestionId), "Arbitrator of the removalQuestionId is l2forkArbitrator");
+
+        uint256 forkFee = l2forkArbitrator.getDisputeFee(removalQuestionId);
+        vm.prank(user2);
+        l2forkArbitrator.requestArbitration{value: forkFee}(removalQuestionId, 0);
+
+        assertTrue(l2forkArbitrator.isForkInProgress(), "In forking state");
+
+        // L1 STUFF HAPPENS HERE
+        // Assume somebody else called fork or the fee changed or something.
+        // We should get a reply via the bridge.
+
+        // NB Here we're sending the payment directly
+        // In fact it seems like it would have to be claimed separately
+        assertEq(address(l2forkArbitrator).balance, 0);
+        payable(address(l2Bridge)).transfer(1000000); // Fund it so it can fund the L2ForkArbitrator
+        bytes memory fakeMessageData = abi.encode(removalQuestionId);
+        l2Bridge.fakeClaimMessage(address(l1GlobalForkRequester), uint32(l1chainId), address(l2forkArbitrator), fakeMessageData, forkFee);
+        assertEq(address(l2forkArbitrator).balance, forkFee);
+
+        assertFalse(l2forkArbitrator.isForkInProgress(), "Not in forking state");
+
+        l2forkArbitrator.cancelArbitration(removalQuestionId);
+        assertEq(forkFee, l2forkArbitrator.refundsDue(user2));
+
+        uint256 user2bal = user2.balance;
+        vm.prank(user2);
+        l2forkArbitrator.claimRefund();
+        assertEq(address(l2forkArbitrator).balance, 0);
+        assertEq(user2.balance, user2bal + forkFee);
+
+    }
+
     function testAdjudicationFrameworkTemplateCreation() public {
         address[] memory initialArbs;
         vm.recordLogs();
 
         // Creates 2 templates, each with a log entry from reality.eth
+        vm.prank(adjudictionDeployer);
         new AdjudicationFramework(address(l2realityEth), 123, address(l2forkArbitrator), initialArbs);
 
         // NB The length and indexes of this may change if we add unrelated log entries to the AdjudicationFramework constructor
         Vm.Log[] memory entries = vm.getRecordedLogs();
         assertEq(entries.length, 2);
 
-        // TODO: Not sure if this contract address will change when we do other stuff
-
-        string memory addLog = '{"title": "Should we add arbitrator %s to the framework 0xd6bbde9174b1cdaa358d2cf4d57d1a9f7178fbff?", "type": "bool", "category": "adjudication", "lang": "en"}';
-        string memory removeLog = '{"title": "Should we remove arbitrator %s from the framework 0xd6bbde9174b1cdaa358d2cf4d57d1a9f7178fbff?", "type": "bool", "category": "adjudication", "lang": "en"}';
+        // We should always get the same contract address because we deploy only this with the same user so the address and nonce shouldn't change
+        string memory addLog = '{"title": "Should we add arbitrator %s to the framework 0xfed866a553d106378b828a2e1effb8bed9c9dc28?", "type": "bool", "category": "adjudication", "lang": "en"}';
+        string memory removeLog = '{"title": "Should we remove arbitrator %s from the framework 0xfed866a553d106378b828a2e1effb8bed9c9dc28?", "type": "bool", "category": "adjudication", "lang": "en"}';
         assertEq(abi.decode(entries[0].data, (string)), string(addLog));
         assertEq(abi.decode(entries[1].data, (string)), string(removeLog));
 
     }
 
-    /*
-    // TODO:
-    If the fork failed because the fee changed or something else forked first (does this happen???), we may need to clearFailedForkAttempt()
-    function testArbitrationContestForkFailed() public {
 
-    }
-    */
 
     /*
     function testL1RequestGovernanceArbitration() public {

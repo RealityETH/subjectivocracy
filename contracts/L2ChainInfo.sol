@@ -23,7 +23,7 @@ contract L2ChainInfo is IBridgeMessageReceiver{
     uint32 public originNetwork;
 
     uint256 internal chainId;
-    address internal forkingManager;
+    address internal forkonomicToken;
     uint256 internal forkFee;
     // uint256 internal totalSupply;
 
@@ -46,6 +46,10 @@ contract L2ChainInfo is IBridgeMessageReceiver{
     modifier isNotUpToDate {
         require(block.chainid != chainId, "Chain ID must be changed");
         _;
+    }
+
+    function getForkonomicToken() external view isUpToDate returns(address) {
+	return forkonomicToken;
     }
 
     function getChainID() external view isUpToDate returns(uint256) {
@@ -71,7 +75,7 @@ contract L2ChainInfo is IBridgeMessageReceiver{
         bytes32 questionId;
         bytes32 result;
 
-        (forkingManager, forkFee, isL1, forker, questionId, result) = abi.decode(_data, (address, uint256, bool, address, bytes32, bytes32));
+        (forkonomicToken, forkFee, isL1, forker, questionId, result) = abi.decode(_data, (address, uint256, bool, address, bytes32, bytes32));
 
         chainId = block.chainid;
 

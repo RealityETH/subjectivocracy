@@ -17,30 +17,31 @@ contract L1GlobalRouter {
 
         // Ask the bridge its forkmanager
         // TODO: ForkableStructure has this but IForkableStructure doesn't
-        IForkingManager fm = IForkingManager(ForkableBridge(_bridge).forkmanager());
+        IForkingManager forkingManager = IForkingManager(ForkableBridge(_bridge).forkmanager());
         // Ask the parent forkmanager which side this forkmanager is  
-        IForkingManager parentFm = IForkingManager(fm.parentContract());
+        IForkingManager parentForkingManager = IForkingManager(forkingManager.parentContract());
         uint8 forkResult = 0;
-        if (address(parentFm) != address(0)) {
-            (address child1, address child2) = fm.getChildren();
-            if (child1 == address(fm)) {
+        if (address(parentForkingManager) != address(0)) {
+            (address child1, address child2) = forkingManager.getChildren();
+            if (child1 == address(forkingManager)) {
                 forkResult = 1;
-            } else if (child2 == address(fm)) {
+            } else if (child2 == address(forkingManager)) {
                 forkResult = 2;
             } else {
                 revert("Unexpected child address");
             }
         }
 
-        uint64 chainId = IPolygonZkEVM(fm.zkEVM()).chainID();
+        uint64 chainId = IPolygonZkEVM(forkingManager.zkEVM()).chainID();
 
-        uint256 arbitrationFee = fm.arbitrationFee();
+        uint256 arbitrationFee = forkingManager.arbitrationFee();
+        address forkonomicToken = forkingManager.forkonomicToken();
 
-        (bool isL1, address disputeContract, bytes32 disputeContent) = fm.disputeData();
+        (bool isL1, address disputeContract, bytes32 disputeContent) = forkingManager.disputeData();
 
         // TODO: Can we put the disputeData in ForkingManager in a bytes32?
         // Fork results: 0 for the genesis, 1 for yes, 2 for no 
-        bytes memory data = abi.encode(fm, arbitrationFee, isL1, disputeContract, disputeContent, forkResult);
+        bytes memory data = abi.encode(forkonomicToken, arbitrationFee, isL1, disputeContract, disputeContent, forkResult);
 
         IPolygonZkEVMBridge(_bridge).bridgeMessage(
             uint32(chainId),

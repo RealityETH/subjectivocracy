@@ -14,6 +14,20 @@ contract MockPolygonZkEVMBridge {
     ) public virtual payable {
     }
 
+    function bridgeAsset(
+        uint32 destinationNetwork,
+        address destinationAddress,
+        uint256 amount,
+        address token,
+        bool forceUpdateGlobalExitRoot,
+        bytes calldata permitData
+    )
+        public
+        payable {
+    }
+
+    receive() external payable {}
+
     function fakeClaimMessage(address originAddress, uint32 originNetwork, address destinationAddress, bytes memory metadata, uint256 amount) external {
         /* solhint-disable avoid-low-level-calls */
         (bool success, ) = destinationAddress.call{value: amount}(

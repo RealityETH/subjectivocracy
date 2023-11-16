@@ -7,10 +7,12 @@ pragma solidity ^0.8.20;
 
 // import {Arbitrator} from "./Arbitrator.sol";
 import {L2ChainInfo} from "./L2ChainInfo.sol";
-import {L1GlobalRouter} from "./L1GlobalRouter.sol";
+import {L1GlobalForkRequester} from "./L1GlobalForkRequester.sol";
 import {IRealityETH} from "./interfaces/IRealityETH.sol";
+import {MoneyBoxUser} from "./MoneyBoxUser.sol";
 
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
+import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 
 /*
 This contract is the arbitrator used by governance propositions for AdjudicationFramework contracts.
@@ -20,17 +22,16 @@ If there is already a dispute in progress (ie another fork has been requested bu
 
 // NB This doesn't implement IArbitrator because that requires slightly more functions than we need
 // TODO: Would be good to make a stripped-down IArbitrator that only has the essential functions
-contract L2ForkArbitrator {
+contract L2ForkArbitrator is MoneyBoxUser, IBridgeMessageReceiver {
 
     bool public isForkInProgress;
     IRealityETH public realitio;
 
     enum RequestStatus {
         NONE,
-        QUEUED,
-        FORK_REQUESTED, // Fork is happening
-        FORK_COMPLETED,  // Fork has happened
-        REQUEST_FAILED   // TODO: Check if we need this or if we can just put it back to QUEUED
+        QUEUED, // We got our payment and put the reality.eth process on hold, but haven't requested initialization yet 
+        FORK_REQUESTED, // Fork request set to L1, result unknown so far
+        FORK_REQUEST_FAILED // Fork request failed, eg another process was forking
     }
 
     struct ArbitrationRequest {
@@ -48,17 +49,18 @@ contract L2ForkArbitrator {
     );
 
     mapping(bytes32 => ArbitrationRequest) public arbitrationRequests;
+    mapping(address => uint256) public refundsDue;
 
     L2ChainInfo public chainInfo;
-    L1GlobalRouter public router;
+    L1GlobalForkRequester public l1globalForkRequester;
 
-    uint256 public disputeFee; // The dispute fee should generally only go down
+    uint256 public disputeFee; // Normally dispute fee should generally only go down in a fork
     uint256 public chainId;
 
-    constructor(IRealityETH _realitio, L2ChainInfo _chainInfo, L1GlobalRouter _router, uint256 _initialDisputeFee) {
+    constructor(IRealityETH _realitio, L2ChainInfo _chainInfo, L1GlobalForkRequester _l1globalForkRequester, uint256 _initialDisputeFee) {
         realitio = _realitio;
         chainInfo = _chainInfo; 
-        router = _router;
+        l1globalForkRequester = _l1globalForkRequester;
         disputeFee = _initialDisputeFee;
     }
 
@@ -101,29 +103,76 @@ contract L2ForkArbitrator {
 	return true;
     }
 
-    // Request a fork via the bridge
-    // NB This may fail if someone else is already forking, and we'll have to retry after the fork.
+    /// @notice Request a fork via the bridge
+    /// @dev Talks to the L1 ForkingManager asynchronously, and may fail.
+    /// @param question_id The question in question
     function requestActivateFork(
         bytes32 question_id
     ) public {
+
+        require(!isForkInProgress, "Already forking over something else");
+
         RequestStatus status = arbitrationRequests[question_id].status;
-        require(status == RequestStatus.QUEUED || status == RequestStatus.REQUEST_FAILED, "not awaiting activation");
+        require(status == RequestStatus.QUEUED || status == RequestStatus.FORK_REQUEST_FAILED, "not awaiting activation");
 	arbitrationRequests[question_id].status = RequestStatus.FORK_REQUESTED;
-        // TODO: Send a message via the bridge, along with the payment
+
+        uint256 forkFee = chainInfo.getForkFee();
+        uint256 paid = arbitrationRequests[question_id].paid;
+        require(paid >= forkFee, "fee paid too low");
 
         address l2bridge = chainInfo.l2bridge();
         require(l2bridge != address(0), "l2bridge not set");
 
         IPolygonZkEVMBridge bridge = IPolygonZkEVMBridge(l2bridge);
 
+        address forkonomicToken = chainInfo.getForkonomicToken();
+
+        // The receiving contract may get different payments from different requests
+        // To differentiate our payment, we will use a dedicated MoneyBox contract controlled by l1globalForkRequester
+        // The L1GlobalForkRequester will deploy this as and when it's needed.
+        // TODO: For now we assume only 1 request is in-flight at a time. If there might be more, differentiate them in the salt.
+        bytes32 salt = keccak256(abi.encodePacked(address(this)));
+        address moneyBox = _calculateMoneyBoxAddress(address(l1globalForkRequester), salt, address(forkonomicToken));
+
+        bytes memory permitData;
+        bridge.bridgeAsset{value: forkFee}(
+            uint32(chainInfo.originNetwork()),
+            moneyBox,
+            forkFee, // TODO: Should this be 0 since we already sent the forkFee as msg.value?
+            address(0), // Empty address for the native token
+            true,
+            permitData
+        );
+
         bytes memory qdata = bytes.concat(question_id);
         bridge.bridgeMessage(
             uint32(chainInfo.originNetwork()),
-            address(router), // TODO: Use the fork requesting contract instead?
+            address(l1globalForkRequester),
             true,
             qdata
         );
         isForkInProgress = true;
+    }
+
+    // If the fork request fails, we will get a message back through the bridge telling us about it
+    // We will set FORK_REQUEST_FAILED which will allow anyone to request cancellation 
+    function onMessageReceived(address _originAddress, uint32 _originNetwork, bytes memory _data) external payable {
+
+        address l2bridge = chainInfo.l2bridge();
+        require(msg.sender == l2bridge, "Not our bridge");
+        require(_originNetwork == uint32(chainInfo.originNetwork()), "Wrong network, WTF");
+        require(_originAddress == address(l1globalForkRequester), "Unexpected sender");
+
+        bytes32 question_id = bytes32(_data);
+        RequestStatus status = arbitrationRequests[question_id].status;
+        require(status == RequestStatus.FORK_REQUESTED, "not in fork-requested state");
+        require(isForkInProgress, "No fork in progress to clear");
+
+        isForkInProgress = false;
+        arbitrationRequests[question_id].status = RequestStatus.FORK_REQUEST_FAILED;
+
+        // We don't check the funds are back here, just assume L1GlobalForkRequester send them and they can be recovered.
+
     }
 
     /// @notice Submit the arbitrator's answer to a question, assigning the winner automatically.
@@ -149,9 +198,6 @@ contract L2ForkArbitrator {
         // TODO: Is this best, or is it better to bridge it directly?
         bytes32 answer = chainInfo.forkQuestionResults(false, address(this), question_id);
 
-	arbitrationRequests[question_id].status = RequestStatus.FORK_COMPLETED;
-	isForkInProgress = false;
-
         realitio.assignWinnerAndSubmitAnswerByArbitrator(
             question_id,
             answer,
@@ -161,29 +207,36 @@ contract L2ForkArbitrator {
             last_answerer
         );
 
-    }
+	isForkInProgress = false;
+	delete(arbitrationRequests[question_id]);
 
-    function clearFailedForkAttempt(
-        bytes32 question_id
-    ) external {
-        RequestStatus status = arbitrationRequests[question_id].status;
-        require(isForkInProgress, "No fork in progress to clear");
-        require(status == RequestStatus.FORK_REQUESTED, "Nothing to clear");
-        // Confirm from the bridge that the previous call failed
-        // TODO: Do we need a contract on L2 that has this information?
-        isForkInProgress = false;
     }
 
     /// @notice Cancel a previous arbitration request
-    /// @dev This is intended for situations where the arbitration is happening non-atomically and the fee or something changes.
-    /// @dev In our cases it should only happen if the fee is not up-to-date or a too-low fee was paid.
+    /// @dev This is intended for situations where the stuff is happening non-atomically and the fee changes or someone else forks before us
+    /// @dev Another way to handle this might be to go back into QUEUED state and let people keep retrying
+    /// @dev NB This may revert if the contract has returned funds in the bridge but claimAsset hasn't been called yet
     /// @param question_id The question in question
     function cancelArbitration(bytes32 question_id) external {
+
+        // For simplicity we won't let you cancel until forking is sorted, as you might retry and keep failing for the same reason
+        require(!isForkInProgress, "Fork in progress");
+
         RequestStatus status = arbitrationRequests[question_id].status;
+        require(status == RequestStatus.FORK_REQUEST_FAILED, "Not in fork-failed state");
+
         address payable payer = arbitrationRequests[question_id].payer;
-        require(status == RequestStatus.REQUEST_FAILED, "Not in fork-failed state");
         realitio.cancelArbitration(question_id);
-        payer.transfer(arbitrationRequests[question_id].paid);
+
+        refundsDue[payer] = refundsDue[payer] + arbitrationRequests[question_id].paid;
+        delete(arbitrationRequests[question_id]);
+
+    }
+
+    function claimRefund() external {
+        uint256 due = refundsDue[msg.sender];
+        refundsDue[msg.sender] = refundsDue[msg.sender] - due;
+        payable(msg.sender).transfer(due);
     }
 
 }
