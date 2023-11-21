@@ -164,7 +164,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             );
             initializePackedParameters.chainID = ChainIdManager(chainIdManager)
                 .getNextUsableChainId();
-            initializePackedParameters.forkID = newImplementations.forkID;
+            initializePackedParameters.forkID = newImplementations.forkID > 0 ? newImplementations.forkID : IPolygonZkEVM(zkEVM).forkID();
             IForkableZkEVM(newInstances.zkEVM.two).initialize(
                 newInstances.forkingManager.two,
                 zkEVM,
