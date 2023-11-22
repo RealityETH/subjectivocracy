@@ -29,7 +29,7 @@ contract ForkingManagerTest is Test {
     address public zkevmImplementation;
     address public forkonomicTokenImplementation;
     address public globalExitRootImplementation;
-    address public chainIdManager;
+    address public chainIdManagerAddress;
     bytes32 internal constant _IMPLEMENTATION_SLOT =
         0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
@@ -43,7 +43,6 @@ contract ForkingManagerTest is Test {
         );
     uint64 public forkID = 3;
     uint64 public newForkID = 4;
-    uint64 public chainID = 4;
     uint32 public networkID = 10;
     uint64 public pendingStateTimeout = 123;
     uint64 public trustedAggregatorTimeout = 124235;
@@ -59,8 +58,8 @@ contract ForkingManagerTest is Test {
     bytes32[32] public depositTree;
     address public admin = address(0xad);
     uint64 public initialChainId = 1;
-    uint64 public firstChainId = 1;
-    uint64 public secondChainId = 2;
+    uint64 public firstChainId = initialChainId+1;
+    uint64 public secondChainId = initialChainId+2;
 
     // Setup new implementations for the fork
     address public newBridgeImplementation = address(new ForkableBridge());
@@ -131,8 +130,8 @@ contract ForkingManagerTest is Test {
                 )
             )
         );
-
-        chainIdManager = address(new ChainIdManager(initialChainId));
+        ChainIdManager chainIdManager= new ChainIdManager(initialChainId);
+        chainIdManagerAddress = address(chainIdManager);
         globalExitRoot.initialize(
             address(forkmanager),
             address(0x0),
@@ -160,7 +159,7 @@ contract ForkingManagerTest is Test {
                     pendingStateTimeout: pendingStateTimeout,
                     trustedAggregator: trustedAggregator,
                     trustedAggregatorTimeout: trustedAggregatorTimeout,
-                    chainID: chainID,
+                    chainID: chainIdManager.getNextUsableChainId(),
                     forkID: forkID
                 });
         zkevm.initialize(
@@ -183,7 +182,7 @@ contract ForkingManagerTest is Test {
             address(0x0),
             address(globalExitRoot),
             arbitrationFee,
-            chainIdManager
+            chainIdManagerAddress
         );
         forkonomicToken.initialize(
             address(forkmanager),
@@ -389,11 +388,11 @@ contract ForkingManagerTest is Test {
         }
         {
             assertEq(
-                chainIdManager,
+                chainIdManagerAddress,
                 ForkingManager(childForkmanager1).chainIdManager()
             );
             assertEq(
-                chainIdManager,
+                chainIdManagerAddress,
                 ForkingManager(childForkmanager2).chainIdManager()
             );
         }
