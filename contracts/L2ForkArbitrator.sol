@@ -187,8 +187,6 @@ contract L2ForkArbitrator is MoneyBoxUser, IBridgeMessageReceiver {
         require(chainInfo.questionToChainID(false, address(this), question_id) > 0, "Dispute not found in ChainInfo");
 
         // We get the fork result from the L2ChainInfo contract
-        // One answer is assigned to each fork
-        // TODO: Is this best, or is it better to bridge it directly?
         bytes32 answer = chainInfo.forkQuestionResults(false, address(this), question_id);
 
         realitio.assignWinnerAndSubmitAnswerByArbitrator(
