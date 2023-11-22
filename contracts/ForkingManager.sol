@@ -237,7 +237,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         );
         IForkingManager(newInstances.forkingManager.two).initialize(
             newInstances.zkEVM.two,
-            newInstances.zkEVM.two,
+            newInstances.bridge.two,
             newInstances.forkonomicToken.two,
             address(this),
             newInstances.globalExitRoot.two,
