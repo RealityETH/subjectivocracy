@@ -169,7 +169,7 @@ contract L1GlobalForkRequester is MoneyBoxUser {
         bridge.bridgeMessage(
             uint32(chainId),
             requester,
-            false,
+            true,
             data
         );
 
