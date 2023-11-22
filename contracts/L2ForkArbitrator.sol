@@ -131,7 +131,7 @@ contract L2ForkArbitrator is MoneyBoxUser, IBridgeMessageReceiver {
         // To differentiate our payment, we will use a dedicated MoneyBox contract controlled by l1globalForkRequester
         // The L1GlobalForkRequester will deploy this as and when it's needed.
         // TODO: For now we assume only 1 request is in-flight at a time. If there might be more, differentiate them in the salt.
-        bytes32 salt = keccak256(abi.encodePacked(address(this)));
+        bytes32 salt = keccak256(abi.encodePacked(address(this), question_id));
         address moneyBox = _calculateMoneyBoxAddress(address(l1globalForkRequester), salt, address(forkonomicToken));
 
         bytes memory permitData;
@@ -144,13 +144,6 @@ contract L2ForkArbitrator is MoneyBoxUser, IBridgeMessageReceiver {
             permitData
         );
 
-        bytes memory qdata = bytes.concat(question_id);
-        bridge.bridgeMessage(
-            uint32(chainInfo.originNetwork()),
-            address(l1globalForkRequester),
-            true,
-            qdata
-        );
         isForkInProgress = true;
     }
 

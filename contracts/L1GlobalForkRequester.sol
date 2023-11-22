@@ -26,61 +26,70 @@ import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/inte
 import {MoneyBox} from "./MoneyBox.sol";
 import {MoneyBoxUser} from "./MoneyBoxUser.sol";
 
-contract L1GlobalForkRequester is IBridgeMessageReceiver, MoneyBoxUser {
+contract L1GlobalForkRequester is MoneyBoxUser {
 
     struct FailedForkRequest {
         uint256 amount;
-        bool migratedY;
-        bool migratedN;
+        uint256 amountMigratedY;
+        uint256 amountMigratedN;
     }
-    // Token => Requester => ID => FailedForkRequest 
+    // Token => Beneficiary => ID => FailedForkRequest 
     mapping(address=>mapping(address=>mapping(bytes32=>FailedForkRequest))) public failedRequests;
 
-    // Any bridge (or any contract pretending to be a bridge) can call this.
-    // We'll look up its ForkingManager and ask it for a fork.
-    // TODO: It might make more sense if this contract requested the chain ID then kept a record of it.
-    // ...then the ForkingManager would be locked to only fork based on our request.
+    // Anybody can say, "Hey, you got a payment for this fork to happen"
+    // Normally this would only happen if the L2 contract send a payment but in theory someone else could fund it directly on L1.
+    function handlePayment(address token, address beneficiary, bytes32 requestId) external {
 
-    function onMessageReceived(address _originAddress, uint32 _originNetwork, bytes memory _data) external payable {
+        // Normally the "beneficiary" would be the sender on L2. 
+        // But if some other kind person sent funds to this address we would still send it back to the beneficiary.
 
-        ForkableBridge bridge = ForkableBridge(msg.sender);
-        IForkingManager forkingManager = IForkingManager(bridge.forkmanager());
-        IForkonomicToken forkonomicToken = IForkonomicToken(forkingManager.forkonomicToken());
+        bytes32 salt = keccak256(abi.encodePacked(beneficiary, requestId));
 
-        // The chain ID should always be the chain ID expected by the ForkingManager.
-        // It shouldn't be possible for it to be anything else but we'll check it anyhow.
-        IPolygonZkEVM zkevm = IPolygonZkEVM(forkingManager.zkEVM());
-        require(uint64(_originNetwork) == zkevm.chainID(), "Bad _originNetwork, WTF");
+        // Check the MoneyBox has funds
+        address moneyBox = _calculateMoneyBoxAddress(address(this), salt, token);
 
-        // We also check in the opposite direction to make sure the ForkingManager thinks the bridge is its bridge etc
-        require(address(forkingManager.bridge()) == msg.sender, "Bridge mismatch, WTF");
-        require(address(forkonomicToken.forkmanager()) == address(forkingManager), "Token/manager mismatch, WTF");
+        // If for some reason we've already got part of a payment, include it. 
+        uint256 initialBalance = failedRequests[token][beneficiary][requestId].amount;
 
-        // TODO: Check if we should have anything else identifying the transfer
-        bytes32 salt = keccak256(abi.encodePacked(msg.sender));
-        address moneyBox = _calculateMoneyBoxAddress(address(this), salt, address(forkonomicToken));
-        uint256 transferredBalance = forkonomicToken.balanceOf(moneyBox);
+        uint256 transferredBalance = initialBalance + IForkonomicToken(token).balanceOf(moneyBox);
 
         if (moneyBox.code.length == 0) {
-            new MoneyBox{salt: salt}(address(forkonomicToken));
+            new MoneyBox{salt: salt}(token);
         }
-        require(forkonomicToken.transferFrom(moneyBox, address(this), transferredBalance), "Preparing payment failed");
+        require(IForkonomicToken(token).transferFrom(moneyBox, address(this), transferredBalance), "Preparing payment failed");
 
-        bool canFork = false; // TODO: Get this from the ForkingManager
+        // If the token is already being or has already been forked, record the request as failed.
+        // Somebody can split the token after the fork, then send the failure message and the funds back on both the child forks.
+        // TODO: Replace this with an isForked() method in ForkingStructure.sol?
 
-        if (canFork) {
-            forkonomicToken.approve(address(forkingManager), transferredBalance);
+        IForkingManager forkingManager = IForkingManager(IForkonomicToken(token).forkmanager());
+
+        bool isForkGuaranteedNotToRevert = true;
+        if (transferredBalance < forkingManager.arbitrationFee()) {
+            isForkGuaranteedNotToRevert = false;
+        } 
+        if (!forkingManager.canFork()) {
+            isForkGuaranteedNotToRevert = false;
+        }
+
+        if (isForkGuaranteedNotToRevert) {
+
+            if (initialBalance > 0) {
+                delete(failedRequests[token][beneficiary][requestId]);
+            }
+
+            IForkonomicToken(token).approve(address(forkingManager), transferredBalance);
 
             // Assume the data contains the questionId and pass it directly to the forkmanager in the fork request
             IForkingManager.NewImplementations memory newImplementations;
-            IForkingManager.DisputeData memory disputeData = IForkingManager.DisputeData(false, _originAddress, bytes32(_data));
+            IForkingManager.DisputeData memory disputeData = IForkingManager.DisputeData(false, beneficiary, requestId);
             forkingManager.initiateFork(disputeData, newImplementations);
 
         } else {
 
             // Store the request so we can return the tokens across the bridge
             // If the fork has already happened we may have to split them first and do this twice.
-            failedRequests[address(forkonomicToken)][msg.sender][salt] = FailedForkRequest(transferredBalance, false, false);
+            failedRequests[token][beneficiary][requestId].amount = transferredBalance; 
 
         }
 
@@ -92,40 +101,42 @@ contract L1GlobalForkRequester is IBridgeMessageReceiver, MoneyBoxUser {
         // TODO: We need to update ForkonomicToken to handle each side separately in case one bridge reverts maliciously.
         // Then handle only one side being requested, or only one side being left
         uint256 amount = failedRequests[token][requester][requestId].amount;
-        require(amount > 0, "Nothing to split");
+
+        // You need to call registerPayment before you call this.
+        require(amount > 0, "Nothing to split"); 
 
         (address yesToken, address noToken)  = IForkonomicToken(token).getChildren();
         require(yesToken != address(0) && noToken != address(0), "Token not forked");
 
-        // Current version with a single function
+        // Current version only has a single function so we have to migrate both sides
         IForkonomicToken(token).splitTokensIntoChildTokens(amount);
-        failedRequests[yesToken][requester][requestId] = FailedForkRequest(amount, false, false);
-        failedRequests[noToken][requester][requestId] = FailedForkRequest(amount, false, false);
+        failedRequests[yesToken][requester][requestId].amount += amount;
+        failedRequests[noToken][requester][requestId].amount += amount;
         delete(failedRequests[token][requester][requestId]);
 
         /*
-        // Should probably be something like:
+        // Probably need something like:
 
-        bool migratedY = failedRequests[token][requester][requestId].migratedY;
-        bool migratedN = failedRequests[token][requester][requestId].migratedN;
+        uint256 amountRemainingY = amount - failedRequests[token][requester][requestId].amountMigratedY;
+        uint256 amountRemainingN = amount - failedRequests[token][requester][requestId].amountMigratedN;
 
         if (doYesToken) {
-            require(!migratedY, "Already migrated Y");
-            token.splitTokensIntoChildTokens(uint256 amount, 1);
-            migratedY = true;
+            require(amountRemainingY > 0, "Nothing to migrate for Y");
+            token.splitTokensIntoChildTokens(amountRemainingY, 1);
+            amountRemainingY = 0;
         }
 
         if (doNoToken) {
-            require(!migratedN, "Already migrated N");
-            token.splitTokensIntoChildTokens(uint256 amount, 0);
-            migratedN = true;
+            require(amountMigratedN > 0, "Nothing to migrate for N");
+            token.splitTokensIntoChildTokens(amountMigratedN, 0);
+            amountRemainingN = 0;
         }
 
-        if (migratedY && migratedN) {
+        if (amountRemainingY == 0 && amountRemainingN == 0) {
             delete(failedRequests[token][requester][requestId]);
         } else {
-            failedRequests[token][requester][requestId] = migratedY;
-            failedRequests[token][requester][requestId] = migratedN;
+            failedRequests[token][requester][requestId].amountRemainingY = amountRemainingY;
+            failedRequests[token][requester][requestId].amountRemainingN = amountRemainingN;
         }
         */
     }
@@ -162,7 +173,7 @@ contract L1GlobalForkRequester is IBridgeMessageReceiver, MoneyBoxUser {
         bridge.bridgeMessage(
             uint32(chainId),
             requester,
-            true,
+            false,
             data
         );
 
