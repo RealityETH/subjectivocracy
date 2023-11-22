@@ -198,6 +198,54 @@ contract ForkingManagerTest is Test {
         );
     }
 
+    function testForkingStatusFunctions() public {
+
+        assertFalse(forkmanager.isForkingInitiated());
+        assertFalse(forkmanager.isForkingExecuted());
+        assertTrue(forkmanager.canFork());
+
+        // Mint and approve the arbitration fee for the test contract
+        forkonomicToken.approve(address(forkmanager), arbitrationFee);
+        vm.prank(address(this));
+        forkonomicToken.mint(address(this), arbitrationFee);
+
+        vm.expectEmit(true, true, true, true, address(forkonomicToken));
+        emit Transfer(
+            address(this),
+            address(forkmanager),
+            uint256(arbitrationFee)
+        );
+
+        forkmanager.initiateFork(
+            IForkingManager.DisputeData({
+                disputeContract: disputeContract,
+                disputeContent: disputeContent,
+                isL1: isL1
+            }),
+            IForkingManager.NewImplementations({
+                bridgeImplementation: newBridgeImplementation,
+                zkEVMImplementation: newZkevmImplementation,
+                forkonomicTokenImplementation: newForkonomicTokenImplementation,
+                forkingManagerImplementation: newForkmanagerImplementation,
+                globalExitRootImplementation: newGlobalExitRootImplementation,
+                verifier: newVerifierImplementation,
+                forkID: newForkID
+            })
+        );
+
+        assertTrue(forkmanager.isForkingInitiated());
+        assertFalse(forkmanager.isForkingExecuted());
+        assertFalse(forkmanager.canFork());
+
+        vm.warp(block.timestamp + forkmanager.forkPreparationTime() + 1);
+        forkmanager.executeFork();
+
+        assertTrue(forkmanager.isForkingInitiated());
+        assertTrue(forkmanager.isForkingExecuted());
+        assertFalse(forkmanager.canFork());
+
+    }
+
     function testInitiateForkChargesFees() public {
         // Call the initiateFork function to create a new fork
         vm.expectRevert(bytes("ERC20: insufficient allowance"));

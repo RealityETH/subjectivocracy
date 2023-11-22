@@ -63,6 +63,19 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         ForkableStructure.initialize(address(this), _parentContract);
     }
 
+    function isForkingInitiated() external view returns (bool) {
+        return (executionTimeForProposal > 0);    
+    } 
+
+    function isForkingExecuted() external view returns (bool) {
+        return (children[0] != address(0) || children[1] != address(0));
+    }
+
+    // TODO: If there is any other reason a fork can be prevented, eg the contract can be frozen by governance, add it here.
+    function canFork() external view returns (bool) {
+        return (executionTimeForProposal == 0);
+    }
+
     /**
      * @notice function to initiate and schedule the fork
      * @param _disputeData the dispute contract and call to identify the dispute
