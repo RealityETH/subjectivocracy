@@ -110,7 +110,7 @@ contract L2ForkArbitrator is MoneyBoxUser, IBridgeMessageReceiver {
         bytes32 question_id
     ) public {
 
-        require(!isForkInProgress, "Already forking over something else");
+        require(!isForkInProgress, "Already forking"); // Forking over something else
 
         RequestStatus status = arbitrationRequests[question_id].status;
         require(status == RequestStatus.QUEUED || status == RequestStatus.FORK_REQUEST_FAILED, "not awaiting activation");
