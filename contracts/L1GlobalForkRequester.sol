@@ -8,10 +8,6 @@ pragma solidity ^0.8.20;
    We record the dispute they were forking over
 */
 
-// TODO: An alternative would be to look up the ForkingManager on L2ChainInfo and call it directly.
-// TODO: We could use this to manage the dispute data, in which case we could gate initiateFork() to only be callable by us.
-// TODO: The whitepaper implies a whitelist about who is allowed to fork us. Currently anybody can as long as they pay.
-
 import {IForkingManager} from "./interfaces/IForkingManager.sol";
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
 import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
