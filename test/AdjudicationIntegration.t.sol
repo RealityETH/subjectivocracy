@@ -93,7 +93,7 @@ contract AdjudicationIntegrationTest is Test {
     address internal l1ForkingManagerF2 = address(0x2abe13);
     address internal l1TokenF2 = address(0x2abe14);
 
-    uint32 internal l1chainId = 0;
+    uint64 internal l2chainIdInit = 1;
 
     uint256 internal forkingFee = 5000; // Should ultimately come from l1 forkingmanager
 
@@ -109,8 +109,9 @@ contract AdjudicationIntegrationTest is Test {
         // Triggers:
         // l2ChainInfo.onMessageReceived(l1GlobalRouter, l1chainId, fakeMessageData);
         // In reality this would originate on L1.
-        bytes memory fakeMessageData = abi.encode(address(l1ForkingManager), uint256(forkingFee), false, address(l2forkArbitrator), bytes32(0x0), bytes32(0x0));
-        l2Bridge.fakeClaimMessage(address(l1GlobalRouter), uint32(l1chainId), address(l2ChainInfo), fakeMessageData, uint256(0));
+        vm.chainId(l2chainIdInit);
+        bytes memory fakeMessageData = abi.encode(l2chainIdInit, address(l1ForkingManager), uint256(forkingFee), false, address(l2forkArbitrator), bytes32(0x0), bytes32(0x0));
+        l2Bridge.fakeClaimMessage(address(l1GlobalRouter), uint32(0), address(l2ChainInfo), fakeMessageData, uint256(0));
 
         l1realityEth = new ForkableRealityETH_ERC20();
         l1realityEth.init(tokenMock, address(0), bytes32(0));
@@ -365,8 +366,8 @@ contract AdjudicationIntegrationTest is Test {
         vm.chainId(newChainId1);
 
         // TODO: Adjust the forkingFee as the total supply has changed a bit
-        bytes memory fakeMessageData = abi.encode(address(l1ForkingManagerF1), uint256(forkingFee), false, address(l2forkArbitrator),  removalQuestionId, bytes32(uint256(1)));
-        l2Bridge.fakeClaimMessage(address(l1GlobalRouter), uint32(l1chainId), address(l2ChainInfo), fakeMessageData, uint256(0));
+        bytes memory fakeMessageData = abi.encode(uint64(newChainId1), address(l1ForkingManagerF1), uint256(forkingFee), false, address(l2forkArbitrator),  removalQuestionId, bytes32(uint256(1)));
+        l2Bridge.fakeClaimMessage(address(l1GlobalRouter), uint32(0), address(l2ChainInfo), fakeMessageData, uint256(0));
 
         assertTrue(l2realityEth.isPendingArbitration(removalQuestionId));
         l2forkArbitrator.handleCompletedFork(removalQuestionId, lastHistoryHash, lastAnswer, lastAnswerer);
@@ -408,8 +409,8 @@ contract AdjudicationIntegrationTest is Test {
         vm.chainId(newChainId1);
 
         // TODO: Adjust the forkingFee as the total supply has changed a bit
-        bytes memory fakeMessageData = abi.encode(address(l1ForkingManagerF1), uint256(forkingFee), false, address(l2forkArbitrator), removalQuestionId, bytes32(uint256(0)));
-        l2Bridge.fakeClaimMessage(address(l1GlobalRouter), uint32(l1chainId), address(l2ChainInfo), fakeMessageData, uint256(0));
+        bytes memory fakeMessageData = abi.encode(uint64(newChainId1), address(l1ForkingManagerF1), uint256(forkingFee), false, address(l2forkArbitrator), removalQuestionId, bytes32(uint256(0)));
+        l2Bridge.fakeClaimMessage(address(l1GlobalRouter), uint32(0), address(l2ChainInfo), fakeMessageData, uint256(0));
 
         assertTrue(l2realityEth.isPendingArbitration(removalQuestionId));
         l2forkArbitrator.handleCompletedFork(removalQuestionId, lastHistoryHash, lastAnswer, lastAnswerer);
@@ -459,7 +460,7 @@ contract AdjudicationIntegrationTest is Test {
         assertEq(address(l2forkArbitrator).balance, 0);
         payable(address(l2Bridge)).transfer(1000000); // Fund it so it can fund the L2ForkArbitrator
         bytes memory fakeMessageData = abi.encode(removalQuestionId);
-        l2Bridge.fakeClaimMessage(address(l1GlobalForkRequester), uint32(l1chainId), address(l2forkArbitrator), fakeMessageData, forkFee);
+        l2Bridge.fakeClaimMessage(address(l1GlobalForkRequester), uint32(0), address(l2forkArbitrator), fakeMessageData, forkFee);
         assertEq(address(l2forkArbitrator).balance, forkFee);
 
         assertFalse(l2forkArbitrator.isForkInProgress(), "Not in forking state");
