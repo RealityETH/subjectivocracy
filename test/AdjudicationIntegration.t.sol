@@ -19,7 +19,7 @@ import {RealityETH_v3_0} from "../contracts/lib/reality-eth/RealityETH-3.0.sol";
 import {AdjudicationFramework} from "../contracts/AdjudicationFramework.sol";
 
 import {L2ForkArbitrator} from "../contracts/L2ForkArbitrator.sol";
-import {L1GlobalRouter} from "../contracts/L1GlobalRouter.sol";
+import {L1GlobalChainInfoPublisher} from "../contracts/L1GlobalChainInfoPublisher.sol";
 import {L1GlobalForkRequester} from "../contracts/L1GlobalForkRequester.sol";
 import {L2ChainInfo} from "../contracts/L2ChainInfo.sol";
 
@@ -81,7 +81,7 @@ contract AdjudicationIntegrationTest is Test {
     // The following should be the same on all forks
     MockPolygonZkEVMBridge internal l2Bridge;
     address internal l1GlobalForkRequester = address(new L1GlobalForkRequester());
-    address internal l1GlobalRouter = address(0xbabe12);
+    address internal l1GlobalChainInfoPublisher = address(0xbabe12);
 
     // The following will change when we fork so we fake multiple versions here
     address internal l1ForkingManager = address(0xbabe13);
@@ -103,15 +103,15 @@ contract AdjudicationIntegrationTest is Test {
 
         // For now the values of the l1 contracts are all made up
         // Ultimately our tests should include a deployment on l1
-        l2ChainInfo = new L2ChainInfo(address(l2Bridge), l1GlobalRouter);
+        l2ChainInfo = new L2ChainInfo(address(l2Bridge), l1GlobalChainInfoPublisher);
 
         // Pretend to send the initial setup to the l2 directory via the bridge
         // Triggers:
-        // l2ChainInfo.onMessageReceived(l1GlobalRouter, l1chainId, fakeMessageData);
+        // l2ChainInfo.onMessageReceived(l1GlobalChainInfoPublisher, l1chainId, fakeMessageData);
         // In reality this would originate on L1.
         vm.chainId(l2chainIdInit);
         bytes memory fakeMessageData = abi.encode(l2chainIdInit, address(l1ForkingManager), uint256(forkingFee), false, address(l2forkArbitrator), bytes32(0x0), bytes32(0x0));
-        l2Bridge.fakeClaimMessage(address(l1GlobalRouter), uint32(0), address(l2ChainInfo), fakeMessageData, uint256(0));
+        l2Bridge.fakeClaimMessage(address(l1GlobalChainInfoPublisher), uint32(0), address(l2ChainInfo), fakeMessageData, uint256(0));
 
         l1realityEth = new ForkableRealityETH_ERC20();
         l1realityEth.init(tokenMock, address(0), bytes32(0));
@@ -367,7 +367,7 @@ contract AdjudicationIntegrationTest is Test {
 
         // TODO: Adjust the forkingFee as the total supply has changed a bit
         bytes memory fakeMessageData = abi.encode(uint64(newChainId1), address(l1ForkingManagerF1), uint256(forkingFee), false, address(l2forkArbitrator),  removalQuestionId, bytes32(uint256(1)));
-        l2Bridge.fakeClaimMessage(address(l1GlobalRouter), uint32(0), address(l2ChainInfo), fakeMessageData, uint256(0));
+        l2Bridge.fakeClaimMessage(address(l1GlobalChainInfoPublisher), uint32(0), address(l2ChainInfo), fakeMessageData, uint256(0));
 
         assertTrue(l2realityEth.isPendingArbitration(removalQuestionId));
         l2forkArbitrator.handleCompletedFork(removalQuestionId, lastHistoryHash, lastAnswer, lastAnswerer);
@@ -410,7 +410,7 @@ contract AdjudicationIntegrationTest is Test {
 
         // TODO: Adjust the forkingFee as the total supply has changed a bit
         bytes memory fakeMessageData = abi.encode(uint64(newChainId1), address(l1ForkingManagerF1), uint256(forkingFee), false, address(l2forkArbitrator), removalQuestionId, bytes32(uint256(0)));
-        l2Bridge.fakeClaimMessage(address(l1GlobalRouter), uint32(0), address(l2ChainInfo), fakeMessageData, uint256(0));
+        l2Bridge.fakeClaimMessage(address(l1GlobalChainInfoPublisher), uint32(0), address(l2ChainInfo), fakeMessageData, uint256(0));
 
         assertTrue(l2realityEth.isPendingArbitration(removalQuestionId));
         l2forkArbitrator.handleCompletedFork(removalQuestionId, lastHistoryHash, lastAnswer, lastAnswerer);
