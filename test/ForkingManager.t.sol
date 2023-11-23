@@ -595,11 +595,11 @@ contract ForkingManagerTest is Test {
         }
         {
             assertEq(
-                chainIdManager,
+                chainIdManagerAddress,
                 ForkingManager(childForkmanager1).chainIdManager()
             );
             assertEq(
-                chainIdManager,
+                chainIdManagerAddress,
                 ForkingManager(childForkmanager2).chainIdManager()
             );
         }
