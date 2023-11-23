@@ -32,8 +32,6 @@ contract L1GlobalRouter {
             }
         }
 
-        uint64 chainId = IPolygonZkEVM(forkingManager.zkEVM()).chainID();
-
         uint256 arbitrationFee = forkingManager.arbitrationFee();
         address forkonomicToken = forkingManager.forkonomicToken();
 
@@ -44,7 +42,7 @@ contract L1GlobalRouter {
         bytes memory data = abi.encode(forkonomicToken, arbitrationFee, isL1, disputeContract, disputeContent, forkResult);
 
         IPolygonZkEVMBridge(_bridge).bridgeMessage(
-            uint32(chainId),
+            uint32(1),
             _l2ChainInfo,
             true,
             data

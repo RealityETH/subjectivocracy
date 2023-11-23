@@ -93,7 +93,7 @@ contract AdjudicationIntegrationTest is Test {
     address internal l1ForkingManagerF2 = address(0x2abe13);
     address internal l1TokenF2 = address(0x2abe14);
 
-    uint32 internal l1chainId = 1;
+    uint32 internal l1chainId = 0;
 
     uint256 internal forkingFee = 5000; // Should ultimately come from l1 forkingmanager
 
@@ -103,7 +103,7 @@ contract AdjudicationIntegrationTest is Test {
 
         // For now the values of the l1 contracts are all made up
         // Ultimately our tests should include a deployment on l1
-        l2ChainInfo = new L2ChainInfo(l1chainId, address(l2Bridge), l1GlobalRouter);
+        l2ChainInfo = new L2ChainInfo(address(l2Bridge), l1GlobalRouter);
 
         // Pretend to send the initial setup to the l2 directory via the bridge
         // Triggers:

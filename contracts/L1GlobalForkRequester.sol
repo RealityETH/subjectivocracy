@@ -141,7 +141,6 @@ contract L1GlobalForkRequester is MoneyBoxUser {
 
         IForkingManager forkingManager = IForkingManager(IForkonomicToken(token).forkmanager());
         ForkableBridge bridge = ForkableBridge(forkingManager.bridge());
-        IPolygonZkEVM zkevm = IPolygonZkEVM(forkingManager.zkEVM());
 
         // Check the relations in the other direction to make sure we don't lie to the bridge somehow
         require(address(bridge.forkmanager()) == address(forkingManager), "Bridge/manager mismatch, WTF");
@@ -152,11 +151,9 @@ contract L1GlobalForkRequester is MoneyBoxUser {
         require(amount > 0, "Nothing to return");
         IForkonomicToken(token).approve(address(bridge), amount);
 
-        uint64 chainId = zkevm.chainID();
-
         bytes memory permitData;
         bridge.bridgeAsset(
-            uint32(chainId),
+            uint32(1),
             requester,
             amount,
             token, // TODO: Should this be address(0)?
@@ -167,7 +164,7 @@ contract L1GlobalForkRequester is MoneyBoxUser {
         // TODO: It might be useful to send information about the failure eg fork timestamp
         bytes memory data = bytes.concat(requestId);
         bridge.bridgeMessage(
-            uint32(chainId),
+            uint32(1),
             requester,
             true,
             data

@@ -136,7 +136,7 @@ contract L2ForkArbitrator is MoneyBoxUser, IBridgeMessageReceiver {
 
         bytes memory permitData;
         bridge.bridgeAsset{value: forkFee}(
-            uint32(chainInfo.originNetwork()),
+            uint32(0),
             moneyBox,
             forkFee, // TODO: Should this be 0 since we already sent the forkFee as msg.value?
             address(0), // Empty address for the native token
@@ -153,7 +153,7 @@ contract L2ForkArbitrator is MoneyBoxUser, IBridgeMessageReceiver {
 
         address l2bridge = chainInfo.l2bridge();
         require(msg.sender == l2bridge, "Not our bridge");
-        require(_originNetwork == uint32(chainInfo.originNetwork()), "Wrong network, WTF");
+        require(_originNetwork == uint32(0), "Wrong network, WTF");
         require(_originAddress == address(l1globalForkRequester), "Unexpected sender");
 
         bytes32 question_id = bytes32(_data);

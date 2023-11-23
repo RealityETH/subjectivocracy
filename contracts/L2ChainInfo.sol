@@ -20,7 +20,7 @@ contract L2ChainInfo is IBridgeMessageReceiver{
     // These should be fixed addresses that never change
     address public l2bridge; 
     address public l1globalRouter;
-    uint32 public originNetwork;
+    uint32 public constant L1_NETWORK_ID= 0;
 
     uint256 internal chainId;
     address internal forkonomicToken;
@@ -32,8 +32,7 @@ contract L2ChainInfo is IBridgeMessageReceiver{
     mapping(bool=>mapping(address=>mapping(bytes32=>bytes32))) public forkQuestionResults;
     mapping(bool=>mapping(address=>mapping(bytes32=>uint256))) public questionToChainID;
 
-    constructor(uint32 _originNetwork, address _l2bridge, address _l1globalRouter) {
-	originNetwork = _originNetwork;
+    constructor(address _l2bridge, address _l1globalRouter) {
         l2bridge = _l2bridge; 
         l1globalRouter = _l1globalRouter;
     }
@@ -68,7 +67,7 @@ contract L2ChainInfo is IBridgeMessageReceiver{
 
         require(msg.sender == l2bridge, "not the expected bridge");
         require(_originAddress == l1globalRouter, "only l1globalRouter can call us");
-        require(_originNetwork == originNetwork, "wrong origin network");
+        require(_originNetwork == L1_NETWORK_ID, "wrong origin network");
 
         bool isL1;
         address forker; 
