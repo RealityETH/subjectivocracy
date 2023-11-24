@@ -13,7 +13,7 @@ import {L2ChainInfo} from "./L2ChainInfo.sol";
 
 contract L1GlobalChainInfoPublisher {
 
-    function updateL2ChainInfo(ForkableBridge _bridge, address _l2ChainInfo, address _ancestorForkingManager) external {
+    function updateL2ChainInfo(address _bridge, address _l2ChainInfo, address _ancestorForkingManager, uint256 _maxAncestors) external {
 
         // Ask the bridge its forkmanager
         // TODO: ForkableStructure has this but IForkableStructure doesn't
@@ -24,17 +24,23 @@ contract L1GlobalChainInfoPublisher {
         // This is here just in case there's some weird availability issue and we couldn't send an update before the next fork.
         // NB If we keep forking every week forever you will eventually become unable to get the earliest before running out of gas
         if (_ancestorForkingManager != address(0)) {
-            while(address(forkingManager) != _ancestorForkingManager) {
-                IForkingManager forkingManager = IForkingManager(forkingManager.parentContract());
+            bool found = false;
+            for(uint256 i = 0; i < _maxAncestors; i++) {
+                forkingManager = IForkingManager(forkingManager.parentContract());
                 require(address(forkingManager) != address(0), "Ancestor not found");
+                if (_ancestorForkingManager == address(forkingManager)) {
+                    found = true;
+                    break;
+                }
             }
+            require(found, "Ancestor not found");
         }
 
         // Ask the parent forkmanager which side this forkmanager is  
         IForkingManager parentForkingManager = IForkingManager(forkingManager.parentContract());
         uint8 forkResult = 0;
         if (address(parentForkingManager) != address(0)) {
-            (address child1, address child2) = forkingManager.getChildren();
+            (address child1, address child2) = parentForkingManager.getChildren();
             if (child1 == address(forkingManager)) {
                 forkResult = 1;
             } else if (child2 == address(forkingManager)) {

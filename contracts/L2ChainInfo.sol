@@ -19,7 +19,7 @@ contract L2ChainInfo is IBridgeMessageReceiver{
 
     // These should be fixed addresses that never change
     address public l2bridge; 
-    address public l1globalRouter;
+    address public l1globalChainInfoPublisher;
     uint32 public constant L1_NETWORK_ID = 0;
 
     struct ChainInfo{
@@ -33,9 +33,9 @@ contract L2ChainInfo is IBridgeMessageReceiver{
     mapping(bool=>mapping(address=>mapping(bytes32=>bytes32))) public forkQuestionResults;
     mapping(bool=>mapping(address=>mapping(bytes32=>uint256))) public questionToChainID;
 
-    constructor(address _l2bridge, address _l1globalRouter) {
+    constructor(address _l2bridge, address _l1globalChainInfoPublisher) {
         l2bridge = _l2bridge; 
-        l1globalRouter = _l1globalRouter;
+        l1globalChainInfoPublisher = _l1globalChainInfoPublisher;
     }
 
     modifier isUpToDate {
@@ -65,8 +65,8 @@ contract L2ChainInfo is IBridgeMessageReceiver{
     function onMessageReceived(address _originAddress, uint32 _originNetwork, bytes memory _data) external payable {
 
         require(msg.sender == l2bridge, "not the expected bridge");
-        require(_originAddress == l1globalRouter, "only l1globalRouter can call us");
-        require(_originNetwork == L1_NETWORK_ID, "wrong origin network");
+        require(_originAddress == l1globalChainInfoPublisher, "only publisher can call us");
+        require(_originNetwork == L1_NETWORK_ID, "Bad origin network");
 
         (uint64 chainId, address forkonomicToken, uint256 forkFee, bool isL1, address forker, bytes32 questionId, bytes32 result) = abi.decode(_data, (uint64, address, uint256, bool, address, bytes32, bytes32));
 
