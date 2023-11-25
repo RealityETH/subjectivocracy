@@ -3,21 +3,16 @@
 pragma solidity ^0.8.20;
 
 import {IForkingManager} from "./interfaces/IForkingManager.sol";
+import {IForkableStructure} from "./interfaces/IForkableStructure.sol";
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
 import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
-
-// NB We'd normally use the interface IForkableBridge here but it causes an error:
-//   Error (5005): Linearization of inheritance graph impossible
-import {ForkableBridge} from "./ForkableBridge.sol";
-import {L2ChainInfo} from "./L2ChainInfo.sol";
 
 contract L1GlobalChainInfoPublisher {
 
     function updateL2ChainInfo(address _bridge, address _l2ChainInfo, address _ancestorForkingManager, uint256 _maxAncestors) external {
 
         // Ask the bridge its forkmanager
-        // TODO: ForkableStructure has this but IForkableStructure doesn't
-        IForkingManager forkingManager = IForkingManager(ForkableBridge(_bridge).forkmanager());
+        IForkingManager forkingManager = IForkingManager(IForkableStructure(_bridge).forkmanager());
 
         // If we passed an _ancestorForkingManager, crawl up and find that as our ancestor and send data for that over the current bridge.
         // Normally we won't need to do this because we'll update L2ChainInfo as soon as there's a fork
@@ -27,7 +22,9 @@ contract L1GlobalChainInfoPublisher {
             bool found = false;
             for(uint256 i = 0; i < _maxAncestors; i++) {
                 forkingManager = IForkingManager(forkingManager.parentContract());
-                require(address(forkingManager) != address(0), "Ancestor not found");
+                if (address(forkingManager) == address(0)) {
+                    break; // No more ancestors
+                }
                 if (_ancestorForkingManager == address(forkingManager)) {
                     found = true;
                     break;
@@ -38,7 +35,10 @@ contract L1GlobalChainInfoPublisher {
 
         // Ask the parent forkmanager which side this forkmanager is  
         IForkingManager parentForkingManager = IForkingManager(forkingManager.parentContract());
+
+        // Fork results: 0 for the genesis, 1 for yes, 2 for no 
         uint8 forkResult = 0;
+
         if (address(parentForkingManager) != address(0)) {
             (address child1, address child2) = parentForkingManager.getChildren();
             if (child1 == address(forkingManager)) {
@@ -52,13 +52,9 @@ contract L1GlobalChainInfoPublisher {
 
         uint256 arbitrationFee = forkingManager.arbitrationFee();
         address forkonomicToken = forkingManager.forkonomicToken();
-
         uint64 chainId = IPolygonZkEVM(forkingManager.zkEVM()).chainID();
 
         (bool isL1, address disputeContract, bytes32 disputeContent) = forkingManager.disputeData();
-
-        // TODO: Can we put the disputeData in ForkingManager in a bytes32?
-        // Fork results: 0 for the genesis, 1 for yes, 2 for no 
         bytes memory data = abi.encode(chainId, forkonomicToken, arbitrationFee, isL1, disputeContract, disputeContent, forkResult);
 
         IPolygonZkEVMBridge(_bridge).bridgeMessage(
