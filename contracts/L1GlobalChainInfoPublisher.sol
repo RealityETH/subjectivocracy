@@ -36,9 +36,14 @@ contract L1GlobalChainInfoPublisher {
         // Ask the parent forkmanager which side this forkmanager is  
         IForkingManager parentForkingManager = IForkingManager(forkingManager.parentContract());
 
+        bool isL1; 
+        address disputeContract; 
+        bytes32 disputeContent;
+
         // Fork results: 0 for the genesis, 1 for yes, 2 for no 
         uint8 forkResult = 0;
 
+        // Find out whether we are the "yes" fork or the "no" fork
         if (address(parentForkingManager) != address(0)) {
             (address child1, address child2) = parentForkingManager.getChildren();
             if (child1 == address(forkingManager)) {
@@ -48,13 +53,13 @@ contract L1GlobalChainInfoPublisher {
             } else {
                 revert("Unexpected child address");
             }
+            (isL1, disputeContract, disputeContent) = forkingManager.disputeData();
         }
 
         uint256 arbitrationFee = forkingManager.arbitrationFee();
         address forkonomicToken = forkingManager.forkonomicToken();
         uint64 chainId = IPolygonZkEVM(forkingManager.zkEVM()).chainID();
 
-        (bool isL1, address disputeContract, bytes32 disputeContent) = forkingManager.disputeData();
         bytes memory data = abi.encode(chainId, forkonomicToken, arbitrationFee, isL1, disputeContract, disputeContent, forkResult);
 
         IPolygonZkEVMBridge(_bridge).bridgeMessage(
