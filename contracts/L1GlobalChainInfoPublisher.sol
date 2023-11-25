@@ -9,12 +9,19 @@ import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IP
 
 contract L1GlobalChainInfoPublisher {
 
+    /// @notice Function to send the data about a fork to a contract on L2.
+    /// @param _bridge The bridge to send the data through
+    /// @param _l2ChainInfo The L2ChainInfo contract on L2 to send the data to
+    /// @param _ancestorForkingManager The ForkingManager to send data about, if referring to a previous fork (unusual)
+    /// @param _maxAncestors The number of forks back to look when looking for the _ancestorForkingManager
+    /// @dev Normally someone would call this right after a fork, _ancestorForkingManager and _maxAncestors should only be used in wierd cases
     function updateL2ChainInfo(address _bridge, address _l2ChainInfo, address _ancestorForkingManager, uint256 _maxAncestors) external {
 
         // Ask the bridge its forkmanager
         IForkingManager forkingManager = IForkingManager(IForkableStructure(_bridge).forkmanager());
 
         // If we passed an _ancestorForkingManager, crawl up and find that as our ancestor and send data for that over the current bridge.
+        // We will refuse to send data about a forkingManager that isn't an ancestor of the one used by the bridge.
         // Normally we won't need to do this because we'll update L2ChainInfo as soon as there's a fork
         // This is here just in case there's some weird availability issue and we couldn't send an update before the next fork.
         // NB If we keep forking every week forever you will eventually become unable to get the earliest before running out of gas
@@ -33,7 +40,7 @@ contract L1GlobalChainInfoPublisher {
             require(found, "Ancestor not found");
         }
 
-        // Ask the parent forkmanager which side this forkmanager is  
+        // Dispute results will need to come from the parent ForkingManager
         IForkingManager parentForkingManager = IForkingManager(forkingManager.parentContract());
 
         bool isL1; 
