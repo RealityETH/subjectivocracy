@@ -55,7 +55,6 @@ contract L2ForkArbitrator is MoneyBoxUser, IBridgeMessageReceiver {
     L1GlobalForkRequester public l1globalForkRequester;
 
     uint256 public disputeFee; // Normally dispute fee should generally only go down in a fork
-    uint256 public chainId;
 
     constructor(IRealityETH _realitio, L2ChainInfo _chainInfo, L1GlobalForkRequester _l1globalForkRequester, uint256 _initialDisputeFee) {
         realitio = _realitio;
