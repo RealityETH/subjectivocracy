@@ -9,15 +9,13 @@ We made it for the ForkArbitrator to get the result after a fork.
 Other contracts may also find it useful.
 It must be called after a fork until it's updated.
 Queries against it will revert until the update is done.
-
-TODO: Should we somehow make it updateable even if you miss the fork window?
 */
 
 import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 
 contract L2ChainInfo is IBridgeMessageReceiver{
 
-    // These should be fixed addresses that never change
+    // These are the same for all forks
     address public l2bridge; 
     address public l1globalChainInfoPublisher;
     uint32 public constant L1_NETWORK_ID = 0;
@@ -26,12 +24,12 @@ contract L2ChainInfo is IBridgeMessageReceiver{
         address forkonomicToken;
         uint256 forkFee;
     }
-    mapping(uint256 => ChainInfo) public chainInfo;
+    mapping(uint64 => ChainInfo) public chainInfo;
 
     // Questions are stored by isL2->forker->id
     // The forker is assumed to have created a unique id within itself for the dispute it's forking over
     mapping(bool=>mapping(address=>mapping(bytes32=>bytes32))) public forkQuestionResults;
-    mapping(bool=>mapping(address=>mapping(bytes32=>uint256))) public questionToChainID;
+    mapping(bool=>mapping(address=>mapping(bytes32=>uint64))) public questionToChainID;
 
     constructor(address _l2bridge, address _l1globalChainInfoPublisher) {
         l2bridge = _l2bridge; 
@@ -39,29 +37,25 @@ contract L2ChainInfo is IBridgeMessageReceiver{
     }
 
     modifier isUpToDate {
-        require(chainInfo[block.chainid].forkonomicToken != address(0), "Current chain must be known");
-        _;
-    }
-
-    modifier isNotUpToDate {
-        require(chainInfo[block.chainid].forkonomicToken == address(0), "Current chain must be unknown");
+        require(chainInfo[uint64(block.chainid)].forkonomicToken != address(0), "Current chain must be known");
         _;
     }
 
     function getForkonomicToken() external view isUpToDate returns(address) {
-	return chainInfo[block.chainid].forkonomicToken;
+	return chainInfo[uint64(block.chainid)].forkonomicToken;
     }
 
     function getForkFee() external view isUpToDate returns(uint256) {
-	return chainInfo[block.chainid].forkFee;
+	return chainInfo[uint64(block.chainid)].forkFee;
     }
 
     function getForkQuestionResult(bool isL1, address forker, bytes32 questionId) external view isUpToDate returns(bytes32) {
 	return forkQuestionResults[isL1][forker][questionId];
     }
 
-    // Get a message from a contract we trust on L1 reporting to us the details of a chain.
-    // It should only send us the current chain (normally) or a previous chain that's a parent of ours.
+    // Get a message via the bridge from a contract we trust on L1 reporting to us the details of a fork.
+    // It should normally be used right after a fork to send us the current chain.
+    // It could also send us information about a previous chain that's a parent of ours if we forked again before getting it for some reason.
     function onMessageReceived(address _originAddress, uint32 _originNetwork, bytes memory _data) external payable {
 
         require(msg.sender == l2bridge, "not the expected bridge");
@@ -70,7 +64,7 @@ contract L2ChainInfo is IBridgeMessageReceiver{
 
         (uint64 chainId, address forkonomicToken, uint256 forkFee, bool isL1, address forker, bytes32 questionId, bytes32 result) = abi.decode(_data, (uint64, address, uint256, bool, address, bytes32, bytes32));
 
-        chainInfo[uint256(chainId)] = ChainInfo(forkonomicToken, forkFee);
+        chainInfo[chainId] = ChainInfo(forkonomicToken, forkFee);
 
         questionToChainID[isL1][forker][questionId] = chainId;
         forkQuestionResults[isL1][forker][questionId] = result;
