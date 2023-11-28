@@ -7,6 +7,7 @@
   "license": "MIT",
   "scripts": {
     "fmt": "prettier 'contracts/**/*.sol' -w && prettier 'test/**/*.sol' -w",
+    "fmt:check": "prettier 'contracts/**/*.sol' -c && prettier 'test/**/*.sol' -c",
     "lint": "solhint 'contracts/**/*.sol' 'test/**/*.sol'"
   },
   "dependencies": {
