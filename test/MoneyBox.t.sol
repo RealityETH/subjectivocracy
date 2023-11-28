@@ -4,7 +4,7 @@ import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 
 import {MoneyBox} from "../contracts/mixin/MoneyBox.sol";
-import {MoneyBoxUser} from "../contracts/mixin/MoneyBoxUser.sol";
+import {CalculateMoneyBoxAddress} from "../contracts/lib/CalculateMoneyBoxAddress.sol";
 
 import {ExampleToken} from "./testcontract/ExampleToken.sol";
 import {ExampleMoneyBoxUser} from "./testcontract/ExampleMoneyBoxUser.sol";

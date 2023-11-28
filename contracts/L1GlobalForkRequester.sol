@@ -20,9 +20,9 @@ import {ForkableBridge} from "./ForkableBridge.sol";
 import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 
 import {MoneyBox} from "./mixin/MoneyBox.sol";
-import {MoneyBoxUser} from "./mixin/MoneyBoxUser.sol";
+import {CalculateMoneyBoxAddress} from "./lib/CalculateMoneyBoxAddress.sol";
 
-contract L1GlobalForkRequester is MoneyBoxUser {
+contract L1GlobalForkRequester {
 
     struct FailedForkRequest {
         uint256 amount;
@@ -42,7 +42,7 @@ contract L1GlobalForkRequester is MoneyBoxUser {
         bytes32 salt = keccak256(abi.encodePacked(beneficiary, requestId));
 
         // Check the MoneyBox has funds
-        address moneyBox = _calculateMoneyBoxAddress(address(this), salt, token);
+        address moneyBox = CalculateMoneyBoxAddress._calculateMoneyBoxAddress(address(this), salt, token);
 
         // If for some reason we've already got part of a payment, include it. 
         uint256 initialBalance = failedRequests[token][beneficiary][requestId].amount;

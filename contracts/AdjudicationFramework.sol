@@ -12,8 +12,6 @@ import {IRealityETH} from "./interfaces/IRealityETH.sol";
 import {IArbitrator} from "./interfaces/IArbitrator.sol";
 import {IERC20} from "./interfaces/IERC20.sol";
 
-import {MoneyBoxUser} from "./mixin/MoneyBoxUser.sol";
-
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /*
@@ -25,7 +23,7 @@ To Reality.eth it looks like a normal arbitrator, implementing the Arbitrator in
 To the normal Arbitrator contracts that does its arbitration jobs, it looks like Reality.eth.
 */
 
-contract AdjudicationFramework is BalanceHolder, MoneyBoxUser {
+contract AdjudicationFramework is BalanceHolder {
 
     uint256 public constant ARB_DISPUTE_TIMEOUT = 86400;
     uint256 public constant QUESTION_UNHANDLED_TIMEOUT = 86400;

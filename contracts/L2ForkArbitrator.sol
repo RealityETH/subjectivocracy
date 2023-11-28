@@ -8,7 +8,7 @@ pragma solidity ^0.8.20;
 import {L2ChainInfo} from "./L2ChainInfo.sol";
 import {L1GlobalForkRequester} from "./L1GlobalForkRequester.sol";
 import {IRealityETH} from "./interfaces/IRealityETH.sol";
-import {MoneyBoxUser} from "./mixin/MoneyBoxUser.sol";
+import {CalculateMoneyBoxAddress} from "./lib/CalculateMoneyBoxAddress.sol";
 
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
 import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
@@ -21,7 +21,7 @@ If there is already a dispute in progress (ie another fork has been requested bu
 
 // NB This doesn't implement IArbitrator because that requires slightly more functions than we need
 // TODO: Would be good to make a stripped-down IArbitrator that only has the essential functions
-contract L2ForkArbitrator is MoneyBoxUser, IBridgeMessageReceiver {
+contract L2ForkArbitrator is IBridgeMessageReceiver {
 
     bool public isForkInProgress;
     IRealityETH public realitio;
@@ -130,7 +130,7 @@ contract L2ForkArbitrator is MoneyBoxUser, IBridgeMessageReceiver {
         // The L1GlobalForkRequester will deploy this as and when it's needed.
         // TODO: For now we assume only 1 request is in-flight at a time. If there might be more, differentiate them in the salt.
         bytes32 salt = keccak256(abi.encodePacked(address(this), question_id));
-        address moneyBox = _calculateMoneyBoxAddress(address(l1GlobalForkRequester), salt, address(forkonomicToken));
+        address moneyBox = CalculateMoneyBoxAddress._calculateMoneyBoxAddress(address(l1GlobalForkRequester), salt, address(forkonomicToken));
 
         bytes memory permitData;
         bridge.bridgeAsset{value: forkFee}(

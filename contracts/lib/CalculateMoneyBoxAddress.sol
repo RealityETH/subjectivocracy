@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.20;
 
-import {MoneyBox} from "./MoneyBox.sol";
+import {MoneyBox} from "../mixin/MoneyBox.sol";
 import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
 
-abstract contract MoneyBoxUser {
+library CalculateMoneyBoxAddress {
 
     function _calculateMoneyBoxAddress(address _creator, bytes32 _salt, address _token) internal pure returns (address) {
 
