@@ -150,36 +150,32 @@ contract ForkableBridge is
         );
     }
 
-    function prepareSplittinTokens(
-        address token,
-        uint256 amount
-    ) public onlyAfterForking {
-        TokenWrapped(token).burn(msg.sender, amount);
-        childTokenAllowances[msg.sender][token][true] += amount;
-        childTokenAllowances[msg.sender][token][false] += amount;
-    }
-
     // @inheritdoc IForkableBridge
     function splitTokenIntoChildTokens(
         address token,
         uint256 amount
     ) external onlyAfterForking {
-        prepareSplittinTokens(token, amount);
-        createChildToken(token, amount, true);
-        createChildToken(token, amount, false);
+        splitTokenIntoChildToken(token, amount, true, false);
+        splitTokenIntoChildToken(token, amount, false, true);
     }
 
     // @inheritdoc IForkableBridge
-    function createChildToken(
+    function splitTokenIntoChildToken(
         address token,
         uint256 amount,
-        bool firstChild
+        bool firstChild,
+        bool useChildTokenAllowances
     ) public onlyAfterForking {
-        require(
-            childTokenAllowances[msg.sender][token][firstChild] >= amount,
-            "Not enough allowance"
-        );
-        childTokenAllowances[msg.sender][token][firstChild] -= amount;
+        if (useChildTokenAllowances) {
+            require(
+                childTokenAllowances[msg.sender][token][firstChild] >= amount,
+                "Not enough allowance"
+            );
+            childTokenAllowances[msg.sender][token][firstChild] -= amount;
+        } else {
+            TokenWrapped(token).burn(msg.sender, amount);
+            childTokenAllowances[msg.sender][token][!firstChild] += amount;
+        }
         BridgeAssetOperations.createChildToken(
             token,
             amount,
