@@ -2,52 +2,41 @@
 
 pragma solidity ^0.8.20;
 
-import "./mixin/BalanceHolder.sol";
+/* solhint-disable var-name-mixedcase */
+/* solhint-disable quotes */
+/* solhint-disable not-rely-on-time */
 
-import "./interfaces/IRealityETH_ERC20.sol";
+import {BalanceHolder} from "./lib/reality-eth/BalanceHolder.sol";
 
-import "./interfaces/IArbitrator.sol";
-import "./interfaces/IAMB.sol";
-import "./interfaces/IERC20.sol";
+import {IRealityETH} from "./interfaces/IRealityETH.sol";
+import {IArbitrator} from "./interfaces/IArbitrator.sol";
+import {IERC20} from "./interfaces/IERC20.sol";
+
+import {MoneyBoxUser} from "./MoneyBoxUser.sol";
+
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /*
 This contract sits between a Reality.eth instance and an Arbitrator.
-It manages a whitelist of arbitrators, and makes sure questions can be sent to an arbitrator on the whitelist.
-When called on to arbitrate, it pays someone to send out the arbitration job to an arbitrator on the whitelist.
+It manages a allowlist of arbitrators, and makes sure questions can be sent to an arbitrator on the allowlist.
+When called on to arbitrate, it pays someone to send out the arbitration job to an arbitrator on the allowlist.
 Arbitrators can be disputed on L1.
 To Reality.eth it looks like a normal arbitrator, implementing the Arbitrator interface.
 To the normal Arbitrator contracts that does its arbitration jobs, it looks like Reality.eth.
 */
 
-contract AdjudicationFramework is BalanceHolder {
-    // From RealityETH_ERC20
-    struct Question {
-        bytes32 content_hash;
-        address arbitrator;
-        uint32 opening_ts;
-        uint32 timeout;
-        uint32 finalize_ts;
-        bool is_pending_arbitration;
-        uint256 bounty;
-        bytes32 best_answer;
-        bytes32 history_hash;
-        uint256 bond;
-        uint256 min_bond;
-    }
+contract AdjudicationFramework is BalanceHolder, MoneyBoxUser {
 
-    mapping(bytes32 => Question) public questions;
-
-    IAMB bridge;
     uint256 public constant ARB_DISPUTE_TIMEOUT = 86400;
     uint256 public constant QUESTION_UNHANDLED_TIMEOUT = 86400;
 
-    uint256 public constant TOKEN_RESERVATION_BIDDING_PERIOD = 86400; // After you make a bid, people have 1 day to outbid you
-    uint256 public constant TOKEN_RESERVATION_CLAIM_TIMEOUT = 864000; // After a bid is accepted, you have 9 days to complete it or you can lose your deposit
-    uint256 public constant TOKEN_RESERVATION_DEPOSIT = 10; // 1/10, ie 10%
+    uint32 public constant REALITY_ETH_TIMEOUT = 86400;
+    uint32 public constant REALITY_ETH_BOND_ARBITRATOR_ADD = 10000;
+    uint32 public constant REALITY_ETH_BOND_ARBITRATOR_REMOVE = 10000;
+    uint32 public constant REALITY_ETH_BOND_ARBITRATOR_FREEZE = 20000;
 
-    // The bridge (either on L1 or L2) should switch out real L1 forkmanager address for a special address
-    address constant FORK_MANAGER_SPECIAL_ADDRESS =
-        0x00000000000000000000000000000000f0f0F0F0;
+    uint256 public templateIdAddArbitrator;
+    uint256 public templateIdRemoveArbitrator;
 
     event LogRequestArbitration(
         bytes32 indexed question_id,
@@ -61,22 +50,32 @@ contract AdjudicationFramework is BalanceHolder {
         address indexed user
     );
 
-    struct TokenReservation {
-        address reserver;
-        uint256 num;
-        uint256 price;
-        uint256 reserved_ts;
-    }
-    mapping(bytes32 => TokenReservation) public token_reservations;
-    uint256 public reserved_tokens;
-
-    // Allowlist of acceptable arbitrators
+    // AllowList of acceptable arbitrators
     mapping(address => bool) public arbitrators;
 
-    // List of arbitrators that are currently being challenged
-    mapping(address => bool) public frozen_arbitrators;
+    enum PropositionType {
+        NONE,
+        ADD_ARBITRATOR,
+        REMOVE_ARBITRATOR,
+        UPGRADE_BRIDGE
+    }
 
-    IRealityETH_ERC20 public realityETH;
+    // Reality.eth questions for propositions we may be asked to rule on
+    struct ArbitratorProposition{
+        PropositionType proposition_type;
+        address arbitrator;
+        bool isFrozen;
+    }
+    mapping(bytes32 => ArbitratorProposition) public propositions;
+
+    // Keep a count of active propositions that freeze an arbitrator. 
+    // When they're all cleared they can be unfrozen.
+    mapping(address => uint256) public countArbitratorFreezePropositions;
+
+    IRealityETH public realityETH;
+
+    // Arbitrator used for requesting a fork in the L1 chain in add/remove propositions
+    address public forkArbitrator;
 
     uint256 public dispute_fee;
 
@@ -91,40 +90,50 @@ contract AdjudicationFramework is BalanceHolder {
 
     mapping(bytes32 => ArbitrationRequest) public question_arbitrations;
 
-    // TODO: Work out how this is implemented in xdai or whatever we use
-    modifier l1_forkmanager_only() {
-        require(msg.sender == address(bridge), "Message must come from bridge");
-        require(
-            bridge.messageSender() == FORK_MANAGER_SPECIAL_ADDRESS,
-            "Message must come from L1 ForkManager"
-        );
-        _;
-    }
-
+    /// @param _realityETH The reality.eth instance we adjudicate for
+    /// @param _dispute_fee The dispute fee we charge reality.eth users
+    /// @param _forkArbitrator The arbitrator contract that escalates to an L1 fork, used for our governance
+    /// @param _initialArbitrators Arbitrator contracts we initially support
     constructor(
         address _realityETH,
         uint256 _dispute_fee,
-        IAMB _bridge,
-        address[] memory _initial_arbitrators
+        address _forkArbitrator,
+        address[] memory _initialArbitrators
     ) {
-        realityETH = IRealityETH_ERC20(_realityETH);
+        realityETH = IRealityETH(_realityETH);
         dispute_fee = _dispute_fee;
-        bridge = _bridge;
-        for (uint256 i = 0; i < _initial_arbitrators.length; i++) {
-            arbitrators[_initial_arbitrators[i]] = true;
+        forkArbitrator = _forkArbitrator;
+
+        // Create reality.eth templates for our add and remove questions
+        // We'll identify ourselves in the template so we only need a single parameter for questions, the arbitrator in question.
+        // TODO: We may want to specify a document with the terms that guide this decision here, rather than just leaving it implicit.
+
+        string memory templatePrefixAdd = '{"title": "Should we add arbitrator %s to the framework ';
+        string memory templatePrefixRemove = '{"title": "Should we remove arbitrator %s from the framework ';
+        string memory templateSuffix = '?", "type": "bool", "category": "adjudication", "lang": "en"}';
+
+        string memory thisContractStr = Strings.toHexString(address(this));
+        string memory addTemplate = string.concat(templatePrefixAdd, thisContractStr, templateSuffix);
+        string memory removeTemplate = string.concat(templatePrefixRemove, thisContractStr, templateSuffix);
+
+        templateIdAddArbitrator = realityETH.createTemplate(addTemplate);
+        templateIdRemoveArbitrator = realityETH.createTemplate(removeTemplate);
+
+        for (uint256 i = 0; i < _initialArbitrators.length; i++) {
+           arbitrators[_initialArbitrators[i]] = true;
         }
+
     }
 
     /// @notice Return the dispute fee for the specified question. 0 indicates that we won't arbitrate it.
     /// @dev Uses a general default, but can be over-ridden on a question-by-question basis.
     function getDisputeFee(bytes32) public view returns (uint256) {
-        // Todo: make it depend on the question
+        // TODO: Should we have a governance process to change this?
         return dispute_fee;
     }
 
     /// @notice Request arbitration, freezing the question until we send submitAnswerByArbitrator
-    /// @dev The bounty can be paid only in part, in which case the last person to pay will be considered the payer
-    /// Will trigger an error if the notification fails, eg because the question has already been finalized
+    /// @dev Will trigger an error if the notification fails, eg because the question has already been finalized
     /// @param question_id The question in question
     /// @param max_previous If specified, reverts if a bond higher than this was submitted after you sent your transaction.
     function requestArbitration(
@@ -134,9 +143,9 @@ contract AdjudicationFramework is BalanceHolder {
         uint256 arbitration_fee = getDisputeFee(question_id);
         require(
             arbitration_fee > 0,
-            "The arbitrator must have set a non-zero fee for the question"
+            "Question must have fee" // "The arbitrator must have set a non-zero fee for the question"
         );
-        require(msg.value >= arbitration_fee);
+        require(msg.value >= arbitration_fee, "Insufficient fee");
 
         realityETH.notifyOfArbitrationRequest(
             question_id,
@@ -145,8 +154,8 @@ contract AdjudicationFramework is BalanceHolder {
         );
         emit LogRequestArbitration(question_id, msg.value, msg.sender, 0);
 
-        // Queue the question for arbitration by a whitelisted arbitrator
-        // Anybody can take the question off the queue and submit it to a whitelisted arbitrator
+        // Queue the question for arbitration by a allowlisted arbitrator
+        // Anybody can take the question off the queue and submit it to a allowlisted arbitrator
         // They will have to pay the arbitration fee upfront
         // They can claim the bounty when they get an answer
         // If the arbitrator is removed in the meantime, they'll lose the money they spent on arbitration
@@ -169,17 +178,17 @@ contract AdjudicationFramework is BalanceHolder {
         address requester,
         uint256
     ) external {
-        require(arbitrators[msg.sender], "Arbitrator must be on the whitelist");
+        require(arbitrators[msg.sender], "Arbitrator not allowlisted");
         require(
             question_arbitrations[question_id].bounty > 0,
-            "Question must be in the arbitration queue"
+            "Not in queue" // Question must be in the arbitration queue
         );
 
-        // The only time you can pick up a question that's already being arbitrated is if it's been removed from the whitelist
+        // The only time you can pick up a question that's already being arbitrated is if it's been removed from the allowlist
         if (question_arbitrations[question_id].arbitrator != address(0)) {
             require(
                 !arbitrators[question_arbitrations[question_id].arbitrator],
-                "Question already taken, and the arbitrator who took it is still active"
+                "Question under arbitration" // Question already taken, and the arbitrator who took it is still active
             );
 
             // Clear any in-progress data from the arbitrator that has now been removed
@@ -202,7 +211,7 @@ contract AdjudicationFramework is BalanceHolder {
         require(old_arbitrator != address(0), "No arbitrator to remove");
         require(
             !arbitrators[old_arbitrator],
-            "Arbitrator must no longer be on the whitelist"
+            "Arbitrator not removed" // Arbitrator must no longer be on the allowlist
         );
 
         question_arbitrations[question_id].arbitrator = address(0);
@@ -222,11 +231,11 @@ contract AdjudicationFramework is BalanceHolder {
 
         require(
             question_arbitrations[question_id].arbitrator == address(0),
-            "Question already accepted by an arbitrator"
+            "Already under arbitration" // Question already accepted by an arbitrator
         );
         require(
             block.timestamp - last_action_ts > QUESTION_UNHANDLED_TIMEOUT,
-            "You can only cancel questions that no arbitrator has accepted in a reasonable time"
+            "Too soon to cancel" // You can only cancel questions that no arbitrator has accepted in a reasonable time
         );
 
         // Refund the arbitration bounty
@@ -253,11 +262,11 @@ contract AdjudicationFramework is BalanceHolder {
     ) public {
         require(
             question_arbitrations[question_id].arbitrator == msg.sender,
-            "An arbitrator can only submit their own arbitration result"
+            "Sender not the arbitrator" // An arbitrator can only submit their own arbitration result
         );
         require(
             question_arbitrations[question_id].bounty > 0,
-            "Question must be in the arbitration queue"
+            "Question not in queue"
         );
 
         bytes32 data_hash = keccak256(
@@ -280,10 +289,10 @@ contract AdjudicationFramework is BalanceHolder {
     ) external {
         address arbitrator = question_arbitrations[question_id].arbitrator;
 
-        require(arbitrators[arbitrator], "Arbitrator must be whitelisted");
+        require(arbitrators[arbitrator], "Arbitrator must be allowlisted");
         require(
-            !frozen_arbitrators[arbitrator],
-            "Arbitrator must not be under dispute"
+            countArbitratorFreezePropositions[arbitrator] == 0,
+            "Arbitrator under dispute"
         );
 
         bytes32 data_hash = keccak256(
@@ -291,14 +300,14 @@ contract AdjudicationFramework is BalanceHolder {
         );
         require(
             question_arbitrations[question_id].msg_hash == data_hash,
-            "You must resubmit the parameters previously sent"
+            "Resubmit previous parameters"
         );
 
         uint256 finalize_ts = question_arbitrations[question_id].finalize_ts;
         require(finalize_ts > 0, "Submission must have been queued");
         require(
             finalize_ts < block.timestamp,
-            "Challenge deadline must have passed"
+            "Challenge deadline not passed"
         );
 
         balanceOf[question_arbitrations[question_id].payer] =
@@ -308,133 +317,114 @@ contract AdjudicationFramework is BalanceHolder {
         realityETH.submitAnswerByArbitrator(question_id, answer, answerer);
     }
 
-    function freezeArbitrator(
-        address arbitrator //    l1_forkmanager_only
-    ) public {
-        require(
-            arbitrators[arbitrator],
-            "Arbitrator not whitelisted in the first place"
-        );
-        require(!frozen_arbitrators[arbitrator], "Arbitrator already frozen");
-        frozen_arbitrators[arbitrator] = true;
+    // Governance (specifically adding and removing arbitrators from the allowlist) has two steps:
+    // 1) Create question
+    // 2) Complete operation (if proposition succeeded) or nothing if it failed
+
+    // For time-sensitive operations, we also freeze any interested parties, so
+    // 1) Create question
+    // 2) Prove sufficient bond posted, freeze
+    // 3) Complete operation or Undo freeze
+
+    function beginAddArbitratorToAllowList(address arbitrator_to_add)
+    external returns (bytes32) {
+        string memory question = Strings.toHexString(arbitrator_to_add);
+        bytes32 question_id = realityETH.askQuestionWithMinBond(templateIdAddArbitrator, question, forkArbitrator, REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0, REALITY_ETH_BOND_ARBITRATOR_ADD);
+        require(propositions[question_id].proposition_type == PropositionType.NONE, "Proposition already exists");
+        propositions[question_id] = ArbitratorProposition(PropositionType.ADD_ARBITRATOR, arbitrator_to_add, false);
+        return question_id;
     }
 
-    function unfreezeArbitrator(address arbitrator) public l1_forkmanager_only {
-        require(
-            arbitrators[arbitrator],
-            "Arbitrator not whitelisted in the first place"
-        );
-        require(
-            frozen_arbitrators[arbitrator],
-            "Arbitrator not already frozen"
-        );
-        frozen_arbitrators[arbitrator] = false;
+    function beginRemoveArbitratorFromAllowList(address arbitrator_to_remove)
+    external returns (bytes32) {
+        string memory question = Strings.toHexString(arbitrator_to_remove);
+        bytes32 question_id = realityETH.askQuestionWithMinBond(templateIdRemoveArbitrator, question, forkArbitrator, REALITY_ETH_TIMEOUT, uint32(block.timestamp), 0, REALITY_ETH_BOND_ARBITRATOR_REMOVE);
+        require(propositions[question_id].proposition_type == PropositionType.NONE, "Proposition already exists");
+        propositions[question_id] = ArbitratorProposition(PropositionType.REMOVE_ARBITRATOR, arbitrator_to_remove, false);
+
+        return question_id;
     }
 
-    function addArbitrator(address arbitrator) public l1_forkmanager_only {
-        require(!arbitrators[arbitrator], "Arbitrator already whitelisted");
+    function executeAddArbitratorToAllowList(bytes32 question_id) external {
+
+        require(propositions[question_id].proposition_type == PropositionType.ADD_ARBITRATOR, "Wrong Proposition type");
+        address arbitrator = propositions[question_id].arbitrator;
+        require(!arbitrators[arbitrator], "Arbitrator already on allowlist");
+        require(realityETH.resultFor(question_id) == bytes32(uint256(1)), "Question did not return yes");
+        delete(propositions[question_id]);
+
+        // NB They may still be in a frozen state because of some other proposition
         arbitrators[arbitrator] = true;
     }
 
-    function removeArbitrator(address arbitrator) public l1_forkmanager_only {
-        require(arbitrators[arbitrator], "Arbitrator already whitelisted");
-        frozen_arbitrators[arbitrator] = false;
+    function executeRemoveArbitratorFromAllowList(bytes32 question_id) external {
+
+        require(propositions[question_id].proposition_type == PropositionType.REMOVE_ARBITRATOR, "Wrong Proposition type");
+
+        // NB This will run even if the arbitrator has already been removed by another proposition.
+        // This is needed so that the freeze can be cleared if the arbitrator is then reinstated.
+
+        address arbitrator = propositions[question_id].arbitrator;
+        bytes32 realityEthResult = realityETH.resultFor(question_id);
+        require(realityEthResult == bytes32(uint256(1)), "Result was not 1");
+
+        if (propositions[question_id].isFrozen) {
+            countArbitratorFreezePropositions[arbitrator] = countArbitratorFreezePropositions[arbitrator] - 1;
+        }
+        delete(propositions[question_id]);
+
         arbitrators[arbitrator] = false;
     }
 
-    function _numUnreservedTokens() internal view returns (uint256) {
-        return address(this).balance - reserved_tokens;
-    }
-
-    function reserveTokens(uint256 num, uint256 price, uint256 nonce) public {
-        bytes32 resid = keccak256(abi.encodePacked(msg.sender, nonce));
-        require(
-            token_reservations[resid].reserved_ts == 0,
-            "Nonce already used"
-        );
-
-        require(_numUnreservedTokens() > num, "Not enough tokens unreserved");
-
-        uint256 deposit = (num * price) / TOKEN_RESERVATION_DEPOSIT;
-        payable(msg.sender).transfer(deposit);
-
-        token_reservations[resid] = TokenReservation(
-            msg.sender,
-            num,
-            price,
-            block.timestamp
-        );
-        reserved_tokens = reserved_tokens + num;
-    }
-
-    function outBidReservation(
-        uint256 num,
-        uint256 price,
-        uint256 nonce,
-        bytes32 resid
-    ) external {
-        require(
-            token_reservations[resid].reserved_ts > 0,
-            "Reservation you want to outbid does not exist"
-        );
-        uint256 age = block.timestamp - token_reservations[resid].reserved_ts;
-        require(
-            age < TOKEN_RESERVATION_BIDDING_PERIOD,
-            "Bidding period has passed"
-        );
+    // When an arbitrator is listed for removal, they can be frozen given a sufficient bond
+    function freezeArbitrator(
+        bytes32 question_id,
+        bytes32[] memory history_hashes, address[] memory addrs, uint256[] memory bonds, bytes32[] memory answers
+    ) public {
+        require(propositions[question_id].proposition_type == PropositionType.REMOVE_ARBITRATOR, "Wrong Proposition type");
+        address arbitrator = propositions[question_id].arbitrator;
 
         require(
-            token_reservations[resid].num >= num,
-            "More tokens requested than remain in the reservation"
+            arbitrators[arbitrator],
+            "Arbitrator not allowlisted" // Not allowlisted in the first place
         );
-        require(
-            price > (token_reservations[resid].price * 101) / 100,
-            "You must bid at least 1% more than the previous bid"
-        );
+        require(!propositions[question_id].isFrozen, "Arbitrator already frozen");
 
-        uint256 deposit_return = (num * token_reservations[resid].price) /
-            TOKEN_RESERVATION_DEPOSIT;
+        // Require a bond of at least the specified level
+        // This is only relevant if REALITY_ETH_BOND_ARBITRATOR_FREEZE is higher than REALITY_ETH_BOND_ARBITRATOR_REMOVE
 
-        payable(token_reservations[resid].reserver).transfer(deposit_return);
-        reserved_tokens = reserved_tokens - num;
-
-        if (num == token_reservations[resid].num) {
-            delete (token_reservations[resid]);
+        bytes32 answer;
+        uint256 bond;
+        // Normally you call this right after posting your answer so your final answer will be the current answer
+        // If someone has since submitted a different answer, you need to pass in the history from now until yours
+        if (history_hashes.length == 0) {
+            answer = realityETH.getBestAnswer(question_id);
+            bond = realityETH.getBond(question_id);
         } else {
-            token_reservations[resid].num = token_reservations[resid].num - num;
+            (answer, bond) = realityETH.getEarliestAnswerFromSuppliedHistoryOrRevert(question_id, history_hashes, addrs, bonds, answers);
         }
 
-        return reserveTokens(num, price, nonce);
+        require(answer == bytes32(uint256(1)), "Supplied answer is not yes");
+        require(bond >= REALITY_ETH_BOND_ARBITRATOR_FREEZE, "Bond too low to freeze");
+
+        // TODO: Ideally we would check the bond is for the "remove" answer. 
+        // #92
+
+        propositions[question_id].isFrozen = true;
+        countArbitratorFreezePropositions[arbitrator] = countArbitratorFreezePropositions[arbitrator] + 1;
     }
 
-    function cancelTimedOutReservation(bytes32 resid) external {
-        uint256 age = block.timestamp - token_reservations[resid].reserved_ts;
-        require(age > TOKEN_RESERVATION_CLAIM_TIMEOUT, "Not timed out yet");
-        reserved_tokens = reserved_tokens - token_reservations[resid].num;
-        delete (token_reservations[resid]);
-    }
-
-    function executeTokenSale(
-        bytes32 resid,
-        uint256 gov_tokens_paid
-    ) external l1_forkmanager_only {
-        uint256 age = block.timestamp - token_reservations[resid].reserved_ts;
-        require(
-            age > TOKEN_RESERVATION_BIDDING_PERIOD,
-            "Bidding period has not yet passed"
-        );
-
-        uint256 num = token_reservations[resid].num;
-        uint256 price = token_reservations[resid].price;
-        uint256 cost = price * num;
-        require(gov_tokens_paid >= cost, "Insufficient gov tokens sent");
-        reserved_tokens = reserved_tokens - num;
-        payable(token_reservations[resid].reserver).transfer(num);
-
-        delete (token_reservations[resid]);
+    function clearFailedProposition(bytes32 question_id) public {
+        address arbitrator = propositions[question_id].arbitrator;
+        require(arbitrator != address(0), "Proposition not found");
+        if (propositions[question_id].isFrozen) {
+            countArbitratorFreezePropositions[arbitrator] = countArbitratorFreezePropositions[arbitrator] - 1;
+        }
+        delete(propositions[question_id]);
     }
 
     function realitio() external view returns (address) {
         return address(realityETH);
     }
+
 }

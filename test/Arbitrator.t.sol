@@ -1,6 +1,6 @@
 pragma solidity ^0.8.20;
 import {Test} from "forge-std/Test.sol";
-import {Arbitrator} from "../contracts/Arbitrator.sol";
+import {Arbitrator} from "../contracts/lib/reality-eth/Arbitrator.sol";
 
 import {IRealityETH} from "../contracts/interfaces/IRealityETH.sol";
 import {IERC20} from "../contracts/interfaces/IERC20.sol";

@@ -196,6 +196,10 @@ interface IRealityETH is IBalanceHolder {
         bytes32 question_id
     ) external view returns (bytes32);
 
+    function getEarliestAnswerFromSuppliedHistoryOrRevert(
+        bytes32 question_id, bytes32[] memory history_hashes, address[] memory addrs, uint256[] memory bonds, bytes32[] memory answers
+    ) external view returns (bytes32, uint256);
+
     function getFinalAnswer(
         bytes32 question_id
     ) external view returns (bytes32);

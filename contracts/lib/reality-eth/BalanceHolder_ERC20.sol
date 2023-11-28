@@ -2,8 +2,10 @@
 
 pragma solidity ^0.8.20;
 
-import "../interfaces/IERC20.sol";
-import "../interfaces/IBalanceHolder_ERC20.sol";
+/* solhint-disable contract-name-camelcase */
+
+import {IERC20} from "../../interfaces/IERC20.sol";
+import {IBalanceHolder_ERC20} from "../../interfaces/IBalanceHolder_ERC20.sol";
 
 contract BalanceHolder_ERC20 is IBalanceHolder_ERC20 {
     IERC20 public token;
@@ -15,7 +17,7 @@ contract BalanceHolder_ERC20 is IBalanceHolder_ERC20 {
     function withdraw() public {
         uint256 bal = balanceOf[msg.sender];
         balanceOf[msg.sender] = 0;
-        require(token.transfer(msg.sender, bal));
+        require(token.transfer(msg.sender, bal), "Transfer failed");
         emit LogWithdraw(msg.sender, bal);
     }
 }
