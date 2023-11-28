@@ -404,6 +404,159 @@ contract ForkingManagerTest is Test {
         }
     }
 
+    function testInitiateForkAndExecuteWorksWithoutChangingImplementations() public {
+        // Mint and approve the arbitration fee for the test contract
+        forkonomicToken.approve(address(forkmanager), arbitrationFee);
+        vm.prank(address(this));
+        forkonomicToken.mint(address(this), arbitrationFee);
+
+        IForkingManager.NewImplementations memory noNewImplementations;
+        // Call the initiateFork function to create a new fork
+        forkmanager.initiateFork(
+            disputeData,
+            noNewImplementations
+        );
+        vm.warp(block.timestamp + forkmanager.forkPreparationTime() + 1);
+        forkmanager.executeFork();
+
+        // Fetch the children from the ForkingManager
+        (address childForkmanager1, address childForkmanager2) = forkmanager
+            .getChildren();
+
+        // Assert that the fork managers implementation match the ones we provided
+        assertEq(
+            bytesToAddress(
+                vm.load(address(childForkmanager1), _IMPLEMENTATION_SLOT)
+            ),
+            forkmanagerImplementation
+        );
+        assertEq(
+            bytesToAddress(
+                vm.load(address(childForkmanager2), _IMPLEMENTATION_SLOT)
+            ),
+            forkmanagerImplementation
+        );
+
+        {
+            // Fetch the children from the ForkableBridge contract
+            (address childBridge1, address childBridge2) = bridge.getChildren();
+
+            // Assert that the bridges match the ones we provided
+            assertEq(
+                bytesToAddress(
+                    vm.load(address(childBridge1), _IMPLEMENTATION_SLOT)
+                ),
+                bridgeImplementation
+            );
+            assertEq(
+                bytesToAddress(
+                    vm.load(address(childBridge2), _IMPLEMENTATION_SLOT)
+                ),
+                bridgeImplementation
+            );
+        }
+        {
+            // Fetch the children from the ForkableZkEVM contract
+            (address childZkevm1, address childZkevm2) = zkevm.getChildren();
+
+            // Assert that the ZkEVM contracts match the ones we provided
+            assertEq(
+                bytesToAddress(
+                    vm.load(address(childZkevm1), _IMPLEMENTATION_SLOT)
+                ),
+                zkevmImplementation
+            );
+            assertEq(
+                bytesToAddress(
+                    vm.load(address(childZkevm2), _IMPLEMENTATION_SLOT)
+                ),
+                zkevmImplementation
+            );
+            (address childBridge1, address childBridge2) = bridge.getChildren();
+            assertEq(
+                ForkableBridge(childBridge1).polygonZkEVMaddress(),
+                childZkevm1
+            );
+            assertEq(
+                ForkableBridge(childBridge2).polygonZkEVMaddress(),
+                childZkevm2
+            );
+            assertEq(ForkableZkEVM(childZkevm1).chainID(), firstChainId);
+            assertEq(ForkableZkEVM(childZkevm2).chainID(), secondChainId);
+            assertEq(
+                ForkableZkEVM(childZkevm1).forkID(),
+                ForkableZkEVM(zkevm).forkID()
+            );
+            assertEq(
+                ForkableZkEVM(childZkevm2).forkID(),
+                ForkableZkEVM(zkevm).forkID()
+            );
+        }
+        {
+            // Fetch the children from the ForkonomicToken contract
+            (
+                address childForkonomicToken1,
+                address childForkonomicToken2
+            ) = forkonomicToken.getChildren();
+
+            // Assert that the forkonomic tokens match the ones we provided
+            assertEq(
+                bytesToAddress(
+                    vm.load(
+                        address(childForkonomicToken1),
+                        _IMPLEMENTATION_SLOT
+                    )
+                ),
+                forkonomicTokenImplementation
+            );
+            assertEq(
+                bytesToAddress(
+                    vm.load(
+                        address(childForkonomicToken2),
+                        _IMPLEMENTATION_SLOT
+                    )
+                ),
+                forkonomicTokenImplementation
+            );
+        }
+        {
+            // Fetch the children from the ForkonomicToken contract
+            (
+                address childGlobalExitRoot1,
+                address childGlobalExitRoot2
+            ) = globalExitRoot.getChildren();
+
+            // Assert that the forkonomic tokens match the ones we provided
+            assertEq(
+                bytesToAddress(
+                    vm.load(address(childGlobalExitRoot1), _IMPLEMENTATION_SLOT)
+                ),
+                globalExitRootImplementation
+            );
+            assertEq(
+                bytesToAddress(
+                    vm.load(address(childGlobalExitRoot2), _IMPLEMENTATION_SLOT)
+                ),
+                globalExitRootImplementation
+            );
+
+            assertEq(
+                ForkableGlobalExitRoot(childGlobalExitRoot1).forkmanager(),
+                childForkmanager1
+            );
+        }
+        {
+            assertEq(
+                chainIdManagerAddress,
+                ForkingManager(childForkmanager1).chainIdManager()
+            );
+            assertEq(
+                chainIdManagerAddress,
+                ForkingManager(childForkmanager2).chainIdManager()
+            );
+        }
+    }
+
     function testInitiateForkSetsDispuateDataAndExecutionTime() public {
         // Mint and approve the arbitration fee for the test contract
         forkonomicToken.approve(address(forkmanager), arbitrationFee);

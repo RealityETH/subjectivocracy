@@ -41,7 +41,6 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     DisputeData public disputeData;
     NewImplementations public proposedImplementations;
     uint256 public executionTimeForProposal = 0;
-
     uint256 public immutable forkPreparationTime = 1 weeks;
 
     /// @inheritdoc IForkingManager
@@ -165,7 +164,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             );
             initializePackedParameters.chainID = ChainIdManager(chainIdManager)
                 .getNextUsableChainId();
-            initializePackedParameters.forkID = newImplementations.forkID;
+            initializePackedParameters.forkID = newImplementations.forkID > 0 ? newImplementations.forkID : IPolygonZkEVM(zkEVM).forkID();
             IForkableZkEVM(newInstances.zkEVM.two).initialize(
                 newInstances.forkingManager.two,
                 zkEVM,
@@ -260,4 +259,5 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             newInstances.bridge.two
         );
     }
+
 }
