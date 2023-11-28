@@ -30,6 +30,11 @@ interface IForkingManager is IForkableStructure {
     function globalExitRoot() external returns (address);
     function arbitrationFee() external returns (uint256);
     function disputeData() external returns (bool isL1, address disputeContract, bytes32 disputeContent);
+    function executionTimeForProposal() external returns (uint256);
+
+    function isForkingInitiated() external returns (bool);
+    function isForkingExecuted() external returns (bool);
+    function canFork() external returns (bool);
 
     // Struct that holds an address pair used to store the new child contracts
     struct AddressPair {
