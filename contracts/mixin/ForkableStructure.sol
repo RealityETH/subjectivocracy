@@ -34,12 +34,12 @@ contract ForkableStructure is IForkableStructure, Initializable {
     }
 
     modifier onlyParent() {
-        require(msg.sender == parentContract, "Only available for parent");
+        require(msg.sender == parentContract, "Not parent");
         _;
     }
 
     modifier onlyForkManger() {
-        require(msg.sender == forkmanager, "Only forkManager is allowed");
+        require(msg.sender == forkmanager, "Not forkManager");
         _;
     }
 
@@ -58,35 +58,18 @@ contract ForkableStructure is IForkableStructure, Initializable {
 
     /**
      *  @dev Internal function to create the children contracts.
-     */
-    function _createChild1() internal returns (address forkingManager1) {
-        forkingManager1 = CreateChildren.createChild1();
-        children[0] = forkingManager1;
-    }
-
-    /**
-     *  @dev Internal function to create the children contracts.
-     * @param implementation Allows to pass a different implementation contract for the second proxied child.
-     */
-    function _createChild2(
-        address implementation
-    ) internal returns (address forkingManager2) {
-        forkingManager2 = CreateChildren.createChild2(implementation);
-        children[1] = forkingManager2;
-    }
-
-    /**
-     *  @dev Internal function to create the children contracts.
      * @param implementation Allows to pass a different implementation contract for the second proxied child.
      */
     function _createChildren(
         address implementation
     ) internal returns (address forkingManager1, address forkingManager2) {
-        forkingManager1 = _createChild1();
-        forkingManager2 = _createChild2(implementation);
+        forkingManager1 = CreateChildren.createChild1();
+        children[0] = forkingManager1;
+        forkingManager2 = CreateChildren.createChild2(implementation);
+        children[1] = forkingManager2;
     }
 
-    function getChildren() external view returns (address, address) {
+    function getChildren() public view returns (address, address) {
         return (children[0], children[1]);
     }
 }

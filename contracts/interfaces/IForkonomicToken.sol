@@ -25,15 +25,6 @@ interface IForkonomicToken is IForkableStructure, IERC20Upgradeable {
     function mint(address to, uint256 amount) external;
 
     /// @dev Interface for the forkManger to create children
-    /// @return The addresses of the two children
-    function createChild1() external returns (address);
-
-    /// @dev Interface for the forkManger to create children
-    /// @param implementation Allows to pass a different implementation contract for the second proxied child.
-    /// @return The addresses of the two children
-    function createChild2(address implementation) external returns (address);
-
-    /// @dev Interface for the forkManger to create children
     /// @param implementation Allows to pass a different implementation contract for the second proxied child.
     /// @return The addresses of the two children
     function createChildren(

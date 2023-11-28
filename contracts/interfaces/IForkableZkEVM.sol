@@ -35,17 +35,6 @@ interface IForkableZkEVM is IForkableStructure, IPolygonZkEVM {
         IPolygonZkEVMBridge _bridgeAddress
     ) external;
 
-    /**
-     *  @dev Internal function to create the children contracts.
-     */
-    function createChild1() external returns (address);
-
-    /**
-     *  @dev Internal function to create the children contracts.
-     * @param implementation Allows to pass a different implementation contract for the second proxied child.
-     */
-    function createChild2(address implementation) external returns (address);
-
     // @dev: This function is used to create the children contracts.
     // The initialization of the children contracts should be called in the same transaction
     // as the creation of the children contracts.

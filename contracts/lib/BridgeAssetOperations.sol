@@ -72,6 +72,31 @@ library BridgeAssetOperations {
         );
     }
 
+     // @inheritdoc IForkableBridge
+    function splitTokenIntoChildToken(
+        address token,
+        uint256 amount,
+        address child1,
+        address child2,
+        PolygonZkEVMBridge.TokenInformation memory tokenInfo
+    ) public {
+         TokenWrapped(token).burn(msg.sender, amount);
+        createChildToken(
+            token,
+            amount,
+            tokenInfo,
+            child1
+        );
+        if (child2 != address(0)) {
+            createChildToken(
+                token,
+                amount,
+                tokenInfo,
+                child2
+            );
+        }
+    }
+
     /**
      * @notice Function to send tokens into children-bridge contract by the admin
      * @param gasTokenAddress Address of the token

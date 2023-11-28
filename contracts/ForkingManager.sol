@@ -110,16 +110,18 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             "ForkingManager: fork not ready"
         );
 
+        NewImplementations memory newImplementations = proposedImplementations;
+
         // Create the children of each contract
         NewInstances memory newInstances;
-        newInstances.forkingManager.one = _createChild1();
-        (newInstances.bridge.one) = IForkableBridge(bridge).createChild1();
-        (newInstances.zkEVM.one) = IForkableZkEVM(zkEVM).createChild1();
-        (newInstances.forkonomicToken.one) = IForkonomicToken(forkonomicToken)
-            .createChild1();
-        (newInstances.globalExitRoot.one) = IForkableGlobalExitRoot(
+        (newInstances.forkingManager.one, ) = _createChildren(newImplementations.forkingManagerImplementation);
+        (newInstances.bridge.one, ) = IForkableBridge(bridge).createChildren(newImplementations.bridgeImplementation);
+        (newInstances.zkEVM.one, ) = IForkableZkEVM(zkEVM).createChildren(newImplementations.zkEVMImplementation);
+        (newInstances.forkonomicToken.one, ) = IForkonomicToken(forkonomicToken)
+            .createChildren(newImplementations.forkonomicTokenImplementation);
+        (newInstances.globalExitRoot.one, ) = IForkableGlobalExitRoot(
             globalExitRoot
-        ).createChild1();
+        ).createChildren(newImplementations.globalExitRootImplementation);
 
         // Initialize the zkEVM contracts
         IPolygonZkEVM.InitializePackedParameters
@@ -223,20 +225,15 @@ contract ForkingManager is IForkingManager, ForkableStructure {
 
         // Create the children of each contract
         NewInstances memory newInstances;
-        newInstances.forkingManager.two = _createChild2(
-            newImplementations.forkingManagerImplementation
+        (,newInstances.forkingManager.two) = getChildren();
+        (,newInstances.bridge.two) = IForkableBridge(bridge).getChildren();
+        (,newInstances.zkEVM.two) = IForkableZkEVM(zkEVM).getChildren(
         );
-        newInstances.bridge.two = IForkableBridge(bridge).createChild2(
-            newImplementations.bridgeImplementation
-        );
-        newInstances.zkEVM.two = IForkableZkEVM(zkEVM).createChild2(
-            newImplementations.zkEVMImplementation
-        );
-        newInstances.forkonomicToken.two = IForkonomicToken(forkonomicToken)
-            .createChild2(newImplementations.forkonomicTokenImplementation);
-        (newInstances.globalExitRoot.two) = IForkableGlobalExitRoot(
+        (,newInstances.forkonomicToken.two) = IForkonomicToken(forkonomicToken)
+            .getChildren();
+        (,newInstances.globalExitRoot.two) = IForkableGlobalExitRoot(
             globalExitRoot
-        ).createChild2(newImplementations.globalExitRootImplementation);
+        ).getChildren();
 
         // Initialize the zkEVM contracts
         IPolygonZkEVM.InitializePackedParameters

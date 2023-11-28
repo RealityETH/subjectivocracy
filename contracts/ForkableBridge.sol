@@ -19,13 +19,6 @@ contract ForkableBridge is
     // tokens to the children-bridge contracts
     address internal _hardAssetManager;
 
-    // @dev Mapping to keep track of the allowances for the child tokens minting process
-    // @param user Address of the token
-    // @param token Address of the token
-    // @param isChild0 Boolean to indicate if the allowance is for the first or second child-bridge contract
-    // @param amount Amount of tokens allowed to be minted
-    mapping(address => mapping(address => mapping(bool => uint256)))
-        public childTokenAllowances;
 
     // @inheritdoc IForkableBridge
     function initialize(
@@ -65,7 +58,7 @@ contract ForkableBridge is
         address to
     ) external onlyAfterForking {
         require(_hardAssetManager == msg.sender, "Not authorized");
-        require(to == children[0] || to == children[1], "Invalid to address");
+        require(to == children[0] || to == children[1], "Invalid to");
         IERC20(token).transfer(to, amount);
     }
 
@@ -87,9 +80,8 @@ contract ForkableBridge is
         if (parentContract != address(0)) {
             // Also check the parent contract for claims if it is set
             return ForkableBridge(parentContract).isClaimed(index);
-        } else {
-            return false;
         }
+        return false;
     }
 
     /**
@@ -105,22 +97,6 @@ contract ForkableBridge is
             }
         }
         PolygonZkEVMBridge._setAndCheckClaimed(index);
-    }
-
-    // @inheritdoc IForkableBridge
-    function createChild1() external onlyForkManger returns (address) {
-        // process all pending deposits/messages before coping over the state root.
-        updateGlobalExitRoot();
-        return _createChild1();
-    }
-
-    // @inheritdoc IForkableBridge
-    function createChild2(
-        address implementation
-    ) external onlyForkManger returns (address) {
-        // process all pending deposits/messages before coping over the state root.
-        updateGlobalExitRoot();
-        return _createChild2(implementation);
     }
 
     // @inheritdoc IForkableBridge
@@ -140,7 +116,7 @@ contract ForkableBridge is
         bytes calldata metadata,
         address destinationAddress
     ) external onlyParent {
-        require(originNetwork != networkID, "Token is from this network");
+        require(originNetwork != networkID, "wrong Token");
         _issueBridgedTokens(
             originNetwork,
             token,
@@ -151,36 +127,17 @@ contract ForkableBridge is
     }
 
     // @inheritdoc IForkableBridge
-    function splitTokenIntoChildTokens(
-        address token,
-        uint256 amount
-    ) external onlyAfterForking {
-        splitTokenIntoChildToken(token, amount, true, false);
-        splitTokenIntoChildToken(token, amount, false, true);
-    }
-
-    // @inheritdoc IForkableBridge
     function splitTokenIntoChildToken(
         address token,
         uint256 amount,
-        bool firstChild,
-        bool useChildTokenAllowances
+        bool mintSecondChildAsWell
     ) public onlyAfterForking {
-        if (useChildTokenAllowances) {
-            require(
-                childTokenAllowances[msg.sender][token][firstChild] >= amount,
-                "Not enough allowance"
-            );
-            childTokenAllowances[msg.sender][token][firstChild] -= amount;
-        } else {
-            TokenWrapped(token).burn(msg.sender, amount);
-            childTokenAllowances[msg.sender][token][!firstChild] += amount;
-        }
-        BridgeAssetOperations.createChildToken(
+       BridgeAssetOperations.splitTokenIntoChildToken(
             token,
             amount,
-            wrappedTokenToTokenInfo[token],
-            firstChild ? children[0] : children[1]
+            children[0],
+            mintSecondChildAsWell ? children[1] : address(0),
+            wrappedTokenToTokenInfo[token]
         );
     }
 
