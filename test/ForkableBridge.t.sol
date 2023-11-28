@@ -584,10 +584,10 @@ contract ForkableBridgeTest is Test {
         // Now, call the function as the forkmanager
         vm.expectRevert(bytes("onlyAfterForking"));
         vm.prank(forkmanager);
-        forkableBridge2.sendForkonomicTokensToChild(true);
+        forkableBridge2.sendForkonomicTokensToChild(10, true, false);
         vm.expectRevert(bytes("onlyAfterForking"));
         vm.prank(forkmanager);
-        forkableBridge2.sendForkonomicTokensToChild(false);
+        forkableBridge2.sendForkonomicTokensToChild(10, true, false);
 
         // Create initiate the forking process and create children
         address secondBridgeImplementation = address(
@@ -635,10 +635,11 @@ contract ForkableBridgeTest is Test {
             "FTK"
         );
         // Now, call the function as the forkmanager
+        uint256 amount = erc20GasToken.balanceOf(address(forkableBridge2));
         vm.prank(forkmanager);
-        forkableBridge2.sendForkonomicTokensToChild(true);
+        forkableBridge2.sendForkonomicTokensToChild(amount, true, false);
         vm.prank(forkmanager);
-        forkableBridge2.sendForkonomicTokensToChild(false);
+        forkableBridge2.sendForkonomicTokensToChild(amount, false, true);
 
         // Check that the tokens were transferred correctly
         assertEq(

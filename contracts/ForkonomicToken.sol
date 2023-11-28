@@ -52,6 +52,28 @@ contract ForkonomicToken is
         return _createChildren(implementation);
     }
 
+    function splitTokenAndMintOneChild(
+        uint256 amount,
+        bool firstChild,
+        bool useChildTokenAllowance
+    ) public onlyAfterForking {
+        require(children[0] != address(0), "Children not created yet");
+        if (useChildTokenAllowance) {
+            require(
+                childTokenAllowances[msg.sender][firstChild] >= amount,
+                "Not enough allowance"
+            );
+            childTokenAllowances[msg.sender][firstChild] -= amount;
+        } else {
+            _burn(msg.sender, amount);
+            childTokenAllowances[msg.sender][!firstChild] += amount;
+        }
+        IForkonomicToken(firstChild ? children[0] : children[1]).mint(
+            msg.sender,
+            amount
+        );
+    }
+
     /// @dev Allows anyone to prepare the splitting of tokens
     /// by burning them
     /// @param amount The amount of tokens to burn
@@ -62,23 +84,10 @@ contract ForkonomicToken is
         childTokenAllowances[msg.sender][true] += amount;
     }
 
-    /// @dev Allows anyone to finish their splitting of tokens
-    /// by minting them
-    /// @param firstChild Whether to mint the tokens of the first or second child
-    function finishSplittingTokens(bool firstChild) public {
-        IForkonomicToken(firstChild ? children[0] : children[1]).mint(
-            msg.sender,
-            childTokenAllowances[msg.sender][firstChild]
-        );
-        childTokenAllowances[msg.sender][firstChild] = 0;
-    }
-
     /// @dev Allows anyone to split the tokens from the parent contract into the tokens of the children
     /// @param amount The amount of tokens to split
     function splitTokensIntoChildTokens(uint256 amount) external {
-        require(children[0] != address(0), "Children not created yet");
-        prepareSplittingTokens(amount);
-        finishSplittingTokens(true);
-        finishSplittingTokens(false);
+        splitTokenAndMintOneChild(amount, true, false);
+        splitTokenAndMintOneChild(amount, false, true);
     }
 }

@@ -135,6 +135,7 @@ contract ForkableBridge is
             token,
             amount,
             children[0],
+            // If the second token should not be minted - to safe gas or since its broken - we pass address(0)
             mintSecondChildAsWell ? children[1] : address(0),
             wrappedTokenToTokenInfo[token]
         );
@@ -172,15 +173,19 @@ contract ForkableBridge is
      * and send them to the children-bridge contracts
      * Notice that forkonomic tokens are special, as they their main contract
      * is on L1, but they are still forkable tokens as all the tokens from
-     * @param firstChild boolean indicating for which child the operation should be run
+     * @param useFirstChild boolean indicating for which child the operation should be run
      */
     function sendForkonomicTokensToChild(
-        bool firstChild
+        uint256 amount,
+        bool useFirstChild,
+        bool useChildTokenAllowance
     ) public onlyForkManger onlyAfterForking {
         BridgeAssetOperations.sendForkonomicTokensToChild(
             gasTokenAddress,
-            firstChild ? children[0] : children[1],
-            firstChild
+            amount,
+            useFirstChild ? children[0] : children[1],
+            useFirstChild,
+            useChildTokenAllowance
         );
     }
 

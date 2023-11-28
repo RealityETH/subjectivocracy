@@ -91,30 +91,27 @@ library BridgeAssetOperations {
      * @notice Function to send tokens into children-bridge contract by the admin
      * @param gasTokenAddress Address of the token
      * @param child Address of the first child-bridge contract
-     * @param firstChild Boolean to indicate which child to send tokens to
+     * @param useFirstChild Boolean to indicate which child to send tokens to
      */
     function sendForkonomicTokensToChild(
         address gasTokenAddress,
+        uint256 amount,
         address child,
-        bool firstChild
+        bool useFirstChild,
+        bool useChildTokenAllowance
     ) public {
-        IForkonomicToken(gasTokenAddress).prepareSplittingTokens(
-            IERC20(gasTokenAddress).balanceOf(address(this))
+        IForkonomicToken(gasTokenAddress).splitTokenAndMintOneChild(
+            amount,
+            useFirstChild,
+            useChildTokenAllowance
         );
-        IForkonomicToken(gasTokenAddress).finishSplittingTokens(firstChild);
         (address forkonomicToken1, address forkonomicToken2) = IForkonomicToken(
             gasTokenAddress
         ).getChildren();
-        if (firstChild) {
-            IERC20(forkonomicToken1).transfer(
-                child,
-                IERC20(forkonomicToken1).balanceOf(address(this))
-            );
+        if (useFirstChild) {
+            IERC20(forkonomicToken1).transfer(child, amount);
         } else {
-            IERC20(forkonomicToken2).transfer(
-                child,
-                IERC20(forkonomicToken2).balanceOf(address(this))
-            );
+            IERC20(forkonomicToken2).transfer(child, amount);
         }
     }
 }
