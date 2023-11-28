@@ -3,8 +3,8 @@ pragma solidity ^0.8.20;
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 
-import {MoneyBox} from "../contracts/MoneyBox.sol";
-import {MoneyBoxUser} from "../contracts/MoneyBoxUser.sol";
+import {MoneyBox} from "../contracts/mixin/MoneyBox.sol";
+import {MoneyBoxUser} from "../contracts/mixin/MoneyBoxUser.sol";
 
 import {ExampleToken} from "./testcontract/ExampleToken.sol";
 import {ExampleMoneyBoxUser} from "./testcontract/ExampleMoneyBoxUser.sol";

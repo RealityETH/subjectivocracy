@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.20;
 
-import {MoneyBoxUser} from "../../contracts/MoneyBoxUser.sol";
+import {MoneyBoxUser} from "../../contracts/mixin/MoneyBoxUser.sol";
 
 contract ExampleMoneyBoxUser is MoneyBoxUser {
 

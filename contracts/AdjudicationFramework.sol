@@ -12,7 +12,7 @@ import {IRealityETH} from "./interfaces/IRealityETH.sol";
 import {IArbitrator} from "./interfaces/IArbitrator.sol";
 import {IERC20} from "./interfaces/IERC20.sol";
 
-import {MoneyBoxUser} from "./MoneyBoxUser.sol";
+import {MoneyBoxUser} from "./mixin/MoneyBoxUser.sol";
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 

@@ -8,7 +8,7 @@ pragma solidity ^0.8.20;
 import {L2ChainInfo} from "./L2ChainInfo.sol";
 import {L1GlobalForkRequester} from "./L1GlobalForkRequester.sol";
 import {IRealityETH} from "./interfaces/IRealityETH.sol";
-import {MoneyBoxUser} from "./MoneyBoxUser.sol";
+import {MoneyBoxUser} from "./mixin/MoneyBoxUser.sol";
 
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
 import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";

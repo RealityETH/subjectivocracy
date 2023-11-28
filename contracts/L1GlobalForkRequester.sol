@@ -19,8 +19,8 @@ import {ForkableBridge} from "./ForkableBridge.sol";
 
 import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 
-import {MoneyBox} from "./MoneyBox.sol";
-import {MoneyBoxUser} from "./MoneyBoxUser.sol";
+import {MoneyBox} from "./mixin/MoneyBox.sol";
+import {MoneyBoxUser} from "./mixin/MoneyBoxUser.sol";
 
 contract L1GlobalForkRequester is MoneyBoxUser {
 
