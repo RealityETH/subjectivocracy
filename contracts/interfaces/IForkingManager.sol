@@ -24,6 +24,13 @@ interface IForkingManager is IForkableStructure {
         uint64 forkID;
     }
 
+    function zkEVM() external returns (address);
+    function bridge() external returns (address);
+    function forkonomicToken() external returns (address);
+    function globalExitRoot() external returns (address);
+    function arbitrationFee() external returns (uint256);
+    function disputeData() external returns (bool isL1, address disputeContract, bytes32 disputeContent);
+
     // Struct that holds an address pair used to store the new child contracts
     struct AddressPair {
         address one;
@@ -47,6 +54,11 @@ interface IForkingManager is IForkableStructure {
         address _globalExitRoot,
         uint256 _arbitrationFee,
         address _chainIdManager
+    ) external;
+
+    function initiateFork(
+        DisputeData memory _disputeData,
+        NewImplementations calldata newImplementations
     ) external;
 
 }
