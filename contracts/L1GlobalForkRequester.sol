@@ -26,8 +26,8 @@ contract L1GlobalForkRequester is MoneyBoxUser {
 
     struct FailedForkRequest {
         uint256 amount;
-        uint256 amountMigratedY;
-        uint256 amountMigratedN;
+        uint256 amountMigratedYes;
+        uint256 amountMigratedNo;
     }
     // Token => Beneficiary => ID => FailedForkRequest 
     mapping(address=>mapping(address=>mapping(bytes32=>FailedForkRequest))) public failedRequests;
@@ -113,8 +113,8 @@ contract L1GlobalForkRequester is MoneyBoxUser {
         /*
         // Probably need something like:
 
-        uint256 amountRemainingY = amount - failedRequests[token][requester][requestId].amountMigratedY;
-        uint256 amountRemainingN = amount - failedRequests[token][requester][requestId].amountMigratedN;
+        uint256 amountRemainingY = amount - failedRequests[token][requester][requestId].amountMigratedYes;
+        uint256 amountRemainingN = amount - failedRequests[token][requester][requestId].amountMigratedNo;
 
         if (doYesToken) {
             require(amountRemainingY > 0, "Nothing to migrate for Y");
@@ -123,8 +123,8 @@ contract L1GlobalForkRequester is MoneyBoxUser {
         }
 
         if (doNoToken) {
-            require(amountMigratedN > 0, "Nothing to migrate for N");
-            token.splitTokensIntoChildTokens(amountMigratedN, 0);
+            require(amountMigratedNo > 0, "Nothing to migrate for N");
+            token.splitTokensIntoChildTokens(amountMigratedNo, 0);
             amountRemainingN = 0;
         }
 
