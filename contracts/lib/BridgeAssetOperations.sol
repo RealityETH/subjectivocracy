@@ -45,35 +45,25 @@ library BridgeAssetOperations {
     }
 
     /**
-     * @notice Function to split tokens into children-bridge contracts
+     * @notice Function to create child tokens after splitting operation
      * @param token Address of the token
      * @param amount Amount of tokens to transfer
      * @param tokenInfo Information about the token
-     * @param child0 Address of the first child-bridge contract
-     * @param child1 Address of the second child-bridge contract
+     * @param child Address of the first child-bridge contract
      */
-    function splitTokenIntoChildTokens(
+    function createChildToken(
         address token,
         uint256 amount,
         PolygonZkEVMBridge.TokenInformation memory tokenInfo,
-        address child0,
-        address child1
-    ) external {
+        address child
+    ) public {
         require(tokenInfo.originNetwork != 0, "Token not forkable");
-        TokenWrapped(token).burn(msg.sender, amount);
         bytes memory metadata = abi.encode(
             IERC20Metadata(token).name(),
             IERC20Metadata(token).symbol(),
             IERC20Metadata(token).decimals()
         );
-        ForkableBridge(child0).mintForkableToken(
-            tokenInfo.originTokenAddress,
-            tokenInfo.originNetwork,
-            amount,
-            metadata,
-            msg.sender
-        );
-        ForkableBridge(child1).mintForkableToken(
+        ForkableBridge(child).mintForkableToken(
             tokenInfo.originTokenAddress,
             tokenInfo.originNetwork,
             amount,
@@ -83,29 +73,33 @@ library BridgeAssetOperations {
     }
 
     /**
-     * @notice Function to send tokens into children-bridge contracts by the admin
+     * @notice Function to send tokens into children-bridge contract by the admin
      * @param gasTokenAddress Address of the token
-     * @param child0 Address of the first child-bridge contract
-     * @param child1 Address of the second child-bridge contract
+     * @param child Address of the first child-bridge contract
+     * @param firstChild Boolean to indicate which child to send tokens to
      */
-    function sendForkonomicTokensToChildren(
+    function sendForkonomicTokensToChild(
         address gasTokenAddress,
-        address child0,
-        address child1
+        address child,
+        bool firstChild
     ) public {
-        IForkonomicToken(gasTokenAddress).splitTokensIntoChildTokens(
+        IForkonomicToken(gasTokenAddress).prepareSplittingTokens(
             IERC20(gasTokenAddress).balanceOf(address(this))
         );
+        IForkonomicToken(gasTokenAddress).finishSplittingTokens(firstChild);
         (address forkonomicToken1, address forkonomicToken2) = IForkonomicToken(
             gasTokenAddress
         ).getChildren();
-        IERC20(forkonomicToken1).transfer(
-            child0,
-            IERC20(forkonomicToken1).balanceOf(address(this))
-        );
-        IERC20(forkonomicToken2).transfer(
-            child1,
-            IERC20(forkonomicToken2).balanceOf(address(this))
-        );
+        if (firstChild) {
+            IERC20(forkonomicToken1).transfer(
+                child,
+                IERC20(forkonomicToken1).balanceOf(address(this))
+            );
+        } else {
+            IERC20(forkonomicToken2).transfer(
+                child,
+                IERC20(forkonomicToken2).balanceOf(address(this))
+            );
+        }
     }
 }

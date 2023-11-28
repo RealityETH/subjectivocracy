@@ -16,6 +16,12 @@ contract ForkonomicToken is
     /// @dev The role that allows minting new tokens
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
+    /// @dev Mapping that stores burned amounts
+    /// address The address of the token owner
+    /// bool indicating whether the first or second child was burnt
+    /// uint256 The amount of burned tokens
+    mapping(address => mapping(bool => uint256)) public childTokenAllowances;
+
     /// @inheritdoc IForkonomicToken
     function initialize(
         address _forkmanager,
@@ -58,12 +64,33 @@ contract ForkonomicToken is
         return _createChildren(implementation);
     }
 
+    /// @dev Allows anyone to prepare the splitting of tokens
+    /// by burning them
+    /// @param amount The amount of tokens to burn
+    function prepareSplittingTokens(uint256 amount) public {
+        require(children[0] != address(0), "Children not created yet");
+        _burn(msg.sender, amount);
+        childTokenAllowances[msg.sender][false] += amount;
+        childTokenAllowances[msg.sender][true] += amount;
+    }
+
+    /// @dev Allows anyone to finish their splitting of tokens
+    /// by minting them
+    /// @param firstChild Whether to mint the tokens of the first or second child
+    function finishSplittingTokens(bool firstChild) public {
+        IForkonomicToken(firstChild ? children[0] : children[1]).mint(
+            msg.sender,
+            childTokenAllowances[msg.sender][firstChild]
+        );
+        childTokenAllowances[msg.sender][firstChild] = 0;
+    }
+
     /// @dev Allows anyone to split the tokens from the parent contract into the tokens of the children
     /// @param amount The amount of tokens to split
     function splitTokensIntoChildTokens(uint256 amount) external {
         require(children[0] != address(0), "Children not created yet");
-        _burn(msg.sender, amount);
-        IForkonomicToken(children[0]).mint(msg.sender, amount);
-        IForkonomicToken(children[1]).mint(msg.sender, amount);
+        prepareSplittingTokens(amount);
+        finishSplittingTokens(true);
+        finishSplittingTokens(false);
     }
 }

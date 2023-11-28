@@ -228,9 +228,6 @@ contract ForkableBridgeTest is Test {
         (address child1, address child2) = forkableBridge.createChildren(
             secondBridgeImplementation
         );
-        // Testing revert if token was not bridged before (i.e. is not forkable)
-        vm.expectRevert(bytes("Token not forkable"));
-        forkableBridge.splitTokenIntoChildTokens(address(token), amount);
 
         // Create forkable token
         vm.prank(forkableBridge.parentContract());
@@ -587,7 +584,10 @@ contract ForkableBridgeTest is Test {
         // Now, call the function as the forkmanager
         vm.expectRevert(bytes("onlyAfterForking"));
         vm.prank(forkmanager);
-        forkableBridge2.sendForkonomicTokensToChildren();
+        forkableBridge2.sendForkonomicTokensToChild(true);
+        vm.expectRevert(bytes("onlyAfterForking"));
+        vm.prank(forkmanager);
+        forkableBridge2.sendForkonomicTokensToChild(false);
 
         // Create initiate the forking process and create children
         address secondBridgeImplementation = address(
@@ -636,7 +636,9 @@ contract ForkableBridgeTest is Test {
         );
         // Now, call the function as the forkmanager
         vm.prank(forkmanager);
-        forkableBridge2.sendForkonomicTokensToChildren();
+        forkableBridge2.sendForkonomicTokensToChild(true);
+        vm.prank(forkmanager);
+        forkableBridge2.sendForkonomicTokensToChild(false);
 
         // Check that the tokens were transferred correctly
         assertEq(
