@@ -1,5 +1,7 @@
 pragma solidity ^0.8.20;
 
+/* solhint-disable not-rely-on-time */
+
 import {Test} from "forge-std/Test.sol";
 import {ForkingManager} from "../contracts/ForkingManager.sol";
 import {ForkableBridge} from "../contracts/ForkableBridge.sol";
@@ -73,12 +75,14 @@ contract ForkingManagerTest is Test {
         address(new ForkonomicToken());
     address public disputeContract =
         address(0x1234567890123456789012345678901234567894);
-    bytes public disputeCall = "0x34567890129";
+    bytes32 public disputeContent = "0x34567890129";
+    bool public isL1 = true;
 
     ForkingManager.DisputeData public disputeData =
         IForkingManager.DisputeData({
             disputeContract: disputeContract,
-            disputeCall: disputeCall
+            disputeContent: disputeContent,
+            isL1: isL1
         });
 
     event Transfer(address indexed from, address indexed to, uint256 tokenId);
@@ -199,7 +203,8 @@ contract ForkingManagerTest is Test {
         forkmanager.initiateFork(
             IForkingManager.DisputeData({
                 disputeContract: disputeContract,
-                disputeCall: disputeCall
+                disputeContent: disputeContent,
+                isL1: isL1 
             }),
             IForkingManager.NewImplementations({
                 bridgeImplementation: newBridgeImplementation,
@@ -227,7 +232,8 @@ contract ForkingManagerTest is Test {
         forkmanager.initiateFork(
             IForkingManager.DisputeData({
                 disputeContract: disputeContract,
-                disputeCall: disputeCall
+                disputeContent: disputeContent,
+                isL1: isL1
             }),
             IForkingManager.NewImplementations({
                 bridgeImplementation: newBridgeImplementation,
@@ -421,17 +427,18 @@ contract ForkingManagerTest is Test {
         );
         skip(forkmanager.forkPreparationTime() + 1);
         forkmanager.executeFork();
-
         (
+            bool receivedIsL1,
             address receivedDisputeContract,
-            bytes memory receivedDisputeCall
+            bytes32 receivedDisputeContent
         ) = ForkingManager(forkmanager).disputeData();
         uint256 receivedExecutionTime = ForkingManager(forkmanager)
             .executionTimeForProposal();
 
         // Assert the dispute contract and call stored in the ForkingManager match the ones we provided
         assertEq(receivedDisputeContract, disputeContract);
-        assertEq(receivedDisputeCall, disputeCall);
+        assertEq(receivedDisputeContent, disputeContent);
+        assertEq(receivedIsL1, isL1);
         assertEq(
             receivedExecutionTime,
             testTimestamp + forkmanager.forkPreparationTime()
@@ -504,7 +511,7 @@ contract ForkingManagerTest is Test {
         forkonomicToken.mint(address(this), 3 * arbitrationFee);
 
         // Call the initiateFork function to create a new fork
-        disputeData.disputeCall = "0x1";
+        disputeData.disputeContent = "0x1";
         forkmanager.initiateFork(
             disputeData,
             IForkingManager.NewImplementations({
@@ -517,7 +524,7 @@ contract ForkingManagerTest is Test {
                 forkID: newForkID
             })
         );
-        disputeData.disputeCall = "0x2";
+        disputeData.disputeContent = "0x2";
         vm.expectRevert(bytes("ForkingManager: fork pending"));
         forkmanager.initiateFork(
             disputeData,
