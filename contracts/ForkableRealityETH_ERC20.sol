@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.20;
 
-import "./mixin/BalanceHolder_ERC20.sol";
+import "./lib/reality-eth/BalanceHolder_ERC20.sol";
 
 import "./interfaces/IForkableRealityETH.sol";
 

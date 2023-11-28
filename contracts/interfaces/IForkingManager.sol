@@ -4,11 +4,13 @@ pragma solidity ^0.8.20;
 import {IForkableStructure} from "./IForkableStructure.sol";
 
 interface IForkingManager is IForkableStructure {
+
     // Dispute contract and call to identify the dispute
     // that will be used to initiate/justify the fork
     struct DisputeData {
+        bool isL1;
         address disputeContract;
-        bytes disputeCall;
+        bytes32 disputeContent;
     }
 
     // Struct containing the addresses of the new implementations
@@ -21,6 +23,18 @@ interface IForkingManager is IForkableStructure {
         address verifier;
         uint64 forkID;
     }
+
+    function zkEVM() external returns (address);
+    function bridge() external returns (address);
+    function forkonomicToken() external returns (address);
+    function globalExitRoot() external returns (address);
+    function arbitrationFee() external returns (uint256);
+    function disputeData() external returns (bool isL1, address disputeContract, bytes32 disputeContent);
+    function executionTimeForProposal() external returns (uint256);
+
+    function isForkingInitiated() external returns (bool);
+    function isForkingExecuted() external returns (bool);
+    function canFork() external returns (bool);
 
     // Struct that holds an address pair used to store the new child contracts
     struct AddressPair {
@@ -46,4 +60,10 @@ interface IForkingManager is IForkableStructure {
         uint256 _arbitrationFee,
         address _chainIdManager
     ) external;
+
+    function initiateFork(
+        DisputeData memory _disputeData,
+        NewImplementations calldata newImplementations
+    ) external;
+
 }

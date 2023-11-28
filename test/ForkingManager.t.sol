@@ -1,5 +1,7 @@
 pragma solidity ^0.8.20;
 
+/* solhint-disable not-rely-on-time */
+
 import {Test} from "forge-std/Test.sol";
 import {ForkingManager} from "../contracts/ForkingManager.sol";
 import {ForkableBridge} from "../contracts/ForkableBridge.sol";
@@ -73,12 +75,14 @@ contract ForkingManagerTest is Test {
         address(new ForkonomicToken());
     address public disputeContract =
         address(0x1234567890123456789012345678901234567894);
-    bytes public disputeCall = "0x34567890129";
+    bytes32 public disputeContent = "0x34567890129";
+    bool public isL1 = true;
 
     ForkingManager.DisputeData public disputeData =
         IForkingManager.DisputeData({
             disputeContract: disputeContract,
-            disputeCall: disputeCall
+            disputeContent: disputeContent,
+            isL1: isL1
         });
 
     event Transfer(address indexed from, address indexed to, uint256 tokenId);
@@ -193,13 +197,62 @@ contract ForkingManagerTest is Test {
         );
     }
 
+    function testForkingStatusFunctions() public {
+
+        assertFalse(forkmanager.isForkingInitiated());
+        assertFalse(forkmanager.isForkingExecuted());
+        assertTrue(forkmanager.canFork());
+
+        // Mint and approve the arbitration fee for the test contract
+        forkonomicToken.approve(address(forkmanager), arbitrationFee);
+        vm.prank(address(this));
+        forkonomicToken.mint(address(this), arbitrationFee);
+
+        vm.expectEmit(true, true, true, true, address(forkonomicToken));
+        emit Transfer(
+            address(this),
+            address(forkmanager),
+            uint256(arbitrationFee)
+        );
+
+        forkmanager.initiateFork(
+            IForkingManager.DisputeData({
+                disputeContract: disputeContract,
+                disputeContent: disputeContent,
+                isL1: isL1
+            }),
+            IForkingManager.NewImplementations({
+                bridgeImplementation: newBridgeImplementation,
+                zkEVMImplementation: newZkevmImplementation,
+                forkonomicTokenImplementation: newForkonomicTokenImplementation,
+                forkingManagerImplementation: newForkmanagerImplementation,
+                globalExitRootImplementation: newGlobalExitRootImplementation,
+                verifier: newVerifierImplementation,
+                forkID: newForkID
+            })
+        );
+
+        assertTrue(forkmanager.isForkingInitiated());
+        assertFalse(forkmanager.isForkingExecuted());
+        assertFalse(forkmanager.canFork());
+
+        vm.warp(block.timestamp + forkmanager.forkPreparationTime() + 1);
+        forkmanager.executeFork();
+
+        assertTrue(forkmanager.isForkingInitiated());
+        assertTrue(forkmanager.isForkingExecuted());
+        assertFalse(forkmanager.canFork());
+
+    }
+
     function testInitiateForkChargesFees() public {
         // Call the initiateFork function to create a new fork
         vm.expectRevert(bytes("ERC20: insufficient allowance"));
         forkmanager.initiateFork(
             IForkingManager.DisputeData({
                 disputeContract: disputeContract,
-                disputeCall: disputeCall
+                disputeContent: disputeContent,
+                isL1: isL1 
             }),
             IForkingManager.NewImplementations({
                 bridgeImplementation: newBridgeImplementation,
@@ -227,7 +280,8 @@ contract ForkingManagerTest is Test {
         forkmanager.initiateFork(
             IForkingManager.DisputeData({
                 disputeContract: disputeContract,
-                disputeCall: disputeCall
+                disputeContent: disputeContent,
+                isL1: isL1
             }),
             IForkingManager.NewImplementations({
                 bridgeImplementation: newBridgeImplementation,
@@ -398,6 +452,159 @@ contract ForkingManagerTest is Test {
         }
     }
 
+    function testInitiateForkAndExecuteWorksWithoutChangingImplementations() public {
+        // Mint and approve the arbitration fee for the test contract
+        forkonomicToken.approve(address(forkmanager), arbitrationFee);
+        vm.prank(address(this));
+        forkonomicToken.mint(address(this), arbitrationFee);
+
+        IForkingManager.NewImplementations memory noNewImplementations;
+        // Call the initiateFork function to create a new fork
+        forkmanager.initiateFork(
+            disputeData,
+            noNewImplementations
+        );
+        vm.warp(block.timestamp + forkmanager.forkPreparationTime() + 1);
+        forkmanager.executeFork();
+
+        // Fetch the children from the ForkingManager
+        (address childForkmanager1, address childForkmanager2) = forkmanager
+            .getChildren();
+
+        // Assert that the fork managers implementation match the ones we provided
+        assertEq(
+            bytesToAddress(
+                vm.load(address(childForkmanager1), _IMPLEMENTATION_SLOT)
+            ),
+            forkmanagerImplementation
+        );
+        assertEq(
+            bytesToAddress(
+                vm.load(address(childForkmanager2), _IMPLEMENTATION_SLOT)
+            ),
+            forkmanagerImplementation
+        );
+
+        {
+            // Fetch the children from the ForkableBridge contract
+            (address childBridge1, address childBridge2) = bridge.getChildren();
+
+            // Assert that the bridges match the ones we provided
+            assertEq(
+                bytesToAddress(
+                    vm.load(address(childBridge1), _IMPLEMENTATION_SLOT)
+                ),
+                bridgeImplementation
+            );
+            assertEq(
+                bytesToAddress(
+                    vm.load(address(childBridge2), _IMPLEMENTATION_SLOT)
+                ),
+                bridgeImplementation
+            );
+        }
+        {
+            // Fetch the children from the ForkableZkEVM contract
+            (address childZkevm1, address childZkevm2) = zkevm.getChildren();
+
+            // Assert that the ZkEVM contracts match the ones we provided
+            assertEq(
+                bytesToAddress(
+                    vm.load(address(childZkevm1), _IMPLEMENTATION_SLOT)
+                ),
+                zkevmImplementation
+            );
+            assertEq(
+                bytesToAddress(
+                    vm.load(address(childZkevm2), _IMPLEMENTATION_SLOT)
+                ),
+                zkevmImplementation
+            );
+            (address childBridge1, address childBridge2) = bridge.getChildren();
+            assertEq(
+                ForkableBridge(childBridge1).polygonZkEVMaddress(),
+                childZkevm1
+            );
+            assertEq(
+                ForkableBridge(childBridge2).polygonZkEVMaddress(),
+                childZkevm2
+            );
+            assertEq(ForkableZkEVM(childZkevm1).chainID(), firstChainId);
+            assertEq(ForkableZkEVM(childZkevm2).chainID(), secondChainId);
+            assertEq(
+                ForkableZkEVM(childZkevm1).forkID(),
+                ForkableZkEVM(zkevm).forkID()
+            );
+            assertEq(
+                ForkableZkEVM(childZkevm2).forkID(),
+                ForkableZkEVM(zkevm).forkID()
+            );
+        }
+        {
+            // Fetch the children from the ForkonomicToken contract
+            (
+                address childForkonomicToken1,
+                address childForkonomicToken2
+            ) = forkonomicToken.getChildren();
+
+            // Assert that the forkonomic tokens match the ones we provided
+            assertEq(
+                bytesToAddress(
+                    vm.load(
+                        address(childForkonomicToken1),
+                        _IMPLEMENTATION_SLOT
+                    )
+                ),
+                forkonomicTokenImplementation
+            );
+            assertEq(
+                bytesToAddress(
+                    vm.load(
+                        address(childForkonomicToken2),
+                        _IMPLEMENTATION_SLOT
+                    )
+                ),
+                forkonomicTokenImplementation
+            );
+        }
+        {
+            // Fetch the children from the ForkonomicToken contract
+            (
+                address childGlobalExitRoot1,
+                address childGlobalExitRoot2
+            ) = globalExitRoot.getChildren();
+
+            // Assert that the forkonomic tokens match the ones we provided
+            assertEq(
+                bytesToAddress(
+                    vm.load(address(childGlobalExitRoot1), _IMPLEMENTATION_SLOT)
+                ),
+                globalExitRootImplementation
+            );
+            assertEq(
+                bytesToAddress(
+                    vm.load(address(childGlobalExitRoot2), _IMPLEMENTATION_SLOT)
+                ),
+                globalExitRootImplementation
+            );
+
+            assertEq(
+                ForkableGlobalExitRoot(childGlobalExitRoot1).forkmanager(),
+                childForkmanager1
+            );
+        }
+        {
+            assertEq(
+                chainIdManagerAddress,
+                ForkingManager(childForkmanager1).chainIdManager()
+            );
+            assertEq(
+                chainIdManagerAddress,
+                ForkingManager(childForkmanager2).chainIdManager()
+            );
+        }
+    }
+
     function testInitiateForkSetsDispuateDataAndExecutionTime() public {
         // Mint and approve the arbitration fee for the test contract
         forkonomicToken.approve(address(forkmanager), arbitrationFee);
@@ -421,17 +628,18 @@ contract ForkingManagerTest is Test {
         );
         skip(forkmanager.forkPreparationTime() + 1);
         forkmanager.executeFork();
-
         (
+            bool receivedIsL1,
             address receivedDisputeContract,
-            bytes memory receivedDisputeCall
+            bytes32 receivedDisputeContent
         ) = ForkingManager(forkmanager).disputeData();
         uint256 receivedExecutionTime = ForkingManager(forkmanager)
             .executionTimeForProposal();
 
         // Assert the dispute contract and call stored in the ForkingManager match the ones we provided
         assertEq(receivedDisputeContract, disputeContract);
-        assertEq(receivedDisputeCall, disputeCall);
+        assertEq(receivedDisputeContent, disputeContent);
+        assertEq(receivedIsL1, isL1);
         assertEq(
             receivedExecutionTime,
             testTimestamp + forkmanager.forkPreparationTime()
@@ -504,7 +712,7 @@ contract ForkingManagerTest is Test {
         forkonomicToken.mint(address(this), 3 * arbitrationFee);
 
         // Call the initiateFork function to create a new fork
-        disputeData.disputeCall = "0x1";
+        disputeData.disputeContent = "0x1";
         forkmanager.initiateFork(
             disputeData,
             IForkingManager.NewImplementations({
@@ -517,7 +725,7 @@ contract ForkingManagerTest is Test {
                 forkID: newForkID
             })
         );
-        disputeData.disputeCall = "0x2";
+        disputeData.disputeContent = "0x2";
         vm.expectRevert(bytes("ForkingManager: fork pending"));
         forkmanager.initiateFork(
             disputeData,

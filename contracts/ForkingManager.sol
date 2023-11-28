@@ -41,7 +41,6 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     DisputeData public disputeData;
     NewImplementations public proposedImplementations;
     uint256 public executionTimeForProposal = 0;
-
     uint256 public immutable forkPreparationTime = 1 weeks;
 
     /// @inheritdoc IForkingManager
@@ -62,6 +61,19 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         arbitrationFee = _arbitrationFee;
         chainIdManager = _chainIdManager;
         ForkableStructure.initialize(address(this), _parentContract);
+    }
+
+    function isForkingInitiated() external view returns (bool) {
+        return (executionTimeForProposal > 0);    
+    } 
+
+    function isForkingExecuted() external view returns (bool) {
+        return (children[0] != address(0) || children[1] != address(0));
+    }
+
+    // TODO: If there is any other reason a fork can be prevented, eg the contract can be frozen by governance, add it here.
+    function canFork() external view returns (bool) {
+        return (executionTimeForProposal == 0);
     }
 
     /**
@@ -165,7 +177,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             );
             initializePackedParameters.chainID = ChainIdManager(chainIdManager)
                 .getNextUsableChainId();
-            initializePackedParameters.forkID = newImplementations.forkID;
+            initializePackedParameters.forkID = newImplementations.forkID > 0 ? newImplementations.forkID : IPolygonZkEVM(zkEVM).forkID();
             IForkableZkEVM(newInstances.zkEVM.two).initialize(
                 newInstances.forkingManager.two,
                 zkEVM,
@@ -260,4 +272,5 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             newInstances.bridge.two
         );
     }
+
 }
