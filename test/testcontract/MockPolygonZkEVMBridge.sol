@@ -5,14 +5,12 @@ pragma solidity ^0.8.20;
 import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 
 contract MockPolygonZkEVMBridge {
-
     function bridgeMessage(
         uint32 destinationNetwork,
         address destinationAddress,
         bool forceUpdateGlobalExitRoot,
         bytes calldata metadata
-    ) public virtual payable {
-    }
+    ) public payable virtual {}
 
     function bridgeAsset(
         uint32 destinationNetwork,
@@ -21,14 +19,17 @@ contract MockPolygonZkEVMBridge {
         address token,
         bool forceUpdateGlobalExitRoot,
         bytes calldata permitData
-    )
-        public
-        payable {
-    }
+    ) public payable {}
 
     receive() external payable {}
 
-    function fakeClaimMessage(address originAddress, uint32 originNetwork, address destinationAddress, bytes memory metadata, uint256 amount) external {
+    function fakeClaimMessage(
+        address originAddress,
+        uint32 originNetwork,
+        address destinationAddress,
+        bytes memory metadata,
+        uint256 amount
+    ) external {
         /* solhint-disable avoid-low-level-calls */
         (bool success, ) = destinationAddress.call{value: amount}(
             abi.encodeCall(
@@ -38,5 +39,4 @@ contract MockPolygonZkEVMBridge {
         );
         require(success, "Call failed");
     }
-
 }

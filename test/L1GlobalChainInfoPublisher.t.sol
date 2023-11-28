@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 /* solhint-disable reentrancy */
 /* solhint-disable quotes */
 
-import { Vm } from 'forge-std/Vm.sol';
+import {Vm} from "forge-std/Vm.sol";
 
 import {Test} from "forge-std/Test.sol";
 import {Arbitrator} from "../contracts/lib/reality-eth/Arbitrator.sol";
@@ -47,7 +47,6 @@ import {ChainIdManager} from "../contracts/ChainIdManager.sol";
 import {ForkableZkEVM} from "../contracts/ForkableZkEVM.sol";
 
 contract L1GlobalChainInfoPublisherTest is Test {
-
     ForkableBridge public bridge;
     ForkonomicToken public forkonomicToken;
     ForkingManager public forkmanager;
@@ -86,8 +85,8 @@ contract L1GlobalChainInfoPublisherTest is Test {
     bytes32[32] public depositTree;
     address public admin = address(0xad);
     uint64 public initialChainId = 1;
-    uint64 public firstChainId = initialChainId+1;
-    uint64 public secondChainId = initialChainId+2;
+    uint64 public firstChainId = initialChainId + 1;
+    uint64 public secondChainId = initialChainId + 2;
 
     // Setup new implementations for the fork
     address public newBridgeImplementation = address(new ForkableBridge());
@@ -104,8 +103,10 @@ contract L1GlobalChainInfoPublisherTest is Test {
     bytes32 public disputeContent = "0x34567890129";
     bool public isL1 = true;
 
-    L1GlobalChainInfoPublisher public l1GlobalChainInfoPublisher = new L1GlobalChainInfoPublisher();
-    L2ChainInfo public l2ChainInfo = new L2ChainInfo(address(l2Bridge), address(l1GlobalChainInfoPublisher));
+    L1GlobalChainInfoPublisher public l1GlobalChainInfoPublisher =
+        new L1GlobalChainInfoPublisher();
+    L2ChainInfo public l2ChainInfo =
+        new L2ChainInfo(address(l2Bridge), address(l1GlobalChainInfoPublisher));
 
     ForkingManager.DisputeData public disputeData =
         IForkingManager.DisputeData({
@@ -121,7 +122,6 @@ contract L1GlobalChainInfoPublisherTest is Test {
     }
 
     function setUp() public {
-
         bridgeImplementation = address(new ForkableBridge());
         bridge = ForkableBridge(
             address(
@@ -172,7 +172,7 @@ contract L1GlobalChainInfoPublisherTest is Test {
                 )
             )
         );
-        ChainIdManager chainIdManager= new ChainIdManager(initialChainId);
+        ChainIdManager chainIdManager = new ChainIdManager(initialChainId);
         chainIdManagerAddress = address(chainIdManager);
         globalExitRoot.initialize(
             address(forkmanager),
@@ -236,24 +236,39 @@ contract L1GlobalChainInfoPublisherTest is Test {
     }
 
     function testChainInfoPublishedBeforeFork() public {
-
         // vm.recordLogs();
-        l1GlobalChainInfoPublisher.updateL2ChainInfo(address(bridge), address(l2ChainInfo), address(0), 10);
+        l1GlobalChainInfoPublisher.updateL2ChainInfo(
+            address(bridge),
+            address(l2ChainInfo),
+            address(0),
+            10
+        );
         // Vm.Log[] memory entries = vm.getRecordedLogs();
         // TODO: Check the logs
-
     }
 
     function testChainInfoPublishedBeforeForkBreaksWithBrokenBridge() public {
         address garbageAddress = address(0xabcd01);
         vm.expectRevert();
-        l1GlobalChainInfoPublisher.updateL2ChainInfo(garbageAddress, address(l2ChainInfo), address(0), 10);
+        l1GlobalChainInfoPublisher.updateL2ChainInfo(
+            garbageAddress,
+            address(l2ChainInfo),
+            address(0),
+            10
+        );
     }
 
-    function testChainInfoPublishedBeforeForkRevertsWithBrokenAncestor() public {
+    function testChainInfoPublishedBeforeForkRevertsWithBrokenAncestor()
+        public
+    {
         address garbageAddress = address(0xabcd01);
         vm.expectRevert("Ancestor not found");
-        l1GlobalChainInfoPublisher.updateL2ChainInfo(address(bridge), address(l2ChainInfo), garbageAddress, 10);
+        l1GlobalChainInfoPublisher.updateL2ChainInfo(
+            address(bridge),
+            address(l2ChainInfo),
+            garbageAddress,
+            10
+        );
     }
 
     function testChainInfoPublishedAfterForks() public {
@@ -281,28 +296,57 @@ contract L1GlobalChainInfoPublisherTest is Test {
 
         // The current bridge should no longer work
         vm.expectRevert("No changes after forking");
-        l1GlobalChainInfoPublisher.updateL2ChainInfo(address(bridge), address(l2ChainInfo), address(0), uint256(10));
+        l1GlobalChainInfoPublisher.updateL2ChainInfo(
+            address(bridge),
+            address(l2ChainInfo),
+            address(0),
+            uint256(10)
+        );
 
-        (address forkmanager1Addrg, address forkmanager2Addr) = forkmanager.getChildren();
+        (address forkmanager1Addrg, address forkmanager2Addr) = forkmanager
+            .getChildren();
         address bridge1 = IForkingManager(forkmanager1Addrg).bridge();
         address bridge2 = IForkingManager(forkmanager2Addr).bridge();
 
         // The new bridges should work though
-        l1GlobalChainInfoPublisher.updateL2ChainInfo(bridge1, address(l2ChainInfo), address(0), uint256(10));
-        l1GlobalChainInfoPublisher.updateL2ChainInfo(bridge2, address(l2ChainInfo), address(0), uint256(10));
+        l1GlobalChainInfoPublisher.updateL2ChainInfo(
+            bridge1,
+            address(l2ChainInfo),
+            address(0),
+            uint256(10)
+        );
+        l1GlobalChainInfoPublisher.updateL2ChainInfo(
+            bridge2,
+            address(l2ChainInfo),
+            address(0),
+            uint256(10)
+        );
 
-        l1GlobalChainInfoPublisher.updateL2ChainInfo(bridge1, address(l2ChainInfo), address(forkmanager), uint256(10));
-        l1GlobalChainInfoPublisher.updateL2ChainInfo(bridge2, address(l2ChainInfo), address(forkmanager), uint256(10));
+        l1GlobalChainInfoPublisher.updateL2ChainInfo(
+            bridge1,
+            address(l2ChainInfo),
+            address(forkmanager),
+            uint256(10)
+        );
+        l1GlobalChainInfoPublisher.updateL2ChainInfo(
+            bridge2,
+            address(l2ChainInfo),
+            address(forkmanager),
+            uint256(10)
+        );
 
         ForkingManager forkmanager2 = ForkingManager(forkmanager2Addr);
-        ForkonomicToken forkonomicToken2 = ForkonomicToken(forkmanager2.forkonomicToken());
+        ForkonomicToken forkonomicToken2 = ForkonomicToken(
+            forkmanager2.forkonomicToken()
+        );
 
         // Next we'll fork with a dispute
-        ForkingManager.DisputeData memory disputeData2 = IForkingManager.DisputeData({
-            disputeContract: address(0xabab),
-            disputeContent: bytes32("0xbaba"),
-            isL1: true
-        });
+        ForkingManager.DisputeData memory disputeData2 = IForkingManager
+            .DisputeData({
+                disputeContract: address(0xabab),
+                disputeContent: bytes32("0xbaba"),
+                isL1: true
+            });
 
         IForkingManager.NewImplementations memory newImplementations2; // Empty one to simulate a question
 
@@ -311,29 +355,49 @@ contract L1GlobalChainInfoPublisherTest is Test {
         vm.prank(address(this));
 
         // Call the initiateFork function to create a new fork
-        forkmanager2.initiateFork(
-            disputeData2,
-            newImplementations2
-        );
+        forkmanager2.initiateFork(disputeData2, newImplementations2);
         skip(forkmanager.forkPreparationTime() + 1);
         forkmanager2.executeFork();
 
         vm.expectRevert("No changes after forking");
-        l1GlobalChainInfoPublisher.updateL2ChainInfo(bridge2, address(l2ChainInfo), address(forkmanager), uint256(10));
+        l1GlobalChainInfoPublisher.updateL2ChainInfo(
+            bridge2,
+            address(l2ChainInfo),
+            address(forkmanager),
+            uint256(10)
+        );
 
         (, address forkmanager22Addr) = forkmanager2.getChildren();
         // address bridge21 = IForkingManager(forkmanager21Addrg).bridge();
         address bridge22 = IForkingManager(forkmanager22Addr).bridge();
 
-        l1GlobalChainInfoPublisher.updateL2ChainInfo(bridge22, address(l2ChainInfo), address(forkmanager), uint256(10));
+        l1GlobalChainInfoPublisher.updateL2ChainInfo(
+            bridge22,
+            address(l2ChainInfo),
+            address(forkmanager),
+            uint256(10)
+        );
 
         vm.expectRevert("Ancestor not found");
-        l1GlobalChainInfoPublisher.updateL2ChainInfo(bridge22, address(l2ChainInfo), address(forkmanager), uint256(0));
+        l1GlobalChainInfoPublisher.updateL2ChainInfo(
+            bridge22,
+            address(l2ChainInfo),
+            address(forkmanager),
+            uint256(0)
+        );
         vm.expectRevert("Ancestor not found");
-        l1GlobalChainInfoPublisher.updateL2ChainInfo(bridge22, address(l2ChainInfo), address(forkmanager), uint256(1));
+        l1GlobalChainInfoPublisher.updateL2ChainInfo(
+            bridge22,
+            address(l2ChainInfo),
+            address(forkmanager),
+            uint256(1)
+        );
 
-        l1GlobalChainInfoPublisher.updateL2ChainInfo(bridge22, address(l2ChainInfo), address(forkmanager), uint256(2));
-
+        l1GlobalChainInfoPublisher.updateL2ChainInfo(
+            bridge22,
+            address(l2ChainInfo),
+            address(forkmanager),
+            uint256(2)
+        );
     }
-
 }

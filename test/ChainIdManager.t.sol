@@ -75,13 +75,10 @@ contract ChainIdManagerTest is Test {
         );
     }
 
-    function testCheckGasBurn() view public {
+    function testCheckGasBurn() public view {
         uint256 initialGasLeft = gasleft();
         chainIdManager.burnGas();
         uint256 finalGasLeft = gasleft();
-        assert(
-            initialGasLeft - finalGasLeft >=
-            chainIdManager.gasBurnAmount()
-        );
+        assert(initialGasLeft - finalGasLeft >= chainIdManager.gasBurnAmount());
     }
 }
