@@ -53,7 +53,6 @@ contract AdjudicationFramework is BalanceHolder, MoneyBoxUser {
     // AllowList of acceptable arbitrators
     mapping(address => bool) public arbitrators;
 
-    // TODO: Check if we need this, if we do put it in a shareable place to go with the l1 realityeth
     enum PropositionType {
         NONE,
         ADD_ARBITRATOR,
