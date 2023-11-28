@@ -17,7 +17,7 @@ contract ForkableStructure is IForkableStructure, Initializable {
     // but this would make the initialization more complex due to proxy construction.
     mapping(uint256 => address) public children;
 
-    modifier onlyBeforeCreatingChild1() {
+    modifier onlyBeforeForking() {
         require(children[0] == address(0x0), "No changes after forking");
         _;
     }

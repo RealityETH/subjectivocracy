@@ -199,7 +199,7 @@ contract ForkableBridge is
         public
         payable
         override(PolygonZkEVMBridge, IPolygonZkEVMBridge)
-        onlyBeforeCreatingChild1
+        onlyBeforeForking
     {
         PolygonZkEVMBridge.bridgeAsset(
             destinationNetwork,
@@ -221,7 +221,7 @@ contract ForkableBridge is
         payable
         virtual
         override(PolygonZkEVMBridge, IPolygonZkEVMBridge)
-        onlyBeforeCreatingChild1
+        onlyBeforeForking
     {
         PolygonZkEVMBridge.bridgeMessage(
             destinationNetwork,
@@ -245,7 +245,7 @@ contract ForkableBridge is
     )
         public
         override(IPolygonZkEVMBridge, PolygonZkEVMBridge)
-        onlyBeforeCreatingChild1
+        onlyBeforeForking
     {
         PolygonZkEVMBridge.claimMessage(
             smtProof,
@@ -275,7 +275,7 @@ contract ForkableBridge is
     )
         public
         override(IPolygonZkEVMBridge, PolygonZkEVMBridge)
-        onlyBeforeCreatingChild1
+        onlyBeforeForking
     {
         PolygonZkEVMBridge.claimAsset(
             smtProof,

@@ -48,7 +48,7 @@ contract ForkableZkEVM is ForkableStructure, IForkableZkEVM, PolygonZkEVM {
     }
 
     ////////////////////////////////////////////////////////////////////////////
-    // For the following functions a modifier called: onlyBeforeCreatingChild1 is added.
+    // For the following functions a modifier called: onlyBeforeForking is added.
     // This ensure that the functions do not change the consolidated state after forking.
     ///////////////////////////////////////////////////////////////////////////
 
@@ -59,7 +59,7 @@ contract ForkableZkEVM is ForkableStructure, IForkableZkEVM, PolygonZkEVM {
         bytes32 newLocalExitRoot,
         bytes32 newStateRoot,
         bytes32[24] calldata proof
-    ) public override onlyBeforeCreatingChild1 {
+    ) public override onlyBeforeForking {
         PolygonZkEVM.verifyBatches(
             pendingStateNum,
             initNumBatch,
@@ -77,7 +77,7 @@ contract ForkableZkEVM is ForkableStructure, IForkableZkEVM, PolygonZkEVM {
         bytes32 newLocalExitRoot,
         bytes32 newStateRoot,
         bytes32[24] calldata proof
-    ) public override onlyBeforeCreatingChild1 {
+    ) public override onlyBeforeForking {
         PolygonZkEVM.verifyBatchesTrustedAggregator(
             pendingStateNum,
             initNumBatch,
@@ -90,7 +90,7 @@ contract ForkableZkEVM is ForkableStructure, IForkableZkEVM, PolygonZkEVM {
 
     function consolidatePendingState(
         uint64 pendingStateNum
-    ) public override onlyBeforeCreatingChild1 {
+    ) public override onlyBeforeForking {
         PolygonZkEVM.consolidatePendingState(pendingStateNum);
     }
 
@@ -102,7 +102,7 @@ contract ForkableZkEVM is ForkableStructure, IForkableZkEVM, PolygonZkEVM {
         bytes32 newLocalExitRoot,
         bytes32 newStateRoot,
         bytes32[24] calldata proof
-    ) public override onlyBeforeCreatingChild1 {
+    ) public override onlyBeforeForking {
         PolygonZkEVM.overridePendingState(
             initPendingStateNum,
             finalPendingStateNum,
@@ -119,7 +119,7 @@ contract ForkableZkEVM is ForkableStructure, IForkableZkEVM, PolygonZkEVM {
     function sequenceBatches(
         BatchData[] calldata batches,
         address l2Coinbase
-    ) public override onlyBeforeCreatingChild1 {
+    ) public override onlyBeforeForking {
         PolygonZkEVM.sequenceBatches(batches, l2Coinbase);
     }
 
