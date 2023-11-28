@@ -50,7 +50,7 @@ library CreateChildren {
             )
         );
         if (address(implementation) == address(0)) {
-            implementation = _getImplementation(); 
+            implementation = _getImplementation();
         }
         // Fork 2 can introduce a new implementation, if a different implementation contract
         // is passed in

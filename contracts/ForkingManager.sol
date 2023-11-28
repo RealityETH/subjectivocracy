@@ -64,8 +64,8 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     }
 
     function isForkingInitiated() external view returns (bool) {
-        return (executionTimeForProposal > 0);    
-    } 
+        return (executionTimeForProposal > 0);
+    }
 
     function isForkingExecuted() external view returns (bool) {
         return (children[0] != address(0) || children[1] != address(0));
@@ -177,7 +177,9 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             );
             initializePackedParameters.chainID = ChainIdManager(chainIdManager)
                 .getNextUsableChainId();
-            initializePackedParameters.forkID = newImplementations.forkID > 0 ? newImplementations.forkID : IPolygonZkEVM(zkEVM).forkID();
+            initializePackedParameters.forkID = newImplementations.forkID > 0
+                ? newImplementations.forkID
+                : IPolygonZkEVM(zkEVM).forkID();
             IForkableZkEVM(newInstances.zkEVM.two).initialize(
                 newInstances.forkingManager.two,
                 zkEVM,
@@ -272,5 +274,4 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             newInstances.bridge.two
         );
     }
-
 }

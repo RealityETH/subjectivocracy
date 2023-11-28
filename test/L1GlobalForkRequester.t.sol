@@ -23,15 +23,14 @@ import {L1GlobalForkRequester} from "../contracts/L1GlobalForkRequester.sol";
 import {ExampleMoneyBoxUser} from "./testcontract/ExampleMoneyBoxUser.sol";
 
 contract L1GlobalForkRequesterTest is Test {
-
-    L1GlobalForkRequester public l1GlobalForkRequester = new L1GlobalForkRequester();
+    L1GlobalForkRequester public l1GlobalForkRequester =
+        new L1GlobalForkRequester();
 
     ForkableBridge public bridge;
     ForkonomicToken public forkonomicToken;
     ForkingManager public forkmanager;
     ForkableZkEVM public zkevm;
     ForkableGlobalExitRoot public globalExitRoot;
-
 
     address public bridgeImplementation;
     address public forkmanagerImplementation;
@@ -201,7 +200,6 @@ contract L1GlobalForkRequesterTest is Test {
     }
 
     function testReceivePayment() public {
-
         uint256 fee = forkmanager.arbitrationFee();
 
         ExampleMoneyBoxUser exampleMoneyBoxUser = new ExampleMoneyBoxUser();
@@ -210,7 +208,11 @@ contract L1GlobalForkRequesterTest is Test {
         address l2Requester = address(0xbabe01);
         bytes32 requestId = bytes32("0xc0ffee01");
         bytes32 salt = keccak256(abi.encodePacked(l2Requester, requestId));
-        address moneyBoxAddress = exampleMoneyBoxUser.calculateMoneyBoxAddress(address(l1GlobalForkRequester), salt, address(forkonomicToken));
+        address moneyBoxAddress = exampleMoneyBoxUser.calculateMoneyBoxAddress(
+            address(l1GlobalForkRequester),
+            salt,
+            address(forkonomicToken)
+        );
 
         vm.prank(address(this));
         forkonomicToken.mint(address(this), fee);
@@ -218,20 +220,25 @@ contract L1GlobalForkRequesterTest is Test {
         vm.prank(address(this));
         forkonomicToken.transfer(moneyBoxAddress, fee);
 
-        assertEq(address(forkmanager.forkonomicToken()), address(forkonomicToken)); 
+        assertEq(
+            address(forkmanager.forkonomicToken()),
+            address(forkonomicToken)
+        );
         assertTrue(forkmanager.canFork());
         assertFalse(forkmanager.isForkingInitiated());
         assertFalse(forkmanager.isForkingExecuted());
 
-        l1GlobalForkRequester.handlePayment(address(forkonomicToken), l2Requester, requestId);
+        l1GlobalForkRequester.handlePayment(
+            address(forkonomicToken),
+            l2Requester,
+            requestId
+        );
 
         assertTrue(forkmanager.isForkingInitiated());
         assertFalse(forkmanager.isForkingExecuted());
-
     }
 
     function testReceiveInsufficientPayment() public {
-
         uint256 fee = forkmanager.arbitrationFee() - 1;
 
         ExampleMoneyBoxUser exampleMoneyBoxUser = new ExampleMoneyBoxUser();
@@ -240,7 +247,11 @@ contract L1GlobalForkRequesterTest is Test {
         address l2Requester = address(0xbabe01);
         bytes32 requestId = bytes32("0xc0ffee01");
         bytes32 salt = keccak256(abi.encodePacked(l2Requester, requestId));
-        address moneyBoxAddress = exampleMoneyBoxUser.calculateMoneyBoxAddress(address(l1GlobalForkRequester), salt, address(forkonomicToken));
+        address moneyBoxAddress = exampleMoneyBoxUser.calculateMoneyBoxAddress(
+            address(l1GlobalForkRequester),
+            salt,
+            address(forkonomicToken)
+        );
 
         vm.prank(address(this));
         forkonomicToken.mint(address(this), fee);
@@ -248,21 +259,34 @@ contract L1GlobalForkRequesterTest is Test {
         vm.prank(address(this));
         forkonomicToken.transfer(moneyBoxAddress, fee);
 
-        assertEq(address(forkmanager.forkonomicToken()), address(forkonomicToken)); 
+        assertEq(
+            address(forkmanager.forkonomicToken()),
+            address(forkonomicToken)
+        );
         assertTrue(forkmanager.canFork());
 
-        l1GlobalForkRequester.handlePayment(address(forkonomicToken), l2Requester, requestId);
+        l1GlobalForkRequester.handlePayment(
+            address(forkonomicToken),
+            l2Requester,
+            requestId
+        );
         assertFalse(forkmanager.isForkingInitiated());
 
-        (uint256 amount, uint256 amountRemainingY, uint256 amountRemainingN) = l1GlobalForkRequester.failedRequests(address(forkonomicToken), l2Requester, requestId);
+        (
+            uint256 amount,
+            uint256 amountRemainingY,
+            uint256 amountRemainingN
+        ) = l1GlobalForkRequester.failedRequests(
+                address(forkonomicToken),
+                l2Requester,
+                requestId
+            );
         assertEq(amount, fee);
         assertEq(amountRemainingY, 0);
         assertEq(amountRemainingN, 0);
-
     }
 
     function testHandleOtherRequestForksFirst() public {
-
         uint256 fee = forkmanager.arbitrationFee();
 
         ExampleMoneyBoxUser exampleMoneyBoxUser = new ExampleMoneyBoxUser();
@@ -271,7 +295,11 @@ contract L1GlobalForkRequesterTest is Test {
         address l2Requester = address(0xbabe01);
         bytes32 requestId = bytes32("0xc0ffee01");
         bytes32 salt = keccak256(abi.encodePacked(l2Requester, requestId));
-        address moneyBoxAddress = exampleMoneyBoxUser.calculateMoneyBoxAddress(address(l1GlobalForkRequester), salt, address(forkonomicToken));
+        address moneyBoxAddress = exampleMoneyBoxUser.calculateMoneyBoxAddress(
+            address(l1GlobalForkRequester),
+            salt,
+            address(forkonomicToken)
+        );
 
         vm.prank(address(this));
         forkonomicToken.mint(address(this), fee);
@@ -279,7 +307,10 @@ contract L1GlobalForkRequesterTest is Test {
         vm.prank(address(this));
         forkonomicToken.transfer(moneyBoxAddress, fee);
 
-        assertEq(address(forkmanager.forkonomicToken()), address(forkonomicToken)); 
+        assertEq(
+            address(forkmanager.forkonomicToken()),
+            address(forkonomicToken)
+        );
         assertTrue(forkmanager.canFork());
 
         {
@@ -290,47 +321,104 @@ contract L1GlobalForkRequesterTest is Test {
             forkonomicToken.approve(address(forkmanager), fee);
             // Assume the data contains the questionId and pass it directly to the forkmanager in the fork request
             IForkingManager.NewImplementations memory newImplementations;
-            IForkingManager.DisputeData memory disputeData = IForkingManager.DisputeData(false, address(this), requestId);
+            IForkingManager.DisputeData memory disputeData = IForkingManager
+                .DisputeData(false, address(this), requestId);
             forkmanager.initiateFork(disputeData, newImplementations);
         }
 
         // Our handlePayment will fail and leave our money sitting in failedRequests
-        uint256 balBeforeHandle = forkonomicToken.balanceOf(address(l1GlobalForkRequester));
+        uint256 balBeforeHandle = forkonomicToken.balanceOf(
+            address(l1GlobalForkRequester)
+        );
 
-        l1GlobalForkRequester.handlePayment(address(forkonomicToken), l2Requester, requestId);
-        (uint256 amount, uint256 amountRemainingY, uint256 amountRemainingN) = l1GlobalForkRequester.failedRequests(address(forkonomicToken), l2Requester, requestId);
+        l1GlobalForkRequester.handlePayment(
+            address(forkonomicToken),
+            l2Requester,
+            requestId
+        );
+        (
+            uint256 amount,
+            uint256 amountRemainingY,
+            uint256 amountRemainingN
+        ) = l1GlobalForkRequester.failedRequests(
+                address(forkonomicToken),
+                l2Requester,
+                requestId
+            );
         assertEq(amount, fee);
         assertEq(amountRemainingY, 0);
         assertEq(amountRemainingN, 0);
 
-        uint256 balAfterHandle = forkonomicToken.balanceOf(address(l1GlobalForkRequester));
+        uint256 balAfterHandle = forkonomicToken.balanceOf(
+            address(l1GlobalForkRequester)
+        );
         assertEq(balBeforeHandle + amount, balAfterHandle);
 
         vm.expectRevert("Token not forked");
-        l1GlobalForkRequester.splitTokensIntoChildTokens(address(forkonomicToken), l2Requester, requestId);
+        l1GlobalForkRequester.splitTokensIntoChildTokens(
+            address(forkonomicToken),
+            l2Requester,
+            requestId
+        );
 
         // Execute the other guy's fork
         skip(forkmanager.forkPreparationTime() + 1);
         forkmanager.executeFork();
 
         {
-            uint256 balBeforeSplit = forkonomicToken.balanceOf(address(l1GlobalForkRequester));
-            l1GlobalForkRequester.splitTokensIntoChildTokens(address(forkonomicToken), l2Requester, requestId);
-            uint256 balAfterSplit = forkonomicToken.balanceOf(address(l1GlobalForkRequester));
+            uint256 balBeforeSplit = forkonomicToken.balanceOf(
+                address(l1GlobalForkRequester)
+            );
+            l1GlobalForkRequester.splitTokensIntoChildTokens(
+                address(forkonomicToken),
+                l2Requester,
+                requestId
+            );
+            uint256 balAfterSplit = forkonomicToken.balanceOf(
+                address(l1GlobalForkRequester)
+            );
             assertEq(balAfterSplit + amount, balBeforeSplit);
         }
 
         // The children should now both have the funds we split
-        (address childToken1, address childToken2) = forkonomicToken.getChildren();
-        assertEq(ForkonomicToken(childToken1).balanceOf(address(l1GlobalForkRequester)), amount);
-        assertEq(ForkonomicToken(childToken2).balanceOf(address(l1GlobalForkRequester)), amount);
+        (address childToken1, address childToken2) = forkonomicToken
+            .getChildren();
+        assertEq(
+            ForkonomicToken(childToken1).balanceOf(
+                address(l1GlobalForkRequester)
+            ),
+            amount
+        );
+        assertEq(
+            ForkonomicToken(childToken2).balanceOf(
+                address(l1GlobalForkRequester)
+            ),
+            amount
+        );
 
         // Now we should be able to return the tokens on the child chain
-        l1GlobalForkRequester.returnTokens(address(childToken1), l2Requester, requestId);
-        (uint256 amountChild1, , ) = l1GlobalForkRequester.failedRequests(childToken1, l2Requester, requestId);
-        (uint256 amountChild2, , ) = l1GlobalForkRequester.failedRequests(childToken2, l2Requester, requestId);
+        l1GlobalForkRequester.returnTokens(
+            address(childToken1),
+            l2Requester,
+            requestId
+        );
+        (uint256 amountChild1, , ) = l1GlobalForkRequester.failedRequests(
+            childToken1,
+            l2Requester,
+            requestId
+        );
+        (uint256 amountChild2, , ) = l1GlobalForkRequester.failedRequests(
+            childToken2,
+            l2Requester,
+            requestId
+        );
 
-        assertEq(ForkonomicToken(childToken2).balanceOf(address(l1GlobalForkRequester)), amount);
+        assertEq(
+            ForkonomicToken(childToken2).balanceOf(
+                address(l1GlobalForkRequester)
+            ),
+            amount
+        );
 
         assertEq(amountChild1, 0);
         assertEq(amountChild2, amount);
@@ -341,7 +429,5 @@ contract L1GlobalForkRequesterTest is Test {
         // l1GlobalForkRequester.returnTokens(address(childToken2), l2Requester, requestId);
         // (amountChild2, , ) = l1GlobalForkRequester.failedRequests(childToken2, l2Requester, requestId);
         // assertEq(amountChild2, 0);
-
     }
-
 }

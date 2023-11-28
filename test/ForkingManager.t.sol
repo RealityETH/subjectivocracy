@@ -60,8 +60,8 @@ contract ForkingManagerTest is Test {
     bytes32[32] public depositTree;
     address public admin = address(0xad);
     uint64 public initialChainId = 1;
-    uint64 public firstChainId = initialChainId+1;
-    uint64 public secondChainId = initialChainId+2;
+    uint64 public firstChainId = initialChainId + 1;
+    uint64 public secondChainId = initialChainId + 2;
 
     // Setup new implementations for the fork
     address public newBridgeImplementation = address(new ForkableBridge());
@@ -134,7 +134,7 @@ contract ForkingManagerTest is Test {
                 )
             )
         );
-        ChainIdManager chainIdManager= new ChainIdManager(initialChainId);
+        ChainIdManager chainIdManager = new ChainIdManager(initialChainId);
         chainIdManagerAddress = address(chainIdManager);
         globalExitRoot.initialize(
             address(forkmanager),
@@ -198,7 +198,6 @@ contract ForkingManagerTest is Test {
     }
 
     function testForkingStatusFunctions() public {
-
         assertFalse(forkmanager.isForkingInitiated());
         assertFalse(forkmanager.isForkingExecuted());
         assertTrue(forkmanager.canFork());
@@ -242,7 +241,6 @@ contract ForkingManagerTest is Test {
         assertTrue(forkmanager.isForkingInitiated());
         assertTrue(forkmanager.isForkingExecuted());
         assertFalse(forkmanager.canFork());
-
     }
 
     function testInitiateForkChargesFees() public {
@@ -252,7 +250,7 @@ contract ForkingManagerTest is Test {
             IForkingManager.DisputeData({
                 disputeContract: disputeContract,
                 disputeContent: disputeContent,
-                isL1: isL1 
+                isL1: isL1
             }),
             IForkingManager.NewImplementations({
                 bridgeImplementation: newBridgeImplementation,
@@ -452,7 +450,9 @@ contract ForkingManagerTest is Test {
         }
     }
 
-    function testInitiateForkAndExecuteWorksWithoutChangingImplementations() public {
+    function testInitiateForkAndExecuteWorksWithoutChangingImplementations()
+        public
+    {
         // Mint and approve the arbitration fee for the test contract
         forkonomicToken.approve(address(forkmanager), arbitrationFee);
         vm.prank(address(this));
@@ -460,10 +460,7 @@ contract ForkingManagerTest is Test {
 
         IForkingManager.NewImplementations memory noNewImplementations;
         // Call the initiateFork function to create a new fork
-        forkmanager.initiateFork(
-            disputeData,
-            noNewImplementations
-        );
+        forkmanager.initiateFork(disputeData, noNewImplementations);
         vm.warp(block.timestamp + forkmanager.forkPreparationTime() + 1);
         forkmanager.executeFork();
 

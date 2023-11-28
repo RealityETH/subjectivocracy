@@ -9,9 +9,7 @@ pragma solidity ^0.8.20;
 import {IERC20} from "./../interfaces/IERC20.sol";
 
 contract MoneyBox {
-
     constructor(address _token) {
-        IERC20(_token).approve(msg.sender, type(uint256).max); 
+        IERC20(_token).approve(msg.sender, type(uint256).max);
     }
-
 }

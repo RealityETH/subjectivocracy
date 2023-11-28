@@ -12,7 +12,9 @@ contract ChainIdManager is Owned {
     // Fee to use up a Chain ID
     uint256 public immutable gasBurnAmount = 1000000;
 
-    constructor(uint64 _chainIdCounter) Owned() {chainIdCounter = _chainIdCounter;}
+    constructor(uint64 _chainIdCounter) Owned() {
+        chainIdCounter = _chainIdCounter;
+    }
 
     /**
      * @dev Adds a Chain ID to the deny list, this can be done if the chainId is used by another project
@@ -37,7 +39,7 @@ contract ChainIdManager is Owned {
      * @return chainId The next usable Chain ID
      */
     function getNextUsableChainId() public returns (uint64 chainId) {
-        // The burnGas function introduces a cost to use up chainIds. 
+        // The burnGas function introduces a cost to use up chainIds.
         // There are uint64(2**63=9.223372e+18) chainIds minus the publicly used chainIds available.
         // Using all of the chainIds would cost 9.223372e+18 * gasBurnAmount = 9.223372e+24 gas = 6.1489147e+17 blocks = 237226647377 years
         burnGas();
@@ -51,6 +53,6 @@ contract ChainIdManager is Owned {
     function burnGas() public view {
         uint256 counter = 0;
         uint256 _lowestLimit = gasleft() - gasBurnAmount;
-        while(gasleft() > _lowestLimit) counter++;
+        while (gasleft() > _lowestLimit) counter++;
     }
 }
