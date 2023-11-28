@@ -292,7 +292,8 @@ contract L1GlobalChainInfoPublisherTest is Test {
             })
         );
         skip(forkmanager.forkPreparationTime() + 1);
-        forkmanager.executeFork();
+        forkmanager.executeFork1();
+        forkmanager.executeFork2();
 
         // The current bridge should no longer work
         vm.expectRevert("No changes after forking");
@@ -357,7 +358,8 @@ contract L1GlobalChainInfoPublisherTest is Test {
         // Call the initiateFork function to create a new fork
         forkmanager2.initiateFork(disputeData2, newImplementations2);
         skip(forkmanager.forkPreparationTime() + 1);
-        forkmanager2.executeFork();
+        forkmanager2.executeFork1();
+        forkmanager2.executeFork2();
 
         vm.expectRevert("No changes after forking");
         l1GlobalChainInfoPublisher.updateL2ChainInfo(

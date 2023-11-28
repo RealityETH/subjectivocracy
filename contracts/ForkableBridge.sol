@@ -20,10 +20,12 @@ contract ForkableBridge is
     address internal _hardAssetManager;
 
     // @dev Mapping to keep track of the allowances for the child tokens minting process
+    // @param user Address of the token
     // @param token Address of the token
     // @param isChild0 Boolean to indicate if the allowance is for the first or second child-bridge contract
     // @param amount Amount of tokens allowed to be minted
-    mapping(address => mapping(bool => uint256)) public childTokenAllowances;
+    mapping(address => mapping(address => mapping(bool => uint256)))
+        public childTokenAllowances;
 
     // @inheritdoc IForkableBridge
     function initialize(
@@ -153,8 +155,8 @@ contract ForkableBridge is
         uint256 amount
     ) public onlyAfterForking {
         TokenWrapped(token).burn(msg.sender, amount);
-        childTokenAllowances[token][true] += amount;
-        childTokenAllowances[token][false] += amount;
+        childTokenAllowances[msg.sender][token][true] += amount;
+        childTokenAllowances[msg.sender][token][false] += amount;
     }
 
     // @inheritdoc IForkableBridge
@@ -174,10 +176,10 @@ contract ForkableBridge is
         bool firstChild
     ) public onlyAfterForking {
         require(
-            childTokenAllowances[token][firstChild] >= amount,
+            childTokenAllowances[msg.sender][token][firstChild] >= amount,
             "Not enough allowance"
         );
-        childTokenAllowances[token][firstChild] -= amount;
+        childTokenAllowances[msg.sender][token][firstChild] -= amount;
         BridgeAssetOperations.createChildToken(
             token,
             amount,

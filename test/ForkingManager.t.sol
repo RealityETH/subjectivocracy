@@ -236,7 +236,8 @@ contract ForkingManagerTest is Test {
         assertFalse(forkmanager.canFork());
 
         vm.warp(block.timestamp + forkmanager.forkPreparationTime() + 1);
-        forkmanager.executeFork();
+        forkmanager.executeFork1();
+        forkmanager.executeFork2();
 
         assertTrue(forkmanager.isForkingInitiated());
         assertTrue(forkmanager.isForkingExecuted());
@@ -463,7 +464,8 @@ contract ForkingManagerTest is Test {
         // Call the initiateFork function to create a new fork
         forkmanager.initiateFork(disputeData, noNewImplementations);
         vm.warp(block.timestamp + forkmanager.forkPreparationTime() + 1);
-        forkmanager.executeFork();
+        forkmanager.executeFork1();
+        forkmanager.executeFork2();
 
         // Fetch the children from the ForkingManager
         (address childForkmanager1, address childForkmanager2) = forkmanager
