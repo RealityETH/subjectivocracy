@@ -19,7 +19,6 @@ contract ForkableBridge is
     // tokens to the children-bridge contracts
     address internal _hardAssetManager;
 
-
     // @inheritdoc IForkableBridge
     function initialize(
         address _forkmanager,
@@ -132,7 +131,7 @@ contract ForkableBridge is
         uint256 amount,
         bool mintSecondChildAsWell
     ) public onlyAfterForking {
-       BridgeAssetOperations.splitTokenIntoChildToken(
+        BridgeAssetOperations.splitTokenIntoChildToken(
             token,
             amount,
             children[0],

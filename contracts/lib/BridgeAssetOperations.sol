@@ -72,7 +72,7 @@ library BridgeAssetOperations {
         );
     }
 
-     // @inheritdoc IForkableBridge
+    // @inheritdoc IForkableBridge
     function splitTokenIntoChildToken(
         address token,
         uint256 amount,
@@ -80,20 +80,10 @@ library BridgeAssetOperations {
         address child2,
         PolygonZkEVMBridge.TokenInformation memory tokenInfo
     ) public {
-         TokenWrapped(token).burn(msg.sender, amount);
-        createChildToken(
-            token,
-            amount,
-            tokenInfo,
-            child1
-        );
+        TokenWrapped(token).burn(msg.sender, amount);
+        createChildToken(token, amount, tokenInfo, child1);
         if (child2 != address(0)) {
-            createChildToken(
-                token,
-                amount,
-                tokenInfo,
-                child2
-            );
+            createChildToken(token, amount, tokenInfo, child2);
         }
     }
 

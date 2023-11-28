@@ -114,9 +114,15 @@ contract ForkingManager is IForkingManager, ForkableStructure {
 
         // Create the children of each contract
         NewInstances memory newInstances;
-        (newInstances.forkingManager.one, ) = _createChildren(newImplementations.forkingManagerImplementation);
-        (newInstances.bridge.one, ) = IForkableBridge(bridge).createChildren(newImplementations.bridgeImplementation);
-        (newInstances.zkEVM.one, ) = IForkableZkEVM(zkEVM).createChildren(newImplementations.zkEVMImplementation);
+        (newInstances.forkingManager.one, ) = _createChildren(
+            newImplementations.forkingManagerImplementation
+        );
+        (newInstances.bridge.one, ) = IForkableBridge(bridge).createChildren(
+            newImplementations.bridgeImplementation
+        );
+        (newInstances.zkEVM.one, ) = IForkableZkEVM(zkEVM).createChildren(
+            newImplementations.zkEVMImplementation
+        );
         (newInstances.forkonomicToken.one, ) = IForkonomicToken(forkonomicToken)
             .createChildren(newImplementations.forkonomicTokenImplementation);
         (newInstances.globalExitRoot.one, ) = IForkableGlobalExitRoot(
@@ -225,13 +231,12 @@ contract ForkingManager is IForkingManager, ForkableStructure {
 
         // Create the children of each contract
         NewInstances memory newInstances;
-        (,newInstances.forkingManager.two) = getChildren();
-        (,newInstances.bridge.two) = IForkableBridge(bridge).getChildren();
-        (,newInstances.zkEVM.two) = IForkableZkEVM(zkEVM).getChildren(
-        );
-        (,newInstances.forkonomicToken.two) = IForkonomicToken(forkonomicToken)
+        (, newInstances.forkingManager.two) = getChildren();
+        (, newInstances.bridge.two) = IForkableBridge(bridge).getChildren();
+        (, newInstances.zkEVM.two) = IForkableZkEVM(zkEVM).getChildren();
+        (, newInstances.forkonomicToken.two) = IForkonomicToken(forkonomicToken)
             .getChildren();
-        (,newInstances.globalExitRoot.two) = IForkableGlobalExitRoot(
+        (, newInstances.globalExitRoot.two) = IForkableGlobalExitRoot(
             globalExitRoot
         ).getChildren();
 

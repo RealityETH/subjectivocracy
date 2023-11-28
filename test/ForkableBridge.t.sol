@@ -277,7 +277,6 @@ contract ForkableBridgeTest is Test {
         // Split the token
         forkableBridge.splitTokenIntoChildToken(forkableToken, amount, true);
 
-
         // Assert token balances
         address forkableTokenChild1 = ForkableBridge(child1)
             .tokenInfoToWrappedToken(tokenInfoHash);
@@ -359,7 +358,6 @@ contract ForkableBridgeTest is Test {
 
         // Split the token
         forkableBridge.splitTokenIntoChildToken(forkableToken, amount, true);
-
 
         // Only parent can merge
         vm.expectRevert(bytes("onlyAfterForking"));
