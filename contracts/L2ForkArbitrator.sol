@@ -52,14 +52,14 @@ contract L2ForkArbitrator is MoneyBoxUser, IBridgeMessageReceiver {
     mapping(address => uint256) public refundsDue;
 
     L2ChainInfo public chainInfo;
-    L1GlobalForkRequester public l1globalForkRequester;
+    L1GlobalForkRequester public l1GlobalForkRequester;
 
     uint256 public disputeFee; // Normally dispute fee should generally only go down in a fork
 
-    constructor(IRealityETH _realitio, L2ChainInfo _chainInfo, L1GlobalForkRequester _l1globalForkRequester, uint256 _initialDisputeFee) {
+    constructor(IRealityETH _realitio, L2ChainInfo _chainInfo, L1GlobalForkRequester _l1GlobalForkRequester, uint256 _initialDisputeFee) {
         realitio = _realitio;
         chainInfo = _chainInfo; 
-        l1globalForkRequester = _l1globalForkRequester;
+        l1GlobalForkRequester = _l1GlobalForkRequester;
         disputeFee = _initialDisputeFee;
     }
 
@@ -119,19 +119,19 @@ contract L2ForkArbitrator is MoneyBoxUser, IBridgeMessageReceiver {
         uint256 paid = arbitrationRequests[question_id].paid;
         require(paid >= forkFee, "fee paid too low");
 
-        address l2bridge = chainInfo.l2bridge();
-        require(l2bridge != address(0), "l2bridge not set");
+        address l2Bridge = chainInfo.l2Bridge();
+        require(l2Bridge != address(0), "l2Bridge not set");
 
-        IPolygonZkEVMBridge bridge = IPolygonZkEVMBridge(l2bridge);
+        IPolygonZkEVMBridge bridge = IPolygonZkEVMBridge(l2Bridge);
 
         address forkonomicToken = chainInfo.getForkonomicToken();
 
         // The receiving contract may get different payments from different requests
-        // To differentiate our payment, we will use a dedicated MoneyBox contract controlled by l1globalForkRequester
+        // To differentiate our payment, we will use a dedicated MoneyBox contract controlled by l1GlobalForkRequester
         // The L1GlobalForkRequester will deploy this as and when it's needed.
         // TODO: For now we assume only 1 request is in-flight at a time. If there might be more, differentiate them in the salt.
         bytes32 salt = keccak256(abi.encodePacked(address(this), question_id));
-        address moneyBox = _calculateMoneyBoxAddress(address(l1globalForkRequester), salt, address(forkonomicToken));
+        address moneyBox = _calculateMoneyBoxAddress(address(l1GlobalForkRequester), salt, address(forkonomicToken));
 
         bytes memory permitData;
         bridge.bridgeAsset{value: forkFee}(
@@ -150,10 +150,10 @@ contract L2ForkArbitrator is MoneyBoxUser, IBridgeMessageReceiver {
     // We will set FORK_REQUEST_FAILED which will allow anyone to request cancellation 
     function onMessageReceived(address _originAddress, uint32 _originNetwork, bytes memory _data) external payable {
 
-        address l2bridge = chainInfo.l2bridge();
-        require(msg.sender == l2bridge, "Not our bridge");
+        address l2Bridge = chainInfo.l2Bridge();
+        require(msg.sender == l2Bridge, "Not our bridge");
         require(_originNetwork == uint32(0), "Wrong network, WTF");
-        require(_originAddress == address(l1globalForkRequester), "Unexpected sender");
+        require(_originAddress == address(l1GlobalForkRequester), "Unexpected sender");
 
         bytes32 question_id = bytes32(_data);
         RequestStatus status = arbitrationRequests[question_id].status;

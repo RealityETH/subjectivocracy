@@ -54,7 +54,7 @@ contract L1GlobalChainInfoPublisherTest is Test {
     ForkableZkEVM public zkevm;
     ForkableGlobalExitRoot public globalExitRoot;
 
-    ForkableBridge public l2bridge;
+    ForkableBridge public l2Bridge;
 
     address public bridgeImplementation;
     address public forkmanagerImplementation;
@@ -105,7 +105,7 @@ contract L1GlobalChainInfoPublisherTest is Test {
     bool public isL1 = true;
 
     L1GlobalChainInfoPublisher public l1GlobalChainInfoPublisher = new L1GlobalChainInfoPublisher();
-    L2ChainInfo public l2ChainInfo = new L2ChainInfo(address(l2bridge), address(l1GlobalChainInfoPublisher));
+    L2ChainInfo public l2ChainInfo = new L2ChainInfo(address(l2Bridge), address(l1GlobalChainInfoPublisher));
 
     ForkingManager.DisputeData public disputeData =
         IForkingManager.DisputeData({
@@ -130,7 +130,7 @@ contract L1GlobalChainInfoPublisherTest is Test {
         );
 
         // Bridge on l2, should have different chain ID etc
-        l2bridge = ForkableBridge(
+        l2Bridge = ForkableBridge(
             address(
                 new TransparentUpgradeableProxy(bridgeImplementation, admin, "")
             )
@@ -283,9 +283,9 @@ contract L1GlobalChainInfoPublisherTest is Test {
         vm.expectRevert("No changes after forking");
         l1GlobalChainInfoPublisher.updateL2ChainInfo(address(bridge), address(l2ChainInfo), address(0), uint256(10));
 
-        (address forkmanager1addr, address forkmanager2addr) = forkmanager.getChildren();        
-        address bridge1 = IForkingManager(forkmanager1addr).bridge();
-        address bridge2 = IForkingManager(forkmanager2addr).bridge();
+        (address forkmanager1Addrg, address forkmanager2Addr) = forkmanager.getChildren();
+        address bridge1 = IForkingManager(forkmanager1Addrg).bridge();
+        address bridge2 = IForkingManager(forkmanager2Addr).bridge();
 
         // The new bridges should work though
         l1GlobalChainInfoPublisher.updateL2ChainInfo(bridge1, address(l2ChainInfo), address(0), uint256(10));
@@ -294,7 +294,7 @@ contract L1GlobalChainInfoPublisherTest is Test {
         l1GlobalChainInfoPublisher.updateL2ChainInfo(bridge1, address(l2ChainInfo), address(forkmanager), uint256(10));
         l1GlobalChainInfoPublisher.updateL2ChainInfo(bridge2, address(l2ChainInfo), address(forkmanager), uint256(10));
 
-        ForkingManager forkmanager2 = ForkingManager(forkmanager2addr);
+        ForkingManager forkmanager2 = ForkingManager(forkmanager2Addr);
         ForkonomicToken forkonomicToken2 = ForkonomicToken(forkmanager2.forkonomicToken());
 
         // Next we'll fork with a dispute
@@ -321,9 +321,9 @@ contract L1GlobalChainInfoPublisherTest is Test {
         vm.expectRevert("No changes after forking");
         l1GlobalChainInfoPublisher.updateL2ChainInfo(bridge2, address(l2ChainInfo), address(forkmanager), uint256(10));
 
-        (, address forkmanager22addr) = forkmanager2.getChildren();        
-        // address bridge21 = IForkingManager(forkmanager21addr).bridge();
-        address bridge22 = IForkingManager(forkmanager22addr).bridge();
+        (, address forkmanager22Addr) = forkmanager2.getChildren();
+        // address bridge21 = IForkingManager(forkmanager21Addrg).bridge();
+        address bridge22 = IForkingManager(forkmanager22Addr).bridge();
 
         l1GlobalChainInfoPublisher.updateL2ChainInfo(bridge22, address(l2ChainInfo), address(forkmanager), uint256(10));
 

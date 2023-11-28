@@ -207,9 +207,9 @@ contract L1GlobalForkRequesterTest is Test {
         ExampleMoneyBoxUser exampleMoneyBoxUser = new ExampleMoneyBoxUser();
         // Receive a payment from a MoneyBox
 
-        address l2requester = address(0xbabe01);
+        address l2Requester = address(0xbabe01);
         bytes32 requestId = bytes32("0xc0ffee01");
-        bytes32 salt = keccak256(abi.encodePacked(l2requester, requestId));
+        bytes32 salt = keccak256(abi.encodePacked(l2Requester, requestId));
         address moneyBoxAddress = exampleMoneyBoxUser.calculateMoneyBoxAddress(address(l1GlobalForkRequester), salt, address(forkonomicToken));
 
         vm.prank(address(this));
@@ -223,7 +223,7 @@ contract L1GlobalForkRequesterTest is Test {
         assertFalse(forkmanager.isForkingInitiated());
         assertFalse(forkmanager.isForkingExecuted());
 
-        l1GlobalForkRequester.handlePayment(address(forkonomicToken), l2requester, requestId);
+        l1GlobalForkRequester.handlePayment(address(forkonomicToken), l2Requester, requestId);
 
         assertTrue(forkmanager.isForkingInitiated());
         assertFalse(forkmanager.isForkingExecuted());
@@ -237,9 +237,9 @@ contract L1GlobalForkRequesterTest is Test {
         ExampleMoneyBoxUser exampleMoneyBoxUser = new ExampleMoneyBoxUser();
         // Receive a payment from a MoneyBox
 
-        address l2requester = address(0xbabe01);
+        address l2Requester = address(0xbabe01);
         bytes32 requestId = bytes32("0xc0ffee01");
-        bytes32 salt = keccak256(abi.encodePacked(l2requester, requestId));
+        bytes32 salt = keccak256(abi.encodePacked(l2Requester, requestId));
         address moneyBoxAddress = exampleMoneyBoxUser.calculateMoneyBoxAddress(address(l1GlobalForkRequester), salt, address(forkonomicToken));
 
         vm.prank(address(this));
@@ -251,10 +251,10 @@ contract L1GlobalForkRequesterTest is Test {
         assertEq(address(forkmanager.forkonomicToken()), address(forkonomicToken)); 
         assertTrue(forkmanager.canFork());
 
-        l1GlobalForkRequester.handlePayment(address(forkonomicToken), l2requester, requestId);
+        l1GlobalForkRequester.handlePayment(address(forkonomicToken), l2Requester, requestId);
         assertFalse(forkmanager.isForkingInitiated());
 
-        (uint256 amount, uint256 amountRemainingY, uint256 amountRemainingN) = l1GlobalForkRequester.failedRequests(address(forkonomicToken), l2requester, requestId);
+        (uint256 amount, uint256 amountRemainingY, uint256 amountRemainingN) = l1GlobalForkRequester.failedRequests(address(forkonomicToken), l2Requester, requestId);
         assertEq(amount, fee);
         assertEq(amountRemainingY, 0);
         assertEq(amountRemainingN, 0);
@@ -268,9 +268,9 @@ contract L1GlobalForkRequesterTest is Test {
         ExampleMoneyBoxUser exampleMoneyBoxUser = new ExampleMoneyBoxUser();
         // Receive a payment from a MoneyBox
 
-        address l2requester = address(0xbabe01);
+        address l2Requester = address(0xbabe01);
         bytes32 requestId = bytes32("0xc0ffee01");
-        bytes32 salt = keccak256(abi.encodePacked(l2requester, requestId));
+        bytes32 salt = keccak256(abi.encodePacked(l2Requester, requestId));
         address moneyBoxAddress = exampleMoneyBoxUser.calculateMoneyBoxAddress(address(l1GlobalForkRequester), salt, address(forkonomicToken));
 
         vm.prank(address(this));
@@ -297,8 +297,8 @@ contract L1GlobalForkRequesterTest is Test {
         // Our handlePayment will fail and leave our money sitting in failedRequests
         uint256 balBeforeHandle = forkonomicToken.balanceOf(address(l1GlobalForkRequester));
 
-        l1GlobalForkRequester.handlePayment(address(forkonomicToken), l2requester, requestId);
-        (uint256 amount, uint256 amountRemainingY, uint256 amountRemainingN) = l1GlobalForkRequester.failedRequests(address(forkonomicToken), l2requester, requestId);
+        l1GlobalForkRequester.handlePayment(address(forkonomicToken), l2Requester, requestId);
+        (uint256 amount, uint256 amountRemainingY, uint256 amountRemainingN) = l1GlobalForkRequester.failedRequests(address(forkonomicToken), l2Requester, requestId);
         assertEq(amount, fee);
         assertEq(amountRemainingY, 0);
         assertEq(amountRemainingN, 0);
@@ -307,7 +307,7 @@ contract L1GlobalForkRequesterTest is Test {
         assertEq(balBeforeHandle + amount, balAfterHandle);
 
         vm.expectRevert("Token not forked");
-        l1GlobalForkRequester.splitTokensIntoChildTokens(address(forkonomicToken), l2requester, requestId);
+        l1GlobalForkRequester.splitTokensIntoChildTokens(address(forkonomicToken), l2Requester, requestId);
 
         // Execute the other guy's fork
         skip(forkmanager.forkPreparationTime() + 1);
@@ -315,7 +315,7 @@ contract L1GlobalForkRequesterTest is Test {
 
         {
             uint256 balBeforeSplit = forkonomicToken.balanceOf(address(l1GlobalForkRequester));
-            l1GlobalForkRequester.splitTokensIntoChildTokens(address(forkonomicToken), l2requester, requestId);
+            l1GlobalForkRequester.splitTokensIntoChildTokens(address(forkonomicToken), l2Requester, requestId);
             uint256 balAfterSplit = forkonomicToken.balanceOf(address(l1GlobalForkRequester));
             assertEq(balAfterSplit + amount, balBeforeSplit);
         }
@@ -326,9 +326,9 @@ contract L1GlobalForkRequesterTest is Test {
         assertEq(ForkonomicToken(childToken2).balanceOf(address(l1GlobalForkRequester)), amount);
 
         // Now we should be able to return the tokens on the child chain
-        l1GlobalForkRequester.returnTokens(address(childToken1), l2requester, requestId);
-        (uint256 amountChild1, , ) = l1GlobalForkRequester.failedRequests(childToken1, l2requester, requestId);
-        (uint256 amountChild2, , ) = l1GlobalForkRequester.failedRequests(childToken2, l2requester, requestId);
+        l1GlobalForkRequester.returnTokens(address(childToken1), l2Requester, requestId);
+        (uint256 amountChild1, , ) = l1GlobalForkRequester.failedRequests(childToken1, l2Requester, requestId);
+        (uint256 amountChild2, , ) = l1GlobalForkRequester.failedRequests(childToken2, l2Requester, requestId);
 
         assertEq(ForkonomicToken(childToken2).balanceOf(address(l1GlobalForkRequester)), amount);
 
@@ -338,8 +338,8 @@ contract L1GlobalForkRequesterTest is Test {
         // TODO: This breaks due to _CURRENT_SUPPORTED_NETWORKS which is capped at 2
         // Raise this if we need it, alternatively maybe it's unrelated to Chain ID and it doesn't need to change when the fork does.
 
-        // l1GlobalForkRequester.returnTokens(address(childToken2), l2requester, requestId);
-        // (amountChild2, , ) = l1GlobalForkRequester.failedRequests(childToken2, l2requester, requestId);
+        // l1GlobalForkRequester.returnTokens(address(childToken2), l2Requester, requestId);
+        // (amountChild2, , ) = l1GlobalForkRequester.failedRequests(childToken2, l2Requester, requestId);
         // assertEq(amountChild2, 0);
 
     }

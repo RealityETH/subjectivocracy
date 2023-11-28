@@ -16,8 +16,8 @@ import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/inte
 contract L2ChainInfo is IBridgeMessageReceiver{
 
     // These are the same for all forks
-    address public l2bridge; 
-    address public l1globalChainInfoPublisher;
+    address public l2Bridge;
+    address public l1GlobalChainInfoPublisher;
     uint32 public constant L1_NETWORK_ID = 0;
 
     struct ChainInfo{
@@ -31,9 +31,9 @@ contract L2ChainInfo is IBridgeMessageReceiver{
     mapping(bool=>mapping(address=>mapping(bytes32=>bytes32))) public forkQuestionResults;
     mapping(bool=>mapping(address=>mapping(bytes32=>uint64))) public questionToChainID;
 
-    constructor(address _l2bridge, address _l1globalChainInfoPublisher) {
-        l2bridge = _l2bridge; 
-        l1globalChainInfoPublisher = _l1globalChainInfoPublisher;
+    constructor(address _l2Bridge, address _l1GlobalChainInfoPublisher) {
+        l2Bridge = _l2Bridge; 
+        l1GlobalChainInfoPublisher = _l1GlobalChainInfoPublisher;
     }
 
     modifier isUpToDate {
@@ -58,8 +58,8 @@ contract L2ChainInfo is IBridgeMessageReceiver{
     // It could also send us information about a previous chain that's a parent of ours if we forked again before getting it for some reason.
     function onMessageReceived(address _originAddress, uint32 _originNetwork, bytes memory _data) external payable {
 
-        require(msg.sender == l2bridge, "not the expected bridge");
-        require(_originAddress == l1globalChainInfoPublisher, "only publisher can call us");
+        require(msg.sender == l2Bridge, "not the expected bridge");
+        require(_originAddress == l1GlobalChainInfoPublisher, "only publisher can call us");
         require(_originNetwork == L1_NETWORK_ID, "Bad origin network");
 
         (uint64 chainId, address forkonomicToken, uint256 forkFee, bool isL1, address forker, bytes32 questionId, bytes32 result) = abi.decode(_data, (uint64, address, uint256, bool, address, bytes32, bytes32));

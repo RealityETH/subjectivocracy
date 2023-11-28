@@ -31,8 +31,8 @@ contract AdjudicationIntegrationTest is Test {
 
     IERC20 internal tokenMock = IERC20(0x1234567890123456789012345678901234567890);
 
-    ForkableRealityETH_ERC20 internal l1realityEth;
-    RealityETH_v3_0 internal l2realityEth;
+    ForkableRealityETH_ERC20 internal l1RealityEth;
+    RealityETH_v3_0 internal l2RealityEth;
 
     bytes32 internal addArbitratorQID1;
     bytes32 internal addArbitratorQID2;
@@ -44,7 +44,7 @@ contract AdjudicationIntegrationTest is Test {
     AdjudicationFramework internal adjudicationFramework1;
     AdjudicationFramework internal adjudicationFramework2;
 
-    L2ForkArbitrator internal l2forkArbitrator;
+    L2ForkArbitrator internal l2ForkArbitrator;
     L2ChainInfo internal l2ChainInfo;
 
     Arbitrator internal l2Arbitrator1;
@@ -93,7 +93,7 @@ contract AdjudicationIntegrationTest is Test {
     address internal l1ForkingManagerF2 = address(0x2abe13);
     address internal l1TokenF2 = address(0x2abe14);
 
-    uint64 internal l2chainIdInit = 1;
+    uint64 internal l2ChainIdInit = 1;
 
     uint256 internal forkingFee = 5000; // Should ultimately come from l1 forkingmanager
 
@@ -107,14 +107,14 @@ contract AdjudicationIntegrationTest is Test {
 
         // Pretend to send the initial setup to the l2 directory via the bridge
         // Triggers:
-        // l2ChainInfo.onMessageReceived(l1GlobalChainInfoPublisher, l1chainId, fakeMessageData);
+        // l2ChainInfo.onMessageReceived(l1GlobalChainInfoPublisher, l1ChainId, fakeMessageData);
         // In reality this would originate on L1.
-        vm.chainId(l2chainIdInit);
-        bytes memory fakeMessageData = abi.encode(l2chainIdInit, address(l1ForkingManager), uint256(forkingFee), false, address(l2forkArbitrator), bytes32(0x0), bytes32(0x0));
+        vm.chainId(l2ChainIdInit);
+        bytes memory fakeMessageData = abi.encode(l2ChainIdInit, address(l1ForkingManager), uint256(forkingFee), false, address(l2ForkArbitrator), bytes32(0x0), bytes32(0x0));
         l2Bridge.fakeClaimMessage(address(l1GlobalChainInfoPublisher), uint32(0), address(l2ChainInfo), fakeMessageData, uint256(0));
 
-        l1realityEth = new ForkableRealityETH_ERC20();
-        l1realityEth.init(tokenMock, address(0), bytes32(0));
+        l1RealityEth = new ForkableRealityETH_ERC20();
+        l1RealityEth.init(tokenMock, address(0), bytes32(0));
 
         /*
         Creates templates 1, 2, 3 as
@@ -126,16 +126,16 @@ contract AdjudicationIntegrationTest is Test {
 
         // Should be a governance arbitrator for adjudicating upgrades
         govArb = new Arbitrator();
-        govArb.setRealitio(address(l1realityEth));
+        govArb.setRealitio(address(l1RealityEth));
         govArb.setDisputeFee(50);
 
         user1.transfer(1000000);
         user2.transfer(1000000);
 
         // NB we're modelling this on the same chain but it should really be the l2
-        l2realityEth = new RealityETH_v3_0();
+        l2RealityEth = new RealityETH_v3_0();
 
-        l2forkArbitrator = new L2ForkArbitrator(IRealityETH(l2realityEth), L2ChainInfo(l2ChainInfo), L1GlobalForkRequester(l1GlobalForkRequester), forkingFee);
+        l2ForkArbitrator = new L2ForkArbitrator(IRealityETH(l2RealityEth), L2ChainInfo(l2ChainInfo), L1GlobalForkRequester(l1GlobalForkRequester), forkingFee);
 
         // The adjudication framework can act like a regular reality.eth arbitrator.
         // It will also use reality.eth to arbitrate its own governance, using the L2ForkArbitrator which makes L1 fork requests.
@@ -143,7 +143,7 @@ contract AdjudicationIntegrationTest is Test {
         initialArbitrators[0] = initialArbitrator1;
         initialArbitrators[1] = initialArbitrator2;
         vm.prank(adjudictionDeployer);
-        adjudicationFramework1 = new AdjudicationFramework(address(l2realityEth), 123, address(l2forkArbitrator), initialArbitrators);
+        adjudicationFramework1 = new AdjudicationFramework(address(l2RealityEth), 123, address(l2ForkArbitrator), initialArbitrators);
 
         l2Arbitrator1 = new Arbitrator();
         // NB The adjudication framework looks to individual arbitrators like a reality.eth question, so they can use it without being changed.
@@ -160,16 +160,16 @@ contract AdjudicationIntegrationTest is Test {
         // Contested cases should also be tested.
 
         addArbitratorQID1 = adjudicationFramework1.beginAddArbitratorToAllowList(address(l2Arbitrator1));
-        l2realityEth.submitAnswer{value: 10000}(addArbitratorQID1, bytes32(uint256(1)), 0);
+        l2RealityEth.submitAnswer{value: 10000}(addArbitratorQID1, bytes32(uint256(1)), 0);
 
-        uint32 to = l2realityEth.getTimeout(addArbitratorQID1);
+        uint32 to = l2RealityEth.getTimeout(addArbitratorQID1);
         assertEq(to, REALITY_ETH_TIMEOUT);
 
-        uint32 finalizeTs = l2realityEth.getFinalizeTS(addArbitratorQID1);
+        uint32 finalizeTs = l2RealityEth.getFinalizeTS(addArbitratorQID1);
         assertTrue(finalizeTs > block.timestamp, "finalization ts should be passed block ts");
         
         vm.expectRevert("question must be finalized");
-        l2realityEth.resultFor(addArbitratorQID1);
+        l2RealityEth.resultFor(addArbitratorQID1);
         assertTrue(finalizeTs > block.timestamp, "finalization ts should be passed block ts");
 
         vm.expectRevert("question must be finalized");
@@ -193,10 +193,10 @@ contract AdjudicationIntegrationTest is Test {
     function testContestedAddArbitrator() public {
 
         addArbitratorQID2 = adjudicationFramework1.beginAddArbitratorToAllowList(address(l2Arbitrator2));
-        l2realityEth.submitAnswer{value: 10000}(addArbitratorQID2, bytes32(uint256(1)), 0);
-        l2realityEth.submitAnswer{value: 20000}(addArbitratorQID2, bytes32(uint256(0)), 0);
+        l2RealityEth.submitAnswer{value: 10000}(addArbitratorQID2, bytes32(uint256(1)), 0);
+        l2RealityEth.submitAnswer{value: 20000}(addArbitratorQID2, bytes32(uint256(0)), 0);
 
-        l2forkArbitrator.requestArbitration{value: 500000}(addArbitratorQID2, 0);
+        l2ForkArbitrator.requestArbitration{value: 500000}(addArbitratorQID2, 0);
 
         // This talks to the bridge, we fake what happens next.
         // TODO: Hook this up to the real bridge so we can test it properly.
@@ -207,13 +207,13 @@ contract AdjudicationIntegrationTest is Test {
     internal returns (bytes32) {
 
         // ask a question
-        bytes32 qid = l2realityEth.askQuestion(0, "Question 1", address(adjudicationFramework1), 123, uint32(block.timestamp), 0);
+        bytes32 qid = l2RealityEth.askQuestion(0, "Question 1", address(adjudicationFramework1), 123, uint32(block.timestamp), 0);
 
         // do some bond escalation
         vm.prank(user1);
-        l2realityEth.submitAnswer{value: 10}(qid, bytes32(uint256(1)), 0);
+        l2RealityEth.submitAnswer{value: 10}(qid, bytes32(uint256(1)), 0);
         vm.prank(user2);
-        l2realityEth.submitAnswer{value: 20}(qid, bytes32(0), 0);
+        l2RealityEth.submitAnswer{value: 20}(qid, bytes32(0), 0);
 
         return qid;
 
@@ -246,7 +246,7 @@ contract AdjudicationIntegrationTest is Test {
         skip(86401);
         adjudicationFramework1.completeArbitration(qid, bytes32(uint256(1)), user1);
 
-        assertEq(l2realityEth.resultFor(qid), bytes32(uint256(1)), "reality.eth question should be settled");
+        assertEq(l2RealityEth.resultFor(qid), bytes32(uint256(1)), "reality.eth question should be settled");
 
     }
 
@@ -265,7 +265,7 @@ contract AdjudicationIntegrationTest is Test {
 
         // now before we can complete this somebody challenges it
         removalQuestionId = adjudicationFramework1.beginRemoveArbitratorFromAllowList(address(l2Arbitrator1));
-        l2realityEth.submitAnswer{value: 10000}(removalQuestionId, bytes32(uint256(1)), 0);
+        l2RealityEth.submitAnswer{value: 10000}(removalQuestionId, bytes32(uint256(1)), 0);
 
         bytes32[] memory hashes;
         address[] memory users;
@@ -275,9 +275,9 @@ contract AdjudicationIntegrationTest is Test {
         vm.expectRevert("Bond too low to freeze");
         adjudicationFramework1.freezeArbitrator(removalQuestionId, hashes, users, bonds, answers);
 
-        lastHistoryHash = l2realityEth.getHistoryHash(removalQuestionId);
+        lastHistoryHash = l2RealityEth.getHistoryHash(removalQuestionId);
         vm.prank(user2);
-        l2realityEth.submitAnswer{value: 20000}(removalQuestionId, bytes32(uint256(1)), 0);
+        l2RealityEth.submitAnswer{value: 20000}(removalQuestionId, bytes32(uint256(1)), 0);
         adjudicationFramework1.freezeArbitrator(removalQuestionId, hashes, users, bonds, answers);
         assertEq(adjudicationFramework1.countArbitratorFreezePropositions(address(l2Arbitrator1)), uint256(1));
 
@@ -304,7 +304,7 @@ contract AdjudicationIntegrationTest is Test {
 
         // Now wait for the timeout and settle the proposition
         vm.expectRevert("question must be finalized");
-        l2realityEth.resultFor(removalQuestionId);
+        l2RealityEth.resultFor(removalQuestionId);
 
         vm.expectRevert("question must be finalized");
         adjudicationFramework1.executeRemoveArbitratorFromAllowList(removalQuestionId);
@@ -321,12 +321,12 @@ contract AdjudicationIntegrationTest is Test {
         (, bytes32 removalQuestionId, , , ) = _setupContestedArbitration();
 
         // Put the proposition to remove the arbitrator into the "no" state
-        l2realityEth.submitAnswer{value: 40000}(removalQuestionId, bytes32(uint256(0)), 0);
+        l2RealityEth.submitAnswer{value: 40000}(removalQuestionId, bytes32(uint256(0)), 0);
 
         // Now wait for the timeout and settle the proposition
 
         vm.expectRevert("question must be finalized");
-        l2realityEth.resultFor(removalQuestionId);
+        l2RealityEth.resultFor(removalQuestionId);
 
         vm.expectRevert("question must be finalized");
         adjudicationFramework1.executeRemoveArbitratorFromAllowList(removalQuestionId);
@@ -351,14 +351,14 @@ contract AdjudicationIntegrationTest is Test {
 
         // Now wait for the timeout and settle the proposition
         vm.expectRevert("question must be finalized");
-        l2realityEth.resultFor(removalQuestionId);
+        l2RealityEth.resultFor(removalQuestionId);
 
-        assertEq(address(l2forkArbitrator.realitio()), address(l2realityEth), "l2forkArbitrator expects to arbitrate our l2realityEth");
-        assertEq(address(adjudicationFramework1.realityETH()), address(l2realityEth), "adjudicationFramework1 expects to use our l2realityEth");
-        assertEq(address(l2forkArbitrator), l2realityEth.getArbitrator(removalQuestionId), "Arbitrator of the removalQuestionId is l2forkArbitrator");
+        assertEq(address(l2ForkArbitrator.realitio()), address(l2RealityEth), "l2ForkArbitrator expects to arbitrate our l2RealityEth");
+        assertEq(address(adjudicationFramework1.realityETH()), address(l2RealityEth), "adjudicationFramework1 expects to use our l2RealityEth");
+        assertEq(address(l2ForkArbitrator), l2RealityEth.getArbitrator(removalQuestionId), "Arbitrator of the removalQuestionId is l2ForkArbitrator");
 
-        uint256 forkFee = l2forkArbitrator.getDisputeFee(removalQuestionId);
-        l2forkArbitrator.requestArbitration{value: forkFee}(removalQuestionId, 0);
+        uint256 forkFee = l2ForkArbitrator.getDisputeFee(removalQuestionId);
+        l2ForkArbitrator.requestArbitration{value: forkFee}(removalQuestionId, 0);
 
         // IMAGINE THE FORK HAPPENED HERE
         // There are now two L2s, each with a different chain ID
@@ -366,13 +366,13 @@ contract AdjudicationIntegrationTest is Test {
         vm.chainId(newChainId1);
 
         // TODO: Adjust the forkingFee as the total supply has changed a bit
-        bytes memory fakeMessageData = abi.encode(uint64(newChainId1), address(l1ForkingManagerF1), uint256(forkingFee), false, address(l2forkArbitrator),  removalQuestionId, bytes32(uint256(1)));
+        bytes memory fakeMessageData = abi.encode(uint64(newChainId1), address(l1ForkingManagerF1), uint256(forkingFee), false, address(l2ForkArbitrator),  removalQuestionId, bytes32(uint256(1)));
         l2Bridge.fakeClaimMessage(address(l1GlobalChainInfoPublisher), uint32(0), address(l2ChainInfo), fakeMessageData, uint256(0));
 
-        assertTrue(l2realityEth.isPendingArbitration(removalQuestionId));
-        l2forkArbitrator.handleCompletedFork(removalQuestionId, lastHistoryHash, lastAnswer, lastAnswerer);
+        assertTrue(l2RealityEth.isPendingArbitration(removalQuestionId));
+        l2ForkArbitrator.handleCompletedFork(removalQuestionId, lastHistoryHash, lastAnswer, lastAnswerer);
 
-        assertFalse(l2realityEth.isPendingArbitration(removalQuestionId));
+        assertFalse(l2RealityEth.isPendingArbitration(removalQuestionId));
 
         assertEq(adjudicationFramework1.countArbitratorFreezePropositions(address(l2Arbitrator1)), 1);
         assertTrue(adjudicationFramework1.arbitrators(address(l2Arbitrator1)));
@@ -393,15 +393,15 @@ contract AdjudicationIntegrationTest is Test {
 
         // Now wait for the timeout and settle the proposition
         vm.expectRevert("question must be finalized");
-        bytes32 result = l2realityEth.resultFor(removalQuestionId);
+        bytes32 result = l2RealityEth.resultFor(removalQuestionId);
         assertEq(result, bytes32(uint256(0)));
 
-        assertEq(address(l2forkArbitrator.realitio()), address(l2realityEth), "l2forkArbitrator expects to arbitrate our l2realityEth");
-        assertEq(address(adjudicationFramework1.realityETH()), address(l2realityEth), "adjudicationFramework1 expects to use our l2realityEth");
-        assertEq(address(l2forkArbitrator), l2realityEth.getArbitrator(removalQuestionId), "Arbitrator of the removalQuestionId is l2forkArbitrator");
+        assertEq(address(l2ForkArbitrator.realitio()), address(l2RealityEth), "l2ForkArbitrator expects to arbitrate our l2RealityEth");
+        assertEq(address(adjudicationFramework1.realityETH()), address(l2RealityEth), "adjudicationFramework1 expects to use our l2RealityEth");
+        assertEq(address(l2ForkArbitrator), l2RealityEth.getArbitrator(removalQuestionId), "Arbitrator of the removalQuestionId is l2ForkArbitrator");
 
-        uint256 forkFee = l2forkArbitrator.getDisputeFee(removalQuestionId);
-        l2forkArbitrator.requestArbitration{value: forkFee}(removalQuestionId, 0);
+        uint256 forkFee = l2ForkArbitrator.getDisputeFee(removalQuestionId);
+        l2ForkArbitrator.requestArbitration{value: forkFee}(removalQuestionId, 0);
 
         // IMAGINE THE FORK HAPPENED HERE
         // There are now two L2s, each with a different chain ID
@@ -409,13 +409,13 @@ contract AdjudicationIntegrationTest is Test {
         vm.chainId(newChainId1);
 
         // TODO: Adjust the forkingFee as the total supply has changed a bit
-        bytes memory fakeMessageData = abi.encode(uint64(newChainId1), address(l1ForkingManagerF1), uint256(forkingFee), false, address(l2forkArbitrator), removalQuestionId, bytes32(uint256(0)));
+        bytes memory fakeMessageData = abi.encode(uint64(newChainId1), address(l1ForkingManagerF1), uint256(forkingFee), false, address(l2ForkArbitrator), removalQuestionId, bytes32(uint256(0)));
         l2Bridge.fakeClaimMessage(address(l1GlobalChainInfoPublisher), uint32(0), address(l2ChainInfo), fakeMessageData, uint256(0));
 
-        assertTrue(l2realityEth.isPendingArbitration(removalQuestionId));
-        l2forkArbitrator.handleCompletedFork(removalQuestionId, lastHistoryHash, lastAnswer, lastAnswerer);
+        assertTrue(l2RealityEth.isPendingArbitration(removalQuestionId));
+        l2ForkArbitrator.handleCompletedFork(removalQuestionId, lastHistoryHash, lastAnswer, lastAnswerer);
 
-        assertFalse(l2realityEth.isPendingArbitration(removalQuestionId));
+        assertFalse(l2RealityEth.isPendingArbitration(removalQuestionId));
 
         assertEq(adjudicationFramework1.countArbitratorFreezePropositions(address(l2Arbitrator1)), 1);
         assertTrue(adjudicationFramework1.arbitrators(address(l2Arbitrator1)));
@@ -438,18 +438,18 @@ contract AdjudicationIntegrationTest is Test {
 
         // Now wait for the timeout and settle the proposition
         vm.expectRevert("question must be finalized");
-        bytes32 result = l2realityEth.resultFor(removalQuestionId);
+        bytes32 result = l2RealityEth.resultFor(removalQuestionId);
         assertEq(result, bytes32(uint256(0)));
 
-        assertEq(address(l2forkArbitrator.realitio()), address(l2realityEth), "l2forkArbitrator expects to arbitrate our l2realityEth");
-        assertEq(address(adjudicationFramework1.realityETH()), address(l2realityEth), "adjudicationFramework1 expects to use our l2realityEth");
-        assertEq(address(l2forkArbitrator), l2realityEth.getArbitrator(removalQuestionId), "Arbitrator of the removalQuestionId is l2forkArbitrator");
+        assertEq(address(l2ForkArbitrator.realitio()), address(l2RealityEth), "l2ForkArbitrator expects to arbitrate our l2RealityEth");
+        assertEq(address(adjudicationFramework1.realityETH()), address(l2RealityEth), "adjudicationFramework1 expects to use our l2RealityEth");
+        assertEq(address(l2ForkArbitrator), l2RealityEth.getArbitrator(removalQuestionId), "Arbitrator of the removalQuestionId is l2ForkArbitrator");
 
-        uint256 forkFee = l2forkArbitrator.getDisputeFee(removalQuestionId);
+        uint256 forkFee = l2ForkArbitrator.getDisputeFee(removalQuestionId);
         vm.prank(user2);
-        l2forkArbitrator.requestArbitration{value: forkFee}(removalQuestionId, 0);
+        l2ForkArbitrator.requestArbitration{value: forkFee}(removalQuestionId, 0);
 
-        assertTrue(l2forkArbitrator.isForkInProgress(), "In forking state");
+        assertTrue(l2ForkArbitrator.isForkInProgress(), "In forking state");
 
         // L1 STUFF HAPPENS HERE
         // Assume somebody else called fork or the fee changed or something.
@@ -457,22 +457,22 @@ contract AdjudicationIntegrationTest is Test {
 
         // NB Here we're sending the payment directly
         // In fact it seems like it would have to be claimed separately
-        assertEq(address(l2forkArbitrator).balance, 0);
+        assertEq(address(l2ForkArbitrator).balance, 0);
         payable(address(l2Bridge)).transfer(1000000); // Fund it so it can fund the L2ForkArbitrator
         bytes memory fakeMessageData = abi.encode(removalQuestionId);
-        l2Bridge.fakeClaimMessage(address(l1GlobalForkRequester), uint32(0), address(l2forkArbitrator), fakeMessageData, forkFee);
-        assertEq(address(l2forkArbitrator).balance, forkFee);
+        l2Bridge.fakeClaimMessage(address(l1GlobalForkRequester), uint32(0), address(l2ForkArbitrator), fakeMessageData, forkFee);
+        assertEq(address(l2ForkArbitrator).balance, forkFee);
 
-        assertFalse(l2forkArbitrator.isForkInProgress(), "Not in forking state");
+        assertFalse(l2ForkArbitrator.isForkInProgress(), "Not in forking state");
 
-        l2forkArbitrator.cancelArbitration(removalQuestionId);
-        assertEq(forkFee, l2forkArbitrator.refundsDue(user2));
+        l2ForkArbitrator.cancelArbitration(removalQuestionId);
+        assertEq(forkFee, l2ForkArbitrator.refundsDue(user2));
 
-        uint256 user2bal = user2.balance;
+        uint256 user2Bal = user2.balance;
         vm.prank(user2);
-        l2forkArbitrator.claimRefund();
-        assertEq(address(l2forkArbitrator).balance, 0);
-        assertEq(user2.balance, user2bal + forkFee);
+        l2ForkArbitrator.claimRefund();
+        assertEq(address(l2ForkArbitrator).balance, 0);
+        assertEq(user2.balance, user2Bal + forkFee);
 
     }
 
@@ -482,7 +482,7 @@ contract AdjudicationIntegrationTest is Test {
 
         // Creates 2 templates, each with a log entry from reality.eth
         vm.prank(adjudictionDeployer);
-        new AdjudicationFramework(address(l2realityEth), 123, address(l2forkArbitrator), initialArbs);
+        new AdjudicationFramework(address(l2RealityEth), 123, address(l2ForkArbitrator), initialArbs);
 
         // NB The length and indexes of this may change if we add unrelated log entries to the AdjudicationFramework constructor
         Vm.Log[] memory entries = vm.getRecordedLogs();
@@ -503,7 +503,7 @@ contract AdjudicationIntegrationTest is Test {
         bytes32 questionId = keccak256(abi.encodePacked("Question 1")); // TODO: This should be in some wrapper contract
         govArb.setDisputeFee(50);
         vm.mockCall(
-            address(l1realityEth),
+            address(l1RealityEth),
             abi.encodeWithSelector(IRealityETH.isFinalized.selector),
             abi.encode(true)
         );
