@@ -161,6 +161,7 @@ contract ForkableBridge is
         BridgeAssetOperations.mergeChildTokens(
             token,
             amount,
+            
             wrappedTokenToTokenInfo[token],
             children[0],
             children[1]
