@@ -5,7 +5,6 @@ pragma solidity ^0.8.20;
 // Allow mixed-case variables for compatibility with reality.eth, eg it uses question_id not questionId
 /* solhint-disable var-name-mixedcase */
 
-// import {Arbitrator} from "./Arbitrator.sol";
 import {L2ChainInfo} from "./L2ChainInfo.sol";
 import {L1GlobalForkRequester} from "./L1GlobalForkRequester.sol";
 import {IRealityETH} from "./interfaces/IRealityETH.sol";
