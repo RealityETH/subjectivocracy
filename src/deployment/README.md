@@ -146,7 +146,7 @@ cp deploy_parameters.json.example deploy_parameters.json
 run
 
 ```sh
-yarn hardhat run src/deployment/1_deployforkableToken.js --network goerli
+yarn hardhat run src/deployment/1_deployforkableToken.js --network sepolia
 ```
 
 This will fill your maticTokenAddress in deploy_parameters.
@@ -157,11 +157,11 @@ yarn hardhat run src/deployment/2_creategenesis.js --network hardhat
 
 ```sh
 rm .openzeppelin/$HARDHAT_NETWORK.json
-yarn hardhat run src/deployment/3_deployContracts.js --network goerli
+yarn hardhat run src/deployment/3_deployContracts.js --network sepolia
 ```
 
 and verify all contracts by:
 
 ```sh
-yarn hardhat run verifyContracts.js --network goerli
+yarn hardhat run verifyContracts.js --network sepolia
 ```

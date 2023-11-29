@@ -146,7 +146,7 @@ async function main() {
     });
 
     if (!ongoingDeployment.chainIdManager) {
-        chainIdManagerContract = await ChainIdManagerFactory.deploy();
+        chainIdManagerContract = await ChainIdManagerFactory.deploy(1500054);
         console.log('#######################\n');
         console.log('chainIdManager deployed to:', chainIdManagerContract.address);
 
