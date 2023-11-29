@@ -97,7 +97,7 @@ contract ForkableZkEVMTest is Test {
             new ForkableZkEVM()
         );
 
-        vm.expectRevert("Only forkManager is allowed");
+        vm.expectRevert("Not forkManager");
         forkableZkEVM.createChildren(secondForkableZkEVMImplementation);
 
         vm.prank(forkableZkEVM.forkmanager());

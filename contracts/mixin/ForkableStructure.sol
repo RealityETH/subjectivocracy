@@ -22,17 +22,24 @@ contract ForkableStructure is IForkableStructure, Initializable {
         _;
     }
 
-    modifier onlyAfterForking() {
-        require(children[0] != address(0x0), "onlyAfterForking");
+    modifier onlyBeforeCreatingChild2() {
+        require(children[2] == address(0x0), "No changes after forking");
         _;
     }
+
+    modifier onlyAfterForking() {
+        require(children[0] != address(0x0), "onlyAfterForking");
+        require(children[1] != address(0x0), "onlyAfterForking");
+        _;
+    }
+
     modifier onlyParent() {
-        require(msg.sender == parentContract, "Only available for parent");
+        require(msg.sender == parentContract, "Not parent");
         _;
     }
 
     modifier onlyForkManger() {
-        require(msg.sender == forkmanager, "Only forkManager is allowed");
+        require(msg.sender == forkmanager, "Not forkManager");
         _;
     }
 
@@ -56,14 +63,13 @@ contract ForkableStructure is IForkableStructure, Initializable {
     function _createChildren(
         address implementation
     ) internal returns (address forkingManager1, address forkingManager2) {
-        (forkingManager1, forkingManager2) = CreateChildren.createChildren(
-            implementation
-        );
+        forkingManager1 = CreateChildren.createChild1();
         children[0] = forkingManager1;
+        forkingManager2 = CreateChildren.createChild2(implementation);
         children[1] = forkingManager2;
     }
 
-    function getChildren() external view returns (address, address) {
+    function getChildren() public view returns (address, address) {
         return (children[0], children[1]);
     }
 }

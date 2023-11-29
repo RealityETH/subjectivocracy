@@ -36,11 +36,7 @@ library CreateChildren {
     }
 
     /// @dev Internal function to create the children contracts.
-    ///
-    /// @param implementation Allows to pass a different implementation contract for the second proxied child.
-    function createChildren(
-        address implementation
-    ) public returns (address forkingManager1, address forkingManager2) {
+    function createChild1() public returns (address forkingManager1) {
         // Fork 1 will always keep the original implementation
         forkingManager1 = address(
             new TransparentUpgradeableProxy(
@@ -49,6 +45,14 @@ library CreateChildren {
                 ""
             )
         );
+    }
+
+    /// @dev Internal function to create the child 2
+    ///
+    /// @param implementation Allows to pass a different implementation contract for the second proxied child.
+    function createChild2(
+        address implementation
+    ) public returns (address forkingManager2) {
         if (address(implementation) == address(0)) {
             implementation = _getImplementation();
         }
@@ -57,5 +61,15 @@ library CreateChildren {
         forkingManager2 = address(
             new TransparentUpgradeableProxy(implementation, _getAdmin(), "")
         );
+    }
+
+    /// @dev Internal function to create the children contracts.
+    ///
+    /// @param implementation Allows to pass a different implementation contract for the second proxied child.
+    function createChildren(
+        address implementation
+    ) public returns (address forkingManager1, address forkingManager2) {
+        forkingManager1 = createChild1();
+        forkingManager2 = createChild2(implementation);
     }
 }

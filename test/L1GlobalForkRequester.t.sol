@@ -363,7 +363,8 @@ contract L1GlobalForkRequesterTest is Test {
 
         // Execute the other guy's fork
         skip(forkmanager.forkPreparationTime() + 1);
-        forkmanager.executeFork();
+        forkmanager.executeFork1();
+        forkmanager.executeFork2();
 
         {
             uint256 balBeforeSplit = forkonomicToken.balanceOf(

@@ -72,7 +72,7 @@ contract ForkableBridgeTest is Test {
         address secondBridgeImplementation = address(
             new ForkableBridgeWrapper()
         );
-        vm.expectRevert(bytes("Only forkManager is allowed"));
+        vm.expectRevert(bytes("Not forkManager"));
         forkableBridge.createChildren(secondBridgeImplementation);
         ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
         vm.mockCall(
@@ -101,7 +101,7 @@ contract ForkableBridgeTest is Test {
             abi.encodePacked(originNetwork, token)
         );
 
-        vm.expectRevert(bytes("Only available for parent"));
+        vm.expectRevert(bytes("Not parent"));
         forkableBridge.mintForkableToken(
             address(token),
             originNetwork,
@@ -111,7 +111,7 @@ contract ForkableBridgeTest is Test {
         );
 
         vm.prank(forkableBridge.parentContract());
-        vm.expectRevert(bytes("Token is from this network"));
+        vm.expectRevert(bytes("wrong Token"));
         forkableBridge.mintForkableToken(
             address(token),
             networkID, // <-- this line is changed
@@ -178,7 +178,7 @@ contract ForkableBridgeTest is Test {
             amount
         );
 
-        vm.expectRevert(bytes("Only available for parent"));
+        vm.expectRevert(bytes("Not parent"));
         forkableBridge.burnForkableTokens(
             destinationAddress,
             originTokenAddress,
@@ -219,7 +219,7 @@ contract ForkableBridgeTest is Test {
 
         // Testing revert if children are not yet created
         vm.expectRevert(bytes("onlyAfterForking"));
-        forkableBridge.splitTokenIntoChildTokens(address(token), amount);
+        forkableBridge.splitTokenIntoChildToken(address(token), amount, true);
 
         address secondBridgeImplementation = address(
             new ForkableBridgeWrapper()
@@ -228,9 +228,6 @@ contract ForkableBridgeTest is Test {
         (address child1, address child2) = forkableBridge.createChildren(
             secondBridgeImplementation
         );
-        // Testing revert if token was not bridged before (i.e. is not forkable)
-        vm.expectRevert(bytes("Token not forkable"));
-        forkableBridge.splitTokenIntoChildTokens(address(token), amount);
 
         // Create forkable token
         vm.prank(forkableBridge.parentContract());
@@ -275,10 +272,10 @@ contract ForkableBridgeTest is Test {
         // splitting fails, if sender does not have the funds
         vm.prank(address(0x234234));
         vm.expectRevert(bytes("ERC20: burn amount exceeds balance"));
-        forkableBridge.splitTokenIntoChildTokens(forkableToken, amount);
+        forkableBridge.splitTokenIntoChildToken(forkableToken, amount, true);
 
         // Split the token
-        forkableBridge.splitTokenIntoChildTokens(forkableToken, amount);
+        forkableBridge.splitTokenIntoChildToken(forkableToken, amount, true);
 
         // Assert token balances
         address forkableTokenChild1 = ForkableBridge(child1)
@@ -360,7 +357,7 @@ contract ForkableBridgeTest is Test {
         );
 
         // Split the token
-        forkableBridge.splitTokenIntoChildTokens(forkableToken, amount);
+        forkableBridge.splitTokenIntoChildToken(forkableToken, amount, true);
 
         // Only parent can merge
         vm.expectRevert(bytes("onlyAfterForking"));
@@ -524,7 +521,7 @@ contract ForkableBridgeTest is Test {
             to
         );
 
-        vm.expectRevert("Invalid to address");
+        vm.expectRevert("Invalid to");
         vm.prank(hardAssetManger);
         forkableBridge.transferHardAssetsToChild(
             address(erc20Token),
@@ -587,7 +584,10 @@ contract ForkableBridgeTest is Test {
         // Now, call the function as the forkmanager
         vm.expectRevert(bytes("onlyAfterForking"));
         vm.prank(forkmanager);
-        forkableBridge2.sendForkonomicTokensToChildren();
+        forkableBridge2.sendForkonomicTokensToChild(10, true, false);
+        vm.expectRevert(bytes("onlyAfterForking"));
+        vm.prank(forkmanager);
+        forkableBridge2.sendForkonomicTokensToChild(10, true, false);
 
         // Create initiate the forking process and create children
         address secondBridgeImplementation = address(
@@ -635,8 +635,11 @@ contract ForkableBridgeTest is Test {
             "FTK"
         );
         // Now, call the function as the forkmanager
+        uint256 amount = erc20GasToken.balanceOf(address(forkableBridge2));
         vm.prank(forkmanager);
-        forkableBridge2.sendForkonomicTokensToChildren();
+        forkableBridge2.sendForkonomicTokensToChild(amount, true, false);
+        vm.prank(forkmanager);
+        forkableBridge2.sendForkonomicTokensToChild(amount, false, true);
 
         // Check that the tokens were transferred correctly
         assertEq(

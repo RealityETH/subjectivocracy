@@ -57,7 +57,7 @@ contract ForkableBridge is
         address to
     ) external onlyAfterForking {
         require(_hardAssetManager == msg.sender, "Not authorized");
-        require(to == children[0] || to == children[1], "Invalid to address");
+        require(to == children[0] || to == children[1], "Invalid to");
         IERC20(token).transfer(to, amount);
     }
 
@@ -79,9 +79,8 @@ contract ForkableBridge is
         if (parentContract != address(0)) {
             // Also check the parent contract for claims if it is set
             return ForkableBridge(parentContract).isClaimed(index);
-        } else {
-            return false;
         }
+        return false;
     }
 
     /**
@@ -116,7 +115,7 @@ contract ForkableBridge is
         bytes calldata metadata,
         address destinationAddress
     ) external onlyParent {
-        require(originNetwork != networkID, "Token is from this network");
+        require(originNetwork != networkID, "wrong Token");
         _issueBridgedTokens(
             originNetwork,
             token,
@@ -127,16 +126,18 @@ contract ForkableBridge is
     }
 
     // @inheritdoc IForkableBridge
-    function splitTokenIntoChildTokens(
+    function splitTokenIntoChildToken(
         address token,
-        uint256 amount
-    ) external onlyAfterForking {
-        BridgeAssetOperations.splitTokenIntoChildTokens(
+        uint256 amount,
+        bool mintSecondChildAsWell
+    ) public onlyAfterForking {
+        BridgeAssetOperations.splitTokenIntoChildToken(
             token,
             amount,
-            wrappedTokenToTokenInfo[token],
             children[0],
-            children[1]
+            // If the second token should not be minted - to safe gas or since its broken - we pass address(0)
+            mintSecondChildAsWell ? children[1] : address(0),
+            wrappedTokenToTokenInfo[token]
         );
     }
 
@@ -171,17 +172,20 @@ contract ForkableBridge is
      * @dev Allows the forkmanager to take out the forkonomic tokens
      * and send them to the children-bridge contracts
      * Notice that forkonomic tokens are special, as they their main contract
-     * is on L1, but they are still forkable tokens as all the tokens from L2.
+     * is on L1, but they are still forkable tokens as all the tokens from
+     * @param useFirstChild boolean indicating for which child the operation should be run
      */
-    function sendForkonomicTokensToChildren()
-        public
-        onlyForkManger
-        onlyAfterForking
-    {
-        BridgeAssetOperations.sendForkonomicTokensToChildren(
+    function sendForkonomicTokensToChild(
+        uint256 amount,
+        bool useFirstChild,
+        bool useChildTokenAllowance
+    ) public onlyForkManger onlyAfterForking {
+        BridgeAssetOperations.sendForkonomicTokensToChild(
             gasTokenAddress,
-            children[0],
-            children[1]
+            amount,
+            useFirstChild ? children[0] : children[1],
+            useFirstChild,
+            useChildTokenAllowance
         );
     }
 

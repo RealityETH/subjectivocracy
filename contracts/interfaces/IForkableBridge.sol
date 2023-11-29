@@ -4,8 +4,9 @@ pragma solidity ^0.8.20;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
 import {IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBasePolygonZkEVMGlobalExitRoot.sol";
+import {IForkableStructure} from "./IForkableStructure.sol";
 
-interface IForkableBridge is IPolygonZkEVMBridge {
+interface IForkableBridge is IForkableStructure, IPolygonZkEVMBridge {
     /**
      * @dev Function to initialize the contract
      * @param _forkmanager: address of the forkmanager contract
@@ -49,7 +50,11 @@ interface IForkableBridge is IPolygonZkEVMBridge {
      * @param token token that should be split
      * @param amount amount of tokens to be split
      */
-    function splitTokenIntoChildTokens(address token, uint256 amount) external;
+    function splitTokenIntoChildToken(
+        address token,
+        uint256 amount,
+        bool mintSecondChild
+    ) external;
 
     /**
      * @dev Function to mint the forkable token by the parent contract

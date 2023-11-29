@@ -34,4 +34,14 @@ interface IForkonomicToken is IForkableStructure, IERC20Upgradeable {
     /// @dev Allows anyone to split the tokens from the parent contract into the tokens of the children
     /// @param amount The amount of tokens to split
     function splitTokensIntoChildTokens(uint256 amount) external;
+
+    /// @dev Allows anyone to split the tokens from the parent contract into the tokens of the children
+    /// @param amount The amount of tokens to split
+    /// @param firstChild Whether to mint the first or second child
+    /// @param useChildTokenAllowance Whether to use the child token allowance or the parent token balance
+    function splitTokenAndMintOneChild(
+        uint256 amount,
+        bool firstChild,
+        bool useChildTokenAllowance
+    ) external;
 }

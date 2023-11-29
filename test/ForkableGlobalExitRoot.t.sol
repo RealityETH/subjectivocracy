@@ -74,7 +74,7 @@ contract ForkableGlobalExitRootTest is Test {
             new ForkableGlobalExitRoot()
         );
 
-        vm.expectRevert("Only forkManager is allowed");
+        vm.expectRevert("Not forkManager");
         forkableGlobalExitRoot.createChildren(
             secondForkableGlobalExitRootImplementation
         );
