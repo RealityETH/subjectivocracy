@@ -18,6 +18,7 @@
     "deploy:testnet:ZkEVM:goerli": "npm run prepare:testnet:ZkEVM:goerli && npm run deploy:ZkEVM:goerli",
     "upgrade:timelock:goerli": "npx hardhat run upgrade/timeLockUpgrade.js --network goerli",
     "verify:ZkEVM:goerli": "npx hardhat run deployment/verifyContracts.js --network goerli",
+    "saveDeployment:sepolia": "mkdir -p deployments/sepolia_$(date +%s) && cp -r src/deployment/deploy_*.json deployments/sepolia_$(date +%s) && cp .openzeppelin/sepolia.json deployments/sepolia_$(date +%s) && cp src/deployment/genesis.json deployments/sepolia_$(date +%s)",
     "saveDeployment:goerli": "mkdir -p deployments/goerli_$(date +%s) && cp -r deployment/deploy_*.json deployments/goerli_$(date +%s) && cp .openzeppelin/goerli.json deployments/goerli_$(date +%s) && cp deployment/genesis.json deployments/goerli_$(date +%s)",
     "saveDeployment:mainnet": "mkdir -p deployments/mainnet_$(date +%s) && cp -r deployment/deploy_*.json deployments/mainnet_$(date +%s) && cp .openzeppelin/mainnet.json deployments/mainnet_$(date +%s) && cp deployment/genesis.json deployments/mainnet_$(date +%s)",
     "deploy:ZkEVM:mainnet": "node deployment/1_createGenesis.js && npx hardhat run deployment/3_deployContracts.js --network mainnet && npm run saveDeployment:mainnet",

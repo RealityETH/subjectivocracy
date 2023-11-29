@@ -165,3 +165,8 @@ and verify all contracts by:
 ```sh
 yarn hardhat run src/deployment/verifyContracts.js --network sepolia
 ```
+
+To safe the deployment, run:
+```sh
+yarn run saveDeployment:sepolia
+```
