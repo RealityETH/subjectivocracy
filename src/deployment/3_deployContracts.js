@@ -201,7 +201,7 @@ async function main() {
         console.log('forkingManager already deployed on: ', ongoingDeployment.forkingManager);
 
         // Import OZ manifest the deployed contracts, its enough to import just the proyx, the rest are imported automatically (admin/impl)
-        await upgrades.forceImport(ongoingDeployment.forkingManagerContract, ForkingManagerFactory, 'transparent');
+        await upgrades.forceImport(ongoingDeployment.forkingManager, ForkingManagerFactory, 'transparent');
     }
 
     let verifierContract;
