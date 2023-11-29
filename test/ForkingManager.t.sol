@@ -235,7 +235,7 @@ contract ForkingManagerTest is Test {
         assertFalse(forkmanager.isForkingExecuted());
         assertFalse(forkmanager.canFork());
 
-        vm.warp(block.timestamp + forkmanager.forkPreparationTime() + 1);
+        vm.warp(block.timestamp + forkmanager.FORK_PREPARATION_TIME() + 1);
         forkmanager.executeFork1();
         forkmanager.executeFork2();
 
@@ -313,7 +313,7 @@ contract ForkingManagerTest is Test {
                 forkID: newForkID
             })
         );
-        vm.warp(block.timestamp + forkmanager.forkPreparationTime() + 1);
+        vm.warp(block.timestamp + forkmanager.FORK_PREPARATION_TIME() + 1);
         forkmanager.executeFork1();
         forkmanager.executeFork2();
 
@@ -463,7 +463,7 @@ contract ForkingManagerTest is Test {
         IForkingManager.NewImplementations memory noNewImplementations;
         // Call the initiateFork function to create a new fork
         forkmanager.initiateFork(disputeData, noNewImplementations);
-        vm.warp(block.timestamp + forkmanager.forkPreparationTime() + 1);
+        vm.warp(block.timestamp + forkmanager.FORK_PREPARATION_TIME() + 1);
         forkmanager.executeFork1();
         forkmanager.executeFork2();
 
@@ -626,7 +626,7 @@ contract ForkingManagerTest is Test {
                 forkID: newForkID
             })
         );
-        skip(forkmanager.forkPreparationTime() + 1);
+        skip(forkmanager.FORK_PREPARATION_TIME() + 1);
         forkmanager.executeFork1();
         forkmanager.executeFork2();
 
@@ -644,7 +644,7 @@ contract ForkingManagerTest is Test {
         assertEq(receivedIsL1, isL1);
         assertEq(
             receivedExecutionTime,
-            testTimestamp + forkmanager.forkPreparationTime()
+            testTimestamp + forkmanager.FORK_PREPARATION_TIME()
         );
     }
 
@@ -676,7 +676,7 @@ contract ForkingManagerTest is Test {
 
         vm.expectRevert("ForkingManager: fork not ready");
         forkmanager.executeFork1();
-        vm.warp(testTimestamp + forkmanager.forkPreparationTime() + 1);
+        vm.warp(testTimestamp + forkmanager.FORK_PREPARATION_TIME() + 1);
         forkmanager.executeFork1();
     }
 
@@ -701,7 +701,7 @@ contract ForkingManagerTest is Test {
                 forkID: newForkID
             })
         );
-        skip(forkmanager.forkPreparationTime() + 1);
+        skip(forkmanager.FORK_PREPARATION_TIME() + 1);
         forkmanager.executeFork1();
         forkmanager.executeFork2();
         vm.expectRevert("No changes after forking");

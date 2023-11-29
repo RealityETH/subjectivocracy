@@ -40,8 +40,8 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     // Following variables are defined during the fork proposal
     DisputeData public disputeData;
     NewImplementations public proposedImplementations;
-    uint256 public executionTimeForProposal = 0;
-    uint256 public immutable forkPreparationTime = 1 weeks;
+    uint256 public executionTimeForProposal;
+    uint256 public constant FORK_PREPARATION_TIME = 1 weeks;
 
     /// @inheritdoc IForkingManager
     function initialize(
@@ -60,6 +60,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         globalExitRoot = _globalExitRoot;
         arbitrationFee = _arbitrationFee;
         chainIdManager = _chainIdManager;
+        executionTimeForProposal = 0;
         ForkableStructure.initialize(address(this), _parentContract);
     }
 
@@ -96,7 +97,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         disputeData = _disputeData;
         proposedImplementations = _newImplementations;
         // solhint-disable-next-line not-rely-on-time
-        executionTimeForProposal = (block.timestamp + forkPreparationTime);
+        executionTimeForProposal = (block.timestamp + FORK_PREPARATION_TIME);
     }
 
     /**
