@@ -362,7 +362,7 @@ contract L1GlobalForkRequesterTest is Test {
         );
 
         // Execute the other guy's fork
-        skip(forkmanager.forkPreparationTime() + 1);
+        skip(forkmanager.FORK_PREPARATION_TIME() + 1);
         forkmanager.executeFork1();
         forkmanager.executeFork2();
 

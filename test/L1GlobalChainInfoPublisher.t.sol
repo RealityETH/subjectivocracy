@@ -291,7 +291,7 @@ contract L1GlobalChainInfoPublisherTest is Test {
                 forkID: newForkID
             })
         );
-        skip(forkmanager.forkPreparationTime() + 1);
+        skip(forkmanager.FORK_PREPARATION_TIME() + 1);
         forkmanager.executeFork1();
         forkmanager.executeFork2();
 
@@ -357,7 +357,7 @@ contract L1GlobalChainInfoPublisherTest is Test {
 
         // Call the initiateFork function to create a new fork
         forkmanager2.initiateFork(disputeData2, newImplementations2);
-        skip(forkmanager.forkPreparationTime() + 1);
+        skip(forkmanager.FORK_PREPARATION_TIME() + 1);
         forkmanager2.executeFork1();
         forkmanager2.executeFork2();
 
