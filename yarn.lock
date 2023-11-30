@@ -2,9 +2,10 @@
 # yarn lockfile v1
 
 
-"@0xpolygonhermez/zkevm-commonjs@github:0xPolygonHermez/zkevm-commonjs#develop":
-  version "1.0.1"
-  resolved "git+ssh://git@github.com/0xPolygonHermez/zkevm-commonjs.git#cd7a4d0a14095c0ba0664cdbc728e8bc6c411e58"
+"@0xpolygonhermez/zkevm-commonjs@github:0xPolygonHermez/zkevm-commonjs#v2.0.0-fork.5":
+  version "2.0.0"
+  uid "035c6ae54ebdf2164bf8a97bb7fc38cb8127c9dd"
+  resolved "https://codeload.github.com/0xPolygonHermez/zkevm-commonjs/tar.gz/035c6ae54ebdf2164bf8a97bb7fc38cb8127c9dd"
   dependencies:
     "@ethereumjs/block" "^3.6.2"
     "@ethereumjs/tx" "^3.4.0"
@@ -888,10 +889,10 @@
   resolved "https://registry.yarnpkg.com/@nomiclabs/hardhat-waffle/-/hardhat-waffle-2.0.6.tgz#d11cb063a5f61a77806053e54009c40ddee49a54"
   integrity sha512-+Wz0hwmJGSI17B+BhU/qFRZ1l6/xMW82QGXE/Gi+WTmwgJrQefuBs1lIf7hzQ1hLk6hpkvb/zwcNkpVKRYTQYg==
 
-"@openzeppelin/contracts-upgradeable@4.8.2":
-  version "4.8.2"
-  resolved "https://registry.npmjs.org/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.8.2.tgz"
-  integrity sha512-zIggnBwemUmmt9IS73qxi+tumALxCY4QEs3zLCII78k0Gfse2hAOdAkuAeLUzvWUpneMUfFE5sGHzEUSTvn4Ag==
+"@openzeppelin/contracts-upgradeable@4.9.3":
+  version "4.9.3"
+  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.9.3.tgz#ff17a80fb945f5102571f8efecb5ce5915cc4811"
+  integrity sha512-jjaHAVRMrE4UuZNfDwjlLGDxTHWIOwTJS2ldnc278a0gevfXfPr8hxKEVBGFBE96kl2G3VHDZhUimw/+G3TG2A==
 
 "@openzeppelin/contracts@4.8.2":
   version "4.8.2"
