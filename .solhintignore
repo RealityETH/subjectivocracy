@@ -19,3 +19,4 @@
 /contracts/ERC20Mint.sol
 /contracts/TokenBridge.sol
 /contracts/ERC20.sol
+lib/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol

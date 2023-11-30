@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.20;
 
 /** This contract can be inherited form any other contrac that needs to be aware of Forks.
