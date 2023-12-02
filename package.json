@@ -25,8 +25,8 @@
     "upgrade:timelock:mainnet": "npx hardhat run upgrade/timeLockUpgrade.js --network mainnet",
     "verify:ZkEVM:mainnet": "npx hardhat run deployment/verifyContracts.js --network mainnet",
     "compile": "npx hardhat compile",
-    "lintjs": "npx eslint ./deployment && npx eslint ./src",
-    "lintjs:fix": "npx eslint ./deployment --fix"
+    "lintjs": "npx eslint ./src",
+    "lintjs:fix": "npx eslint ./src/deployment --fix"
   },
   "dependencies": {
     "chai": "^4.3.7",
