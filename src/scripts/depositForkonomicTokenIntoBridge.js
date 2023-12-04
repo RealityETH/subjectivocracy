@@ -4,14 +4,15 @@ const path = require('path');
 const { ethers } = require('hardhat');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
-const deployParameters = require('../../deployment/deploy_parameters.json');
-const deploymentOutput = require('../../deployment/deploy_output.json');
-
 async function main() {
     /*
      * Check deploy parameters
      * Check that every necessary parameter is fullfilled
      */
+    const args = process.argv.slice(2);
+    const deploymentName = args[0];
+    const deployParameters = require(`../../deployments/${deploymentName}/deploy_parameters.json`);
+    const deploymentOutput = require(`../../deployments/${deploymentName}/deploy_output.json`);
 
     const mandatoryDeploymentOutput = [
         'polygonZkEVMBridgeAddress',
@@ -73,18 +74,22 @@ async function main() {
         [deployer] = (await ethers.getSigners());
     }
 
-    const bridge = await hre.ethers.getContractAt(
+    const bridge = await ethers.getContractAt(
         'ForkableBridge',
         polygonZkEVMBridgeAddress,
     );
 
-    const forkonomicToken = await hre.ethers.getContractAt(
+    const forkonomicToken = await ethers.getContractAt(
         'ForkonomicToken',
         forkonomicTokenAddress,
     );
     const depositAmount = ethers.utils.parseEther('10');
-    await forkonomicToken.connect(deployer).approve(polygonZkEVMBridgeAddress, depositAmount, { gasLimit: 500000 });
+    const tx1 = await forkonomicToken.connect(deployer).approve(polygonZkEVMBridgeAddress, depositAmount, { gasLimit: 500000 });
     console.log('Approved bridge to spend forkonomic tokens');
+    console.log('by the following tx: ', tx1.hash);
+
+    // sleep for 3 secs to wait until tx is mined and nonce increase is reflected
+    await new Promise((r) => setTimeout(r, 3000));
 
     await bridge.connect(deployer).bridgeAsset(
         1,
