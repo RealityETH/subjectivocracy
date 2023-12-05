@@ -26,7 +26,7 @@
     "verify:ZkEVM:mainnet": "npx hardhat run deployment/verifyContracts.js --network mainnet",
     "compile": "npx hardhat compile",
     "lintjs": "npx eslint ./src",
-    "lintjs:fix": "npx eslint ./src/deployment --fix"
+    "lintjs:fix": "npx eslint ./src --fix"
   },
   "dependencies": {
     "chai": "^4.3.7",
