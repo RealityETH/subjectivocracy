@@ -1,0 +1,43 @@
+Setup docs for static web server
+Edmund Edgar, 2012-12-05
+
+# Running the web server
+
+It's just a static website under apache2. 
+
+When changing the config use:
+ 
+  sudo apache2ctl configtest
+  sudo apache2ctl reload
+
+When adding a site, make it in sites-available then do eg
+
+  sudo a2ensite backstop.techology
+
+We use Lets Encrypt for https. Set up the http site first, creating a webroot, then install and run certbot which will automatically create the -le-ssl.conf version.
+
+
+# backstop.technology
+
+Forcing the whitepaper to download uses mod_headers, so 
+
+  sudo a2enmod headers
+  sudo apache2ctl reload
+
+
+# HTTPS proxy to testnet (RPC and explorer)
+
+Testnet needs public services for RPC and the block explorer. These will run on weird ports which we don't want to expose. Also we want to access them over HTTPS, so we need a proxy. 
+
+The proxy will need proxy modules, so do:
+
+  sudo a2enmod proxy
+  sudo a2enmod proxy_http
+  sudo apache2ctl reload
+
+The config uses a hosts entry instead of hard-coding the actual server address, so add to /etc/hosts
+   123.123.123.123 backstop-testnet
+...substituting whatever the actual IP address hosting the services is.
+
+
+
