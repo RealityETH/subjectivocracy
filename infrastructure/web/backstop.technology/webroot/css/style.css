@@ -1,0 +1,48 @@
+body {
+    background-color: rgb(247, 247, 239);
+    font-family: monospace;
+    text-align: center;
+    font-weight:bold;
+    margin:0px;
+}
+
+div.top-bar {
+    background-color: gray;
+    color:#ffffff;
+    margin:auto;
+    width:100%;
+    font-size:20px;
+    font-family: monospace;
+    text-align:center;
+    padding:10px;
+}
+
+div.headline {
+    text-align:center;
+}
+
+iframe.whitepaper-frame {
+    width:800px;
+    height:100%;
+}
+
+div.main {
+    width:800px;
+    margin:auto;
+}
+
+div.main-links {
+    margin:auto;
+    width:800px;
+    font-size:120%;
+    text-align: left;
+    padding-top:10px;
+    padding-bottom:10px;
+}
+
+a.telegram-link {
+}
+a.whitepaper-link {
+}
+
+
