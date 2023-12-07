@@ -1,5 +1,4 @@
 {
-    "l2BridgeAddress": "0x000000000000000000000000000000000000ffff",
     "adjudicationFrameworkDisputeFee": 123,
     "forkArbitratorDisputeFee": 200,
     "arbitratorDisputeFee": 12,

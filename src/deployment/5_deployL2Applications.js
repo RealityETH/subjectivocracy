@@ -6,6 +6,7 @@ const { expect } = require('chai');
 const { ethers, upgrades } = require('hardhat');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
+const pathGenesisJson = path.join(__dirname, './genesis.json');
 const pathOutputJsonL1System = path.join(__dirname, './deploy_output.json');
 const pathOutputJsonL1Applications = path.join(__dirname, './deploy_output_l1_applications.json');
 const pathOutputJsonL2Applications = path.join(__dirname, './deploy_output_l2_applications.json');
@@ -28,6 +29,20 @@ async function main() {
 
     const l1ApplicationAddresses = require(pathOutputJsonL1Applications);
     const l1SystemAddresses = require(pathOutputJsonL1System);
+
+    const genesisJSON = require(pathGenesisJson);
+    const genesisEntries = genesisJSON.genesis;
+    let l2BridgeAddress;
+    for(const genesisIdx in genesisEntries) {
+        const genesisEntry = genesisEntries[genesisIdx];
+        if (genesisEntry.contractName == "PolygonZkEVMBridge proxy") {
+            l2BridgeAddress = genesisEntry.address;    
+            break;
+        }
+    }
+    if (!l2BridgeAddress) {
+        throw new Error('Could not find genesis bridge address in genesis.json');
+    }
 
     const {
         l1GlobalChainInfoPublisher,
@@ -54,7 +69,6 @@ async function main() {
      * Check that every necessary parameter is fullfilled
      */
     const mandatoryDeploymentParameters = [
-        'l2BridgeAddress',
         'adjudicationFrameworkDisputeFee',
         'arbitratorDisputeFee',
         'forkArbitratorDisputeFee'
@@ -67,7 +81,6 @@ async function main() {
     }
 
     let {
-        l2BridgeAddress,
         adjudicationFrameworkDisputeFee,
         forkArbitratorDisputeFee,
         arbitratorDisputeFee,
