@@ -149,21 +149,28 @@ async function main() {
     });
 
     if (initialArbitratorAddresses.length == 0) {
-        const arbitratorContract = await arbitratorFactory.deploy();
-        console.log('#######################\n');
-        console.log('Arbitrator deployed to:', arbitratorContract.address);
 
-        await arbitratorContract.setRealitio(realityETHContract.address);
-        await arbitratorContract.setDisputeFee(arbitratorDisputeFee);
+        if (!ongoingDeployment.initialArbitrator) {
 
-        // save an ongoing deployment
-        ongoingDeployment.initialArbitrator = arbitratorContract.address;
-        fs.writeFileSync(pathOngoingDeploymentJson, JSON.stringify(ongoingDeployment, null, 1));
+            const arbitratorContract = await arbitratorFactory.deploy();
+            console.log('#######################\n');
+            console.log('Arbitrator deployed to:', arbitratorContract.address);
 
-    } else {
-        arbitratorContract = arbitratorFactory.attach(initialArbitratorAddresses[0]);
-        console.log('#######################\n');
-        console.log('Arbitrator(s) already deployed on: ', initialArbitratorAddresses);
+            await arbitratorContract.setRealitio(realityETHContract.address);
+            await arbitratorContract.setDisputeFee(arbitratorDisputeFee);
+
+            // save an ongoing deployment
+            ongoingDeployment.initialArbitrator = arbitratorContract.address;
+            fs.writeFileSync(pathOngoingDeploymentJson, JSON.stringify(ongoingDeployment, null, 1));
+
+            initialArbitratorAddresses = [arbitratorContract.address];
+
+        } else {
+            arbitratorContract = arbitratorFactory.attach(initialArbitratorAddresses[0]);
+            console.log('#######################\n');
+            console.log('Arbitrator(s) already deployed on: ', initialArbitratorAddresses);
+            initialArbitratorAddresses = [arbitratorContract.address];
+        }
     }
 
 
@@ -196,7 +203,7 @@ async function main() {
 
     let l2ForkArbitratorContract;
     if (!ongoingDeployment.l2ForkArbitrator) {
-        console.log('Deploying L2ForkArbitrator with params', realityETHAddress, l2ChainInfoContract.address, l1GlobalForkRequester, forkArbitratorDisputeFee);
+        console.log('Deploying L2ForkArbitrator with params', realityETHContract.address, l2ChainInfoContract.address, l1GlobalForkRequester, forkArbitratorDisputeFee);
 
         l2ForkArbitratorContract = await l2ForkArbitratorFactory.deploy(
             realityETHContract.address,
@@ -223,7 +230,7 @@ async function main() {
 
     let adjudicationFrameworkContract;
     if (!ongoingDeployment.adjudicationFramework) {
-        console.log('Deploying AdjudicationFramework with params', realityETHAddress, adjudicationFrameworkDisputeFee, l2ForkArbitratorContract.address, initialArbitratorAddresses);
+        console.log('Deploying AdjudicationFramework with params', realityETHContract.address, adjudicationFrameworkDisputeFee, l2ForkArbitratorContract.address, initialArbitratorAddresses);
 
         adjudicationFrameworkContract = await adjudicationFrameworkFactory.deploy(
             realityETHContract.address,
@@ -257,11 +264,11 @@ async function main() {
     */
 
     const outputJson = {
-        RealityETH: realityETHContract.address,
-        Arbitrators: initialArbitratorAddresses,
-        L2ChainInfo: l2ChainInfoContract.address,
-        L2ForkArbitrator: l2ForkArbitratorContract.address,
-        AdjudicationFramework: adjudicationFrameworkContract.address
+        realityETH: realityETHContract.address,
+        arbitrators: initialArbitratorAddresses,
+        l2ChainInfo: l2ChainInfoContract.address,
+        l2ForkArbitrator: l2ForkArbitratorContract.address,
+        adjudicationFramework: adjudicationFrameworkContract.address
     };
     fs.writeFileSync(pathOutputJsonL2Applications, JSON.stringify(outputJson, null, 1));
 
