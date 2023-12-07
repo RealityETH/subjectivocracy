@@ -183,6 +183,15 @@ module.exports = {
                 count: 20,
             },
         },
+        backstopTestnet0: {
+            url: "https://rpc.testnet.backstop.technology",
+            accounts: {
+                mnemonic: process.env.MNEMONIC || DEFAULT_MNEMONIC,
+                path: "m/44'/60'/0'/0",
+                initialIndex: 0,
+                count: 20,
+            },
+        },
     },
     gasReporter: {
         enabled: !!process.env.REPORT_GAS,
