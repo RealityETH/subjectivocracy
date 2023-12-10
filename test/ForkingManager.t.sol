@@ -32,6 +32,7 @@ contract ForkingManagerTest is Test {
     address public forkonomicTokenImplementation;
     address public globalExitRootImplementation;
     address public chainIdManagerAddress;
+	uint256 public forkPreparationTime = 1000;
     bytes32 internal constant _IMPLEMENTATION_SLOT =
         0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
@@ -186,7 +187,8 @@ contract ForkingManagerTest is Test {
             address(0x0),
             address(globalExitRoot),
             arbitrationFee,
-            chainIdManagerAddress
+            chainIdManagerAddress,
+			forkPreparationTime
         );
         forkonomicToken.initialize(
             address(forkmanager),
@@ -235,7 +237,7 @@ contract ForkingManagerTest is Test {
         assertFalse(forkmanager.isForkingExecuted());
         assertFalse(forkmanager.canFork());
 
-        vm.warp(block.timestamp + forkmanager.FORK_PREPARATION_TIME() + 1);
+        vm.warp(block.timestamp + forkmanager.forkPreparationTime() + 1);
         forkmanager.executeFork1();
         forkmanager.executeFork2();
 
@@ -313,7 +315,7 @@ contract ForkingManagerTest is Test {
                 forkID: newForkID
             })
         );
-        vm.warp(block.timestamp + forkmanager.FORK_PREPARATION_TIME() + 1);
+        vm.warp(block.timestamp + forkmanager.forkPreparationTime() + 1);
         forkmanager.executeFork1();
         forkmanager.executeFork2();
 
@@ -463,7 +465,7 @@ contract ForkingManagerTest is Test {
         IForkingManager.NewImplementations memory noNewImplementations;
         // Call the initiateFork function to create a new fork
         forkmanager.initiateFork(disputeData, noNewImplementations);
-        vm.warp(block.timestamp + forkmanager.FORK_PREPARATION_TIME() + 1);
+        vm.warp(block.timestamp + forkmanager.forkPreparationTime() + 1);
         forkmanager.executeFork1();
         forkmanager.executeFork2();
 
@@ -626,7 +628,7 @@ contract ForkingManagerTest is Test {
                 forkID: newForkID
             })
         );
-        skip(forkmanager.FORK_PREPARATION_TIME() + 1);
+        skip(forkmanager.forkPreparationTime() + 1);
         forkmanager.executeFork1();
         forkmanager.executeFork2();
 
@@ -644,7 +646,7 @@ contract ForkingManagerTest is Test {
         assertEq(receivedIsL1, isL1);
         assertEq(
             receivedExecutionTime,
-            testTimestamp + forkmanager.FORK_PREPARATION_TIME()
+            testTimestamp + forkmanager.forkPreparationTime()
         );
     }
 
@@ -676,7 +678,7 @@ contract ForkingManagerTest is Test {
 
         vm.expectRevert("ForkingManager: fork not ready");
         forkmanager.executeFork1();
-        vm.warp(testTimestamp + forkmanager.FORK_PREPARATION_TIME() + 1);
+        vm.warp(testTimestamp + forkmanager.forkPreparationTime() + 1);
         forkmanager.executeFork1();
     }
 
@@ -701,7 +703,7 @@ contract ForkingManagerTest is Test {
                 forkID: newForkID
             })
         );
-        skip(forkmanager.FORK_PREPARATION_TIME() + 1);
+        skip(forkmanager.forkPreparationTime() + 1);
         forkmanager.executeFork1();
         forkmanager.executeFork2();
         vm.expectRevert("No changes after forking");

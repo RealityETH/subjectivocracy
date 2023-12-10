@@ -61,6 +61,7 @@ contract L1GlobalChainInfoPublisherTest is Test {
     address public forkonomicTokenImplementation;
     address public globalExitRootImplementation;
     address public chainIdManagerAddress;
+	uint256 public forkPreparationTime = 1000;
     bytes32 internal constant _IMPLEMENTATION_SLOT =
         0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
@@ -224,7 +225,8 @@ contract L1GlobalChainInfoPublisherTest is Test {
             address(0x0),
             address(globalExitRoot),
             arbitrationFee,
-            chainIdManagerAddress
+            chainIdManagerAddress,
+			forkPreparationTime
         );
         forkonomicToken.initialize(
             address(forkmanager),
@@ -291,7 +293,7 @@ contract L1GlobalChainInfoPublisherTest is Test {
                 forkID: newForkID
             })
         );
-        skip(forkmanager.FORK_PREPARATION_TIME() + 1);
+        skip(forkmanager.forkPreparationTime() + 1);
         forkmanager.executeFork1();
         forkmanager.executeFork2();
 
@@ -357,7 +359,7 @@ contract L1GlobalChainInfoPublisherTest is Test {
 
         // Call the initiateFork function to create a new fork
         forkmanager2.initiateFork(disputeData2, newImplementations2);
-        skip(forkmanager.FORK_PREPARATION_TIME() + 1);
+        skip(forkmanager.forkPreparationTime() + 1);
         forkmanager2.executeFork1();
         forkmanager2.executeFork2();
 
