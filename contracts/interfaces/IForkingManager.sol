@@ -68,7 +68,7 @@ interface IForkingManager is IForkableStructure {
         address _globalExitRoot,
         uint256 _arbitrationFee,
         address _chainIdManager,
-		uint256 _executionTimeForProposal
+        uint256 _executionTimeForProposal
     ) external;
 
     function initiateFork(

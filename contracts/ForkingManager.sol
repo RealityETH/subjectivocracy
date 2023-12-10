@@ -52,7 +52,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         address _globalExitRoot,
         uint256 _arbitrationFee,
         address _chainIdManager,
-		uint256 _forkPreparationTime
+        uint256 _forkPreparationTime
     ) external initializer {
         zkEVM = _zkEVM;
         bridge = _bridge;
@@ -62,7 +62,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         arbitrationFee = _arbitrationFee;
         chainIdManager = _chainIdManager;
         executionTimeForProposal = 0;
-		forkPreparationTime = _forkPreparationTime;
+        forkPreparationTime = _forkPreparationTime;
         ForkableStructure.initialize(address(this), _parentContract);
     }
 
@@ -209,7 +209,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             newInstances.globalExitRoot.one,
             arbitrationFee,
             chainIdManager,
-			forkPreparationTime
+            forkPreparationTime
         );
 
         //Initialize the global exit root contracts
@@ -323,7 +323,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             newInstances.globalExitRoot.two,
             arbitrationFee,
             chainIdManager,
-			forkPreparationTime
+            forkPreparationTime
         );
 
         //Initialize the global exit root contracts
