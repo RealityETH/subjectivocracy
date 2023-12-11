@@ -3,6 +3,7 @@
  "trustedSequencerURL": "http://zkevm-json-rpc:8123",
  "networkName": "fzkevm",
  "version": "0.0.1",
+ "forkPreparationTime": "604800",
  "trustedSequencer": "0x740a98F8f4fAe0986FB3264Fe4aaCf94ac1EE96f",
  "chainID": 10101012,
  "trustedAggregator": "0x740a98F8f4fAe0986FB3264Fe4aaCf94ac1EE96f",

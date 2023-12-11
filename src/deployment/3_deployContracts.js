@@ -32,7 +32,6 @@ async function main() {
     // Constant variables
     const networkIDMainnet = 0;
     const attemptsDeployProxy = 5;
-    const forkPreparationTime = 60 * 60 * 24 * 7;
 
     /*
      * Check deploy parameters
@@ -43,6 +42,7 @@ async function main() {
         'trustedSequencerURL',
         'networkName',
         'version',
+        'forkPreparationTime',
         'trustedSequencer',
         'chainID',
         'admin',
@@ -73,6 +73,7 @@ async function main() {
         trustedSequencerURL,
         networkName,
         version,
+        forkPreparationTime,
         trustedSequencer,
         chainID,
         admin,
