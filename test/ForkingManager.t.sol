@@ -247,7 +247,7 @@ contract ForkingManagerTest is Test {
         assertFalse(forkmanager.canFork());
     }
 
-    function testVerifyNewImplementations_RejectsNonContractBridgeImplementation()
+    function testVerifyNewImplementationsRejectsNonContractBridgeImplementation()
         public
     {
         forkonomicToken.approve(address(forkmanager), arbitrationFee);
@@ -264,11 +264,11 @@ contract ForkingManagerTest is Test {
                 forkID: newForkID
             });
 
-        vm.expectRevert("new bridge implentation is not a contract");
+        vm.expectRevert("bridge not contract");
         forkmanager.initiateFork(disputeData, implementations);
     }
 
-    function testVerifyNewImplementations_RejectsNonContractZkEVMImplementation()
+    function testVerifyNewImplementationsRejectsNonContractZkEVMImplementation()
         public
     {
         forkonomicToken.approve(address(forkmanager), arbitrationFee);
@@ -285,7 +285,7 @@ contract ForkingManagerTest is Test {
                 forkID: newForkID
             });
 
-        vm.expectRevert("new zkEVM implentation is not a contract");
+        vm.expectRevert("zkEVM not contract");
         forkmanager.initiateFork(disputeData, implementations);
     }
 

@@ -122,28 +122,28 @@ contract ForkingManager is IForkingManager, ForkableStructure {
                 AddressUpgradeable.isContract(
                     _newImplementations.bridgeImplementation
                 ),
-            "new bridge implentation is not a contract"
+            "bridge not contract"
         );
         require(
             _newImplementations.zkEVMImplementation == address(0) ||
                 AddressUpgradeable.isContract(
                     _newImplementations.zkEVMImplementation
                 ),
-            "new zkEVM implentation is not a contract"
+            "zkEVM not contract"
         );
         require(
             _newImplementations.forkonomicTokenImplementation == address(0) ||
                 AddressUpgradeable.isContract(
                     _newImplementations.forkonomicTokenImplementation
                 ),
-            "new forkonomic token implentation is not a contract"
+            "forkonomic token not contract"
         );
         require(
             _newImplementations.forkingManagerImplementation == address(0) ||
                 AddressUpgradeable.isContract(
                     _newImplementations.forkingManagerImplementation
                 ),
-            "new forking manager implentation is not a contract"
+            "forking manager not contract"
         );
 
         require(
@@ -151,12 +151,12 @@ contract ForkingManager is IForkingManager, ForkableStructure {
                 AddressUpgradeable.isContract(
                     _newImplementations.globalExitRootImplementation
                 ),
-            "new global exit root implentation is not a contract"
+            "global exit root not contract"
         );
         require(
             _newImplementations.verifier == address(0) ||
                 AddressUpgradeable.isContract(_newImplementations.verifier),
-            "new verifier implentation is not a contract"
+            "verifier not contract"
         );
         return true;
     }
