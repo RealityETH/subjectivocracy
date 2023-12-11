@@ -32,7 +32,6 @@ async function main() {
     // Constant variables
     const networkIDMainnet = 0;
     const attemptsDeployProxy = 5;
-    const forkPreparationTime = 60 * 60 * 24 * 7;
 
     /*
      * Check deploy parameters
