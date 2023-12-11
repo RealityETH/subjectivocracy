@@ -60,6 +60,17 @@ interface IForkingManager is IForkableStructure {
         AddressPair globalExitRoot;
     }
 
+    /**
+     * @notice Function to initialize the forking manager
+     * @param _zkEVM Address of the zkEVM contract
+     * @param _bridge Address of the bridge contract
+     * @param _forkonomicToken Address of the forkonomic token contract
+     * @param _parentContract Address of the parent contract
+     * @param _globalExitRoot Address of the global exit root contract
+     * @param _arbitrationFee Arbitration fee for the dispute
+     * @param _chainIdManager Address of the chainIdManager contract
+     * @param _forkPreparationTime Time to wait before the fork is initiated
+     */
     function initialize(
         address _zkEVM,
         address _bridge,
@@ -68,7 +79,7 @@ interface IForkingManager is IForkableStructure {
         address _globalExitRoot,
         uint256 _arbitrationFee,
         address _chainIdManager,
-        uint256 _executionTimeForProposal
+        uint256 _forkPreparationTime
     ) external;
 
     function initiateFork(

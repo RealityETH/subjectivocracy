@@ -32,6 +32,7 @@ async function main() {
     // Constant variables
     const networkIDMainnet = 0;
     const attemptsDeployProxy = 5;
+    const forkPreparationTime = 60 * 60 * 24 * 7;
 
     /*
      * Check deploy parameters
@@ -634,10 +635,10 @@ async function main() {
          */
 
         const ifaceForkingManager = new ethers.utils.Interface([
-            'function initialize(address,address,address,address,address,uint256,address)',
+            'function initialize(address,address,address,address,address,uint256,address,uint256)',
         ]);
         const dataCallInitializeForkingManager = ifaceForkingManager.encodeFunctionData(
-            'initialize(address,address,address,address,address,uint256,address)',
+            'initialize(address,address,address,address,address,uint256,address,uint256)',
             [
                 polygonZkEVMContract.address,
                 polygonZkEVMBridgeContract.address,
@@ -646,6 +647,7 @@ async function main() {
                 polygonZkEVMGlobalExitRoot.address,
                 arbitrationFee,
                 chainIdManagerContract.address,
+                forkPreparationTime,
             ],
         );
         const forkingManagerInitializationTx = await deployer.sendTransaction({
