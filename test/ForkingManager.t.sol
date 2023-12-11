@@ -69,7 +69,8 @@ contract ForkingManagerTest is Test {
     address public newBridgeImplementation = address(new ForkableBridge());
     address public newForkmanagerImplementation = address(new ForkingManager());
     address public newZkevmImplementation = address(new ForkableZkEVM());
-    address public newVerifierImplementation = address(new VerifierRollupHelperMock());
+    address public newVerifierImplementation =
+        address(new VerifierRollupHelperMock());
     address public newGlobalExitRootImplementation =
         address(new ForkableGlobalExitRoot());
     address public newForkonomicTokenImplementation =
@@ -254,13 +255,13 @@ contract ForkingManagerTest is Test {
         forkonomicToken.mint(address(this), arbitrationFee);
         IForkingManager.NewImplementations
             memory implementations = IForkingManager.NewImplementations({
-                bridgeImplementation: address(0x1), // non contract 
+                bridgeImplementation: address(0x1), // non contract
                 zkEVMImplementation: newZkevmImplementation,
                 forkonomicTokenImplementation: newForkonomicTokenImplementation,
                 forkingManagerImplementation: newForkmanagerImplementation,
                 globalExitRootImplementation: newGlobalExitRootImplementation,
                 verifier: newVerifierImplementation,
-				forkID: newForkID
+                forkID: newForkID
             });
 
         vm.expectRevert("new bridge implentation is not a contract");
@@ -281,8 +282,7 @@ contract ForkingManagerTest is Test {
                 forkingManagerImplementation: newForkmanagerImplementation,
                 globalExitRootImplementation: newGlobalExitRootImplementation,
                 verifier: newVerifierImplementation,
-				forkID: newForkID
-
+                forkID: newForkID
             });
 
         vm.expectRevert("new zkEVM implentation is not a contract");

@@ -95,7 +95,8 @@ contract L1GlobalChainInfoPublisherTest is Test {
     address public newForkmanagerImplementation = address(new ForkingManager());
     address public newZkevmImplementation = address(new ForkableZkEVM());
 
-    address public newVerifierImplementation = address(new VerifierRollupHelperMock());
+    address public newVerifierImplementation =
+        address(new VerifierRollupHelperMock());
     address public newGlobalExitRootImplementation =
         address(new ForkableGlobalExitRoot());
     address public newForkonomicTokenImplementation =

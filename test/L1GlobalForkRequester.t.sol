@@ -76,7 +76,8 @@ contract L1GlobalForkRequesterTest is Test {
     address public newBridgeImplementation = address(new ForkableBridge());
     address public newForkmanagerImplementation = address(new ForkingManager());
     address public newZkevmImplementation = address(new ForkableZkEVM());
-    address public newVerifierImplementation = address(new VerifierRollupHelperMock());
+    address public newVerifierImplementation =
+        address(new VerifierRollupHelperMock());
     address public newGlobalExitRootImplementation =
         address(new ForkableGlobalExitRoot());
     address public newForkonomicTokenImplementation =
@@ -322,15 +323,16 @@ contract L1GlobalForkRequesterTest is Test {
             vm.prank(address(this));
             forkonomicToken.approve(address(forkmanager), fee);
             // Assume the data contains the questionId and pass it directly to the forkmanager in the fork request
-            IForkingManager.NewImplementations memory newImplementations = IForkingManager
-				.NewImplementations(
-					newBridgeImplementation,
-					newZkevmImplementation,
-					newForkonomicTokenImplementation,
-					newForkmanagerImplementation,
-					newGlobalExitRootImplementation,
-					newVerifierImplementation,
-					uint64(0x7));
+            IForkingManager.NewImplementations
+                memory newImplementations = IForkingManager.NewImplementations(
+                    newBridgeImplementation,
+                    newZkevmImplementation,
+                    newForkonomicTokenImplementation,
+                    newForkmanagerImplementation,
+                    newGlobalExitRootImplementation,
+                    newVerifierImplementation,
+                    uint64(0x7)
+                );
             IForkingManager.DisputeData memory disputeData = IForkingManager
                 .DisputeData(false, address(this), requestId);
             forkmanager.initiateFork(disputeData, newImplementations);

@@ -116,14 +116,48 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     function verifyNewImplementations(
         NewImplementations calldata _newImplementations
     ) internal view returns (bool) {
-		// address zero is placeholder for no change and hence allowed. CreateChildren library will then read out the parent address and use it
-        require(_newImplementations.bridgeImplementation == address(0) || AddressUpgradeable.isContract(_newImplementations.bridgeImplementation ), "new bridge implentation is not a contract");
-        require(_newImplementations.zkEVMImplementation == address(0) || AddressUpgradeable.isContract(_newImplementations.zkEVMImplementation ), "new zkEVM implentation is not a contract");
-        require(_newImplementations.forkonomicTokenImplementation == address(0) || AddressUpgradeable.isContract(_newImplementations.forkonomicTokenImplementation ), "new forkonomic token implentation is not a contract");
-        require(_newImplementations.forkingManagerImplementation == address(0) || AddressUpgradeable.isContract(_newImplementations.forkingManagerImplementation ), "new forking manager implentation is not a contract");
+        // address zero is placeholder for no change and hence allowed. CreateChildren library will then read out the parent address and use it
+        require(
+            _newImplementations.bridgeImplementation == address(0) ||
+                AddressUpgradeable.isContract(
+                    _newImplementations.bridgeImplementation
+                ),
+            "new bridge implentation is not a contract"
+        );
+        require(
+            _newImplementations.zkEVMImplementation == address(0) ||
+                AddressUpgradeable.isContract(
+                    _newImplementations.zkEVMImplementation
+                ),
+            "new zkEVM implentation is not a contract"
+        );
+        require(
+            _newImplementations.forkonomicTokenImplementation == address(0) ||
+                AddressUpgradeable.isContract(
+                    _newImplementations.forkonomicTokenImplementation
+                ),
+            "new forkonomic token implentation is not a contract"
+        );
+        require(
+            _newImplementations.forkingManagerImplementation == address(0) ||
+                AddressUpgradeable.isContract(
+                    _newImplementations.forkingManagerImplementation
+                ),
+            "new forking manager implentation is not a contract"
+        );
 
-        require(_newImplementations.zkEVMImplementation == address(0) || AddressUpgradeable.isContract(_newImplementations.globalExitRootImplementation ), "new global exit root implentation is not a contract");
-        require(_newImplementations.verifier == address(0) || AddressUpgradeable.isContract(_newImplementations.verifier ), "new verifier implentation is not a contract");
+        require(
+            _newImplementations.zkEVMImplementation == address(0) ||
+                AddressUpgradeable.isContract(
+                    _newImplementations.globalExitRootImplementation
+                ),
+            "new global exit root implentation is not a contract"
+        );
+        require(
+            _newImplementations.verifier == address(0) ||
+                AddressUpgradeable.isContract(_newImplementations.verifier),
+            "new verifier implentation is not a contract"
+        );
         return true;
     }
 
