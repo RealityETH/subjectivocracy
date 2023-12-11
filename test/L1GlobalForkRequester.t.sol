@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 /* solhint-disable not-rely-on-time */
 
 import {Test} from "forge-std/Test.sol";
+import {VerifierRollupHelperMock} from "@RealityETH/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol";
 import {ForkingManager} from "../contracts/ForkingManager.sol";
 import {ForkableBridge} from "../contracts/ForkableBridge.sol";
 import {ForkableZkEVM} from "../contracts/ForkableZkEVM.sol";
@@ -75,8 +76,7 @@ contract L1GlobalForkRequesterTest is Test {
     address public newBridgeImplementation = address(new ForkableBridge());
     address public newForkmanagerImplementation = address(new ForkingManager());
     address public newZkevmImplementation = address(new ForkableZkEVM());
-    address public newVerifierImplementation =
-        address(0x1234567890123456789012345678901234567894);
+    address public newVerifierImplementation = address(new VerifierRollupHelperMock());
     address public newGlobalExitRootImplementation =
         address(new ForkableGlobalExitRoot());
     address public newForkonomicTokenImplementation =
@@ -322,7 +322,15 @@ contract L1GlobalForkRequesterTest is Test {
             vm.prank(address(this));
             forkonomicToken.approve(address(forkmanager), fee);
             // Assume the data contains the questionId and pass it directly to the forkmanager in the fork request
-            IForkingManager.NewImplementations memory newImplementations;
+            IForkingManager.NewImplementations memory newImplementations = IForkingManager
+				.NewImplementations(
+					newBridgeImplementation,
+					newZkevmImplementation,
+					newForkonomicTokenImplementation,
+					newForkmanagerImplementation,
+					newGlobalExitRootImplementation,
+					newVerifierImplementation,
+					uint64(0x7));
             IForkingManager.DisputeData memory disputeData = IForkingManager
                 .DisputeData(false, address(this), requestId);
             forkmanager.initiateFork(disputeData, newImplementations);
