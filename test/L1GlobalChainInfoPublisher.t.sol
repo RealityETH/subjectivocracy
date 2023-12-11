@@ -12,6 +12,7 @@ import {Arbitrator} from "../contracts/lib/reality-eth/Arbitrator.sol";
 // TODO: Replace this with whatever zkEVM or whatever platform we're on uses
 import {IAMB} from "../contracts/interfaces/IAMB.sol";
 
+import {VerifierRollupHelperMock} from "@RealityETH/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol";
 import {IRealityETH} from "../contracts/interfaces/IRealityETH.sol";
 import {IERC20} from "../contracts/interfaces/IERC20.sol";
 import {ForkableRealityETH_ERC20} from "../contracts/ForkableRealityETH_ERC20.sol";
@@ -93,8 +94,9 @@ contract L1GlobalChainInfoPublisherTest is Test {
     address public newBridgeImplementation = address(new ForkableBridge());
     address public newForkmanagerImplementation = address(new ForkingManager());
     address public newZkevmImplementation = address(new ForkableZkEVM());
+
     address public newVerifierImplementation =
-        address(0x1234567890123456789012345678901234567894);
+        address(new VerifierRollupHelperMock());
     address public newGlobalExitRootImplementation =
         address(new ForkableGlobalExitRoot());
     address public newForkonomicTokenImplementation =

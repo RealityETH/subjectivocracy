@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 /* solhint-disable not-rely-on-time */
 
 import {Test} from "forge-std/Test.sol";
+import {VerifierRollupHelperMock} from "@RealityETH/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol";
 import {ForkingManager} from "../contracts/ForkingManager.sol";
 import {ForkableBridge} from "../contracts/ForkableBridge.sol";
 import {ForkableZkEVM} from "../contracts/ForkableZkEVM.sol";
@@ -69,7 +70,7 @@ contract ForkingManagerTest is Test {
     address public newForkmanagerImplementation = address(new ForkingManager());
     address public newZkevmImplementation = address(new ForkableZkEVM());
     address public newVerifierImplementation =
-        address(0x1234567890123456789012345678901234567894);
+        address(new VerifierRollupHelperMock());
     address public newGlobalExitRootImplementation =
         address(new ForkableGlobalExitRoot());
     address public newForkonomicTokenImplementation =
@@ -244,6 +245,48 @@ contract ForkingManagerTest is Test {
         assertTrue(forkmanager.isForkingInitiated());
         assertTrue(forkmanager.isForkingExecuted());
         assertFalse(forkmanager.canFork());
+    }
+
+    function testVerifyNewImplementationsRejectsNonContractBridgeImplementation()
+        public
+    {
+        forkonomicToken.approve(address(forkmanager), arbitrationFee);
+        vm.prank(address(this));
+        forkonomicToken.mint(address(this), arbitrationFee);
+        IForkingManager.NewImplementations
+            memory implementations = IForkingManager.NewImplementations({
+                bridgeImplementation: address(0x1), // non contract
+                zkEVMImplementation: newZkevmImplementation,
+                forkonomicTokenImplementation: newForkonomicTokenImplementation,
+                forkingManagerImplementation: newForkmanagerImplementation,
+                globalExitRootImplementation: newGlobalExitRootImplementation,
+                verifier: newVerifierImplementation,
+                forkID: newForkID
+            });
+
+        vm.expectRevert("bridge not contract");
+        forkmanager.initiateFork(disputeData, implementations);
+    }
+
+    function testVerifyNewImplementationsRejectsNonContractZkEVMImplementation()
+        public
+    {
+        forkonomicToken.approve(address(forkmanager), arbitrationFee);
+        vm.prank(address(this));
+        forkonomicToken.mint(address(this), arbitrationFee);
+        IForkingManager.NewImplementations
+            memory implementations = IForkingManager.NewImplementations({
+                bridgeImplementation: newBridgeImplementation, // non contract
+                zkEVMImplementation: address(0x234),
+                forkonomicTokenImplementation: newForkonomicTokenImplementation,
+                forkingManagerImplementation: newForkmanagerImplementation,
+                globalExitRootImplementation: newGlobalExitRootImplementation,
+                verifier: newVerifierImplementation,
+                forkID: newForkID
+            });
+
+        vm.expectRevert("zkEVM not contract");
+        forkmanager.initiateFork(disputeData, implementations);
     }
 
     function testInitiateForkChargesFees() public {
