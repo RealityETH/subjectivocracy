@@ -70,7 +70,7 @@ async function main() {
             const currentDeposit = _depositsArray[i];
             if (!currentDeposit.ready_for_claim) {
                 if (_verbose) {
-                    console.log('Not ready yet:', currentDeposit);
+                    console.log('Not ready yet:', currentDeposit.tx_hash);
                 }
                 continue;
             }
@@ -98,7 +98,7 @@ async function main() {
 
         if (depositsArray.length === 0) {
             const secs = 5;
-            console.log('No deposits yet, retrying in '+secs+' seconds...');
+            console.log('No deposits ready to claim yet, retrying in '+secs+' seconds...');
             await sleep(secs*1000);
         } else {
             found = true;
