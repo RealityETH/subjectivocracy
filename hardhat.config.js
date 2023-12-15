@@ -58,7 +58,7 @@ module.exports = {
     paths: {
         sources: './contracts/',
         cache: './cache_hardhat',
-        artifacts: './out/ForkonomicToken.sol',
+        artifacts: './out',
     },
     solidity: {
         compilers: [
