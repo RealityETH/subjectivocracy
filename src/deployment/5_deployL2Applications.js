@@ -91,29 +91,11 @@ async function main() {
 
     // Load provider
     let currentProvider = ethers.provider;
-    if (deployParameters.multiplierGas || deployParameters.maxFeePerGas) {
-        if (process.env.HARDHAT_NETWORK !== 'hardhat') {
-            currentProvider = new ethers.providers.JsonRpcProvider(`https://${process.env.HARDHAT_NETWORK}.infura.io/v3/${process.env.INFURA_PROJECT_ID}`);
-            if (deployParameters.maxPriorityFeePerGas && deployParameters.maxFeePerGas) {
-                console.log(`Hardcoded gas used: MaxPriority${deployParameters.maxPriorityFeePerGas} gwei, MaxFee${deployParameters.maxFeePerGas} gwei`);
-                const FEE_DATA = {
-                    maxFeePerGas: ethers.utils.parseUnits(deployParameters.maxFeePerGas, 'gwei'),
-                    maxPriorityFeePerGas: ethers.utils.parseUnits(deployParameters.maxPriorityFeePerGas, 'gwei'),
-                };
-                currentProvider.getFeeData = async () => FEE_DATA;
-            } else {
-                console.log('Multiplier gas used: ', deployParameters.multiplierGas);
-                async function overrideFeeData() {
-                    const feedata = await ethers.provider.getFeeData();
-                    return {
-                        maxFeePerGas: feedata.maxFeePerGas.mul(deployParameters.multiplierGas).div(1000),
-                        maxPriorityFeePerGas: feedata.maxPriorityFeePerGas.mul(deployParameters.multiplierGas).div(1000),
-                    };
-                }
-                currentProvider.getFeeData = overrideFeeData;
-            }
-        }
-    }
+
+    //const feeData = await currentProvider.getFeeData();
+    //console.log('feeData', feeData);
+    //const block = await currentProvider.getBlock('latest');
+    //console.log('latest block', block);
 
     // Load deployer
     let deployer;
@@ -164,7 +146,6 @@ async function main() {
     if (initialArbitratorAddresses.length == 0) {
 
         if (!ongoingDeployment.initialArbitrator) {
-
             const arbitratorContract = await arbitratorFactory.deploy();
             console.log('#######################\n');
             console.log('Arbitrator deployed to:', arbitratorContract.address);
@@ -208,7 +189,6 @@ async function main() {
         console.log('#######################\n');
         console.log('L2ChainInfo already deployed on: ', ongoingDeployment.l2ChainInfo);
     }
-
 
     const l2ForkArbitratorFactory = await ethers.getContractFactory('L2ForkArbitrator', {
         signer: deployer,
@@ -262,19 +242,6 @@ async function main() {
         console.log('#######################\n');
         console.log('AdjudicationFramework already deployed on: ', adjudicationFrameworkContract.address);
     }
-
-    /*
-    while (!newDeployerBalance || newDeployerBalance.eq(deployerBalance)) {
-        newDeployerBalance = await currentProvider.getBalance(deployer.address);
-        if (newDeployerBalance.lt(deployerBalance)) {
-            break;
-        } else {
-            console.log('Waiting for RPC node to notice account balance change before trying next deployment');
-            await delay(5000);
-        }
-    }
-    console.log('continue using deployer: ', deployer.address, 'balance is now', deployerBalance.toString());
-    */
 
     const outputJson = {
         realityETH: realityETHContract.address,
