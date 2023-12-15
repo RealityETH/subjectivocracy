@@ -206,6 +206,11 @@ module.exports = {
             sepolia: `${process.env.ETHERSCAN_API_KEY}`,
             mainnet: `${process.env.ETHERSCAN_API_KEY}`,
         },
+        zkEVMServices: {
+            'backstopTestnet0': {
+                bridgeAPIEndpoint: 'https://api.bridge.testnet.backstop.technology'
+            }
+        },
         customChains: [
             {
                 network: 'polygonZKEVMMainnet',
