@@ -32,7 +32,7 @@
   "dependencies": {
     "axios": "^1.6.2",
     "chai": "^4.3.7",
-    "ethereum-waffle": "^3.4.4",
+    "ethereum-waffle": "^4.0.10",
     "ethers": "^5.7.2",
     "forge": "^2.3.0",
     "hardhat": "^2.13.0"
