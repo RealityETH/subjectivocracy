@@ -1,4 +1,7 @@
 /* eslint-disable import/no-dynamic-require, no-await-in-loop, no-restricted-syntax, guard-for-in */
+
+// Broken and/or not fully tested
+
 require('dotenv').config();
 const path = require('path');
 const hre = require('hardhat');
