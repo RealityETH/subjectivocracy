@@ -20,34 +20,20 @@ const genesisJSON = require(pathGenesisJson);
 const genesisEntries = genesisJSON.genesis;
 const l2Applications = require(pathOutputJsonL2Applications);
 
-let l2BridgeAddress;
-for(const genesisIdx in genesisEntries) {
-    const genesisEntry = genesisEntries[genesisIdx];
-    if (genesisEntry.contractName == "PolygonZkEVMBridge proxy") {
-        l2BridgeAddress = genesisEntry.address;
-        break;
-    }
-}
-if (!l2BridgeAddress) {
-    throw new Error('Could not find genesis bridge address in genesis.json');
-}
 
 const merkleProofString = '/merkle-proof';
 const getClaimsFromAcc = '/bridges/';
 
+const common = require('./common.js');
+
 async function main() {
 
-    const currentProvider = ethers.provider;
-    let deployer;
-    if (process.env.PVTKEY) {
-        deployer = new ethers.Wallet(process.env.PVTKEY, currentProvider);
-        console.log('Using pvtKey deployer with address: ', deployer.address);
-    } else if (process.env.MNEMONIC) {
-        deployer = ethers.Wallet.fromMnemonic(process.env.MNEMONIC, 'm/44\'/60\'/0\'/0/0').connect(currentProvider);
-        console.log('Using MNEMONIC deployer with address: ', deployer.address);
-    } else {
-        [deployer] = (await ethers.getSigners());
-    }
+    const l2BridgeAddress = common.genesisAddressForContractName("PolygonZkEVMBridge proxy");
+
+    const deployParameters = require('./deploy_application_parameters.json');
+
+    const currentProvider = await common.loadProvider(deployParameters, process.env);
+    const deployer = await common.loadDeployer(currentProvider, deployParameters);
 
     const baseURL = bridgeAPIEndpoint;
     if (!baseURL) {

@@ -17,6 +17,8 @@ const deployParameters = require('./deploy_application_parameters.json');
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
+const common = require('./common.js');
+
 async function main() {
     
     // Check that we already have the L1 settings we need
@@ -30,19 +32,7 @@ async function main() {
     const l1ApplicationAddresses = require(pathOutputJsonL1Applications);
     const l1SystemAddresses = require(pathOutputJsonL1System);
 
-    const genesisJSON = require(pathGenesisJson);
-    const genesisEntries = genesisJSON.genesis;
-    let l2BridgeAddress;
-    for(const genesisIdx in genesisEntries) {
-        const genesisEntry = genesisEntries[genesisIdx];
-        if (genesisEntry.contractName == "PolygonZkEVMBridge proxy") {
-            l2BridgeAddress = genesisEntry.address;    
-            break;
-        }
-    }
-    if (!l2BridgeAddress) {
-        throw new Error('Could not find genesis bridge address in genesis.json');
-    }
+    const l2BridgeAddress = common.genesisAddressForContractName("PolygonZkEVMBridge proxy");
 
     const {
         l1GlobalChainInfoPublisher,
@@ -64,21 +54,11 @@ async function main() {
         ongoingDeployment = require(pathOngoingDeploymentJson);
     }
 
-    /*
-     * Check deploy parameters
-     * Check that every necessary parameter is fullfilled
-     */
-    const mandatoryDeploymentParameters = [
+    common.verifyDeploymentParameters([
         'adjudicationFrameworkDisputeFee',
         'arbitratorDisputeFee',
         'forkArbitratorDisputeFee'
-    ];
-
-    for (const parameterName of mandatoryDeploymentParameters) {
-        if (deployParameters[parameterName] === undefined || deployParameters[parameterName] === '') {
-            throw new Error(`Missing parameter: ${parameterName}`);
-        }
-    }
+    ], deployParameters);
 
     let {
         adjudicationFrameworkDisputeFee,
@@ -90,158 +70,37 @@ async function main() {
     } = deployParameters;
 
     // Load provider
-    let currentProvider = ethers.provider;
+    let currentProvider = await common.loadProvider(deployParameters, process.env);
+    let deployer = await common.loadDeployer(currentProvider, deployParameters);
 
     //const feeData = await currentProvider.getFeeData();
     //console.log('feeData', feeData);
     //const block = await currentProvider.getBlock('latest');
     //console.log('latest block', block);
 
-    // Load deployer
-    let deployer;
-    if (deployParameters.deployerPvtKey) {
-        deployer = new ethers.Wallet(deployParameters.deployerPvtKey, currentProvider);
-        console.log('Using pvtKey deployer with address: ', deployer.address);
-    } else if (process.env.MNEMONIC) {
-        deployer = ethers.Wallet.fromMnemonic(process.env.MNEMONIC, 'm/44\'/60\'/0\'/0/0').connect(currentProvider);
-        console.log('Using MNEMONIC deployer with address: ', deployer.address);
-    } else {
-        [deployer] = (await ethers.getSigners());
-    }
     let deployerBalance = await currentProvider.getBalance(deployer.address);
     console.log('using deployer: ', deployer.address, 'balance is ', deployerBalance.toString());
 
-    if (!realityETHAddress && ongoingDeployment.realityETH) {
-        realityETHAddress = ongoingDeployment.realityETH;
-    }
-
-    // NB If we deploy then we only do 1 initial arbitrator. But there may be multiple in the config.
-    if (initialArbitratorAddresses.length == 0 && ongoingDeployment.initialArbitrator) {
-        initialArbitratorAddresses = [ongoingDeployment.initialArbitrator];
-    }
-
-    const realityETHFactory = await ethers.getContractFactory('RealityETH_v3_0', {
-        signer: deployer,
-    });
-
-    let realityETHContract;
-    if (!realityETHAddress) {
-        realityETHContract = await realityETHFactory.deploy();
-        console.log('#######################\n');
-        console.log('RealityETH deployed to:', realityETHContract.address);
-
-        // save an ongoing deployment
-        ongoingDeployment.realityETH = realityETHContract.address;
-        fs.writeFileSync(pathOngoingDeploymentJson, JSON.stringify(ongoingDeployment, null, 1));
-    } else {
-        realityETHContract = realityETHFactory.attach(realityETHAddress);
-        console.log('#######################\n');
-        console.log('RealityETH already deployed on: ', realityETHAddress);
-    }
-
-    const arbitratorFactory = await ethers.getContractFactory('Arbitrator', {
-        signer: deployer,
-    });
-
+    const realityETHContract = await common.loadOngoingOrDeploy(deployer, 'RealityETH_v3_0', 'realityETH', [], ongoingDeployment, pathOngoingDeploymentJson, realityETHAddress);
     if (initialArbitratorAddresses.length == 0) {
 
-        if (!ongoingDeployment.initialArbitrator) {
-            const arbitratorContract = await arbitratorFactory.deploy();
-            console.log('#######################\n');
-            console.log('Arbitrator deployed to:', arbitratorContract.address);
+        const arbitratorContract = await common.loadOngoingOrDeploy(deployer, 'Arbitrator', 'initialArbitrator', [], ongoingDeployment, pathOngoingDeploymentJson);
 
+        const initialFee = await arbitratorContract.getDisputeFee(ethers.constants.HashZero); 
+        if (initialFee.eq(0)) {
             await arbitratorContract.setRealitio(realityETHContract.address);
             await arbitratorContract.setDisputeFee(arbitratorDisputeFee);
-
-            // save an ongoing deployment
-            ongoingDeployment.initialArbitrator = arbitratorContract.address;
-            fs.writeFileSync(pathOngoingDeploymentJson, JSON.stringify(ongoingDeployment, null, 1));
-
-            initialArbitratorAddresses = [arbitratorContract.address];
-
-        } else {
-            arbitratorContract = arbitratorFactory.attach(initialArbitratorAddresses[0]);
-            console.log('#######################\n');
-            console.log('Arbitrator(s) already deployed on: ', initialArbitratorAddresses);
-            initialArbitratorAddresses = [arbitratorContract.address];
         }
-    }
 
+        initialArbitratorAddresses = [arbitratorContract.address];
 
-    const l2ChainInfoFactory = await ethers.getContractFactory('L2ChainInfo', {
-        signer: deployer,
-    });
-
-    let l2ChainInfoContract;
-    if (!ongoingDeployment.l2ChainInfo) {
-        l2ChainInfoContract = await l2ChainInfoFactory.deploy(
-            l2BridgeAddress,
-            l1GlobalChainInfoPublisher
-        );
-        console.log('#######################\n');
-        console.log('L2ChainInfo deployed to:', l2ChainInfoContract.address);
-
-        // save an ongoing deployment
-        ongoingDeployment.l2ChainInfo = l2ChainInfoContract.address;
-        fs.writeFileSync(pathOngoingDeploymentJson, JSON.stringify(ongoingDeployment, null, 1));
     } else {
-        l2ChainInfoContract = l2ChainInfoFactory.attach(ongoingDeployment.l2ChainInfo);
-        console.log('#######################\n');
-        console.log('L2ChainInfo already deployed on: ', ongoingDeployment.l2ChainInfo);
+        console.log('Using arbitrators from config: ', initialArbitratorAddresses);
     }
 
-    const l2ForkArbitratorFactory = await ethers.getContractFactory('L2ForkArbitrator', {
-        signer: deployer,
-    });
-
-    let l2ForkArbitratorContract;
-    if (!ongoingDeployment.l2ForkArbitrator) {
-        console.log('Deploying L2ForkArbitrator with params', realityETHContract.address, l2ChainInfoContract.address, l1GlobalForkRequester, forkArbitratorDisputeFee);
-
-        l2ForkArbitratorContract = await l2ForkArbitratorFactory.deploy(
-            realityETHContract.address,
-            l2ChainInfoContract.address,
-            l1GlobalForkRequester,
-            forkArbitratorDisputeFee
-        );
-        console.log('#######################\n');
-        console.log('L2ForkArbitrator deployed to:', l2ForkArbitratorContract.address);
-
-        // save an ongoing deployment
-        ongoingDeployment.l2ForkArbitrator = l2ForkArbitratorContract.address;
-        fs.writeFileSync(pathOngoingDeploymentJson, JSON.stringify(ongoingDeployment, null, 1));
-    } else {
-        l2ForkArbitratorContract = l2ForkArbitratorFactory.attach(ongoingDeployment.l2ForkArbitrator);
-        console.log('#######################\n');
-        console.log('L2ForkArbitrator already deployed on: ', l2ForkArbitratorContract.address);
-    }
-
-
-    const adjudicationFrameworkFactory = await ethers.getContractFactory('AdjudicationFramework', {
-        signer: deployer,
-    });
-
-    let adjudicationFrameworkContract;
-    if (!ongoingDeployment.adjudicationFramework) {
-        console.log('Deploying AdjudicationFramework with params', realityETHContract.address, adjudicationFrameworkDisputeFee, l2ForkArbitratorContract.address, initialArbitratorAddresses);
-
-        adjudicationFrameworkContract = await adjudicationFrameworkFactory.deploy(
-            realityETHContract.address,
-            adjudicationFrameworkDisputeFee,
-            l2ForkArbitratorContract.address,
-            initialArbitratorAddresses
-        );
-        console.log('#######################\n');
-        console.log('AdjudicationFramework deployed to:', adjudicationFrameworkContract.address);
-
-        // save an ongoing deployment
-        ongoingDeployment.adjudicationFramework = adjudicationFrameworkContract.address;
-        fs.writeFileSync(pathOngoingDeploymentJson, JSON.stringify(ongoingDeployment, null, 1));
-    } else {
-        adjudicationFrameworkContract = adjudicationFrameworkFactory.attach(ongoingDeployment.adjudicationFramework);
-        console.log('#######################\n');
-        console.log('AdjudicationFramework already deployed on: ', adjudicationFrameworkContract.address);
-    }
+    const l2ChainInfoContract = await common.loadOngoingOrDeploy(deployer, 'L2ChainInfo', 'l2ChainInfo', [l2BridgeAddress, l1GlobalChainInfoPublisher], ongoingDeployment, pathOngoingDeploymentJson);
+    const l2ForkArbitratorContract = await common.loadOngoingOrDeploy(deployer, 'L2ForkArbitrator', 'l2ForkArbitrator',[realityETHContract.address, l2ChainInfoContract.address, l1GlobalForkRequester, forkArbitratorDisputeFee], ongoingDeployment, pathOngoingDeploymentJson);
+    const adjudicationFrameworkContract = await common.loadOngoingOrDeploy(deployer, 'AdjudicationFramework', 'adjudicationFramework', [ realityETHContract.address, adjudicationFrameworkDisputeFee, l2ForkArbitratorContract.address, initialArbitratorAddresses ], ongoingDeployment, pathOngoingDeploymentJson)
 
     const outputJson = {
         realityETH: realityETHContract.address,
