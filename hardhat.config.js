@@ -198,6 +198,11 @@ module.exports = {
         outputFile: process.env.REPORT_GAS_FILE ? './gas_report.md' : null,
         noColors: !!process.env.REPORT_GAS_FILE,
     },
+    zkEVMServices: {
+        'backstopTestnet0': {
+            bridgeAPIEndpoint: 'https://api.bridge.testnet.backstop.technology'
+        }
+    },
     etherscan: {
         apiKey: {
             polygonZKEVMTestnet: `${process.env.ETHERSCAN_ZKEVM_API_KEY}`,
@@ -205,11 +210,6 @@ module.exports = {
             goerli: `${process.env.ETHERSCAN_API_KEY}`,
             sepolia: `${process.env.ETHERSCAN_API_KEY}`,
             mainnet: `${process.env.ETHERSCAN_API_KEY}`,
-        },
-        zkEVMServices: {
-            'backstopTestnet0': {
-                bridgeAPIEndpoint: 'https://api.bridge.testnet.backstop.technology'
-            }
         },
         customChains: [
             {
