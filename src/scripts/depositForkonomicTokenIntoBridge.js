@@ -29,6 +29,7 @@ async function main() {
     const {
         polygonZkEVMBridgeAddress,
         maticTokenAddress,
+        trustedSequencer,
     } = deploymentOutput;
 
     const forkonomicTokenAddress = maticTokenAddress;
@@ -74,6 +75,10 @@ async function main() {
         [deployer] = (await ethers.getSigners());
     }
 
+    if (trustedSequencer === undefined || trustedSequencer.toLowerCase() !== deployer.address.toLowerCase()) {
+        throw new Error('Wrong deployer address');
+    }
+
     const bridge = await ethers.getContractAt(
         'ForkableBridge',
         polygonZkEVMBridgeAddress,
@@ -91,7 +96,7 @@ async function main() {
     // sleep for 3 secs to wait until tx is mined and nonce increase is reflected
     await new Promise((r) => setTimeout(r, 3000));
 
-    await bridge.connect(deployer).bridgeAsset(
+    const tx2 = await bridge.connect(deployer).bridgeAsset(
         1,
         deployer.address,
         depositAmount,
@@ -101,6 +106,7 @@ async function main() {
         { gasLimit: 5000000 },
     );
     console.log('Deposited forkonomic tokens into bridge');
+    console.log('by the following tx: ', tx2.hash);
 }
 
 main().catch((e) => {
