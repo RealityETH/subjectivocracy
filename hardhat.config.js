@@ -30,13 +30,16 @@ module.exports = {
     dependencyCompiler: {
         paths: [
             '@openzeppelin/contracts/token/ERC20/presets/ERC20PresetFixedSupply.sol',
-            '@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol',
+            '@openzeppelin/contracts/mocks/ERC20PermitMock.sol',
             '@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol',
             '@RealityETH/zkevm-contracts/contracts/deployment/PolygonZkEVMDeployer.sol',
             '@RealityETH/zkevm-contracts/contracts/PolygonZkEVMGlobalExitRootL2.sol',
             '@RealityETH/zkevm-contracts/contracts/PolygonZkEVMTimelock.sol',
             '@RealityETH/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol',
+            '@RealityETH/zkevm-contracts/contracts/mocks/PolygonZkEVMGlobalExitRootMock.sol',
+            '@RealityETH/zkevm-contracts/contracts/mocks/PolygonZkEVMMock.sol',
             '@RealityETH/zkevm-contracts/contracts/verifiers/FflonkVerifier.sol',
+            '@RealityETH/zkevm-contracts/contracts/PolygonZkEVMBridgeWrapper.sol',
         ], // ,
     // keep: true
     },
