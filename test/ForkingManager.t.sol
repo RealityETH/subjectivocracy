@@ -650,7 +650,7 @@ contract ForkingManagerTest is Test {
         }
     }
 
-    function testInitiateForkSetsDispuateDataAndExecutionTime() public {
+    function testInitiateForkSetsDispuateDataAndExecutionTimeAndReservesChainIds() public {
         // Mint and approve the arbitration fee for the test contract
         forkonomicToken.approve(address(forkmanager), arbitrationFee);
         vm.prank(address(this));
@@ -691,6 +691,11 @@ contract ForkingManagerTest is Test {
             receivedExecutionTime,
             testTimestamp + forkmanager.forkPreparationTime()
         );
+
+        uint64 reservedChainIdForFork1 = ForkingManager(forkmanager).reservedChainIdForFork1();
+        assertEq(reservedChainIdForFork1, firstChainId);
+        uint64 reservedChainIdForFork2 = ForkingManager(forkmanager).reservedChainIdForFork2();
+        assertEq(reservedChainIdForFork2, secondChainId);
     }
 
     function testExecuteForkRespectsTime() public {
