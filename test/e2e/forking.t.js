@@ -24,8 +24,8 @@ const inputJson = require('./input.json');
  *
  * The old state root was generated with the zkevm state tool from common-js. See this fork:
  * https://github.com/RealityETH/zkevm-commonjs/pull/1/files
- * and especially this line:
- * https://github.com/RealityETH/zkevm-commonjs/pull/1/files#diff-4d0a534c9be88e9cfd08ea7c2e6d412b9ad1d6501db1900339f19c02fb689922R147
+ * and especially these lines:
+ * https://github.com/RealityETH/zkevm-commonjs/blob/main/test/processor-forking.test.js#L148-L154
  * It took the genesis state from our deployment script and the first two transactions are
  * some transfers on the chain.
  *
