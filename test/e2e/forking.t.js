@@ -263,7 +263,7 @@ describe('Simulating first proof after a fork', () => {
                 newNumBatch,
                 newLocalExitRoot,
                 newStateRoot,
-                Array.from(Array(24)).fill('0x0e7073c1e73dfb716c35623b741e4ccfc6290d943f3df60377ad8799373ae439'),
+                Array.from(Array(24)).fill('0x0e7073c1e73dfb716c35623b741e4ccfc6290d943f3df60377ad8799373ae439'), // this is arbitrary data
             ),
         ).to.be.revertedWith('InvalidProof');
         await expect(
