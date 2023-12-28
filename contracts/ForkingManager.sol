@@ -44,6 +44,10 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     uint256 public executionTimeForProposal;
     uint256 public forkPreparationTime;
 
+    // variables to store the reserved chainIds for the forks
+    uint64 public reservedChainIdForFork1;
+    uint64 public reservedChainIdForFork2;
+
     /// @inheritdoc IForkingManager
     function initialize(
         address _zkEVM,
@@ -103,6 +107,10 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             "Invalid new implementations"
         );
         proposedImplementations = _newImplementations;
+        reservedChainIdForFork1 = ChainIdManager(chainIdManager)
+            .getNextUsableChainId();
+        reservedChainIdForFork2 = ChainIdManager(chainIdManager)
+            .getNextUsableChainId();
         // solhint-disable-next-line not-rely-on-time
         executionTimeForProposal = (block.timestamp + forkPreparationTime);
     }
@@ -214,8 +222,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
                     trustedAggregator: IPolygonZkEVM(zkEVM).trustedAggregator(),
                     trustedAggregatorTimeout: IPolygonZkEVM(zkEVM)
                         .trustedAggregatorTimeout(),
-                    chainID: ChainIdManager(chainIdManager)
-                        .getNextUsableChainId(),
+                    chainID: reservedChainIdForFork1,
                     forkID: IPolygonZkEVM(zkEVM).forkID()
                 });
             IForkableZkEVM(newInstances.zkEVM.one).initialize(
@@ -326,8 +333,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
                     trustedAggregator: IPolygonZkEVM(zkEVM).trustedAggregator(),
                     trustedAggregatorTimeout: IPolygonZkEVM(zkEVM)
                         .trustedAggregatorTimeout(),
-                    chainID: ChainIdManager(chainIdManager)
-                        .getNextUsableChainId(),
+                    chainID: reservedChainIdForFork2,
                     forkID: newImplementations.forkID > 0
                         ? newImplementations.forkID
                         : IPolygonZkEVM(zkEVM).forkID()
