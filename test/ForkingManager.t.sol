@@ -9,7 +9,7 @@ import {ForkableBridge} from "../contracts/ForkableBridge.sol";
 import {ForkableZkEVM} from "../contracts/ForkableZkEVM.sol";
 import {ForkonomicToken} from "../contracts/ForkonomicToken.sol";
 import {ForkableGlobalExitRoot} from "../contracts/ForkableGlobalExitRoot.sol";
-import {IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
+import {IPolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
 import {IForkingManager} from "../contracts/interfaces/IForkingManager.sol";
 import {IVerifierRollup} from "@RealityETH/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
@@ -37,8 +37,8 @@ contract ForkingManagerTest is Test {
     bytes32 internal constant _IMPLEMENTATION_SLOT =
         0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
-    IBasePolygonZkEVMGlobalExitRoot public globalExitMock =
-        IBasePolygonZkEVMGlobalExitRoot(
+    IPolygonZkEVMGlobalExitRoot public globalExitMock =
+        IPolygonZkEVMGlobalExitRoot(
             0x1234567890123456789012345678901234567892
         );
     bytes32 public genesisRoot =
@@ -142,7 +142,9 @@ contract ForkingManagerTest is Test {
             address(forkmanager),
             address(0x0),
             address(zkevm),
-            address(bridge)
+            address(bridge),
+            bytes32(0),
+            bytes32(0)
         );
         bridge.initialize(
             address(forkmanager),
@@ -795,6 +797,64 @@ contract ForkingManagerTest is Test {
                 verifier: newVerifierImplementation,
                 forkID: newForkID
             })
+        );
+    }
+
+    function testSetsCorrectGlobalExitRoot() public {
+        // Set completely randcom exit hashes to make them non-zero
+        bytes32 lastMainnetExitRoot = keccak256(abi.encode(2));
+        bytes32 lastRollupExitRoot = keccak256(abi.encode(1));
+        vm.prank(address(bridge));
+        globalExitRoot.updateExitRoot(lastMainnetExitRoot);
+        vm.prank(address(zkevm));
+        globalExitRoot.updateExitRoot(lastRollupExitRoot);
+
+        // Mint and approve the arbitration fee for the test contract
+        forkonomicToken.approve(address(forkmanager), arbitrationFee);
+        vm.prank(address(this));
+        forkonomicToken.mint(address(this), arbitrationFee);
+
+        // Call the initiateFork function to create a new fork
+        uint256 testTimestamp = 12354234;
+        vm.warp(testTimestamp);
+        forkmanager.initiateFork(
+            disputeData,
+            IForkingManager.NewImplementations({
+                bridgeImplementation: newBridgeImplementation,
+                zkEVMImplementation: newZkevmImplementation,
+                forkonomicTokenImplementation: newForkonomicTokenImplementation,
+                forkingManagerImplementation: newForkmanagerImplementation,
+                globalExitRootImplementation: newGlobalExitRootImplementation,
+                verifier: newVerifierImplementation,
+                forkID: newForkID
+            })
+        );
+
+        vm.warp(testTimestamp + forkmanager.forkPreparationTime() + 1);
+        forkmanager.executeFork1();
+        (address child1, address child2) = globalExitRoot.getChildren();
+
+         assertEq(
+            IPolygonZkEVMGlobalExitRoot(globalExitRoot).lastMainnetExitRoot(),
+            IPolygonZkEVMGlobalExitRoot(child1).lastMainnetExitRoot()
+        );
+        assertEq(
+            IPolygonZkEVMGlobalExitRoot(globalExitRoot).lastRollupExitRoot(),
+            IPolygonZkEVMGlobalExitRoot(child1).lastRollupExitRoot(),
+            "lastRollupExitRoot not the same"
+        );
+        assertEq(
+            IPolygonZkEVMGlobalExitRoot(globalExitRoot).getLastGlobalExitRoot(),
+            IPolygonZkEVMGlobalExitRoot(child1).getLastGlobalExitRoot()
+        );
+        forkmanager.executeFork2();
+         assertEq(
+            IPolygonZkEVMGlobalExitRoot(globalExitRoot).lastMainnetExitRoot(),
+            IPolygonZkEVMGlobalExitRoot(child2).lastMainnetExitRoot()
+        );
+        assertEq(
+            IPolygonZkEVMGlobalExitRoot(globalExitRoot).lastRollupExitRoot(),
+            IPolygonZkEVMGlobalExitRoot(child2).lastRollupExitRoot()
         );
     }
 }

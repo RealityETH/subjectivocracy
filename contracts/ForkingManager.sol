@@ -283,7 +283,9 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             newInstances.forkingManager.one,
             globalExitRoot,
             newInstances.zkEVM.one,
-            newInstances.bridge.one
+            newInstances.bridge.one,
+            IForkableGlobalExitRoot(globalExitRoot).lastMainnetExitRoot(),
+            IForkableGlobalExitRoot(globalExitRoot).lastRollupExitRoot()
         );
     }
 
@@ -396,7 +398,9 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             newInstances.forkingManager.two,
             globalExitRoot,
             newInstances.zkEVM.two,
-            newInstances.bridge.two
+            newInstances.bridge.two,
+            IForkableGlobalExitRoot(globalExitRoot).lastMainnetExitRoot(),
+            IForkableGlobalExitRoot(globalExitRoot).lastRollupExitRoot()
         );
     }
 }
