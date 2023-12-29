@@ -38,9 +38,7 @@ contract ForkingManagerTest is Test {
         0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
     IPolygonZkEVMGlobalExitRoot public globalExitMock =
-        IPolygonZkEVMGlobalExitRoot(
-            0x1234567890123456789012345678901234567892
-        );
+        IPolygonZkEVMGlobalExitRoot(0x1234567890123456789012345678901234567892);
     bytes32 public genesisRoot =
         bytes32(
             0x827a9240c96ccb855e4943cc9bc49a50b1e91ba087007441a1ae5f9df8d1c57c
@@ -834,7 +832,7 @@ contract ForkingManagerTest is Test {
         forkmanager.executeFork1();
         (address child1, address child2) = globalExitRoot.getChildren();
 
-         assertEq(
+        assertEq(
             IPolygonZkEVMGlobalExitRoot(globalExitRoot).lastMainnetExitRoot(),
             IPolygonZkEVMGlobalExitRoot(child1).lastMainnetExitRoot()
         );
@@ -848,7 +846,7 @@ contract ForkingManagerTest is Test {
             IPolygonZkEVMGlobalExitRoot(child1).getLastGlobalExitRoot()
         );
         forkmanager.executeFork2();
-         assertEq(
+        assertEq(
             IPolygonZkEVMGlobalExitRoot(globalExitRoot).lastMainnetExitRoot(),
             IPolygonZkEVMGlobalExitRoot(child2).lastMainnetExitRoot()
         );

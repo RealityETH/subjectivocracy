@@ -23,7 +23,12 @@ contract ForkableGlobalExitRoot is
         bytes32 _lastRollupExitRoot
     ) public initializer {
         ForkableStructure.initialize(_forkmanager, _parentContract);
-        PolygonZkEVMGlobalExitRoot.initialize(_rollupAddress, _bridgeAddress, _lastMainnetExitRoot, _lastRollupExitRoot);
+        PolygonZkEVMGlobalExitRoot.initialize(
+            _rollupAddress,
+            _bridgeAddress,
+            _lastMainnetExitRoot,
+            _lastRollupExitRoot
+        );
     }
 
     /// @dev Public interface to create children. This can only be done by the forkmanager
