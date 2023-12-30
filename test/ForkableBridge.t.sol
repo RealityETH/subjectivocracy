@@ -4,6 +4,7 @@ import {Test} from "forge-std/Test.sol";
 import {ForkableBridge} from "../contracts/ForkableBridge.sol";
 import {ForkableBridgeWrapper} from "./testcontract/ForkableBridgeWrapper.sol";
 import {ForkonomicToken} from "../contracts/ForkonomicToken.sol";
+import {IForkableBridge} from "../contracts/interfaces/IForkableBridge.sol";
 import {IForkableStructure} from "../contracts/interfaces/IForkableStructure.sol";
 import {IForkonomicToken} from "../contracts/interfaces/IForkonomicToken.sol";
 import {ForkableGlobalExitRoot} from "../contracts/ForkableGlobalExitRoot.sol";
@@ -496,14 +497,16 @@ contract ForkableBridgeTest is Test {
             depositTreeHashes
         );
 
-        vm.expectRevert("Not authorized");
+        vm.expectRevert(IForkableBridge.NotAuthorized.selector);
         forkableBridge.transferHardAssetsToChild(
             address(erc20Token),
             amount,
             to
         );
 
-        vm.expectRevert("Invalid to");
+        vm.expectRevert(
+            IForkableBridge.InvalidDestinationForHardAsset.selector
+        );
         vm.prank(hardAssetManger);
         forkableBridge.transferHardAssetsToChild(
             address(erc20Token),
