@@ -1,6 +1,7 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
+import {IForkableStructure} from "../contracts/interfaces/IForkableStructure.sol";
 import {ForkableGlobalExitRoot} from "../contracts/ForkableGlobalExitRoot.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {Util} from "./utils/Util.sol";
@@ -69,7 +70,7 @@ contract ForkableGlobalExitRootTest is Test {
     }
 
     function testCreateChildrenOnlyByForkManager() public {
-        vm.expectRevert("Not forkManager");
+        vm.expectRevert(IForkableStructure.OnlyForkManagerIsAllowed.selector);
         forkableGlobalExitRoot.createChildren();
         vm.prank(forkableGlobalExitRoot.forkmanager());
         forkableGlobalExitRoot.createChildren();
