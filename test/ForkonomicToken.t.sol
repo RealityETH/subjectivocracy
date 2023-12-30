@@ -62,11 +62,8 @@ contract ForkonomicTokenTest is Test {
     }
 
     function testCreateChildrenAndSplitTokens() public {
-        address forkonomicTokenImplementation2 = address(new ForkonomicToken());
         vm.prank(forkonomicToken.forkmanager());
-        (address child1, address child2) = forkonomicToken.createChildren(
-            forkonomicTokenImplementation2
-        );
+        (address child1, address child2) = forkonomicToken.createChildren();
         ForkonomicToken(child1).initialize(
             forkmanager,
             address(forkonomicToken),

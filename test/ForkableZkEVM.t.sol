@@ -93,17 +93,11 @@ contract ForkableZkEVMTest is Test {
     }
 
     function testCreateChildren() public {
-        address secondForkableZkEVMImplementation = address(
-            new ForkableZkEVM()
-        );
-
         vm.expectRevert("Not forkManager");
-        forkableZkEVM.createChildren(secondForkableZkEVMImplementation);
+        forkableZkEVM.createChildren();
 
         vm.prank(forkableZkEVM.forkmanager());
-        (address child1, address child2) = forkableZkEVM.createChildren(
-            secondForkableZkEVMImplementation
-        );
+        (address child1, address child2) = forkableZkEVM.createChildren();
 
         // child1 and child2 addresses should not be zero address
         assertTrue(child1 != address(0));
@@ -116,7 +110,7 @@ contract ForkableZkEVMTest is Test {
         );
         assertEq(
             Util.bytesToAddress(vm.load(address(child2), _IMPLEMENTATION_SLOT)),
-            secondForkableZkEVMImplementation
+            forkableZkEVMImplementation
         );
     }
 
@@ -134,7 +128,7 @@ contract ForkableZkEVMTest is Test {
         }
 
         vm.prank(forkableZkEVM.forkmanager());
-        forkableZkEVM.createChildren(forkableZkEVMImplementation);
+        forkableZkEVM.createChildren();
 
         vm.expectRevert("No changes after forking");
         forkableZkEVM.verifyBatches(
@@ -149,7 +143,7 @@ contract ForkableZkEVMTest is Test {
 
     function testNoChangeOfConsolidationOfStateAfterForking() public {
         vm.prank(forkableZkEVM.forkmanager());
-        forkableZkEVM.createChildren(forkableZkEVMImplementation);
+        forkableZkEVM.createChildren();
 
         vm.expectRevert("No changes after forking");
         forkableZkEVM.consolidatePendingState(10);

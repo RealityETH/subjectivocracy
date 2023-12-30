@@ -56,13 +56,8 @@ contract ForkStructureTest is Test {
             )
         );
         forkStructure.initialize(forkmanager, parentContract);
-        address secondForkableStructureImplementation = address(
-            new ForkableStructureWrapper()
-        );
 
-        (address child1, address child2) = forkStructure.createChildren(
-            secondForkableStructureImplementation
-        );
+        (address child1, address child2) = forkStructure.createChildren();
 
         // child1 and child2 addresses should not be zero address
         assertTrue(child1 != address(0));
@@ -75,7 +70,7 @@ contract ForkStructureTest is Test {
         );
         assertEq(
             Util.bytesToAddress(vm.load(address(child2), _IMPLEMENTATION_SLOT)),
-            secondForkableStructureImplementation
+            forkableStructureImplementation
         );
         assertEq(
             Util.bytesToAddress(vm.load(address(child1), _ADMIN_SLOT)),

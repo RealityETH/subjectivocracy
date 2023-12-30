@@ -39,7 +39,5 @@ interface IForkableZkEVM is IForkableStructure, IPolygonZkEVM {
     // The initialization of the children contracts should be called in the same transaction
     // as the creation of the children contracts.
     // @params implemation: The implementation of the children contracts.
-    function createChildren(
-        address implementation
-    ) external returns (address, address);
+    function createChildren() external returns (address, address);
 }

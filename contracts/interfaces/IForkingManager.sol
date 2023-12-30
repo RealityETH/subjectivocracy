@@ -82,8 +82,5 @@ interface IForkingManager is IForkableStructure {
         uint256 _forkPreparationTime
     ) external;
 
-    function initiateFork(
-        DisputeData memory _disputeData,
-        NewImplementations calldata newImplementations
-    ) external;
+    function initiateFork(DisputeData memory _disputeData) external;
 }

@@ -97,10 +97,9 @@ contract L1GlobalForkRequester {
             );
 
             // Assume the data contains the questionId and pass it directly to the forkmanager in the fork request
-            IForkingManager.NewImplementations memory newImplementations;
             IForkingManager.DisputeData memory disputeData = IForkingManager
                 .DisputeData(false, beneficiary, requestId);
-            forkingManager.initiateFork(disputeData, newImplementations);
+            forkingManager.initiateFork(disputeData);
         } else {
             // Store the request so we can return the tokens across the bridge
             // If the fork has already happened we may have to split them first and do this twice.
