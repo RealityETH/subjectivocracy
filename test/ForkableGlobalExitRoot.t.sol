@@ -37,7 +37,9 @@ contract ForkableGlobalExitRootTest is Test {
             forkmanager,
             parentContract,
             rollupAddress,
-            bridgeAddress
+            bridgeAddress,
+            bytes32(0),
+            bytes32(0)
         );
     }
 

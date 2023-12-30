@@ -144,7 +144,9 @@ contract L1GlobalForkRequesterTest is Test {
             address(forkmanager),
             address(0x0),
             address(zkevm),
-            address(bridge)
+            address(bridge),
+            bytes32(0),
+            bytes32(0)
         );
         bridge.initialize(
             address(forkmanager),
