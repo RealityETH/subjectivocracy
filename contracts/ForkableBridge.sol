@@ -99,12 +99,14 @@ contract ForkableBridge is
     }
 
     // @inheritdoc IForkableBridge
-    function createChildren(
-        address implementation
-    ) external onlyForkManger returns (address, address) {
+    function createChildren()
+        external
+        onlyForkManger
+        returns (address, address)
+    {
         // process all pending deposits/messages before coping over the state root.
         updateGlobalExitRoot();
-        return _createChildren(implementation);
+        return _createChildren();
     }
 
     // @inheritdoc IForkableBridge

@@ -39,11 +39,8 @@ interface IForkableBridge is IForkableStructure, IPolygonZkEVMBridge {
 
     /**
      * @dev Function to create the children contracts
-     * @param implementation: address of the implementation contract
      */
-    function createChildren(
-        address implementation
-    ) external returns (address, address);
+    function createChildren() external returns (address, address);
 
     /**
      * @dev Anyone can use their tokens to split the bridged tokens into the two corresponding children tokens

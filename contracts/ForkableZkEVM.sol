@@ -41,10 +41,12 @@ contract ForkableZkEVM is ForkableStructure, IForkableZkEVM, PolygonZkEVM {
     }
 
     // @inheritdoc IForkableZkEVM
-    function createChildren(
-        address implementation
-    ) external onlyForkManger returns (address, address) {
-        return _createChildren(implementation);
+    function createChildren()
+        external
+        onlyForkManger
+        returns (address, address)
+    {
+        return _createChildren();
     }
 
     ////////////////////////////////////////////////////////////////////////////

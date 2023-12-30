@@ -49,12 +49,9 @@ contract ForkableGlobalExitRootTest is Test {
     }
 
     function testCreateChildren() public {
-        address secondForkableGlobalExitRootImplementation = address(
-            new ForkableGlobalExitRoot()
-        );
         vm.prank(forkableGlobalExitRoot.forkmanager());
         (address child1, address child2) = forkableGlobalExitRoot
-            .createChildren(secondForkableGlobalExitRootImplementation);
+            .createChildren();
 
         // child1 and child2 addresses should not be zero address
         assertTrue(child1 != address(0));
@@ -67,22 +64,14 @@ contract ForkableGlobalExitRootTest is Test {
         );
         assertEq(
             Util.bytesToAddress(vm.load(address(child2), _IMPLEMENTATION_SLOT)),
-            secondForkableGlobalExitRootImplementation
+            forkableGlobalExitRootImplementation
         );
     }
 
     function testCreateChildrenOnlyByForkManager() public {
-        address secondForkableGlobalExitRootImplementation = address(
-            new ForkableGlobalExitRoot()
-        );
-
         vm.expectRevert("Not forkManager");
-        forkableGlobalExitRoot.createChildren(
-            secondForkableGlobalExitRootImplementation
-        );
+        forkableGlobalExitRoot.createChildren();
         vm.prank(forkableGlobalExitRoot.forkmanager());
-        forkableGlobalExitRoot.createChildren(
-            secondForkableGlobalExitRootImplementation
-        );
+        forkableGlobalExitRoot.createChildren();
     }
 }

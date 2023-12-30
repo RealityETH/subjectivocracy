@@ -24,7 +24,8 @@ interface IForkableGlobalExitRoot is
         bytes32 _lastRollupExitRoot
     ) external;
 
-    function createChildren(
-        address implementation
-    ) external returns (address, address);
+    /**
+     * @dev Function to create the children contracts
+     */
+    function createChildren() external returns (address, address);
 }

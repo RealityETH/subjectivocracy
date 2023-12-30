@@ -285,21 +285,9 @@ contract L1GlobalChainInfoPublisherTest is Test {
         forkonomicToken.mint(address(this), arbitrationFee * 3);
 
         // Call the initiateFork function to create a new fork
-        forkmanager.initiateFork(
-            disputeData,
-            IForkingManager.NewImplementations({
-                bridgeImplementation: newBridgeImplementation,
-                zkEVMImplementation: newZkevmImplementation,
-                forkonomicTokenImplementation: newForkonomicTokenImplementation,
-                forkingManagerImplementation: newForkmanagerImplementation,
-                globalExitRootImplementation: newGlobalExitRootImplementation,
-                verifier: newVerifierImplementation,
-                forkID: newForkID
-            })
-        );
+        forkmanager.initiateFork(disputeData);
         skip(forkmanager.forkPreparationTime() + 1);
-        forkmanager.executeFork1();
-        forkmanager.executeFork2();
+        forkmanager.executeFork();
 
         // The current bridge should no longer work
         vm.expectRevert("No changes after forking");
@@ -355,17 +343,14 @@ contract L1GlobalChainInfoPublisherTest is Test {
                 isL1: true
             });
 
-        IForkingManager.NewImplementations memory newImplementations2; // Empty one to simulate a question
-
         forkonomicToken.splitTokensIntoChildTokens(arbitrationFee);
         forkonomicToken2.approve(address(forkmanager2), arbitrationFee);
         vm.prank(address(this));
 
         // Call the initiateFork function to create a new fork
-        forkmanager2.initiateFork(disputeData2, newImplementations2);
+        forkmanager2.initiateFork(disputeData2);
         skip(forkmanager.forkPreparationTime() + 1);
-        forkmanager2.executeFork1();
-        forkmanager2.executeFork2();
+        forkmanager2.executeFork();
 
         vm.expectRevert("No changes after forking");
         l1GlobalChainInfoPublisher.updateL2ChainInfo(

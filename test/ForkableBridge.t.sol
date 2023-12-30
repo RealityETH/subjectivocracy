@@ -69,11 +69,8 @@ contract ForkableBridgeTest is Test {
     }
 
     function testCreateChildren() public {
-        address secondBridgeImplementation = address(
-            new ForkableBridgeWrapper()
-        );
         vm.expectRevert(bytes("Not forkManager"));
-        forkableBridge.createChildren(secondBridgeImplementation);
+        forkableBridge.createChildren();
         ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
         vm.mockCall(
             address(_globalExitRootManager),
@@ -85,9 +82,7 @@ contract ForkableBridgeTest is Test {
         );
 
         vm.prank(forkableBridge.forkmanager());
-        (address child1, address child2) = forkableBridge.createChildren(
-            secondBridgeImplementation
-        );
+        (address child1, address child2) = forkableBridge.createChildren();
         assertTrue(child1 != address(0));
         assertTrue(child2 != address(0));
     }
@@ -221,13 +216,8 @@ contract ForkableBridgeTest is Test {
         vm.expectRevert(bytes("onlyAfterForking"));
         forkableBridge.splitTokenIntoChildToken(address(token), amount, true);
 
-        address secondBridgeImplementation = address(
-            new ForkableBridgeWrapper()
-        );
         vm.prank(forkableBridge.forkmanager());
-        (address child1, address child2) = forkableBridge.createChildren(
-            secondBridgeImplementation
-        );
+        (address child1, address child2) = forkableBridge.createChildren();
 
         // Create forkable token
         vm.prank(forkableBridge.parentContract());
@@ -306,13 +296,8 @@ contract ForkableBridgeTest is Test {
             abi.encodePacked(originNetwork, token)
         );
 
-        address secondBridgeImplementation = address(
-            new ForkableBridgeWrapper()
-        );
         vm.prank(forkableBridge.forkmanager());
-        (address child1, address child2) = forkableBridge.createChildren(
-            secondBridgeImplementation
-        );
+        (address child1, address child2) = forkableBridge.createChildren();
 
         // Create forkable token
         vm.prank(forkableBridge.parentContract());
@@ -389,7 +374,6 @@ contract ForkableBridgeTest is Test {
     }
 
     function testNoDepostOrClaimingAfterForking() public {
-        address secondBridgeImplementation = address(new ForkableBridge());
         ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
         vm.mockCall(
             address(_globalExitRootManager),
@@ -401,7 +385,7 @@ contract ForkableBridgeTest is Test {
         );
 
         vm.prank(forkableBridge.forkmanager());
-        forkableBridge.createChildren(secondBridgeImplementation);
+        forkableBridge.createChildren();
 
         vm.expectRevert(bytes("No changes after forking"));
         forkableBridge.bridgeAsset(
@@ -471,9 +455,6 @@ contract ForkableBridgeTest is Test {
             to
         );
 
-        address secondBridgeImplementation = address(
-            new ForkableBridgeWrapper()
-        );
         ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
         vm.mockCall(
             address(_globalExitRootManager),
@@ -484,9 +465,7 @@ contract ForkableBridgeTest is Test {
             ""
         );
         vm.prank(forkableBridge.forkmanager());
-        (address child1, address child2) = forkableBridge.createChildren(
-            secondBridgeImplementation
-        );
+        (address child1, address child2) = forkableBridge.createChildren();
 
         // initialize the child contracts to set the parent contract
         ForkableBridge(child1).initialize(
@@ -590,9 +569,6 @@ contract ForkableBridgeTest is Test {
         forkableBridge2.sendForkonomicTokensToChild(10, true, false);
 
         // Create initiate the forking process and create children
-        address secondBridgeImplementation = address(
-            new ForkableBridgeWrapper()
-        );
         ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
         vm.mockCall(
             address(_globalExitRootManager),
@@ -603,9 +579,7 @@ contract ForkableBridgeTest is Test {
             ""
         );
         vm.prank(forkableBridge2.forkmanager());
-        (address child1, address child2) = forkableBridge2.createChildren(
-            secondBridgeImplementation
-        );
+        (address child1, address child2) = forkableBridge2.createChildren();
 
         // The initial balances
         uint256 initialBridgeBalance = erc20GasToken.balanceOf(
@@ -619,7 +593,7 @@ contract ForkableBridgeTest is Test {
 
         vm.prank(forkmanager);
         (address forkonomicToken1, address forkonomicToken2) = erc20GasToken
-            .createChildren(forkonomicTokenImplementation);
+            .createChildren();
         ForkonomicToken(forkonomicToken1).initialize(
             forkmanager,
             address(this),
@@ -692,10 +666,6 @@ contract ForkableBridgeWrapperTest is Test {
 
     function testIsClaimedOnParent() public {
         uint256 index = 1;
-
-        address secondBridgeImplementation = address(
-            new ForkableBridgeWrapper()
-        );
         ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
         vm.mockCall(
             address(_globalExitRootManager),
@@ -706,9 +676,7 @@ contract ForkableBridgeWrapperTest is Test {
             ""
         );
         vm.prank(forkableBridge.forkmanager());
-        (address child1, address child2) = forkableBridge.createChildren(
-            secondBridgeImplementation
-        );
+        (address child1, address child2) = forkableBridge.createChildren();
 
         // initialize the child contracts to set the parent contract
         ForkableBridge(child1).initialize(
@@ -754,9 +722,6 @@ contract ForkableBridgeWrapperTest is Test {
     function testIsClaimedOnParentIsConsideringLastDepositUpdate() public {
         uint256 index = 1;
 
-        address secondBridgeImplementation = address(
-            new ForkableBridgeWrapper()
-        );
         ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
         vm.mockCall(
             address(_globalExitRootManager),
@@ -767,9 +732,7 @@ contract ForkableBridgeWrapperTest is Test {
             ""
         );
         vm.prank(forkableBridge.forkmanager());
-        (address child1, address child2) = forkableBridge.createChildren(
-            secondBridgeImplementation
-        );
+        (address child1, address child2) = forkableBridge.createChildren();
 
         // initialize the child contracts to set the parent contract
         ForkableBridgeWrapper(child1).initialize(
@@ -820,10 +783,6 @@ contract ForkableBridgeWrapperTest is Test {
 
     function testSetAndCheckClaimed() public {
         uint256 index = 1;
-
-        address secondBridgeImplementation = address(
-            new ForkableBridgeWrapper()
-        );
         ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
         vm.mockCall(
             address(_globalExitRootManager),
@@ -834,9 +793,7 @@ contract ForkableBridgeWrapperTest is Test {
             ""
         );
         vm.prank(forkableBridge.forkmanager());
-        (address child1, address child2) = forkableBridge.createChildren(
-            secondBridgeImplementation
-        );
+        (address child1, address child2) = forkableBridge.createChildren();
 
         // initialize the child contracts to set the parent contract
         ForkableBridge(child1).initialize(

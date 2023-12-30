@@ -40,7 +40,6 @@ contract ForkingManager is IForkingManager, ForkableStructure {
 
     // Following variables are defined during the fork proposal
     DisputeData public disputeData;
-    NewImplementations public proposedImplementations;
     uint256 public executionTimeForProposal;
     uint256 public forkPreparationTime;
 
@@ -87,11 +86,9 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     /**
      * @notice function to initiate and schedule the fork
      * @param _disputeData the dispute contract and call to identify the dispute
-     * @param _newImplementations the addresses of the new implementations that will
      */
     function initiateFork(
-        DisputeData memory _disputeData,
-        NewImplementations calldata _newImplementations
+        DisputeData memory _disputeData
     ) external onlyBeforeForking {
         require(executionTimeForProposal == 0, "ForkingManager: fork pending");
         // Charge the forking fee
@@ -102,11 +99,6 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         );
 
         disputeData = _disputeData;
-        require(
-            verifyNewImplementations(_newImplementations),
-            "Invalid new implementations"
-        );
-        proposedImplementations = _newImplementations;
         reservedChainIdForFork1 = ChainIdManager(chainIdManager)
             .getNextUsableChainId();
         reservedChainIdForFork2 = ChainIdManager(chainIdManager)
@@ -116,63 +108,9 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     }
 
     /**
-     * @notice function to check that the new implementations are properly set and are actual contracts
-     * @param _newImplementations the addresses of the new implementations that will
-     * be used in the fork
-     * @return true if the new implementations are properly formed
-     */
-    function verifyNewImplementations(
-        NewImplementations calldata _newImplementations
-    ) internal view returns (bool) {
-        // address zero is placeholder for no change and hence allowed. CreateChildren library will then read out the parent address and use it
-        require(
-            _newImplementations.bridgeImplementation == address(0) ||
-                AddressUpgradeable.isContract(
-                    _newImplementations.bridgeImplementation
-                ),
-            "bridge not contract"
-        );
-        require(
-            _newImplementations.zkEVMImplementation == address(0) ||
-                AddressUpgradeable.isContract(
-                    _newImplementations.zkEVMImplementation
-                ),
-            "zkEVM not contract"
-        );
-        require(
-            _newImplementations.forkonomicTokenImplementation == address(0) ||
-                AddressUpgradeable.isContract(
-                    _newImplementations.forkonomicTokenImplementation
-                ),
-            "forkonomic token not contract"
-        );
-        require(
-            _newImplementations.forkingManagerImplementation == address(0) ||
-                AddressUpgradeable.isContract(
-                    _newImplementations.forkingManagerImplementation
-                ),
-            "forking manager not contract"
-        );
-
-        require(
-            _newImplementations.zkEVMImplementation == address(0) ||
-                AddressUpgradeable.isContract(
-                    _newImplementations.globalExitRootImplementation
-                ),
-            "global exit root not contract"
-        );
-        require(
-            _newImplementations.verifier == address(0) ||
-                AddressUpgradeable.isContract(_newImplementations.verifier),
-            "verifier not contract"
-        );
-        return true;
-    }
-
-    /**
      * @dev function that executes a fork proposal
      */
-    function executeFork1() external onlyBeforeForking {
+    function executeFork() external onlyBeforeForking {
         require(
             executionTimeForProposal != 0 &&
                 // solhint-disable-next-line not-rely-on-time
@@ -180,24 +118,25 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             "ForkingManager: fork not ready"
         );
 
-        NewImplementations memory newImplementations = proposedImplementations;
-
         // Create the children of each contract
         NewInstances memory newInstances;
-        (newInstances.forkingManager.one, ) = _createChildren(
-            newImplementations.forkingManagerImplementation
-        );
-        (newInstances.bridge.one, ) = IForkableBridge(bridge).createChildren(
-            newImplementations.bridgeImplementation
-        );
-        (newInstances.zkEVM.one, ) = IForkableZkEVM(zkEVM).createChildren(
-            newImplementations.zkEVMImplementation
-        );
-        (newInstances.forkonomicToken.one, ) = IForkonomicToken(forkonomicToken)
-            .createChildren(newImplementations.forkonomicTokenImplementation);
-        (newInstances.globalExitRoot.one, ) = IForkableGlobalExitRoot(
-            globalExitRoot
-        ).createChildren(newImplementations.globalExitRootImplementation);
+        (
+            newInstances.forkingManager.one,
+            newInstances.forkingManager.two
+        ) = _createChildren();
+        (newInstances.bridge.one, newInstances.bridge.two) = IForkableBridge(
+            bridge
+        ).createChildren();
+        (newInstances.zkEVM.one, newInstances.zkEVM.two) = IForkableZkEVM(zkEVM)
+            .createChildren();
+        (
+            newInstances.forkonomicToken.one,
+            newInstances.forkonomicToken.two
+        ) = IForkonomicToken(forkonomicToken).createChildren();
+        (
+            newInstances.globalExitRoot.one,
+            newInstances.globalExitRoot.two
+        ) = IForkableGlobalExitRoot(globalExitRoot).createChildren();
 
         // Initialize the zkEVM contracts
         IPolygonZkEVM.InitializePackedParameters
@@ -238,6 +177,20 @@ contract ForkingManager is IForkingManager, ForkableStructure {
                 IForkableZkEVM(zkEVM).rollupVerifier(),
                 IPolygonZkEVMBridge(newInstances.bridge.one)
             );
+            initializePackedParameters.chainID = reservedChainIdForFork2;
+            IForkableZkEVM(newInstances.zkEVM.two).initialize(
+                newInstances.forkingManager.two,
+                zkEVM,
+                initializePackedParameters,
+                genesisRoot,
+                trustedSequencerURL,
+                networkName,
+                "0.1.0",
+                IPolygonZkEVMGlobalExitRoot(newInstances.globalExitRoot.two),
+                IERC20Upgradeable(newInstances.forkonomicToken.two),
+                IForkableZkEVM(zkEVM).rollupVerifier(),
+                IPolygonZkEVMBridge(newInstances.bridge.two)
+            );
         }
 
         // Initialize the tokens
@@ -246,6 +199,13 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             forkonomicToken,
             address(this),
             string.concat(IERC20Metadata(forkonomicToken).name(), "0"),
+            IERC20Metadata(forkonomicToken).symbol()
+        );
+        IForkonomicToken(newInstances.forkonomicToken.two).initialize(
+            newInstances.forkingManager.two,
+            forkonomicToken,
+            address(this),
+            string.concat(IERC20Metadata(forkonomicToken).name(), "1"),
             IERC20Metadata(forkonomicToken).symbol()
         );
 
@@ -265,109 +225,6 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             IForkableBridge(bridge).getLastUpdatedDepositCount(),
             depositBranch
         );
-
-        //Initialize the forking manager contracts
-        IForkingManager(newInstances.forkingManager.one).initialize(
-            newInstances.zkEVM.one,
-            newInstances.bridge.one,
-            newInstances.forkonomicToken.one,
-            address(this),
-            newInstances.globalExitRoot.one,
-            arbitrationFee,
-            chainIdManager,
-            forkPreparationTime
-        );
-
-        //Initialize the global exit root contracts
-        IForkableGlobalExitRoot(newInstances.globalExitRoot.one).initialize(
-            newInstances.forkingManager.one,
-            globalExitRoot,
-            newInstances.zkEVM.one,
-            newInstances.bridge.one,
-            IForkableGlobalExitRoot(globalExitRoot).lastMainnetExitRoot(),
-            IForkableGlobalExitRoot(globalExitRoot).lastRollupExitRoot()
-        );
-    }
-
-    /**
-     * @dev function that creates the second fork for the fork proposal
-     */
-    function executeFork2() external onlyBeforeCreatingChild2 {
-        require(
-            executionTimeForProposal != 0 &&
-                // solhint-disable-next-line not-rely-on-time
-                executionTimeForProposal <= block.timestamp,
-            "ForkingManager: fork not ready"
-        );
-        NewImplementations memory newImplementations = proposedImplementations;
-
-        // Create the children of each contract
-        NewInstances memory newInstances;
-        (, newInstances.forkingManager.two) = getChildren();
-        (, newInstances.bridge.two) = IForkableBridge(bridge).getChildren();
-        (, newInstances.zkEVM.two) = IForkableZkEVM(zkEVM).getChildren();
-        (, newInstances.forkonomicToken.two) = IForkonomicToken(forkonomicToken)
-            .getChildren();
-        (, newInstances.globalExitRoot.two) = IForkableGlobalExitRoot(
-            globalExitRoot
-        ).getChildren();
-
-        // Initialize the zkEVM contracts
-        IPolygonZkEVM.InitializePackedParameters
-            memory initializePackedParameters;
-
-        {
-            // retrieve some information from the zkEVM contract
-            bytes32 genesisRoot = IPolygonZkEVM(zkEVM).batchNumToStateRoot(
-                IPolygonZkEVM(zkEVM).lastVerifiedBatch()
-            );
-            // the following variables could be used to save gas, but it requires via-ir in the compiler settings
-            string memory trustedSequencerURL = IPolygonZkEVM(zkEVM)
-                .trustedSequencerURL();
-            string memory networkName = IPolygonZkEVM(zkEVM).networkName();
-            // string memory version = "0.1.0"; // Todo: get version from zkEVM, currently only emitted as event
-            initializePackedParameters = IPolygonZkEVM
-                .InitializePackedParameters({
-                    admin: IPolygonZkEVM(zkEVM).admin(),
-                    trustedSequencer: IPolygonZkEVM(zkEVM).trustedSequencer(),
-                    pendingStateTimeout: IPolygonZkEVM(zkEVM)
-                        .pendingStateTimeout(),
-                    trustedAggregator: IPolygonZkEVM(zkEVM).trustedAggregator(),
-                    trustedAggregatorTimeout: IPolygonZkEVM(zkEVM)
-                        .trustedAggregatorTimeout(),
-                    chainID: reservedChainIdForFork2,
-                    forkID: newImplementations.forkID > 0
-                        ? newImplementations.forkID
-                        : IPolygonZkEVM(zkEVM).forkID()
-                });
-            IForkableZkEVM(newInstances.zkEVM.two).initialize(
-                newInstances.forkingManager.two,
-                zkEVM,
-                initializePackedParameters,
-                genesisRoot,
-                trustedSequencerURL,
-                networkName,
-                "0.1.0",
-                IPolygonZkEVMGlobalExitRoot(newInstances.globalExitRoot.two),
-                IERC20Upgradeable(newInstances.forkonomicToken.two),
-                IVerifierRollup(newImplementations.verifier),
-                IPolygonZkEVMBridge(newInstances.bridge.two)
-            );
-        }
-
-        // Initialize the tokens
-        IForkonomicToken(newInstances.forkonomicToken.two).initialize(
-            newInstances.forkingManager.two,
-            forkonomicToken,
-            address(this),
-            string.concat(IERC20Metadata(forkonomicToken).name(), "1"),
-            IERC20Metadata(forkonomicToken).symbol()
-        );
-
-        bytes32[DEPOSIT_CONTRACT_TREE_DEPTH]
-            memory depositBranch = IForkableBridge(bridge).getBranch();
-
-        //Initialize the bridge contracts
         IForkableBridge(newInstances.bridge.two).initialize(
             newInstances.forkingManager.two,
             bridge,
@@ -382,6 +239,16 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         );
 
         //Initialize the forking manager contracts
+        IForkingManager(newInstances.forkingManager.one).initialize(
+            newInstances.zkEVM.one,
+            newInstances.bridge.one,
+            newInstances.forkonomicToken.one,
+            address(this),
+            newInstances.globalExitRoot.one,
+            arbitrationFee,
+            chainIdManager,
+            forkPreparationTime
+        );
         IForkingManager(newInstances.forkingManager.two).initialize(
             newInstances.zkEVM.two,
             newInstances.bridge.two,
@@ -394,6 +261,14 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         );
 
         //Initialize the global exit root contracts
+        IForkableGlobalExitRoot(newInstances.globalExitRoot.one).initialize(
+            newInstances.forkingManager.one,
+            globalExitRoot,
+            newInstances.zkEVM.one,
+            newInstances.bridge.one,
+            IForkableGlobalExitRoot(globalExitRoot).lastMainnetExitRoot(),
+            IForkableGlobalExitRoot(globalExitRoot).lastRollupExitRoot()
+        );
         IForkableGlobalExitRoot(newInstances.globalExitRoot.two).initialize(
             newInstances.forkingManager.two,
             globalExitRoot,
