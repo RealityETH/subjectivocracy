@@ -82,7 +82,7 @@ contract L1GlobalForkRequester {
         if (transferredBalance < forkingManager.arbitrationFee()) {
             isForkGuaranteedNotToRevert = false;
         }
-        if (!forkingManager.canFork()) {
+        if (forkingManager.isForkingInitiated()) {
             isForkGuaranteedNotToRevert = false;
         }
 

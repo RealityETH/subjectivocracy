@@ -202,7 +202,6 @@ contract ForkingManagerTest is Test {
     function testForkingStatusFunctions() public {
         assertFalse(forkmanager.isForkingInitiated());
         assertFalse(forkmanager.isForkingExecuted());
-        assertTrue(forkmanager.canFork());
 
         // Mint and approve the arbitration fee for the test contract
         forkonomicToken.approve(address(forkmanager), arbitrationFee);
@@ -226,14 +225,12 @@ contract ForkingManagerTest is Test {
 
         assertTrue(forkmanager.isForkingInitiated());
         assertFalse(forkmanager.isForkingExecuted());
-        assertFalse(forkmanager.canFork());
 
         vm.warp(block.timestamp + forkmanager.forkPreparationTime() + 1);
         forkmanager.executeFork();
 
         assertTrue(forkmanager.isForkingInitiated());
         assertTrue(forkmanager.isForkingExecuted());
-        assertFalse(forkmanager.canFork());
     }
 
     function testInitiateForkChargesFees() public {
