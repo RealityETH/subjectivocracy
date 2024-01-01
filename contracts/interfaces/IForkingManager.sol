@@ -43,8 +43,6 @@ interface IForkingManager is IForkableStructure {
 
     function isForkingExecuted() external returns (bool);
 
-    function canFork() external returns (bool);
-
     // Struct that holds an address pair used to store the new child contracts
     struct AddressPair {
         address one;

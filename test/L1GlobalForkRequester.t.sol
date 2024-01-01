@@ -229,7 +229,6 @@ contract L1GlobalForkRequesterTest is Test {
             address(forkmanager.forkonomicToken()),
             address(forkonomicToken)
         );
-        assertTrue(forkmanager.canFork());
         assertFalse(forkmanager.isForkingInitiated());
         assertFalse(forkmanager.isForkingExecuted());
 
@@ -268,7 +267,7 @@ contract L1GlobalForkRequesterTest is Test {
             address(forkmanager.forkonomicToken()),
             address(forkonomicToken)
         );
-        assertTrue(forkmanager.canFork());
+        assertFalse(forkmanager.isForkingInitiated());
 
         l1GlobalForkRequester.handlePayment(
             address(forkonomicToken),
@@ -316,7 +315,7 @@ contract L1GlobalForkRequesterTest is Test {
             address(forkmanager.forkonomicToken()),
             address(forkonomicToken)
         );
-        assertTrue(forkmanager.canFork());
+        assertFalse(forkmanager.isForkingInitiated());
 
         {
             // Someone else starts and executes a fork before we can handle our payment
