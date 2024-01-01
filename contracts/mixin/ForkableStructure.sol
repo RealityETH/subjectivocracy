@@ -18,28 +18,33 @@ contract ForkableStructure is IForkableStructure, Initializable {
     mapping(uint256 => address) public children;
 
     modifier onlyBeforeForking() {
-        require(children[0] == address(0x0), "No changes after forking");
-        _;
-    }
-
-    modifier onlyBeforeCreatingChild2() {
-        require(children[2] == address(0x0), "No changes after forking");
+        if (children[0] != address(0x0)) {
+            revert NoChangesAfterForking();
+        }
         _;
     }
 
     modifier onlyAfterForking() {
-        require(children[0] != address(0x0), "onlyAfterForking");
-        require(children[1] != address(0x0), "onlyAfterForking");
+        if (children[0] == address(0x0)) {
+            revert OnlyAfterForking();
+        }
+        if (children[1] == address(0x0)) {
+            revert OnlyAfterForking();
+        }
         _;
     }
 
     modifier onlyParent() {
-        require(msg.sender == parentContract, "Not parent");
+        if (msg.sender != parentContract) {
+            revert OnlyParentIsAllowed();
+        }
         _;
     }
 
     modifier onlyForkManger() {
-        require(msg.sender == forkmanager, "Not forkManager");
+        if (msg.sender != forkmanager) {
+            revert OnlyForkManagerIsAllowed();
+        }
         _;
     }
 

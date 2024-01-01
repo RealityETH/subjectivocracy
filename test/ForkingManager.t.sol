@@ -9,6 +9,7 @@ import {ForkableBridge} from "../contracts/ForkableBridge.sol";
 import {ForkableZkEVM} from "../contracts/ForkableZkEVM.sol";
 import {ForkonomicToken} from "../contracts/ForkonomicToken.sol";
 import {ForkableGlobalExitRoot} from "../contracts/ForkableGlobalExitRoot.sol";
+import {IForkableStructure} from "../contracts/interfaces/IForkableStructure.sol";
 import {IPolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
 import {IForkingManager} from "../contracts/interfaces/IForkingManager.sol";
 import {IVerifierRollup} from "@RealityETH/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
@@ -641,7 +642,7 @@ contract ForkingManagerTest is Test {
         forkmanager.initiateFork(disputeData);
         skip(forkmanager.forkPreparationTime() + 1);
         forkmanager.executeFork();
-        vm.expectRevert("No changes after forking");
+        vm.expectRevert(IForkableStructure.NoChangesAfterForking.selector);
         forkmanager.executeFork();
     }
 

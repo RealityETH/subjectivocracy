@@ -56,8 +56,12 @@ contract ForkableBridge is
         uint256 amount,
         address to
     ) external onlyAfterForking {
-        require(_hardAssetManager == msg.sender, "Not authorized");
-        require(to == children[0] || to == children[1], "Invalid to");
+        if (_hardAssetManager != msg.sender) {
+            revert NotAuthorized();
+        }
+        if (to != children[0] && to != children[1]) {
+            revert InvalidDestinationForHardAsset();
+        }
         IERC20(token).transfer(to, amount);
     }
 

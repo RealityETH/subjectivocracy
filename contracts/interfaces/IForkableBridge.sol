@@ -7,6 +7,11 @@ import {IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contr
 import {IForkableStructure} from "./IForkableStructure.sol";
 
 interface IForkableBridge is IForkableStructure, IPolygonZkEVMBridge {
+    /// @dev Error thrown when activity is started by a non-authorized actor
+    error NotAuthorized();
+    /// @dev Error thrown when trying to send bridged tokens to a child contract
+    error InvalidDestinationForHardAsset();
+
     /**
      * @dev Function to initialize the contract
      * @param _forkmanager: address of the forkmanager contract

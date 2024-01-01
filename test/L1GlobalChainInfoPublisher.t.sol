@@ -19,6 +19,7 @@ import {ForkableRealityETH_ERC20} from "../contracts/ForkableRealityETH_ERC20.so
 import {RealityETH_v3_0} from "../contracts/lib/reality-eth/RealityETH-3.0.sol";
 import {AdjudicationFramework} from "../contracts/AdjudicationFramework.sol";
 
+import {IForkableStructure} from "../contracts/interfaces/IForkableStructure.sol";
 import {L2ForkArbitrator} from "../contracts/L2ForkArbitrator.sol";
 import {L1GlobalChainInfoPublisher} from "../contracts/L1GlobalChainInfoPublisher.sol";
 import {L1GlobalForkRequester} from "../contracts/L1GlobalForkRequester.sol";
@@ -290,7 +291,7 @@ contract L1GlobalChainInfoPublisherTest is Test {
         forkmanager.executeFork();
 
         // The current bridge should no longer work
-        vm.expectRevert("No changes after forking");
+        vm.expectRevert(IForkableStructure.NoChangesAfterForking.selector);
         l1GlobalChainInfoPublisher.updateL2ChainInfo(
             address(bridge),
             address(l2ChainInfo),
@@ -352,7 +353,7 @@ contract L1GlobalChainInfoPublisherTest is Test {
         skip(forkmanager.forkPreparationTime() + 1);
         forkmanager2.executeFork();
 
-        vm.expectRevert("No changes after forking");
+        vm.expectRevert(IForkableStructure.NoChangesAfterForking.selector);
         l1GlobalChainInfoPublisher.updateL2ChainInfo(
             bridge2,
             address(l2ChainInfo),

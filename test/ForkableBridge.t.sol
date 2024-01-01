@@ -4,6 +4,8 @@ import {Test} from "forge-std/Test.sol";
 import {ForkableBridge} from "../contracts/ForkableBridge.sol";
 import {ForkableBridgeWrapper} from "./testcontract/ForkableBridgeWrapper.sol";
 import {ForkonomicToken} from "../contracts/ForkonomicToken.sol";
+import {IForkableBridge} from "../contracts/interfaces/IForkableBridge.sol";
+import {IForkableStructure} from "../contracts/interfaces/IForkableStructure.sol";
 import {IForkonomicToken} from "../contracts/interfaces/IForkonomicToken.sol";
 import {ForkableGlobalExitRoot} from "../contracts/ForkableGlobalExitRoot.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC20Upgradeable.sol";
@@ -69,7 +71,7 @@ contract ForkableBridgeTest is Test {
     }
 
     function testCreateChildren() public {
-        vm.expectRevert(bytes("Not forkManager"));
+        vm.expectRevert(IForkableStructure.OnlyForkManagerIsAllowed.selector);
         forkableBridge.createChildren();
         ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
         vm.mockCall(
@@ -96,7 +98,7 @@ contract ForkableBridgeTest is Test {
             abi.encodePacked(originNetwork, token)
         );
 
-        vm.expectRevert(bytes("Not parent"));
+        vm.expectRevert(IForkableStructure.OnlyParentIsAllowed.selector);
         forkableBridge.mintForkableToken(
             address(token),
             originNetwork,
@@ -173,7 +175,7 @@ contract ForkableBridgeTest is Test {
             amount
         );
 
-        vm.expectRevert(bytes("Not parent"));
+        vm.expectRevert(IForkableStructure.OnlyParentIsAllowed.selector);
         forkableBridge.burnForkableTokens(
             destinationAddress,
             originTokenAddress,
@@ -213,7 +215,8 @@ contract ForkableBridgeTest is Test {
         );
 
         // Testing revert if children are not yet created
-        vm.expectRevert(bytes("onlyAfterForking"));
+        vm.expectRevert(IForkableStructure.OnlyAfterForking.selector);
+
         forkableBridge.splitTokenIntoChildToken(address(token), amount, true);
 
         vm.prank(forkableBridge.forkmanager());
@@ -345,7 +348,8 @@ contract ForkableBridgeTest is Test {
         forkableBridge.splitTokenIntoChildToken(forkableToken, amount, true);
 
         // Only parent can merge
-        vm.expectRevert(bytes("onlyAfterForking"));
+        vm.expectRevert(IForkableStructure.OnlyAfterForking.selector);
+
         ForkableBridge(child1).mergeChildTokens(forkableToken, amount + 1);
 
         // Merge the token
@@ -387,7 +391,7 @@ contract ForkableBridgeTest is Test {
         vm.prank(forkableBridge.forkmanager());
         forkableBridge.createChildren();
 
-        vm.expectRevert(bytes("No changes after forking"));
+        vm.expectRevert(IForkableStructure.NoChangesAfterForking.selector);
         forkableBridge.bridgeAsset(
             12,
             address(0x3),
@@ -397,11 +401,11 @@ contract ForkableBridgeTest is Test {
             bytes("0x3453")
         );
 
-        vm.expectRevert(bytes("No changes after forking"));
+        vm.expectRevert(IForkableStructure.NoChangesAfterForking.selector);
         forkableBridge.bridgeMessage(2, address(0x45), false, bytes("0x3453"));
 
         bytes32[32] memory smtProof;
-        vm.expectRevert(bytes("No changes after forking"));
+        vm.expectRevert(IForkableStructure.NoChangesAfterForking.selector);
         forkableBridge.claimMessage(
             smtProof,
             2,
@@ -415,7 +419,7 @@ contract ForkableBridgeTest is Test {
             bytes("0x")
         );
 
-        vm.expectRevert(bytes("No changes after forking"));
+        vm.expectRevert(IForkableStructure.NoChangesAfterForking.selector);
         forkableBridge.claimAsset(
             smtProof,
             32,
@@ -447,7 +451,7 @@ contract ForkableBridgeTest is Test {
             false,
             ""
         );
-        vm.expectRevert("onlyAfterForking");
+        vm.expectRevert(IForkableStructure.OnlyAfterForking.selector);
         vm.prank(hardAssetManger);
         forkableBridge.transferHardAssetsToChild(
             address(erc20Token),
@@ -493,14 +497,16 @@ contract ForkableBridgeTest is Test {
             depositTreeHashes
         );
 
-        vm.expectRevert("Not authorized");
+        vm.expectRevert(IForkableBridge.NotAuthorized.selector);
         forkableBridge.transferHardAssetsToChild(
             address(erc20Token),
             amount,
             to
         );
 
-        vm.expectRevert("Invalid to");
+        vm.expectRevert(
+            IForkableBridge.InvalidDestinationForHardAsset.selector
+        );
         vm.prank(hardAssetManger);
         forkableBridge.transferHardAssetsToChild(
             address(erc20Token),
@@ -561,10 +567,12 @@ contract ForkableBridgeTest is Test {
         erc20GasToken.mint(address(forkableBridge2), mintAmount);
 
         // Now, call the function as the forkmanager
-        vm.expectRevert(bytes("onlyAfterForking"));
+        vm.expectRevert(IForkableStructure.OnlyAfterForking.selector);
+
         vm.prank(forkmanager);
         forkableBridge2.sendForkonomicTokensToChild(10, true, false);
-        vm.expectRevert(bytes("onlyAfterForking"));
+        vm.expectRevert(IForkableStructure.OnlyAfterForking.selector);
+
         vm.prank(forkmanager);
         forkableBridge2.sendForkonomicTokensToChild(10, true, false);
 
