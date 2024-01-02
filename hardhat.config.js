@@ -30,33 +30,18 @@ module.exports = {
     dependencyCompiler: {
         paths: [
             '@openzeppelin/contracts/token/ERC20/presets/ERC20PresetFixedSupply.sol',
-            '@openzeppelin/contracts/mocks/ERC20PermitMock.sol',
+            '@josojo/zkevm-contracts/contracts/mocks/ERC20PermitMock.sol',
             '@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol',
-            '@RealityETH/zkevm-contracts/contracts/deployment/PolygonZkEVMDeployer.sol',
-            '@RealityETH/zkevm-contracts/contracts/PolygonZkEVMGlobalExitRootL2.sol',
-            '@RealityETH/zkevm-contracts/contracts/PolygonZkEVMTimelock.sol',
-            '@RealityETH/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol',
-            '@RealityETH/zkevm-contracts/contracts/mocks/PolygonZkEVMGlobalExitRootMock.sol',
-            '@RealityETH/zkevm-contracts/contracts/mocks/PolygonZkEVMMock.sol',
-            '@RealityETH/zkevm-contracts/contracts/verifiers/FflonkVerifier.sol',
-            '@RealityETH/zkevm-contracts/contracts/PolygonZkEVMBridgeWrapper.sol',
-        ], // ,
-    // keep: true
-    },
-    preprocess: {
-        eachLine: (hre) => ({
-            transform: (line) => {
-                if (line.match(/^\s*import /i)) {
-                    for (const [from, to] of getRemappings()) {
-                        if (line.includes(from)) {
-                            line = line.replace(from, to);
-                            break;
-                        }
-                    }
-                }
-                return line;
-            },
-        }),
+            '@josojo/zkevm-contracts/contracts/deployment/PolygonZkEVMDeployer.sol',
+            '@josojo/zkevm-contracts/contracts/PolygonZkEVMGlobalExitRootL2.sol',
+            '@josojo/zkevm-contracts/contracts/PolygonZkEVMTimelock.sol',
+            '@josojo/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol',
+            '@josojo/zkevm-contracts/contracts/mocks/PolygonZkEVMGlobalExitRootMock.sol',
+            '@josojo/zkevm-contracts/contracts/mocks/PolygonZkEVMMock.sol',
+            '@josojo/zkevm-contracts/contracts/verifiers/FflonkVerifier.sol',
+            '@josojo/zkevm-contracts/contracts/PolygonZkEVMBridgeWrapper.sol',
+        ],
+        keep: true,
     },
     paths: {
         sources: './contracts/',

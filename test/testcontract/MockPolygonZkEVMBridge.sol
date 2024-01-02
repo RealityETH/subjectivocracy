@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.20;
 
-import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
+import {IBridgeMessageReceiver} from "@josojo/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 
 contract MockPolygonZkEVMBridge {
     function bridgeMessage(
