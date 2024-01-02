@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {IForkableStructure} from "./IForkableStructure.sol";
-import {IPolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
+import {IPolygonZkEVMGlobalExitRoot} from "@josojo/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
 
 interface IForkableGlobalExitRoot is
     IForkableStructure,

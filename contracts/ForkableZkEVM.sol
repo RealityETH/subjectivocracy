@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.20;
 
-import {PolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVM.sol";
-import {IPolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
-import {IVerifierRollup} from "@RealityETH/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
-import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
+import {PolygonZkEVM} from "@josojo/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVM.sol";
+import {IPolygonZkEVMGlobalExitRoot} from "@josojo/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
+import {IVerifierRollup} from "@josojo/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
+import {IPolygonZkEVMBridge} from "@josojo/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
 
-import {TokenWrapped} from "@RealityETH/zkevm-contracts/contracts/lib/TokenWrapped.sol";
+import {TokenWrapped} from "@josojo/zkevm-contracts/contracts/lib/TokenWrapped.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import {IForkableZkEVM} from "./interfaces/IForkableZkEVM.sol";
 import {ForkableStructure} from "./mixin/ForkableStructure.sol";

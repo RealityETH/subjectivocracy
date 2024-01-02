@@ -7,12 +7,12 @@ import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Addr
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
-import {IPolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
+import {IPolygonZkEVM} from "@josojo/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
+import {IPolygonZkEVMGlobalExitRoot} from "@josojo/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import {IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
-import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
-import {IVerifierRollup} from "@RealityETH/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
+import {IBasePolygonZkEVMGlobalExitRoot} from "@josojo/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
+import {IPolygonZkEVMBridge} from "@josojo/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
+import {IVerifierRollup} from "@josojo/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
 import {ForkableStructure} from "./mixin/ForkableStructure.sol";
 import {IForkableBridge} from "./interfaces/IForkableBridge.sol";
 import {IForkableZkEVM} from "./interfaces/IForkableZkEVM.sol";
