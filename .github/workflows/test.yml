@@ -37,7 +37,24 @@ jobs:
           forge test -vvv
         id: test
 
+  hardhat-test:
+    runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        node-version: [16.x]
+    steps:
+        - name: Use Node.js ${{ matrix.node-version }}
+          uses: actions/setup-node@v1
+          with:
+            node-version: ${{ matrix.node-version }}
+        - name: Checkout code
+          uses: actions/checkout@v2
+        - name: setup
+          run: yarn 
+        - name: test
+          run: npx hardhat test
+  
   lint:
     strategy:
       matrix:

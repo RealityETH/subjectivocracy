@@ -811,6 +811,13 @@
     mcl-wasm "^0.7.1"
     rustbn.js "~0.2.0"
 
+"@nomicfoundation/hardhat-network-helpers@^1.0.10":
+  version "1.0.10"
+  resolved "https://registry.yarnpkg.com/@nomicfoundation/hardhat-network-helpers/-/hardhat-network-helpers-1.0.10.tgz#c61042ceb104fdd6c10017859fdef6529c1d6585"
+  integrity sha512-R35/BMBlx7tWN5V6d/8/19QCwEmIdbnA4ZrsuXgvs8i2qFx5i7h6mH5pBS4Pwi4WigLH+upl6faYusrNPuzMrQ==
+  dependencies:
+    ethereumjs-util "^7.1.4"
+
 "@nomicfoundation/solidity-analyzer-darwin-arm64@0.1.1":
   version "0.1.1"
   resolved "https://registry.npmjs.org/@nomicfoundation/solidity-analyzer-darwin-arm64/-/solidity-analyzer-darwin-arm64-0.1.1.tgz"
