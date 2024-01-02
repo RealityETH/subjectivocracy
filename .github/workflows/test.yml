@@ -53,7 +53,7 @@ jobs:
         - name: setup
           run: npm i 
         - name: test
-          run: hardhat test
+          run: npx hardhat test
   
   lint:
     strategy:
