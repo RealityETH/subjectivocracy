@@ -7,7 +7,7 @@ const gasPriceKeylessDeployment = '100'; // 100 gweis
 
 async function deployPolygonZkEVMDeployer(deployerAddress, signer) {
     const PolgonZKEVMDeployerFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/deployment/PolygonZkEVMDeployer.sol:PolygonZkEVMDeployer', signer);
-    console.log('Deploying PolygonZkEVMDeployer...');
+
     const deployTxZKEVMDeployer = (PolgonZKEVMDeployerFactory.getDeployTransaction(
         deployerAddress,
     )).data;
