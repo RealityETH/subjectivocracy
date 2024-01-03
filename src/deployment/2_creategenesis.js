@@ -155,7 +155,7 @@ async function main() {
     /*
      *Deployment Global exit root manager
      */
-    const PolygonZkEVMGlobalExitRootL2Factory = await ethers.getContractFactory('@josojo/zkevm-contracts/contracts/PolygonZkEVMGlobalExitRootL2.sol:PolygonZkEVMGlobalExitRootL2', deployer);
+    const PolygonZkEVMGlobalExitRootL2Factory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/PolygonZkEVMGlobalExitRootL2.sol:PolygonZkEVMGlobalExitRootL2', deployer);
     let polygonZkEVMGlobalExitRootL2;
     for (let i = 0; i < attemptsDeployProxy; i++) {
         try {
@@ -180,7 +180,7 @@ async function main() {
     expect(await upgrades.erc1967.getAdminAddress(polygonZkEVMGlobalExitRootL2.address)).to.be.equal(proxyAdminAddress);
     expect(await upgrades.erc1967.getAdminAddress(proxyBridgeAddress)).to.be.equal(proxyAdminAddress);
 
-    const timelockContractFactory = await ethers.getContractFactory('@josojo/zkevm-contracts/contracts/PolygonZkEVMTimelock.sol:PolygonZkEVMTimelock', deployer);
+    const timelockContractFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/PolygonZkEVMTimelock.sol:PolygonZkEVMTimelock', deployer);
     const timelockContract = await timelockContractFactory.deploy(
         minDelayTimelock,
         [timelockAddress],

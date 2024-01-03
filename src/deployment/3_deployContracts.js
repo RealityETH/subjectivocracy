@@ -134,7 +134,7 @@ async function main() {
     console.log('using deployer: ', deployer.address);
 
     // Load zkEVM deployer
-    const PolgonZKEVMDeployerFactory = await ethers.getContractFactory('@josojo/zkevm-contracts/contracts/deployment/PolygonZkEVMDeployer.sol:PolygonZkEVMDeployer', deployer);
+    const PolgonZKEVMDeployerFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/deployment/PolygonZkEVMDeployer.sol:PolygonZkEVMDeployer', deployer);
     const zkEVMDeployerContract = PolgonZKEVMDeployerFactory.attach(zkEVMDeployerAddress);
 
     // check deployer is the owner of the deployer
@@ -209,11 +209,11 @@ async function main() {
     let verifierContract;
     if (!ongoingDeployment.verifierContract) {
         if (realVerifier === true) {
-            const VerifierRollup = await ethers.getContractFactory('@josojo/zkevm-contracts/contracts/verifiers/FflonkVerifier.sol:FflonkVerifier', deployer);
+            const VerifierRollup = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/verifiers/FflonkVerifier.sol:FflonkVerifier', deployer);
             verifierContract = await VerifierRollup.deploy();
             await verifierContract.deployed();
         } else {
-            const VerifierRollupHelperFactory = await ethers.getContractFactory('@josojo/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol:VerifierRollupHelperMock', deployer);
+            const VerifierRollupHelperFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol:VerifierRollupHelperMock', deployer);
             verifierContract = await VerifierRollupHelperFactory.deploy();
             await verifierContract.deployed();
         }
@@ -225,7 +225,7 @@ async function main() {
         fs.writeFileSync(pathOngoingDeploymentJson, JSON.stringify(ongoingDeployment, null, 1));
     } else {
         console.log('Verifier already deployed on: ', ongoingDeployment.verifierContract);
-        const VerifierRollupFactory = await ethers.getContractFactory('@josojo/zkevm-contracts/contracts/verifiers/FflonkVerifier.sol:FflonkVerifier', deployer);
+        const VerifierRollupFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/verifiers/FflonkVerifier.sol:FflonkVerifier', deployer);
         verifierContract = VerifierRollupFactory.attach(ongoingDeployment.verifierContract);
     }
 
