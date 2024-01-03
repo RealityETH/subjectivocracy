@@ -40,6 +40,7 @@ async function main() {
         expect(error.message.toLowerCase().includes('already verified')).to.be.equal(true);
     }
 
+    // verify timelock
     const { minDelayTimelock } = deployParameters;
     const { timelockAddress } = deployParameters;
     try {
@@ -96,6 +97,7 @@ async function main() {
         expect(error.message.toLowerCase().includes('proxyadmin')).to.be.equal(true);
     }
 
+    // verify bridge
     try {
         await hre.run(
             'verify:verify',
@@ -107,6 +109,7 @@ async function main() {
         expect(error.message.toLowerCase().includes('proxyadmin')).to.be.equal(true);
     }
 
+    // verify forking manager
     try {
         await hre.run(
             'verify:verify',

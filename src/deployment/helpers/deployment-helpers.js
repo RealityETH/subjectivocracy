@@ -32,18 +32,13 @@ async function deployPolygonZkEVMDeployer(deployerAddress, signer) {
     const serializedTransaction = ethers.utils.serializeTransaction(tx, signature);
     const resultTransaction = ethers.utils.parseTransaction(serializedTransaction);
     const totalEther = gasLimit.mul(gasPrice); // 0.1 ether
-    console.log('Deploying PolygonZkEVMDeployer with gasLimit: ', gasLimit.toString());
     // Check if it's already deployed
     const zkEVMDeployerAddress = ethers.utils.getContractAddress(resultTransaction);
     if (await signer.provider.getCode(zkEVMDeployerAddress) !== '0x') {
-        console.log('Funded keyless deployment with: ', totalEther.toString());
-
         const zkEVMDeployerContract = PolgonZKEVMDeployerFactory.attach(zkEVMDeployerAddress);
         expect(await zkEVMDeployerContract.owner()).to.be.equal(signer.address);
         return [zkEVMDeployerContract, ethers.constants.AddressZero];
     }
-    console.log('Funded keyless deployment with: ', totalEther.toString());
-
 
     // Fund keyless deployment
     const params = {
