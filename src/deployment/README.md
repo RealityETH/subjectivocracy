@@ -112,7 +112,7 @@ make sure to put a pre-funded address for: `initialZkEVMDeployerOwner` from the 
 You can just take the first address from the output of `npx hardhat node`
 
 Then run:
-
+(Make sure to unset the MENMONIC)
 ```sh
 yarn hardhat run src/deployment/1_deployforkableToken.js --network localhost
 ```

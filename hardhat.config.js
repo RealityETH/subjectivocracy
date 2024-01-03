@@ -22,6 +22,7 @@ module.exports = {
         paths: [
             '@openzeppelin/contracts/token/ERC20/presets/ERC20PresetFixedSupply.sol',
             '@RealityETH/zkevm-contracts/contracts/mocks/ERC20PermitMock.sol',
+            '@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol',
             '@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol',
             '@RealityETH/zkevm-contracts/contracts/deployment/PolygonZkEVMDeployer.sol',
             '@RealityETH/zkevm-contracts/contracts/PolygonZkEVMGlobalExitRootL2.sol',
@@ -133,7 +134,7 @@ module.exports = {
                 mnemonic: process.env.MNEMONIC || DEFAULT_MNEMONIC,
                 path: "m/44'/60'/0'/0",
                 initialIndex: 0,
-                count: 20,
+                count: 200,
             },
         },
         hardhat: {
