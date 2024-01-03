@@ -175,7 +175,7 @@ contract ForkableBridge is
     }
 
     /**
-     * @dev Allows to take out the forkonomic tokens
+     * @dev Allows aynone to take out their forkonomic tokens
      * and send them to the children-bridge contracts
      * Notice that forkonomic tokens are special, as they their main contract
      * is on L1, but they are still forkable tokens as all the tokens from
