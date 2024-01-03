@@ -134,7 +134,7 @@ module.exports = {
                 mnemonic: process.env.MNEMONIC || DEFAULT_MNEMONIC,
                 path: "m/44'/60'/0'/0",
                 initialIndex: 0,
-                count: 200,
+                count: 20,
             },
         },
         hardhat: {
