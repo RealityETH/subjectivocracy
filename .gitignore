@@ -26,6 +26,7 @@ tests/python/venv/
 yarn-error.log
 venv
 
+contracts/hardhat-dependency-compiler/
 records.json
 stats.json
 .awcache

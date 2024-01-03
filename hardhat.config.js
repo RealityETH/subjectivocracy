@@ -30,7 +30,7 @@ module.exports = {
     dependencyCompiler: {
         paths: [
             '@openzeppelin/contracts/token/ERC20/presets/ERC20PresetFixedSupply.sol',
-            '@openzeppelin/contracts/mocks/ERC20PermitMock.sol',
+            '@RealityETH/zkevm-contracts/contracts/mocks/ERC20PermitMock.sol',
             '@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol',
             '@RealityETH/zkevm-contracts/contracts/deployment/PolygonZkEVMDeployer.sol',
             '@RealityETH/zkevm-contracts/contracts/PolygonZkEVMGlobalExitRootL2.sol',
@@ -40,23 +40,8 @@ module.exports = {
             '@RealityETH/zkevm-contracts/contracts/mocks/PolygonZkEVMMock.sol',
             '@RealityETH/zkevm-contracts/contracts/verifiers/FflonkVerifier.sol',
             '@RealityETH/zkevm-contracts/contracts/PolygonZkEVMBridgeWrapper.sol',
-        ], // ,
-    // keep: true
-    },
-    preprocess: {
-        eachLine: (hre) => ({
-            transform: (line) => {
-                if (line.match(/^\s*import /i)) {
-                    for (const [from, to] of getRemappings()) {
-                        if (line.includes(from)) {
-                            line = line.replace(from, to);
-                            break;
-                        }
-                    }
-                }
-                return line;
-            },
-        }),
+        ],
+        keep: true,
     },
     paths: {
         sources: './contracts/',
