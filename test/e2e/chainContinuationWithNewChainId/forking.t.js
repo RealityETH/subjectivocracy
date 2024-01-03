@@ -30,7 +30,7 @@ const inputJson = require('./input.json');
  * some transfers on the chain.
  *
  * Note that we run this "deterministic test" without a fork introduced by the forkingManager,
- * as this would require us to generate a proof for specific inputs (stateHash, globalExitRoot, etc.) 
+ * as this would require us to generate a proof for specific inputs (stateHash, globalExitRoot, etc.)
  * that would require us to prover each new test-run (unless one is able to set up the test perfectly deterministic as well).
  * This would be additional work and is not necessary to verify that we can
  * continue to use the old state root and globalExitRoot with a new chainID - as it is done in this test
@@ -65,6 +65,9 @@ describe('Simulating first proof after a fork', () => {
     const depositBranches = new Array(32).fill(ethers.constants.HashZero);
 
     beforeEach('Deploy contract', async () => {
+        // resetting hardhat to start with an early timestamp, otherwise the first batch may not be initialized with prepared timestamp.
+        await ethers.provider.send('hardhat_reset');
+
         upgrades.silenceWarnings();
 
         // load signers
@@ -84,12 +87,12 @@ describe('Simulating first proof after a fork', () => {
 
         // deploy real verifier
         const VerifierRollupHelperFactory = await ethers.getContractFactory(
-            'FflonkVerifier',
+            '@RealityETH/zkevm-contracts/contracts/verifiers/FflonkVerifier.sol:FflonkVerifier',
         );
         verifierContract = await VerifierRollupHelperFactory.deploy();
 
         // deploy MATIC
-        const maticTokenFactory = await ethers.getContractFactory('ERC20PermitMock');
+        const maticTokenFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/mocks/ERC20PermitMock.sol:ERC20PermitMock');
         maticTokenContract = await maticTokenFactory.deploy(
             maticTokenName,
             maticTokenSymbol,
@@ -102,21 +105,26 @@ describe('Simulating first proof after a fork', () => {
         await upgrades.deployProxyAdmin();
 
         // deploy global exit root manager
-        const polygonZkEVMGlobalExitRootFactory = await ethers.getContractFactory('PolygonZkEVMGlobalExitRootMock');
+        const polygonZkEVMGlobalExitRootFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/mocks/PolygonZkEVMGlobalExitRootMock.sol:PolygonZkEVMGlobalExitRootMock');
         polygonZkEVMGlobalExitRoot = await upgrades.deployProxy(polygonZkEVMGlobalExitRootFactory, [], { initializer: false });
 
         // deploy PolygonZkEVMBridge
-        const polygonZkEVMBridgeFactory = await ethers.getContractFactory('PolygonZkEVMBridgeWrapper');
+        const polygonZkEVMBridgeFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/PolygonZkEVMBridgeWrapper.sol:PolygonZkEVMBridgeWrapper');
         polygonZkEVMBridgeContract = await upgrades.deployProxy(polygonZkEVMBridgeFactory, [], { initializer: false });
 
         // deploy PolygonZkEVMMock
-        const PolygonZkEVMFactory = await ethers.getContractFactory('PolygonZkEVMMock');
+        const PolygonZkEVMFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/mocks/PolygonZkEVMMock.sol:PolygonZkEVMMock');
         polygonZkEVMContract = await upgrades.deployProxy(PolygonZkEVMFactory, [], {
             initializer: false,
         });
 
         // initialize contracts
-        await polygonZkEVMGlobalExitRoot.initialize(polygonZkEVMContract.address, polygonZkEVMBridgeContract.address);
+        await polygonZkEVMGlobalExitRoot.initialize(
+            polygonZkEVMContract.address,
+            polygonZkEVMBridgeContract.address,
+            ethers.constants.HashZero,
+            ethers.constants.HashZero,
+        );
         await polygonZkEVMBridgeContract.initialize(
             networkIDMainnet,
             polygonZkEVMGlobalExitRoot.address,

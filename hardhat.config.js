@@ -6,17 +6,8 @@ require('@nomiclabs/hardhat-etherscan');
 require('@openzeppelin/hardhat-upgrades');
 require('hardhat-dependency-compiler');
 require('hardhat-preprocessor');
-const fs = require('fs');
 
 const DEFAULT_MNEMONIC = 'test test test test test test test test test test test junk';
-
-function getRemappings() {
-    return fs
-        .readFileSync('remappings.txt', 'utf8')
-        .split('\n')
-        .filter(Boolean) // remove empty lines
-        .map((line) => line.trim().split('='));
-}
 
 /*
  * You need to export an object to set up your config
@@ -40,6 +31,8 @@ module.exports = {
             '@RealityETH/zkevm-contracts/contracts/mocks/PolygonZkEVMMock.sol',
             '@RealityETH/zkevm-contracts/contracts/verifiers/FflonkVerifier.sol',
             '@RealityETH/zkevm-contracts/contracts/PolygonZkEVMBridgeWrapper.sol',
+            'test/testcontract/ForkableExitMock.sol',
+            'test/testcontract/ForkableZkEVMMock.sol',
         ],
         keep: true,
     },
