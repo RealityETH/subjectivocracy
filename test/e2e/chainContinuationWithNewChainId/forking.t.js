@@ -87,12 +87,12 @@ describe('Simulating first proof after a fork', () => {
 
         // deploy real verifier
         const VerifierRollupHelperFactory = await ethers.getContractFactory(
-            '@josojo/zkevm-contracts/contracts/verifiers/FflonkVerifier.sol:FflonkVerifier',
+            '@RealityETH/zkevm-contracts/contracts/verifiers/FflonkVerifier.sol:FflonkVerifier',
         );
         verifierContract = await VerifierRollupHelperFactory.deploy();
 
         // deploy MATIC
-        const maticTokenFactory = await ethers.getContractFactory('@josojo/zkevm-contracts/contracts/mocks/ERC20PermitMock.sol:ERC20PermitMock');
+        const maticTokenFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/mocks/ERC20PermitMock.sol:ERC20PermitMock');
         maticTokenContract = await maticTokenFactory.deploy(
             maticTokenName,
             maticTokenSymbol,
@@ -105,15 +105,15 @@ describe('Simulating first proof after a fork', () => {
         await upgrades.deployProxyAdmin();
 
         // deploy global exit root manager
-        const polygonZkEVMGlobalExitRootFactory = await ethers.getContractFactory('@josojo/zkevm-contracts/contracts/mocks/PolygonZkEVMGlobalExitRootMock.sol:PolygonZkEVMGlobalExitRootMock');
+        const polygonZkEVMGlobalExitRootFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/mocks/PolygonZkEVMGlobalExitRootMock.sol:PolygonZkEVMGlobalExitRootMock');
         polygonZkEVMGlobalExitRoot = await upgrades.deployProxy(polygonZkEVMGlobalExitRootFactory, [], { initializer: false });
 
         // deploy PolygonZkEVMBridge
-        const polygonZkEVMBridgeFactory = await ethers.getContractFactory('@josojo/zkevm-contracts/contracts/PolygonZkEVMBridgeWrapper.sol:PolygonZkEVMBridgeWrapper');
+        const polygonZkEVMBridgeFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/PolygonZkEVMBridgeWrapper.sol:PolygonZkEVMBridgeWrapper');
         polygonZkEVMBridgeContract = await upgrades.deployProxy(polygonZkEVMBridgeFactory, [], { initializer: false });
 
         // deploy PolygonZkEVMMock
-        const PolygonZkEVMFactory = await ethers.getContractFactory('@josojo/zkevm-contracts/contracts/mocks/PolygonZkEVMMock.sol:PolygonZkEVMMock');
+        const PolygonZkEVMFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/mocks/PolygonZkEVMMock.sol:PolygonZkEVMMock');
         polygonZkEVMContract = await upgrades.deployProxy(PolygonZkEVMFactory, [], {
             initializer: false,
         });

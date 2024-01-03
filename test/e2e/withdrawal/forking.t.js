@@ -83,7 +83,7 @@ describe('Simulating first proof after a fork', () => {
 
         // deploy real verifier
         const VerifierRollupHelperFactory = await ethers.getContractFactory(
-            '@josojo/zkevm-contracts/contracts/verifiers/FflonkVerifier.sol:FflonkVerifier',
+            '@RealityETH/zkevm-contracts/contracts/verifiers/FflonkVerifier.sol:FflonkVerifier',
         );
         verifierContract = await VerifierRollupHelperFactory.deploy();
 

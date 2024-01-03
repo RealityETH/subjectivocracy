@@ -4,8 +4,8 @@ pragma solidity ^0.8.20;
 
 import {IForkingManager} from "./interfaces/IForkingManager.sol";
 import {IForkableStructure} from "./interfaces/IForkableStructure.sol";
-import {IPolygonZkEVMBridge} from "@josojo/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
-import {IPolygonZkEVM} from "@josojo/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
+import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
+import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
 
 contract L1GlobalChainInfoPublisher {
     /// @notice Function to send the data about a fork to a contract on L2.

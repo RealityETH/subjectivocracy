@@ -16,13 +16,6 @@
     "lodash" "^4.17.21"
     "pg" "^8.7.1"
 
-"@RealityETH/zkevm-contracts@github:RealityETH/zkevm-contracts#v3.0.0-RealityETH":
-  version "3.0.0"
-  resolved "https://codeload.github.com/RealityETH/zkevm-contracts/tar.gz/a090458140cdfce23763af887ff0767469368923"
-  dependencies:
-    chai "^4.3.7"
-    ethers "^5.7.2"
-
 "@aashutoshrathi/word-wrap@^1.2.3":
   "integrity" "sha512-1Yjs2SvM8TflER/OD3cOjhWWOZb58A2t7wpE2S9XfBYTiIl+XFhQG2bjy4Pu1I+EAlCNUzRDYDdFwFYUKvXcIA=="
   "resolved" "https://registry.npmjs.org/@aashutoshrathi/word-wrap/-/word-wrap-1.2.6.tgz"
@@ -611,14 +604,6 @@
   "resolved" "https://registry.npmjs.org/@humanwhocodes/object-schema/-/object-schema-1.2.1.tgz"
   "version" "1.2.1"
 
-"@josojo/zkevm-contracts@3.0.0":
-  "integrity" "sha512-7Z5k7paj2ID6dm9lzz61iOXHzEFVwoLh2YhysLc+AipS5FcZLoEOBsf/aZD57KK8BGHffz2cTBhyYjG9zFfyDQ=="
-  "resolved" "https://registry.npmjs.org/@josojo/zkevm-contracts/-/zkevm-contracts-3.0.0.tgz"
-  "version" "3.0.0"
-  dependencies:
-    "chai" "^4.3.7"
-    "ethers" "^5.7.2"
-
 "@ljharb/resumer@~0.0.1":
   "integrity" "sha512-skQiAOrCfO7vRTq53cxznMpks7wS1va95UCidALlOVWqvBAzwPVErwizDwoMqNVMEn1mDq0utxZd02eIrvF1lw=="
   "resolved" "https://registry.npmjs.org/@ljharb/resumer/-/resumer-0.0.1.tgz"
@@ -958,6 +943,13 @@
     "ffjavascript" "^0.2.55"
     "lodash" "^4.17.21"
     "pg" "^8.7.1"
+
+"@RealityETH/zkevm-contracts@github:RealityETH/zkevm-contracts#v3.0.0-RealityETH":
+  "resolved" "git+ssh://git@github.com/RealityETH/zkevm-contracts.git#a090458140cdfce23763af887ff0767469368923"
+  "version" "3.0.0"
+  dependencies:
+    "chai" "^4.3.7"
+    "ethers" "^5.7.2"
 
 "@resolver-engine/core@^0.3.3":
   "integrity" "sha512-eB8nEbKDJJBi5p5SrvrvILn4a0h42bKtbCTri3ZxCGt6UvoQyp7HnGOfki944bUjBSHKK3RvgfViHn+kqdXtnQ=="
