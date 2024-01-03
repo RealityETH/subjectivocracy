@@ -36,7 +36,7 @@ jobs:
         run: |
           forge test -vvv
         id: test
-  
+
 
   lint:
     strategy:
