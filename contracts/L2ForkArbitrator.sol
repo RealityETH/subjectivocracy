@@ -10,8 +10,8 @@ import {L1GlobalForkRequester} from "./L1GlobalForkRequester.sol";
 import {IRealityETH} from "./interfaces/IRealityETH.sol";
 import {CalculateMoneyBoxAddress} from "./lib/CalculateMoneyBoxAddress.sol";
 
-import {IPolygonZkEVMBridge} from "@josojo/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
-import {IBridgeMessageReceiver} from "@josojo/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
+import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
+import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 
 /*
 This contract is the arbitrator used by governance propositions for AdjudicationFramework contracts.

@@ -2,11 +2,11 @@
 pragma solidity ^0.8.20;
 
 import {IForkableStructure} from "./IForkableStructure.sol";
-import {IPolygonZkEVM} from "@josojo/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
-import {IPolygonZkEVMGlobalExitRoot} from "@josojo/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
+import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
+import {IPolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import {IVerifierRollup} from "@josojo/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
-import {IPolygonZkEVMBridge} from "@josojo/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
+import {IVerifierRollup} from "@RealityETH/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
+import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
 
 interface IForkableZkEVM is IForkableStructure, IPolygonZkEVM {
     // @dev: This function is used to initialize the contract.

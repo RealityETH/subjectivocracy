@@ -11,7 +11,7 @@ It must be called after a fork until it's updated.
 Queries against it will revert until the update is done.
 */
 
-import {IBridgeMessageReceiver} from "@josojo/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
+import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 
 contract L2ChainInfo is IBridgeMessageReceiver {
     // These are the same for all forks

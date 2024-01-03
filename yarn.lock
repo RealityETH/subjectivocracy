@@ -16,6 +16,13 @@
     lodash "^4.17.21"
     pg "^8.7.1"
 
+"@RealityETH/zkevm-contracts@github:RealityETH/zkevm-contracts#v3.0.0-RealityETH":
+  version "3.0.0"
+  resolved "https://codeload.github.com/RealityETH/zkevm-contracts/tar.gz/a090458140cdfce23763af887ff0767469368923"
+  dependencies:
+    chai "^4.3.7"
+    ethers "^5.7.2"
+
 "@aashutoshrathi/word-wrap@^1.2.3":
   version "1.2.6"
   resolved "https://registry.npmjs.org/@aashutoshrathi/word-wrap/-/word-wrap-1.2.6.tgz"
@@ -605,14 +612,6 @@
   version "1.2.1"
   resolved "https://registry.npmjs.org/@humanwhocodes/object-schema/-/object-schema-1.2.1.tgz"
   integrity sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==
-
-"@josojo/zkevm-contracts@3.0.0":
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/@josojo/zkevm-contracts/-/zkevm-contracts-3.0.0.tgz#c05d37b24ef1d05047da4df1fce2bd678840bc1b"
-  integrity sha512-7Z5k7paj2ID6dm9lzz61iOXHzEFVwoLh2YhysLc+AipS5FcZLoEOBsf/aZD57KK8BGHffz2cTBhyYjG9zFfyDQ==
-  dependencies:
-    chai "^4.3.7"
-    ethers "^5.7.2"
 
 "@ljharb/resumer@~0.0.1":
   version "0.0.1"
