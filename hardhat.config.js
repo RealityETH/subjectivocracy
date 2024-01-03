@@ -31,6 +31,8 @@ module.exports = {
             '@RealityETH/zkevm-contracts/contracts/mocks/PolygonZkEVMMock.sol',
             '@RealityETH/zkevm-contracts/contracts/verifiers/FflonkVerifier.sol',
             '@RealityETH/zkevm-contracts/contracts/PolygonZkEVMBridgeWrapper.sol',
+            'test/testcontract/ForkableExitMock.sol',
+            'test/testcontract/ForkableZkEVMMock.sol',
         ],
         keep: true,
     },
