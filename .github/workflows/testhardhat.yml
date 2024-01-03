@@ -15,17 +15,16 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-      matrix:
-        node-version: [16.x]
+        matrix:
+          node-version: [16.x]
+          os: [ubuntu-latest]
 
     steps:
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: setup
-        run: npm i
-      - name: test
-        run: npm run test
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+        cache: 'npm'
+        cache-dependency-path: ./package-lock.json
+    - run: npm install
+    - run: npx hardhat test
