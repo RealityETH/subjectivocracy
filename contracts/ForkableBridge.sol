@@ -62,7 +62,7 @@ contract ForkableBridge is
         if (to != children[0] && to != children[1]) {
             revert InvalidDestinationForHardAsset();
         }
-        if(token==gasTokenAddress){
+        if (token == gasTokenAddress) {
             revert GasTokenIsNotHardAsset();
         }
         IERC20(token).transfer(to, amount);
