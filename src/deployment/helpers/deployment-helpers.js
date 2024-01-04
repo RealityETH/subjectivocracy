@@ -6,7 +6,7 @@ const { ethers } = require('hardhat');
 const gasPriceKeylessDeployment = '100'; // 100 gweis
 
 async function deployPolygonZkEVMDeployer(deployerAddress, signer) {
-    const PolgonZKEVMDeployerFactory = await ethers.getContractFactory('PolygonZkEVMDeployer', signer);
+    const PolgonZKEVMDeployerFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/deployment/PolygonZkEVMDeployer.sol:PolygonZkEVMDeployer', signer);
 
     const deployTxZKEVMDeployer = (PolgonZKEVMDeployerFactory.getDeployTransaction(
         deployerAddress,
@@ -32,7 +32,6 @@ async function deployPolygonZkEVMDeployer(deployerAddress, signer) {
     const serializedTransaction = ethers.utils.serializeTransaction(tx, signature);
     const resultTransaction = ethers.utils.parseTransaction(serializedTransaction);
     const totalEther = gasLimit.mul(gasPrice); // 0.1 ether
-
     // Check if it's already deployed
     const zkEVMDeployerAddress = ethers.utils.getContractAddress(resultTransaction);
     if (await signer.provider.getCode(zkEVMDeployerAddress) !== '0x') {
@@ -47,7 +46,6 @@ async function deployPolygonZkEVMDeployer(deployerAddress, signer) {
         value: totalEther.toHexString(),
     };
     await (await signer.sendTransaction(params)).wait();
-
     // Deploy zkEVMDeployer
     await (await signer.provider.sendTransaction(serializedTransaction)).wait();
 

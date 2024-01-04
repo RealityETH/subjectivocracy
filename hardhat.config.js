@@ -22,6 +22,7 @@ module.exports = {
         paths: [
             '@openzeppelin/contracts/token/ERC20/presets/ERC20PresetFixedSupply.sol',
             '@RealityETH/zkevm-contracts/contracts/mocks/ERC20PermitMock.sol',
+            '@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol',
             '@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol',
             '@RealityETH/zkevm-contracts/contracts/deployment/PolygonZkEVMDeployer.sol',
             '@RealityETH/zkevm-contracts/contracts/PolygonZkEVMGlobalExitRootL2.sol',
