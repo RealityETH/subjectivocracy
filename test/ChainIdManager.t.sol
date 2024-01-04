@@ -31,15 +31,14 @@ contract ChainIdManagerTest is Test {
         uint256 finalGas = gasleft();
         assert(currentGas - finalGas >= chainIdManager.gasBurnAmount());
 
-
         uint256 currentGas2 = gasleft();
-        uint64[]  memory newChainIds = new uint64[](6);
-        newChainIds[0]=3;
-        newChainIds[1]=4;
-        newChainIds[2]=5;
-        newChainIds[3]=6;
-        newChainIds[4]=7;
-        newChainIds[5]=8;
+        uint64[] memory newChainIds = new uint64[](6);
+        newChainIds[0] = 3;
+        newChainIds[1] = 4;
+        newChainIds[2] = 5;
+        newChainIds[3] = 6;
+        newChainIds[4] = 7;
+        newChainIds[5] = 8;
         chainIdManager.denyListChainIds(newChainIds);
         uint256 finalGas2 = gasleft();
         assert(currentGas2 - finalGas2 >= chainIdManager.gasBurnAmount() * 6);
