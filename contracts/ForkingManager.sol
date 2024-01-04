@@ -146,7 +146,6 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             string memory trustedSequencerURL = IPolygonZkEVM(zkEVM)
                 .trustedSequencerURL();
             string memory networkName = IPolygonZkEVM(zkEVM).networkName();
-            // string memory version = "0.1.0"; // Todo: get version from zkEVM, currently only emitted as event
             initializePackedParameters = IPolygonZkEVM
                 .InitializePackedParameters({
                     admin: IPolygonZkEVM(zkEVM).admin(),
@@ -166,7 +165,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
                 genesisRoot,
                 trustedSequencerURL,
                 networkName,
-                "0.1.0",
+                "0.1.0", // hardcoded as the version is not stored in the zkEVM contract, only emitted as event
                 IPolygonZkEVMGlobalExitRoot(newInstances.globalExitRoot.one),
                 IERC20Upgradeable(newInstances.forkonomicToken.one),
                 IForkableZkEVM(zkEVM).rollupVerifier(),
@@ -180,7 +179,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
                 genesisRoot,
                 trustedSequencerURL,
                 networkName,
-                "0.1.0",
+                "0.1.0", // hardcoded as the version is not stored in the zkEVM contract, only emitted as event
                 IPolygonZkEVMGlobalExitRoot(newInstances.globalExitRoot.two),
                 IERC20Upgradeable(newInstances.forkonomicToken.two),
                 IForkableZkEVM(zkEVM).rollupVerifier(),
