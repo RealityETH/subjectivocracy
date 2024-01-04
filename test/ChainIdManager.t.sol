@@ -13,11 +13,9 @@ contract ChainIdManagerTest is Test {
 
     function setUp() public {
         chainIdManager = new ChainIdManager(initialChainId);
-        chainIdManager.transferOwnership(owner);
     }
 
     function testAddChainId() public {
-        vm.prank(owner);
         uint64 newChainId = 10;
         chainIdManager.denyListChainId(newChainId);
 
@@ -27,10 +25,24 @@ contract ChainIdManagerTest is Test {
             "Chain ID not correctly added"
         );
 
-        // Attempt to add a ChainId by a non-owner, expect a revert
-        vm.prank(nonOwner);
-        vm.expectRevert(bytes("Ownable: caller is not the owner")); // Expect a revert with a specific revert message
+        // Attempt to add a ChainId by a non-owner, expect a consumption of gas
+        uint256 currentGas = gasleft();
         chainIdManager.denyListChainId(2);
+        uint256 finalGas = gasleft();
+        assert(currentGas - finalGas >= chainIdManager.gasBurnAmount());
+
+
+        uint256 currentGas2 = gasleft();
+        uint64[]  memory newChainIds = new uint64[](6);
+        newChainIds[0]=3;
+        newChainIds[1]=4;
+        newChainIds[2]=5;
+        newChainIds[3]=6;
+        newChainIds[4]=7;
+        newChainIds[5]=8;
+        chainIdManager.denyListChainIds(newChainIds);
+        uint256 finalGas2 = gasleft();
+        assert(currentGas2 - finalGas2 >= chainIdManager.gasBurnAmount() * 6);
     }
 
     function testAddChainIds() public {
