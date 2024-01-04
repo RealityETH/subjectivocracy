@@ -1,4 +1,4 @@
-/* eslint-disable no-await-in-loop */
+/* eslint-disable no-await-in-loop, import/no-dynamic-require */
 /* eslint-disable no-console, no-inner-declarations, no-undef, import/no-unresolved */
 
 const path = require('path');
@@ -14,7 +14,6 @@ const l2Applications = require(pathOutputJsonL2Applications);
 const l1SystemAddresses = require(pathOutputJsonL1System);
 
 async function main() {
-
     const currentProvider = ethers.provider;
     let deployer;
     if (process.env.PVTKEY) {
@@ -35,9 +34,13 @@ async function main() {
     const l1GlobalChainInfoPublisher = l1GlobalChainInfoPublisherFactory.attach(l1Applications.l1GlobalChainInfoPublisher);
 
     console.log('sending chain info update with addresses', l1BridgeAddress, l2Applications.l2ChainInfo);
-    const result = await l1GlobalChainInfoPublisher.updateL2ChainInfo(l1BridgeAddress, l2Applications.l2ChainInfo, ethers.constants.AddressZero, ethers.constants.AddressZero);
+    const result = await l1GlobalChainInfoPublisher.updateL2ChainInfo(
+        l1BridgeAddress,
+        l2Applications.l2ChainInfo,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+    );
     console.log('sent tx, hash is', result.hash);
-
 }
 
 main().catch((e) => {

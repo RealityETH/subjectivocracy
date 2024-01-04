@@ -1,29 +1,32 @@
-/* eslint-disable no-await-in-loo/
-/* eslint-disable no-console, no-inner-declarations, no-undef, import/no-unresolved */
+/* eslint-disable no-await-in-loop, no-restricted-syntax, no-continue, import/no-dynamic-require, no-console, no-inner-declarations, no-undef, import/no-unresolved */
 
-// Script to run claim for the chain info update
-// Based on https://github.com/0xPolygonHermez/code-examples/blob/main/zkevm-nft-bridge-example/scripts/claimMockNFT.js#L34
-// Same thing should work for any other claim on L2 except you have to substitute the address of the claimer contract
+/*
+ * Script to run claim for the chain info update
+ * Based on https://github.com/0xPolygonHermez/code-examples/blob/main/zkevm-nft-bridge-example/scripts/claimMockNFT.js#L34
+ * Same thing should work for any other claim on L2 except you have to substitute the address of the claimer contract
+ */
 
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const { ethers } = require('hardhat');
 const hre = require('hardhat');
 
-const network_name = hre.network.name;
-const bridgeAPIEndpoint = hre.config.zkEVMServices[network_name].bridgeAPIEndpoint;
+const networkName = hre.network.name;
+const { bridgeAPIEndpoint } = hre.config.zkEVMServices[networkName];
 
 const pathGenesisJson = path.join(__dirname, './genesis.json');
 const pathOutputJsonL2Applications = path.join(__dirname, './deploy_output_l2_applications.json');
+
+const axiosPackage = require('axios');
 
 const genesisJSON = require(pathGenesisJson);
 const genesisEntries = genesisJSON.genesis;
 const l2Applications = require(pathOutputJsonL2Applications);
 
 let l2BridgeAddress;
-for(const genesisIdx in genesisEntries) {
-    const genesisEntry = genesisEntries[genesisIdx];
-    if (genesisEntry.contractName == "PolygonZkEVMBridge proxy") {
+
+for (const [, genesisEntry] of Object.entries(genesisEntries)) {
+    if (genesisEntry.contractName === 'PolygonZkEVMBridge proxy') {
         l2BridgeAddress = genesisEntry.address;
         break;
     }
@@ -36,7 +39,6 @@ const merkleProofString = '/merkle-proof';
 const getClaimsFromAcc = '/bridges/';
 
 async function main() {
-
     const currentProvider = ethers.provider;
     let deployer;
     if (process.env.PVTKEY) {
@@ -51,21 +53,20 @@ async function main() {
 
     const baseURL = bridgeAPIEndpoint;
     if (!baseURL) {
-        throw new Error("Missing baseURL");
+        throw new Error('Missing baseURL');
     }
-    
-    const axios = require('axios').create({
+
+    const axios = axiosPackage.create({
         baseURL,
     });
 
     const l2BridgeFactory = await ethers.getContractFactory('PolygonZkEVMBridge', deployer);
     const l2BridgeContract = l2BridgeFactory.attach(l2BridgeAddress);
 
-    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
     function filterClaimable(_depositsArray, _verbose) {
-
-        let claimable = [];
+        const claimable = [];
         for (let i = 0; i < _depositsArray.length; i++) {
             const currentDeposit = _depositsArray[i];
             if (!currentDeposit.ready_for_claim) {
@@ -74,8 +75,8 @@ async function main() {
                 }
                 continue;
             }
-                
-            if (currentDeposit.claim_tx_hash != "") {
+
+            if (currentDeposit.claim_tx_hash !== '') {
                 if (_verbose) {
                     console.log('already claimed: ', currentDeposit.claim_tx_hash);
                 }
@@ -85,21 +86,19 @@ async function main() {
         }
 
         return claimable;
-
     }
 
     let depositsArray;
     let found = false;
     console.log('Trying claim for contract', l2Applications.l2ChainInfo, 'against bridge', l2BridgeAddress, '...');
     while (!found) {
-
         const depositAxions = await axios.get(getClaimsFromAcc + l2Applications.l2ChainInfo, { params: { limit: 100, offset: 0 } });
         depositsArray = filterClaimable(depositAxions.data.deposits, true);
 
         if (depositsArray.length === 0) {
             const secs = 5;
-            console.log('No deposits ready to claim yet, retrying in '+secs+' seconds...');
-            await sleep(secs*1000);
+            console.log(`No deposits ready to claim yet, retrying in ${secs} seconds...`);
+            await sleep(secs * 1000);
         } else {
             found = true;
         }
@@ -108,7 +107,6 @@ async function main() {
     for (let i = 0; i < depositsArray.length; i++) {
         const currentDeposit = depositsArray[i];
         if (currentDeposit.ready_for_claim) {
-
             const proofAxios = await axios.get(merkleProofString, {
                 params: { deposit_cnt: currentDeposit.deposit_cnt, net_id: currentDeposit.orig_net },
             });
@@ -126,9 +124,9 @@ async function main() {
                 currentDeposit.amount,
                 currentDeposit.metadata,
             );
-            console.log('Claim message succesfully sent: ', claimTx.hash);
+            console.log('Claim message successfully sent: ', claimTx.hash);
             await claimTx.wait();
-            console.log('Claim message succesfully mined ', claimTx.hash);
+            console.log('Claim message successfully mined ', claimTx.hash);
         } else {
             console.log('Not ready yet!');
         }

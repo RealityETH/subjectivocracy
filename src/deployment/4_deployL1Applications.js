@@ -2,8 +2,7 @@
 /* eslint-disable no-console, no-inner-declarations, no-undef, import/no-unresolved, no-restricted-syntax */
 const path = require('path');
 const fs = require('fs');
-const { expect } = require('chai');
-const { ethers, upgrades } = require('hardhat');
+const { ethers } = require('hardhat');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const pathOutputJson = path.join(__dirname, './deploy_output_l1_applications.json');
@@ -12,10 +11,7 @@ const pathOngoingDeploymentJson = path.join(__dirname, './deploy_ongoing_l1_appl
 // const deployParameters = require('./deploy_parameters.json');
 const deployParameters = {};
 
-const delay = ms => new Promise(res => setTimeout(res, ms));
-
 async function main() {
-
     // Check if there's an ongoing deployment
     let ongoingDeployment = {};
     if (fs.existsSync(pathOngoingDeploymentJson)) {
@@ -27,18 +23,18 @@ async function main() {
      * Check that every necessary parameter is fullfilled
      */
     /*
-    const mandatoryDeploymentParameters = [
-    ];
-
-    for (const parameterName of mandatoryDeploymentParameters) {
-        if (deployParameters[parameterName] === undefined || deployParameters[parameterName] === '') {
-            throw new Error(`Missing parameter: ${parameterName}`);
-        }
-    }
-
-    const {
-    } = deployParameters;
-    */
+     *const mandatoryDeploymentParameters = [
+     *];
+     *
+     *for (const parameterName of mandatoryDeploymentParameters) {
+     *    if (deployParameters[parameterName] === undefined || deployParameters[parameterName] === '') {
+     *        throw new Error(`Missing parameter: ${parameterName}`);
+     *    }
+     *}
+     *
+     *const {
+     *} = deployParameters;
+     */
 
     // Load provider
     let currentProvider = ethers.provider;
@@ -77,10 +73,10 @@ async function main() {
     } else {
         [deployer] = (await ethers.getSigners());
     }
-    let deployerBalance = await currentProvider.getBalance(deployer.address);
+    const deployerBalance = await currentProvider.getBalance(deployer.address);
     console.log('using deployer: ', deployer.address, 'balance is ', deployerBalance.toString());
 
-// ../../contracts/L1GlobalChainInfoPublisher.sol  ../../contracts/L1GlobalForkRequester.sol
+    // ../../contracts/L1GlobalChainInfoPublisher.sol  ../../contracts/L1GlobalForkRequester.sol
 
     const L1GlobalChainInfoPublisherFactory = await ethers.getContractFactory('L1GlobalChainInfoPublisher', {
         signer: deployer,
@@ -94,7 +90,6 @@ async function main() {
         // save an ongoing deployment
         ongoingDeployment.l1GlobalChainInfoPublisherContract = l1GlobalChainInfoPublisherContract.address;
         fs.writeFileSync(pathOngoingDeploymentJson, JSON.stringify(ongoingDeployment, null, 1));
-
     } else {
         l1GlobalChainInfoPublisherContract = ChainIdManagerFactory.attach(ongoingDeployment.l1GlobalChainInfoPublisher);
         console.log('#######################\n');
@@ -106,18 +101,18 @@ async function main() {
     });
 
     /*
-    let newDeployerBalance;
-    while (!newDeployerBalance || newDeployerBalance.eq(deployerBalance)) {
-        newDeployerBalance = await currentProvider.getBalance(deployer.address);
-        if (newDeployerBalance.lt(deployerBalance)) {
-            break;
-        } else {
-            console.log('Waiting for RPC node to notice account balance change before trying next deployment');
-            await delay(5000);
-        }
-    }
-    console.log('continue using deployer: ', deployer.address, 'balance is now', deployerBalance.toString());
-    */
+     *let newDeployerBalance;
+     *while (!newDeployerBalance || newDeployerBalance.eq(deployerBalance)) {
+     *    newDeployerBalance = await currentProvider.getBalance(deployer.address);
+     *    if (newDeployerBalance.lt(deployerBalance)) {
+     *        break;
+     *    } else {
+     *        console.log('Waiting for RPC node to notice account balance change before trying next deployment');
+     *        await delay(5000);
+     *    }
+     *}
+     *console.log('continue using deployer: ', deployer.address, 'balance is now', deployerBalance.toString());
+     */
 
     if (!ongoingDeployment.l1GlobalForkRequester) {
         l1GlobalForkRequesterContract = await L1GlobalForkRequesterFactory.deploy();
@@ -135,7 +130,7 @@ async function main() {
 
     const outputJson = {
         l1GlobalChainInfoPublisher: l1GlobalChainInfoPublisherContract.address,
-        l1GlobalForkRequester: l1GlobalForkRequesterContract.address
+        l1GlobalForkRequester: l1GlobalForkRequesterContract.address,
     };
     fs.writeFileSync(pathOutputJson, JSON.stringify(outputJson, null, 1));
 

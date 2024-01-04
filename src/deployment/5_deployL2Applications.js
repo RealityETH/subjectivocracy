@@ -2,8 +2,7 @@
 /* eslint-disable no-console, no-inner-declarations, no-undef, import/no-unresolved, no-restricted-syntax */
 const path = require('path');
 const fs = require('fs');
-const { expect } = require('chai');
-const { ethers, upgrades } = require('hardhat');
+const { ethers } = require('hardhat');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const pathGenesisJson = path.join(__dirname, './genesis.json');
@@ -15,10 +14,7 @@ const pathOngoingDeploymentJson = path.join(__dirname, './deploy_ongoing_l2_appl
 
 const deployParameters = require('./deploy_application_parameters.json');
 
-const delay = ms => new Promise(res => setTimeout(res, ms));
-
 async function main() {
-    
     // Check that we already have the L1 settings we need
     if (!fs.existsSync(pathOutputJsonL1Applications)) {
         throw new Error('No l1 application addresses found. Deploy l1 applications first.');
@@ -28,15 +24,13 @@ async function main() {
     }
 
     const l1ApplicationAddresses = require(pathOutputJsonL1Applications);
-    const l1SystemAddresses = require(pathOutputJsonL1System);
 
     const genesisJSON = require(pathGenesisJson);
     const genesisEntries = genesisJSON.genesis;
     let l2BridgeAddress;
-    for(const genesisIdx in genesisEntries) {
-        const genesisEntry = genesisEntries[genesisIdx];
-        if (genesisEntry.contractName == "PolygonZkEVMBridge proxy") {
-            l2BridgeAddress = genesisEntry.address;    
+    for (const [, genesisEntry] of Object.entries(genesisEntries)) {
+        if (genesisEntry.contractName === 'PolygonZkEVMBridge proxy') {
+            l2BridgeAddress = genesisEntry.address;
             break;
         }
     }
@@ -46,17 +40,15 @@ async function main() {
 
     const {
         l1GlobalChainInfoPublisher,
-        l1GlobalForkRequester
+        l1GlobalForkRequester,
     } = l1ApplicationAddresses;
 
     if (!l1GlobalForkRequester) {
-        throw new Error("Missing l1GlobalForkRequester address");
+        throw new Error('Missing l1GlobalForkRequester address');
     }
     if (!l1GlobalChainInfoPublisher) {
-        throw new Error("Missing l1GlobalChainInfoPublisher address");
+        throw new Error('Missing l1GlobalChainInfoPublisher address');
     }
-
-    const forkonomicTokenAddress = l1SystemAddresses.maticTokenAddress;
 
     // Check if there's an ongoing deployment
     let ongoingDeployment = {};
@@ -71,7 +63,7 @@ async function main() {
     const mandatoryDeploymentParameters = [
         'adjudicationFrameworkDisputeFee',
         'arbitratorDisputeFee',
-        'forkArbitratorDisputeFee'
+        'forkArbitratorDisputeFee',
     ];
 
     for (const parameterName of mandatoryDeploymentParameters) {
@@ -81,21 +73,19 @@ async function main() {
     }
 
     let {
-        adjudicationFrameworkDisputeFee,
-        forkArbitratorDisputeFee,
-        arbitratorDisputeFee,
-        arbitratorOwner,
         realityETHAddress, // This is optional, it will be deployed if not supplied
-        initialArbitratorAddresses // This can be an empty array
+        initialArbitratorAddresses, // This can be an empty array
     } = deployParameters;
 
     // Load provider
-    let currentProvider = ethers.provider;
+    const currentProvider = ethers.provider;
 
-    //const feeData = await currentProvider.getFeeData();
-    //console.log('feeData', feeData);
-    //const block = await currentProvider.getBlock('latest');
-    //console.log('latest block', block);
+    /*
+     * const feeData = await currentProvider.getFeeData();
+     * console.log('feeData', feeData);
+     * const block = await currentProvider.getBlock('latest');
+     * console.log('latest block', block);
+     */
 
     // Load deployer
     let deployer;
@@ -108,7 +98,7 @@ async function main() {
     } else {
         [deployer] = (await ethers.getSigners());
     }
-    let deployerBalance = await currentProvider.getBalance(deployer.address);
+    const deployerBalance = await currentProvider.getBalance(deployer.address);
     console.log('using deployer: ', deployer.address, 'balance is ', deployerBalance.toString());
 
     if (!realityETHAddress && ongoingDeployment.realityETH) {
@@ -116,7 +106,7 @@ async function main() {
     }
 
     // NB If we deploy then we only do 1 initial arbitrator. But there may be multiple in the config.
-    if (initialArbitratorAddresses.length == 0 && ongoingDeployment.initialArbitrator) {
+    if (initialArbitratorAddresses.length === 0 && ongoingDeployment.initialArbitrator) {
         initialArbitratorAddresses = [ongoingDeployment.initialArbitrator];
     }
 
@@ -143,8 +133,7 @@ async function main() {
         signer: deployer,
     });
 
-    if (initialArbitratorAddresses.length == 0) {
-
+    if (initialArbitratorAddresses.length === 0) {
         if (!ongoingDeployment.initialArbitrator) {
             const arbitratorContract = await arbitratorFactory.deploy();
             console.log('#######################\n');
@@ -158,7 +147,6 @@ async function main() {
             fs.writeFileSync(pathOngoingDeploymentJson, JSON.stringify(ongoingDeployment, null, 1));
 
             initialArbitratorAddresses = [arbitratorContract.address];
-
         } else {
             arbitratorContract = arbitratorFactory.attach(initialArbitratorAddresses[0]);
             console.log('#######################\n');
@@ -166,7 +154,6 @@ async function main() {
             initialArbitratorAddresses = [arbitratorContract.address];
         }
     }
-
 
     const l2ChainInfoFactory = await ethers.getContractFactory('L2ChainInfo', {
         signer: deployer,
@@ -176,7 +163,7 @@ async function main() {
     if (!ongoingDeployment.l2ChainInfo) {
         l2ChainInfoContract = await l2ChainInfoFactory.deploy(
             l2BridgeAddress,
-            l1GlobalChainInfoPublisher
+            l1GlobalChainInfoPublisher,
         );
         console.log('#######################\n');
         console.log('L2ChainInfo deployed to:', l2ChainInfoContract.address);
@@ -202,7 +189,7 @@ async function main() {
             realityETHContract.address,
             l2ChainInfoContract.address,
             l1GlobalForkRequester,
-            forkArbitratorDisputeFee
+            forkArbitratorDisputeFee,
         );
         console.log('#######################\n');
         console.log('L2ForkArbitrator deployed to:', l2ForkArbitratorContract.address);
@@ -216,7 +203,6 @@ async function main() {
         console.log('L2ForkArbitrator already deployed on: ', l2ForkArbitratorContract.address);
     }
 
-
     const adjudicationFrameworkFactory = await ethers.getContractFactory('AdjudicationFramework', {
         signer: deployer,
     });
@@ -229,7 +215,7 @@ async function main() {
             realityETHContract.address,
             adjudicationFrameworkDisputeFee,
             l2ForkArbitratorContract.address,
-            initialArbitratorAddresses
+            initialArbitratorAddresses,
         );
         console.log('#######################\n');
         console.log('AdjudicationFramework deployed to:', adjudicationFrameworkContract.address);
@@ -248,7 +234,7 @@ async function main() {
         arbitrators: initialArbitratorAddresses,
         l2ChainInfo: l2ChainInfoContract.address,
         l2ForkArbitrator: l2ForkArbitratorContract.address,
-        adjudicationFramework: adjudicationFrameworkContract.address
+        adjudicationFramework: adjudicationFrameworkContract.address,
     };
     fs.writeFileSync(pathOutputJsonL2Applications, JSON.stringify(outputJson, null, 1));
 
