@@ -504,6 +504,13 @@ contract ForkableBridgeTest is Test {
             to
         );
 
+        vm.expectRevert(IForkableBridge.GasTokenIsNotHardAsset.selector);
+        vm.prank(hardAssetManger);
+        forkableBridge.transferHardAssetsToChild(
+            address(gasTokenAddress),
+            amount,
+            child2
+        );
         vm.expectRevert(
             IForkableBridge.InvalidDestinationForHardAsset.selector
         );
