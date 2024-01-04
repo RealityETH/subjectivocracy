@@ -31,8 +31,7 @@ library BridgeAssetOperations {
         if (tokenInfo.originNetwork == 0) {
             revert TokenNotForkable();
         }
-        if(
-            tokenInfo.originTokenAddress == address(0)) {
+        if (tokenInfo.originTokenAddress == address(0)) {
             revert TokenNotIssuedBefore();
         }
         ForkableBridge(child0).burnForkableTokens(
