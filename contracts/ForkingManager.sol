@@ -85,7 +85,9 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     function initiateFork(
         DisputeData memory _disputeData
     ) external onlyBeforeForking {
-        require(executionTimeForProposal == 0, "ForkingManager: fork pending");
+        if (executionTimeForProposal != 0) {
+            revert ForkingAlreadyInitiated();
+        }
         // Charge the forking fee
         IERC20(forkonomicToken).safeTransferFrom(
             msg.sender,
@@ -106,12 +108,13 @@ contract ForkingManager is IForkingManager, ForkableStructure {
      * @dev function that executes a fork proposal
      */
     function executeFork() external onlyBeforeForking {
-        require(
-            executionTimeForProposal != 0 &&
-                // solhint-disable-next-line not-rely-on-time
-                executionTimeForProposal <= block.timestamp,
-            "ForkingManager: fork not ready"
-        );
+        if (
+            executionTimeForProposal == 0 ||
+            // solhint-disable-next-line not-rely-on-time
+            executionTimeForProposal > block.timestamp
+        ) {
+            revert NotYetReadyToFork();
+        }
 
         // Create the children of each contract
         NewInstances memory newInstances;

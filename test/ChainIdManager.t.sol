@@ -29,7 +29,7 @@ contract ChainIdManagerTest is Test {
 
         // Attempt to add a ChainId by a non-owner, expect a revert
         vm.prank(nonOwner);
-        vm.expectRevert(bytes("Caller is not the owner")); // Expect a revert with a specific revert message
+        vm.expectRevert(bytes("Ownable: caller is not the owner")); // Expect a revert with a specific revert message
         chainIdManager.denyListChainId(2);
     }
 

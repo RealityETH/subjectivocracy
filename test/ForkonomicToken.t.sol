@@ -57,7 +57,7 @@ contract ForkonomicTokenTest is Test {
 
         assertEq(forkonomicToken.balanceOf(address(this)), mintAmount);
 
-        vm.expectRevert(bytes("Caller is not a minter"));
+        vm.expectRevert(IForkonomicToken.NotMinterRole.selector);
         forkonomicToken.mint(address(this), mintAmount);
     }
 

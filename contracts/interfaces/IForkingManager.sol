@@ -4,6 +4,11 @@ pragma solidity ^0.8.20;
 import {IForkableStructure} from "./IForkableStructure.sol";
 
 interface IForkingManager is IForkableStructure {
+    /// @dev Error thrown when the forking manager is not ready to fork
+    error NotYetReadyToFork();
+    /// @dev Error thrown when the forking manager is already initiated
+    error ForkingAlreadyInitiated();
+
     // Dispute contract and call to identify the dispute
     // that will be used to initiate/justify the fork
     struct DisputeData {

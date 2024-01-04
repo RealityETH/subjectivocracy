@@ -13,6 +13,8 @@ interface IForkableBridge is IForkableStructure, IPolygonZkEVMBridge {
     error InvalidDestinationForHardAsset();
     /// @dev Error thrown when hardasset manager tries to send gas token to a child contract
     error GasTokenIsNotHardAsset();
+    /// @dev Error thrown when trying to send bridged tokens to a child contract
+    error InvalidOriginNetwork();
 
     /**
      * @dev Function to initialize the contract

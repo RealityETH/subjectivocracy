@@ -608,7 +608,7 @@ contract ForkingManagerTest is Test {
 
     function testExecuteForkRespectsTime() public {
         // reverts on empty proposal list
-        vm.expectRevert("ForkingManager: fork not ready");
+        vm.expectRevert(IForkingManager.NotYetReadyToFork.selector);
         forkmanager.executeFork();
 
         // Mint and approve the arbitration fee for the test contract
@@ -621,7 +621,7 @@ contract ForkingManagerTest is Test {
         vm.warp(testTimestamp);
         forkmanager.initiateFork(disputeData);
 
-        vm.expectRevert("ForkingManager: fork not ready");
+        vm.expectRevert(IForkingManager.NotYetReadyToFork.selector);
         forkmanager.executeFork();
         vm.warp(testTimestamp + forkmanager.forkPreparationTime() + 1);
         forkmanager.executeFork();
@@ -653,7 +653,7 @@ contract ForkingManagerTest is Test {
         disputeData.disputeContent = "0x1";
         forkmanager.initiateFork(disputeData);
         disputeData.disputeContent = "0x2";
-        vm.expectRevert(bytes("ForkingManager: fork pending"));
+        vm.expectRevert(IForkingManager.ForkingAlreadyInitiated.selector);
         forkmanager.initiateFork(disputeData);
     }
 
