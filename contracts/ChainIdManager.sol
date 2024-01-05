@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.20;
 
-import {Owned} from "./mixin/Owned.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract ChainIdManager is Owned {
+contract ChainIdManager is Ownable {
     // Counter for the number of Chain IDs
     uint64 public chainIdCounter = 0;
     // contains a list of denied Chain IDs that should not be used as chainIds
@@ -12,7 +12,7 @@ contract ChainIdManager is Owned {
     // Fee to use up a Chain ID
     uint256 public immutable gasBurnAmount = 1000000;
 
-    constructor(uint64 _chainIdCounter) Owned() {
+    constructor(uint64 _chainIdCounter) Ownable() {
         chainIdCounter = _chainIdCounter;
     }
 

@@ -108,7 +108,7 @@ contract ForkableBridgeTest is Test {
         );
 
         vm.prank(forkableBridge.parentContract());
-        vm.expectRevert(bytes("wrong Token"));
+        vm.expectRevert(IForkableBridge.InvalidOriginNetwork.selector);
         forkableBridge.mintForkableToken(
             address(token),
             networkID, // <-- this line is changed

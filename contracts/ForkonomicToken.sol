@@ -38,10 +38,9 @@ contract ForkonomicToken is
 
     /// @inheritdoc IForkonomicToken
     function mint(address to, uint256 amount) external {
-        require(
-            hasRole(MINTER_ROLE, msg.sender) || msg.sender == parentContract,
-            "Caller is not a minter"
-        );
+        if (!hasRole(MINTER_ROLE, msg.sender) && msg.sender != parentContract) {
+            revert NotMinterRole();
+        }
         _mint(to, amount);
     }
 
@@ -59,12 +58,10 @@ contract ForkonomicToken is
         bool firstChild,
         bool useChildTokenAllowance
     ) public onlyAfterForking {
-        require(children[0] != address(0), "Children not created yet");
         if (useChildTokenAllowance) {
-            require(
-                childTokenAllowances[msg.sender][firstChild] >= amount,
-                "Not enough allowance"
-            );
+            if (childTokenAllowances[msg.sender][firstChild] < amount) {
+                revert NotSufficientAllowance();
+            }
             childTokenAllowances[msg.sender][firstChild] -= amount;
         } else {
             _burn(msg.sender, amount);
@@ -79,8 +76,7 @@ contract ForkonomicToken is
     /// @dev Allows anyone to prepare the splitting of tokens
     /// by burning them
     /// @param amount The amount of tokens to burn
-    function prepareSplittingTokens(uint256 amount) public {
-        require(children[0] != address(0), "Children not created yet");
+    function prepareSplittingTokens(uint256 amount) public onlyAfterForking {
         _burn(msg.sender, amount);
         childTokenAllowances[msg.sender][false] += amount;
         childTokenAllowances[msg.sender][true] += amount;

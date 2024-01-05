@@ -124,7 +124,9 @@ contract ForkableBridge is
         bytes calldata metadata,
         address destinationAddress
     ) external onlyParent {
-        require(originNetwork != networkID, "wrong Token");
+        if (originNetwork == networkID) {
+            revert InvalidOriginNetwork();
+        }
         _issueBridgedTokens(
             originNetwork,
             token,

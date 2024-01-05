@@ -8,6 +8,11 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 library BridgeAssetOperations {
+    // @dev Error thrown when non-forkable token is intended to be used, but it is not forkable
+    error TokenNotForkable();
+    // @dev Error thrown when token is not issued before
+    error TokenNotIssuedBefore();
+
     /**
      * @notice Function to merge tokens from children-bridge contracts
      * @param token Address of the token
@@ -23,11 +28,12 @@ library BridgeAssetOperations {
         address child0,
         address child1
     ) public {
-        require(tokenInfo.originNetwork != 0, "Token not forkable");
-        require(
-            tokenInfo.originTokenAddress != address(0),
-            "Token not issued before"
-        );
+        if (tokenInfo.originNetwork == 0) {
+            revert TokenNotForkable();
+        }
+        if (tokenInfo.originTokenAddress == address(0)) {
+            revert TokenNotIssuedBefore();
+        }
         ForkableBridge(child0).burnForkableTokens(
             msg.sender,
             tokenInfo.originTokenAddress,
@@ -57,7 +63,9 @@ library BridgeAssetOperations {
         PolygonZkEVMBridge.TokenInformation memory tokenInfo,
         address child
     ) public {
-        require(tokenInfo.originNetwork != 0, "Token not forkable");
+        if (tokenInfo.originNetwork == 0) {
+            revert TokenNotForkable();
+        }
         bytes memory metadata = abi.encode(
             IERC20Metadata(token).name(),
             IERC20Metadata(token).symbol(),
