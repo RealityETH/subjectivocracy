@@ -31,7 +31,7 @@ contract ForkableBridgeTest is Test {
     address public admin = address(0xad);
     uint32 public networkID = 11;
     bool public isDeployedOnL2 = true;
-    IBasePolygonZkEVMGlobalExitRoot public _globalExitRootManager =
+    IBasePolygonZkEVMGlobalExitRoot public globalExitRootManager =
         IBasePolygonZkEVMGlobalExitRoot(address(0xdef));
     address public hardAssetManger = address(0xde34f);
     bytes32[32] public depositTreeHashes;
@@ -47,7 +47,7 @@ contract ForkableBridgeTest is Test {
             forkmanager,
             parentContract,
             networkID,
-            _globalExitRootManager,
+            globalExitRootManager,
             polygonZkEVMaddress,
             gasTokenAddress,
             isDeployedOnL2,
@@ -63,7 +63,7 @@ contract ForkableBridgeTest is Test {
         assertEq(forkableBridge.networkID(), networkID);
         assertEq(
             address(forkableBridge.globalExitRootManager()),
-            address(_globalExitRootManager)
+            address(globalExitRootManager)
         );
         assertEq(forkableBridge.polygonZkEVMaddress(), polygonZkEVMaddress);
         assertEq(forkableBridge.gasTokenAddress(), gasTokenAddress);
@@ -75,7 +75,7 @@ contract ForkableBridgeTest is Test {
         forkableBridge.createChildren();
         ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
         vm.mockCall(
-            address(_globalExitRootManager),
+            address(globalExitRootManager),
             abi.encodeWithSelector(
                 exitRoot.updateExitRoot.selector,
                 bytes32("0")
@@ -241,7 +241,7 @@ contract ForkableBridgeTest is Test {
             forkmanager,
             address(forkableBridge),
             networkID,
-            _globalExitRootManager,
+            globalExitRootManager,
             polygonZkEVMaddress,
             gasTokenAddress,
             isDeployedOnL2,
@@ -253,7 +253,7 @@ contract ForkableBridgeTest is Test {
             forkmanager,
             address(forkableBridge),
             networkID,
-            _globalExitRootManager,
+            globalExitRootManager,
             polygonZkEVMaddress,
             gasTokenAddress,
             isDeployedOnL2,
@@ -323,7 +323,7 @@ contract ForkableBridgeTest is Test {
             forkmanager,
             address(forkableBridge),
             networkID,
-            _globalExitRootManager,
+            globalExitRootManager,
             polygonZkEVMaddress,
             gasTokenAddress,
             isDeployedOnL2,
@@ -335,7 +335,7 @@ contract ForkableBridgeTest is Test {
             forkmanager,
             address(forkableBridge),
             networkID,
-            _globalExitRootManager,
+            globalExitRootManager,
             polygonZkEVMaddress,
             gasTokenAddress,
             isDeployedOnL2,
@@ -380,7 +380,7 @@ contract ForkableBridgeTest is Test {
     function testNoDepostOrClaimingAfterForking() public {
         ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
         vm.mockCall(
-            address(_globalExitRootManager),
+            address(globalExitRootManager),
             abi.encodeWithSelector(
                 exitRoot.updateExitRoot.selector,
                 bytes32("0")
@@ -461,7 +461,7 @@ contract ForkableBridgeTest is Test {
 
         ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
         vm.mockCall(
-            address(_globalExitRootManager),
+            address(globalExitRootManager),
             abi.encodeWithSelector(
                 exitRoot.updateExitRoot.selector,
                 bytes32("0")
@@ -476,7 +476,7 @@ contract ForkableBridgeTest is Test {
             forkmanager,
             address(forkableBridge),
             networkID,
-            _globalExitRootManager,
+            globalExitRootManager,
             polygonZkEVMaddress,
             gasTokenAddress,
             isDeployedOnL2,
@@ -488,7 +488,7 @@ contract ForkableBridgeTest is Test {
             forkmanager,
             address(forkableBridge),
             networkID,
-            _globalExitRootManager,
+            globalExitRootManager,
             polygonZkEVMaddress,
             gasTokenAddress,
             isDeployedOnL2,
@@ -561,7 +561,7 @@ contract ForkableBridgeTest is Test {
             forkmanager,
             parentContract,
             networkID,
-            _globalExitRootManager,
+            globalExitRootManager,
             polygonZkEVMaddress,
             address(erc20GasToken),
             isDeployedOnL2,
@@ -586,7 +586,7 @@ contract ForkableBridgeTest is Test {
         // Create initiate the forking process and create children
         ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
         vm.mockCall(
-            address(_globalExitRootManager),
+            address(globalExitRootManager),
             abi.encodeWithSelector(
                 exitRoot.updateExitRoot.selector,
                 bytes32("0")
@@ -652,7 +652,7 @@ contract ForkableBridgeWrapperTest is Test {
     address public gasTokenAddress = address(0xabc);
     uint32 public networkID = 11;
     bool public isDeployedOnL2 = true;
-    IBasePolygonZkEVMGlobalExitRoot public _globalExitRootManager =
+    IBasePolygonZkEVMGlobalExitRoot public globalExitRootManager =
         IBasePolygonZkEVMGlobalExitRoot(address(0xdef));
     address public hardAssetManger = address(0xde34f);
     bytes32[32] public depositTreeHashes;
@@ -669,7 +669,7 @@ contract ForkableBridgeWrapperTest is Test {
             forkmanager,
             parentContract,
             networkID,
-            _globalExitRootManager,
+            globalExitRootManager,
             polygonZkEVMaddress,
             gasTokenAddress,
             isDeployedOnL2,
@@ -683,7 +683,7 @@ contract ForkableBridgeWrapperTest is Test {
         uint256 index = 1;
         ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
         vm.mockCall(
-            address(_globalExitRootManager),
+            address(globalExitRootManager),
             abi.encodeWithSelector(
                 exitRoot.updateExitRoot.selector,
                 bytes32("0")
@@ -698,7 +698,7 @@ contract ForkableBridgeWrapperTest is Test {
             forkmanager,
             address(forkableBridge),
             networkID,
-            _globalExitRootManager,
+            globalExitRootManager,
             polygonZkEVMaddress,
             gasTokenAddress,
             isDeployedOnL2,
@@ -710,7 +710,7 @@ contract ForkableBridgeWrapperTest is Test {
             forkmanager,
             address(forkableBridge),
             networkID,
-            _globalExitRootManager,
+            globalExitRootManager,
             polygonZkEVMaddress,
             gasTokenAddress,
             isDeployedOnL2,
@@ -739,7 +739,7 @@ contract ForkableBridgeWrapperTest is Test {
 
         ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
         vm.mockCall(
-            address(_globalExitRootManager),
+            address(globalExitRootManager),
             abi.encodeWithSelector(
                 exitRoot.updateExitRoot.selector,
                 bytes32("0")
@@ -754,7 +754,7 @@ contract ForkableBridgeWrapperTest is Test {
             forkmanager,
             address(forkableBridge),
             networkID,
-            _globalExitRootManager,
+            globalExitRootManager,
             polygonZkEVMaddress,
             gasTokenAddress,
             isDeployedOnL2,
@@ -766,7 +766,7 @@ contract ForkableBridgeWrapperTest is Test {
             forkmanager,
             address(forkableBridge),
             networkID,
-            _globalExitRootManager,
+            globalExitRootManager,
             polygonZkEVMaddress,
             gasTokenAddress,
             isDeployedOnL2,
@@ -800,7 +800,7 @@ contract ForkableBridgeWrapperTest is Test {
         uint256 index = 1;
         ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
         vm.mockCall(
-            address(_globalExitRootManager),
+            address(globalExitRootManager),
             abi.encodeWithSelector(
                 exitRoot.updateExitRoot.selector,
                 bytes32("0")
@@ -815,7 +815,7 @@ contract ForkableBridgeWrapperTest is Test {
             forkmanager,
             address(forkableBridge),
             networkID,
-            _globalExitRootManager,
+            globalExitRootManager,
             polygonZkEVMaddress,
             gasTokenAddress,
             isDeployedOnL2,
@@ -827,7 +827,7 @@ contract ForkableBridgeWrapperTest is Test {
             forkmanager,
             address(forkableBridge),
             networkID,
-            _globalExitRootManager,
+            globalExitRootManager,
             polygonZkEVMaddress,
             gasTokenAddress,
             isDeployedOnL2,
