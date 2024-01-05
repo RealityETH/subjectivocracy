@@ -7,6 +7,13 @@ import {IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contr
 import {IForkableStructure} from "./IForkableStructure.sol";
 
 interface IForkableBridge is IForkableStructure, IPolygonZkEVMBridge {
+    /// @dev Error thrown when activity is started by a non-authorized actor
+    error NotAuthorized();
+    /// @dev Error thrown when trying to send bridged tokens to a child contract
+    error InvalidDestinationForHardAsset();
+    /// @dev Error thrown when hardasset manager tries to send gas token to a child contract
+    error GasTokenIsNotHardAsset();
+
     /**
      * @dev Function to initialize the contract
      * @param _forkmanager: address of the forkmanager contract
@@ -39,11 +46,8 @@ interface IForkableBridge is IForkableStructure, IPolygonZkEVMBridge {
 
     /**
      * @dev Function to create the children contracts
-     * @param implementation: address of the implementation contract
      */
-    function createChildren(
-        address implementation
-    ) external returns (address, address);
+    function createChildren() external returns (address, address);
 
     /**
      * @dev Anyone can use their tokens to split the bridged tokens into the two corresponding children tokens

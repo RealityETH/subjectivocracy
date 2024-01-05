@@ -27,7 +27,8 @@
     "deployApplications:backstopTestnet0": "npx hardhat run src/deployment/4_deployL1Applications.js --network sepolia && npx hardhat run src/deployment/5_deployL2Applications.js --network backstopTestnet0 && npx hardhat run src/deployment/6_chainInfoUpdate.js --network sepolia && npx hardhat run src/deployment/7_claimChainInfo.js --network backstopTestnet0",
     "compile": "npx hardhat compile",
     "lintjs": "npx eslint ./src",
-    "lintjs:fix": "npx eslint ./src --fix"
+    "lintjs:fix": "npx eslint ./src --fix",
+    "test": "npx hardhat test"
   },
   "dependencies": {
     "axios": "^1.6.2",
@@ -35,13 +36,15 @@
     "ethereum-waffle": "^3.4.4",
     "ethers": "^5.7.2",
     "forge": "^2.3.0",
-    "hardhat": "^2.13.0"
+    "hardhat": "^2.19.4"
   },
   "devDependencies": {
-    "@0xpolygonhermez/zkevm-commonjs": "github:0xPolygonHermez/zkevm-commonjs#v2.0.0-fork.5",
-    "@nomiclabs/hardhat-ethers": "^2.2.2",
+    "@0xpolygonhermez/zkevm-commonjs": "github:0xPolygonHermez/zkevm-commonjs#v3.0.0-fork.6",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@nomiclabs/hardhat-etherscan": "^3.1.7",
     "@nomiclabs/hardhat-waffle": "^2.0.6",
+    "@RealityETH/zkevm-contracts": "github:RealityETH/zkevm-contracts#v3.0.0-RealityETH",
     "@openzeppelin/contracts": "4.8.2",
     "@openzeppelin/contracts-upgradeable": "4.8.2",
     "@openzeppelin/hardhat-upgrades": "1.22.1",

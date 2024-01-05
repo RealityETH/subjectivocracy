@@ -144,7 +144,9 @@ contract L1GlobalForkRequesterTest is Test {
             address(forkmanager),
             address(0x0),
             address(zkevm),
-            address(bridge)
+            address(bridge),
+            bytes32(0),
+            bytes32(0)
         );
         bridge.initialize(
             address(forkmanager),
@@ -227,7 +229,6 @@ contract L1GlobalForkRequesterTest is Test {
             address(forkmanager.forkonomicToken()),
             address(forkonomicToken)
         );
-        assertTrue(forkmanager.canFork());
         assertFalse(forkmanager.isForkingInitiated());
         assertFalse(forkmanager.isForkingExecuted());
 
@@ -266,7 +267,7 @@ contract L1GlobalForkRequesterTest is Test {
             address(forkmanager.forkonomicToken()),
             address(forkonomicToken)
         );
-        assertTrue(forkmanager.canFork());
+        assertFalse(forkmanager.isForkingInitiated());
 
         l1GlobalForkRequester.handlePayment(
             address(forkonomicToken),
@@ -314,7 +315,7 @@ contract L1GlobalForkRequesterTest is Test {
             address(forkmanager.forkonomicToken()),
             address(forkonomicToken)
         );
-        assertTrue(forkmanager.canFork());
+        assertFalse(forkmanager.isForkingInitiated());
 
         {
             // Someone else starts and executes a fork before we can handle our payment
@@ -323,19 +324,9 @@ contract L1GlobalForkRequesterTest is Test {
             vm.prank(address(this));
             forkonomicToken.approve(address(forkmanager), fee);
             // Assume the data contains the questionId and pass it directly to the forkmanager in the fork request
-            IForkingManager.NewImplementations
-                memory newImplementations = IForkingManager.NewImplementations(
-                    newBridgeImplementation,
-                    newZkevmImplementation,
-                    newForkonomicTokenImplementation,
-                    newForkmanagerImplementation,
-                    newGlobalExitRootImplementation,
-                    newVerifierImplementation,
-                    uint64(0x7)
-                );
             IForkingManager.DisputeData memory disputeData = IForkingManager
                 .DisputeData(false, address(this), requestId);
-            forkmanager.initiateFork(disputeData, newImplementations);
+            forkmanager.initiateFork(disputeData);
         }
 
         // Our handlePayment will fail and leave our money sitting in failedRequests
@@ -375,8 +366,7 @@ contract L1GlobalForkRequesterTest is Test {
 
         // Execute the other guy's fork
         skip(forkmanager.forkPreparationTime() + 1);
-        forkmanager.executeFork1();
-        forkmanager.executeFork2();
+        forkmanager.executeFork();
 
         {
             uint256 balBeforeSplit = forkonomicToken.balanceOf(

@@ -10,10 +10,8 @@ contract ForkableStructureWrapper is ForkableStructure {
         ForkableStructure.initialize(_forkmanager, _parentContract);
     }
 
-    function createChildren(
-        address implementation
-    ) public returns (address, address) {
-        return ForkableStructure._createChildren(implementation);
+    function createChildren() public returns (address, address) {
+        return ForkableStructure._createChildren();
     }
 
     function setChild(uint256 index, address child) public {

@@ -18,28 +18,33 @@ contract ForkableStructure is IForkableStructure, Initializable {
     mapping(uint256 => address) public children;
 
     modifier onlyBeforeForking() {
-        require(children[0] == address(0x0), "No changes after forking");
-        _;
-    }
-
-    modifier onlyBeforeCreatingChild2() {
-        require(children[2] == address(0x0), "No changes after forking");
+        if (children[0] != address(0x0)) {
+            revert NoChangesAfterForking();
+        }
         _;
     }
 
     modifier onlyAfterForking() {
-        require(children[0] != address(0x0), "onlyAfterForking");
-        require(children[1] != address(0x0), "onlyAfterForking");
+        if (children[0] == address(0x0)) {
+            revert OnlyAfterForking();
+        }
+        if (children[1] == address(0x0)) {
+            revert OnlyAfterForking();
+        }
         _;
     }
 
     modifier onlyParent() {
-        require(msg.sender == parentContract, "Not parent");
+        if (msg.sender != parentContract) {
+            revert OnlyParentIsAllowed();
+        }
         _;
     }
 
     modifier onlyForkManger() {
-        require(msg.sender == forkmanager, "Not forkManager");
+        if (msg.sender != forkmanager) {
+            revert OnlyForkManagerIsAllowed();
+        }
         _;
     }
 
@@ -58,15 +63,14 @@ contract ForkableStructure is IForkableStructure, Initializable {
 
     /**
      *  @dev Internal function to create the children contracts.
-     * @param implementation Allows to pass a different implementation contract for the second proxied child.
      */
-    function _createChildren(
-        address implementation
-    ) internal returns (address forkingManager1, address forkingManager2) {
-        forkingManager1 = CreateChildren.createChild1();
-        children[0] = forkingManager1;
-        forkingManager2 = CreateChildren.createChild2(implementation);
-        children[1] = forkingManager2;
+    function _createChildren()
+        internal
+        returns (address child0, address child1)
+    {
+        (child0, child1) = CreateChildren.createChildren();
+        children[0] = child0;
+        children[1] = child1;
     }
 
     function getChildren() public view returns (address, address) {

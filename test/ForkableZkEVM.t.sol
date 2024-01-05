@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 import {Test} from "forge-std/Test.sol";
 import {PolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVM.sol";
 import {ForkableZkEVM} from "../contracts/ForkableZkEVM.sol";
+import {IForkableStructure} from "../contracts/interfaces/IForkableStructure.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {IPolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
 import {IVerifierRollup} from "@RealityETH/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
@@ -93,17 +94,11 @@ contract ForkableZkEVMTest is Test {
     }
 
     function testCreateChildren() public {
-        address secondForkableZkEVMImplementation = address(
-            new ForkableZkEVM()
-        );
-
-        vm.expectRevert("Not forkManager");
-        forkableZkEVM.createChildren(secondForkableZkEVMImplementation);
+        vm.expectRevert(IForkableStructure.OnlyForkManagerIsAllowed.selector);
+        forkableZkEVM.createChildren();
 
         vm.prank(forkableZkEVM.forkmanager());
-        (address child1, address child2) = forkableZkEVM.createChildren(
-            secondForkableZkEVMImplementation
-        );
+        (address child1, address child2) = forkableZkEVM.createChildren();
 
         // child1 and child2 addresses should not be zero address
         assertTrue(child1 != address(0));
@@ -116,7 +111,7 @@ contract ForkableZkEVMTest is Test {
         );
         assertEq(
             Util.bytesToAddress(vm.load(address(child2), _IMPLEMENTATION_SLOT)),
-            secondForkableZkEVMImplementation
+            forkableZkEVMImplementation
         );
     }
 
@@ -134,9 +129,9 @@ contract ForkableZkEVMTest is Test {
         }
 
         vm.prank(forkableZkEVM.forkmanager());
-        forkableZkEVM.createChildren(forkableZkEVMImplementation);
+        forkableZkEVM.createChildren();
 
-        vm.expectRevert("No changes after forking");
+        vm.expectRevert(IForkableStructure.NoChangesAfterForking.selector);
         forkableZkEVM.verifyBatches(
             pendingStateNum,
             initNumBatch,
@@ -149,9 +144,9 @@ contract ForkableZkEVMTest is Test {
 
     function testNoChangeOfConsolidationOfStateAfterForking() public {
         vm.prank(forkableZkEVM.forkmanager());
-        forkableZkEVM.createChildren(forkableZkEVMImplementation);
+        forkableZkEVM.createChildren();
 
-        vm.expectRevert("No changes after forking");
+        vm.expectRevert(IForkableStructure.NoChangesAfterForking.selector);
         forkableZkEVM.consolidatePendingState(10);
 
         bytes32[24] memory proof;
@@ -159,7 +154,7 @@ contract ForkableZkEVMTest is Test {
             proof[i] = bytes32("0x"); // Whatever initialization value you want
         }
 
-        vm.expectRevert("No changes after forking");
+        vm.expectRevert(IForkableStructure.NoChangesAfterForking.selector);
         forkableZkEVM.overridePendingState(
             10,
             10,
@@ -170,7 +165,7 @@ contract ForkableZkEVMTest is Test {
             proof
         );
 
-        vm.expectRevert("No changes after forking");
+        vm.expectRevert(IForkableStructure.NoChangesAfterForking.selector);
         PolygonZkEVM.BatchData[] memory batches = new PolygonZkEVM.BatchData[](
             1
         );

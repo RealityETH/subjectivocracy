@@ -16,26 +16,30 @@ async function main() {
     const attemptsDeployProxy = 5;
     // Load provider
     let currentProvider = ethers.provider;
-    if (deployParameters.multiplierGas || deployParameters.maxFeePerGas) {
-        if (process.env.HARDHAT_NETWORK !== 'hardhat') {
-            currentProvider = new ethers.providers.JsonRpcProvider(`https://${process.env.HARDHAT_NETWORK}.infura.io/v3/${process.env.INFURA_PROJECT_ID}`);
-            if (deployParameters.maxPriorityFeePerGas && deployParameters.maxFeePerGas) {
-                console.log(`Hardcoded gas used: MaxPriority${deployParameters.maxPriorityFeePerGas} gwei, MaxFee${deployParameters.maxFeePerGas} gwei`);
-                const FEE_DATA = {
-                    maxFeePerGas: ethers.utils.parseUnits(deployParameters.maxFeePerGas, 'gwei'),
-                    maxPriorityFeePerGas: ethers.utils.parseUnits(deployParameters.maxPriorityFeePerGas, 'gwei'),
-                };
-                currentProvider.getFeeData = async () => FEE_DATA;
-            } else {
-                console.log('Multiplier gas used: ', deployParameters.multiplierGas);
-                async function overrideFeeData() {
-                    const feedata = await ethers.provider.getFeeData();
-                    return {
-                        maxFeePerGas: feedata.maxFeePerGas.mul(deployParameters.multiplierGas).div(1000),
-                        maxPriorityFeePerGas: feedata.maxPriorityFeePerGas.mul(deployParameters.multiplierGas).div(1000),
+    if (process.env.HARDHAT_NETWORK === 'localhost') {
+        currentProvider = new ethers.providers.JsonRpcProvider('https://127.0.0.1:8454');
+    } else {
+        if (deployParameters.multiplierGas || deployParameters.maxFeePerGas) {
+            if (process.env.HARDHAT_NETWORK !== 'hardhat') {
+                currentProvider = new ethers.providers.JsonRpcProvider(`https://${process.env.HARDHAT_NETWORK}.infura.io/v3/${process.env.INFURA_PROJECT_ID}`);
+                if (deployParameters.maxPriorityFeePerGas && deployParameters.maxFeePerGas) {
+                    console.log(`Hardcoded gas used: MaxPriority${deployParameters.maxPriorityFeePerGas} gwei, MaxFee${deployParameters.maxFeePerGas} gwei`);
+                    const FEE_DATA = {
+                        maxFeePerGas: ethers.utils.parseUnits(deployParameters.maxFeePerGas, 'gwei'),
+                        maxPriorityFeePerGas: ethers.utils.parseUnits(deployParameters.maxPriorityFeePerGas, 'gwei'),
                     };
+                    currentProvider.getFeeData = async () => FEE_DATA;
+                } else {
+                    console.log('Multiplier gas used: ', deployParameters.multiplierGas);
+                    async function overrideFeeData() {
+                        const feedata = await ethers.provider.getFeeData();
+                        return {
+                            maxFeePerGas: feedata.maxFeePerGas.mul(deployParameters.multiplierGas).div(1000),
+                            maxPriorityFeePerGas: feedata.maxPriorityFeePerGas.mul(deployParameters.multiplierGas).div(1000),
+                        };
+                    }
+                    currentProvider.getFeeData = overrideFeeData;
                 }
-                currentProvider.getFeeData = overrideFeeData;
             }
         }
     }
@@ -43,6 +47,8 @@ async function main() {
     let deployer;
     if (deployParameters.deployerPvtKey) {
         deployer = new ethers.Wallet(deployParameters.deployerPvtKey, currentProvider);
+    } else if (process.env.HARDHAT_NETWORK === 'localhost') {
+        [deployer] = (await ethers.getSigners());
     } else if (process.env.MNEMONIC) {
         deployer = ethers.Wallet.fromMnemonic(process.env.MNEMONIC, 'm/44\'/60\'/0\'/0/0').connect(currentProvider);
     } else {

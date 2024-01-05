@@ -46,10 +46,12 @@ contract ForkonomicToken is
     }
 
     /// @inheritdoc IForkonomicToken
-    function createChildren(
-        address implementation
-    ) external onlyForkManger returns (address, address) {
-        return _createChildren(implementation);
+    function createChildren()
+        external
+        onlyForkManger
+        returns (address, address)
+    {
+        return _createChildren();
     }
 
     function splitTokenAndMintOneChild(

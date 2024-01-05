@@ -6,17 +6,8 @@ require('@nomiclabs/hardhat-etherscan');
 require('@openzeppelin/hardhat-upgrades');
 require('hardhat-dependency-compiler');
 require('hardhat-preprocessor');
-const fs = require('fs');
 
 const DEFAULT_MNEMONIC = 'test test test test test test test test test test test junk';
-
-function getRemappings() {
-    return fs
-        .readFileSync('remappings.txt', 'utf8')
-        .split('\n')
-        .filter(Boolean) // remove empty lines
-        .map((line) => line.trim().split('='));
-}
 
 /*
  * You need to export an object to set up your config
@@ -30,30 +21,21 @@ module.exports = {
     dependencyCompiler: {
         paths: [
             '@openzeppelin/contracts/token/ERC20/presets/ERC20PresetFixedSupply.sol',
+            '@RealityETH/zkevm-contracts/contracts/mocks/ERC20PermitMock.sol',
             '@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol',
             '@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol',
             '@RealityETH/zkevm-contracts/contracts/deployment/PolygonZkEVMDeployer.sol',
             '@RealityETH/zkevm-contracts/contracts/PolygonZkEVMGlobalExitRootL2.sol',
             '@RealityETH/zkevm-contracts/contracts/PolygonZkEVMTimelock.sol',
             '@RealityETH/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol',
+            '@RealityETH/zkevm-contracts/contracts/mocks/PolygonZkEVMGlobalExitRootMock.sol',
+            '@RealityETH/zkevm-contracts/contracts/mocks/PolygonZkEVMMock.sol',
             '@RealityETH/zkevm-contracts/contracts/verifiers/FflonkVerifier.sol',
-        ], // ,
-    // keep: true
-    },
-    preprocess: {
-        eachLine: (hre) => ({
-            transform: (line) => {
-                if (line.match(/^\s*import /i)) {
-                    for (const [from, to] of getRemappings()) {
-                        if (line.includes(from)) {
-                            line = line.replace(from, to);
-                            break;
-                        }
-                    }
-                }
-                return line;
-            },
-        }),
+            '@RealityETH/zkevm-contracts/contracts/PolygonZkEVMBridgeWrapper.sol',
+            'test/testcontract/ForkableExitMock.sol',
+            'test/testcontract/ForkableZkEVMMock.sol',
+        ],
+        keep: true,
     },
     paths: {
         sources: './contracts/',
