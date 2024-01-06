@@ -269,7 +269,7 @@ contract L1GlobalChainInfoPublisherTest is Test {
         public
     {
         address garbageAddress = address(0xabcd01);
-        vm.expectRevert("Ancestor not found");
+        vm.expectRevert(L1GlobalChainInfoPublisher.AncestorNotFound.selector);
         l1GlobalChainInfoPublisher.updateL2ChainInfo(
             address(bridge),
             address(l2ChainInfo),
@@ -372,14 +372,14 @@ contract L1GlobalChainInfoPublisherTest is Test {
             uint256(10)
         );
 
-        vm.expectRevert("Ancestor not found");
+        vm.expectRevert(L1GlobalChainInfoPublisher.AncestorNotFound.selector);
         l1GlobalChainInfoPublisher.updateL2ChainInfo(
             bridge22,
             address(l2ChainInfo),
             address(forkmanager),
             uint256(0)
         );
-        vm.expectRevert("Ancestor not found");
+        vm.expectRevert(L1GlobalChainInfoPublisher.AncestorNotFound.selector);
         l1GlobalChainInfoPublisher.updateL2ChainInfo(
             bridge22,
             address(l2ChainInfo),

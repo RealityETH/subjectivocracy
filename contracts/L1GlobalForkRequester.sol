@@ -4,44 +4,46 @@ pragma solidity ^0.8.20;
 
 /* 
    Contract to proxy a fork request from the bridge to its ForkingManager
-   Any L2 contract can call us over the bridge to get us to request a fork.
-   We record the dispute they were forking over
+   Any L2 contract can call this contract over the bridge to request a fork.
+   The disputes causing a fork are recorded in this contract
 */
 
 import {IForkingManager} from "./interfaces/IForkingManager.sol";
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
 import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
 import {IForkonomicToken} from "./interfaces/IForkonomicToken.sol";
-
-// NB We'd normally use the interface IForkableBridge here but it causes an error:
-//  Error (5005): Linearization of inheritance graph impossible
-import {ForkableBridge} from "./ForkableBridge.sol";
-
+import {IForkableBridge} from "./interfaces/IForkableBridge.sol";
 import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 
 import {MoneyBox} from "./mixin/MoneyBox.sol";
 import {CalculateMoneyBoxAddress} from "./lib/CalculateMoneyBoxAddress.sol";
 
 contract L1GlobalForkRequester {
+    /// @dev Error thrown when the transfer out of the moneyBox is unsuccessful
+    error UnsuccessfulTransfer();
+
     struct FailedForkRequest {
         uint256 amount;
         uint256 amountMigratedYes;
         uint256 amountMigratedNo;
     }
+
     // Token => Beneficiary => ID => FailedForkRequest
     mapping(address => mapping(address => mapping(bytes32 => FailedForkRequest)))
         public failedRequests;
 
-    // Anybody can say, "Hey, you got a payment for this fork to happen"
-    // Normally this would only happen if the L2 contract send a payment but in theory someone else could fund it directly on L1.
+    /* 
+    @dev This function can be called by anyone to to take the money out of the moneybox and initiated the fork.
+    Normally this would only happen if the L2 contract send a payment but in theory someone else could fund it directly on L1.
+    @param token The address of the forkonomic token used to pay the forking fee
+    @param beneficiary The receiver of the tokens, if the call does not go through. Normally the "beneficiary" would be the sender on L2.
+    @param requestId The questionId of the dispute
+    */
     function handlePayment(
         address token,
         address beneficiary,
         bytes32 requestId
     ) external {
-        // Normally the "beneficiary" would be the sender on L2.
-        // But if some other kind person sent funds to this address we would still send it back to the beneficiary.
-
         bytes32 salt = keccak256(abi.encodePacked(beneficiary, requestId));
 
         // Check the MoneyBox has funds
@@ -61,32 +63,26 @@ contract L1GlobalForkRequester {
         if (moneyBox.code.length == 0) {
             new MoneyBox{salt: salt}(token);
         }
-        require(
-            IForkonomicToken(token).transferFrom(
+        if (
+            !IForkonomicToken(token).transferFrom(
                 moneyBox,
                 address(this),
                 transferredBalance
-            ),
-            "Preparing payment failed"
-        );
+            )
+        ) {
+            revert UnsuccessfulTransfer();
+        }
 
         // If the token is already being or has already been forked, record the request as failed.
         // Somebody can split the token after the fork, then send the failure message and the funds back on both the child forks.
-        // TODO: Replace this with an isForked() method in ForkingStructure.sol?
-
         IForkingManager forkingManager = IForkingManager(
             IForkonomicToken(token).forkmanager()
         );
 
-        bool isForkGuaranteedNotToRevert = true;
-        if (transferredBalance < forkingManager.arbitrationFee()) {
-            isForkGuaranteedNotToRevert = false;
-        }
-        if (forkingManager.isForkingInitiated()) {
-            isForkGuaranteedNotToRevert = false;
-        }
-
-        if (isForkGuaranteedNotToRevert) {
+        if (
+            transferredBalance >= forkingManager.arbitrationFee() &&
+            !forkingManager.isForkingInitiated()
+        ) {
             if (initialBalance > 0) {
                 delete (failedRequests[token][beneficiary][requestId]);
             }
@@ -162,15 +158,21 @@ contract L1GlobalForkRequester {
         */
     }
 
+    /*
+     * @dev This function can be called by anyone to return the tokens across the bridge.
+     * @param token The address of the forkonomic token used to pay the forking fee
+     * @param beneficiary The receiver of the tokens, if the call does not go through. Normally the "beneficiary" would be the sender on L2.
+     * @param requestId The questionId of the dispute
+     */
     function returnTokens(
         address token,
-        address requester,
+        address beneficiary,
         bytes32 requestId
     ) external {
         IForkingManager forkingManager = IForkingManager(
             IForkonomicToken(token).forkmanager()
         );
-        ForkableBridge bridge = ForkableBridge(forkingManager.bridge());
+        IForkableBridge bridge = IForkableBridge(forkingManager.bridge());
 
         // Check the relations in the other direction to make sure we don't lie to the bridge somehow
         require(
@@ -182,7 +184,7 @@ contract L1GlobalForkRequester {
             "Token/manager mismatch, WTF"
         );
 
-        uint256 amount = failedRequests[token][requester][requestId].amount;
+        uint256 amount = failedRequests[token][beneficiary][requestId].amount;
 
         require(amount > 0, "Nothing to return");
         IForkonomicToken(token).approve(address(bridge), amount);
@@ -190,17 +192,17 @@ contract L1GlobalForkRequester {
         bytes memory permitData;
         bridge.bridgeAsset(
             uint32(1),
-            requester,
+            beneficiary,
             amount,
-            token, // TODO: Should this be address(0)?
+            token,
             true,
             permitData
         );
 
         // TODO: It might be useful to send information about the failure eg fork timestamp
         bytes memory data = bytes.concat(requestId);
-        bridge.bridgeMessage(uint32(1), requester, true, data);
+        bridge.bridgeMessage(uint32(1), beneficiary, true, data);
 
-        delete (failedRequests[token][requester][requestId]);
+        delete (failedRequests[token][beneficiary][requestId]);
     }
 }

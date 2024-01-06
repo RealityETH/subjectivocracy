@@ -16,7 +16,8 @@ import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/inte
 /*
 This contract is the arbitrator used by governance propositions for AdjudicationFramework contracts.
 It charges a dispute fee of 5% of total supply [TODO], which it forwards to L1 when requesting a fork.
-If there is already a dispute in progress (ie another fork has been requested but not triggered or we are in the 1 week period before a fork) the new one will be queued.
+If there is already a dispute in progress (ie another fork has been requested but not yet triggered or 
+we are in the 1 week period before a fork) the new one will be queued.
 */
 
 // NB This doesn't implement IArbitrator because that requires slightly more functions than we need
