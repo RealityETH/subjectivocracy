@@ -8,6 +8,11 @@ import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfa
 import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
 
 contract L1GlobalChainInfoPublisher {
+    /// @dev Error thrown when the ancestor is not found
+    error AncestorNotFound();
+    /// @dev Error thrown when the child address is not expected
+    error UnexpectedChildAddress();
+
     /// @notice Function to send the data about a fork to a contract on L2.
     /// @param _bridge The bridge to send the data through
     /// @param _l2ChainInfo The L2ChainInfo contract on L2 to send the data to
@@ -44,7 +49,9 @@ contract L1GlobalChainInfoPublisher {
                     break;
                 }
             }
-            require(found, "Ancestor not found");
+            if (!found) {
+                revert AncestorNotFound();
+            }
         }
 
         // Dispute results will need to come from the parent ForkingManager
@@ -68,7 +75,7 @@ contract L1GlobalChainInfoPublisher {
             } else if (child2 == address(forkingManager)) {
                 forkResult = 2;
             } else {
-                revert("Unexpected child address");
+                revert UnexpectedChildAddress();
             }
             (isL1, disputeContract, disputeContent) = forkingManager
                 .disputeData();
