@@ -32,7 +32,6 @@ contract L1GlobalForkRequester {
     /// @dev Error thrown when the forkonomic token and the forkmanager are not related
     error ForkonomicTokenMisMatch();
 
-
     struct FailedForkRequest {
         uint256 amount;
         uint256 amountMigratedYes;
