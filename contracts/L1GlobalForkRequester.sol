@@ -32,6 +32,7 @@ contract L1GlobalForkRequester {
     /// @dev Error thrown when the forkonomic token and the forkmanager are not related
     error ForkonomicTokenMisMatch();
 
+
     struct FailedForkRequest {
         uint256 amount;
         uint256 amountMigratedYes;
@@ -187,7 +188,6 @@ contract L1GlobalForkRequester {
             IForkonomicToken(token).forkmanager()
         );
         IForkableBridge bridge = IForkableBridge(forkingManager.bridge());
-
         if (
             failedRequests[token][beneficiary][requestId].amountMigratedNo !=
             0 ||
