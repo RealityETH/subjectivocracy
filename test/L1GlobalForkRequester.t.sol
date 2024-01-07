@@ -11,6 +11,7 @@ import {ForkonomicToken} from "../contracts/ForkonomicToken.sol";
 import {ForkableGlobalExitRoot} from "../contracts/ForkableGlobalExitRoot.sol";
 import {IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
 import {IForkingManager} from "../contracts/interfaces/IForkingManager.sol";
+import {IForkonomicToken} from "../contracts/interfaces/IForkonomicToken.sol";
 import {IVerifierRollup} from "@RealityETH/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
 import {PolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
@@ -357,11 +358,13 @@ contract L1GlobalForkRequesterTest is Test {
         );
         assertEq(balBeforeHandle + amount, balAfterHandle);
 
-        vm.expectRevert("Token not forked");
+        vm.expectRevert(L1GlobalForkRequester.TokenNotYetForked.selector);
         l1GlobalForkRequester.splitTokensIntoChildTokens(
             address(forkonomicToken),
             l2Requester,
-            requestId
+            requestId,
+            true,
+            false
         );
 
         // Execute the other guy's fork
@@ -375,7 +378,32 @@ contract L1GlobalForkRequesterTest is Test {
             l1GlobalForkRequester.splitTokensIntoChildTokens(
                 address(forkonomicToken),
                 l2Requester,
-                requestId
+                requestId,
+                true,
+                false
+            );
+            vm.expectRevert("ERC20: burn amount exceeds balance");
+            l1GlobalForkRequester.splitTokensIntoChildTokens(
+                address(forkonomicToken),
+                l2Requester,
+                requestId,
+                true,
+                false
+            );
+            l1GlobalForkRequester.splitTokensIntoChildTokens(
+                address(forkonomicToken),
+                l2Requester,
+                requestId,
+                false,
+                true
+            );
+            vm.expectRevert(IForkonomicToken.NotSufficientAllowance.selector);
+            l1GlobalForkRequester.splitTokensIntoChildTokens(
+                address(forkonomicToken),
+                l2Requester,
+                requestId,
+                false,
+                true
             );
             uint256 balAfterSplit = forkonomicToken.balanceOf(
                 address(l1GlobalForkRequester)

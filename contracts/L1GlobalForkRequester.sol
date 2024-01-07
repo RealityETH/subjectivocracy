@@ -21,6 +21,16 @@ import {CalculateMoneyBoxAddress} from "./lib/CalculateMoneyBoxAddress.sol";
 contract L1GlobalForkRequester {
     /// @dev Error thrown when the transfer out of the moneyBox is unsuccessful
     error UnsuccessfulTransfer();
+    /// @dev Error thrown when the migration has already started
+    error MigrationAlreadyStarted();
+    /// @dev Error thrown when the token has not yet been forked
+    error TokenNotYetForked();
+    /// @dev Error thrown when there is nothing to return
+    error NothingToReturn();
+    /// @dev Error thrown when the bridge and the forkmanager are not related
+    error BridgeForkManagerMismatch();
+    /// @dev Error thrown when the forkonomic token and the forkmanager are not related
+    error ForkonomicTokenMisMatch();
 
     struct FailedForkRequest {
         uint256 amount;
@@ -32,13 +42,13 @@ contract L1GlobalForkRequester {
     mapping(address => mapping(address => mapping(bytes32 => FailedForkRequest)))
         public failedRequests;
 
-    /* 
-    @dev This function can be called by anyone to to take the money out of the moneybox and initiated the fork.
-    Normally this would only happen if the L2 contract send a payment but in theory someone else could fund it directly on L1.
-    @param token The address of the forkonomic token used to pay the forking fee
-    @param beneficiary The receiver of the tokens, if the call does not go through. Normally the "beneficiary" would be the sender on L2.
-    @param requestId The questionId of the dispute
-    */
+    /**
+     * @dev This function can be called by anyone to to take the money out of the moneybox and initiated the fork.
+     * Normally this would only happen if the L2 contract send a payment but in theory someone else could fund it directly on L1.
+     * @param token The address of the forkonomic token used to pay the forking fee
+     * @param beneficiary The receiver of the tokens, if the call does not go through. Normally the "beneficiary" would be the sender on L2.
+     * @param requestId The questionId of the dispute
+     */
     function handlePayment(
         address token,
         address beneficiary,
@@ -100,65 +110,69 @@ contract L1GlobalForkRequester {
             // Store the request so we can return the tokens across the bridge
             // If the fork has already happened we may have to split them first and do this twice.
             failedRequests[token][beneficiary][requestId]
-                .amount = transferredBalance;
+                .amount += transferredBalance;
         }
     }
 
-    // If something was queued after a fork had happened, we need to be able to return then to both bridges
+    /**
+     * @dev This function can be called by anyone to split the tokens into the child tokens. This is required
+     * in case another fork is executed before the fork request is processed.
+     * @param token The address of the forkonomic token used to pay the forking fee
+     * @param requester The receiver of the tokens, if the call does not go through. Normally the "beneficiary" would be the sender on L2.
+     * @param requestId The questionId of the dispute
+     * @param doYesToken Whether to split the tokens into the first child or the second child
+     * @param useChildTokenAllowance Whether to use the child token allowance or burn the tokens
+     */
     function splitTokensIntoChildTokens(
         address token,
         address requester,
-        bytes32 requestId
+        bytes32 requestId,
+        bool doYesToken,
+        bool useChildTokenAllowance
     ) external {
-        //function splitTokensIntoChildTokens(address token, address requester, bytes32 requestId, bool doYesToken, bool doNoToken) external {}
-        // TODO: We need to update ForkonomicToken to handle each side separately in case one bridge reverts maliciously.
-        // Then handle only one side being requested, or only one side being left
         uint256 amount = failedRequests[token][requester][requestId].amount;
 
         // You need to call registerPayment before you call this.
-        require(amount > 0, "Nothing to split");
+        if (amount == 0) {
+            revert NothingToReturn();
+        }
 
         (address yesToken, address noToken) = IForkonomicToken(token)
             .getChildren();
-        require(
-            yesToken != address(0) && noToken != address(0),
-            "Token not forked"
+        if (doYesToken) {
+            if (yesToken == address(0)) {
+                revert TokenNotYetForked();
+            }
+        } else {
+            if (noToken == address(0)) {
+                revert TokenNotYetForked();
+            }
+        }
+
+        IForkonomicToken(token).splitTokenAndMintOneChild(
+            amount,
+            doYesToken,
+            useChildTokenAllowance
         );
 
-        // Current version only has a single function so we have to migrate both sides
-        IForkonomicToken(token).splitTokensIntoChildTokens(amount);
-        failedRequests[yesToken][requester][requestId].amount += amount;
-        failedRequests[noToken][requester][requestId].amount += amount;
-        delete (failedRequests[token][requester][requestId]);
-
-        /*
-        // Probably need something like:
-
-        uint256 amountRemainingY = amount - failedRequests[token][requester][requestId].amountMigratedYes;
-        uint256 amountRemainingN = amount - failedRequests[token][requester][requestId].amountMigratedNo;
-
         if (doYesToken) {
-            require(amountRemainingY > 0, "Nothing to migrate for Y");
-            token.splitTokensIntoChildTokens(amountRemainingY, 1);
-            amountRemainingY = 0;
-        }
-
-        if (doNoToken) {
-            require(amountMigratedNo > 0, "Nothing to migrate for N");
-            token.splitTokensIntoChildTokens(amountMigratedNo, 0);
-            amountRemainingN = 0;
-        }
-
-        if (amountRemainingY == 0 && amountRemainingN == 0) {
-            delete(failedRequests[token][requester][requestId]);
+            uint newAmountToMigrate = amount -
+                failedRequests[token][requester][requestId].amountMigratedYes;
+            failedRequests[yesToken][requester][requestId]
+                .amount += newAmountToMigrate;
+            failedRequests[token][requester][requestId]
+                .amountMigratedYes += newAmountToMigrate;
         } else {
-            failedRequests[token][requester][requestId].amountRemainingY = amountRemainingY;
-            failedRequests[token][requester][requestId].amountRemainingN = amountRemainingN;
+            uint256 newAmountToMigrate = amount -
+                failedRequests[token][requester][requestId].amountMigratedNo;
+            failedRequests[noToken][requester][requestId]
+                .amount += newAmountToMigrate;
+            failedRequests[token][requester][requestId]
+                .amountMigratedNo += newAmountToMigrate;
         }
-        */
     }
 
-    /*
+    /**
      * @dev This function can be called by anyone to return the tokens across the bridge.
      * @param token The address of the forkonomic token used to pay the forking fee
      * @param beneficiary The receiver of the tokens, if the call does not go through. Normally the "beneficiary" would be the sender on L2.
@@ -174,19 +188,27 @@ contract L1GlobalForkRequester {
         );
         IForkableBridge bridge = IForkableBridge(forkingManager.bridge());
 
+        if (
+            failedRequests[token][beneficiary][requestId].amountMigratedNo !=
+            0 ||
+            failedRequests[token][beneficiary][requestId].amountMigratedYes != 0
+        ) {
+            revert MigrationAlreadyStarted();
+        }
+
         // Check the relations in the other direction to make sure we don't lie to the bridge somehow
-        require(
-            address(bridge.forkmanager()) == address(forkingManager),
-            "Bridge/manager mismatch, WTF"
-        );
-        require(
-            address(forkingManager.forkonomicToken()) == token,
-            "Token/manager mismatch, WTF"
-        );
+        if (address(bridge.forkmanager()) != address(forkingManager)) {
+            revert BridgeForkManagerMismatch();
+        }
+        if (address(forkingManager.forkonomicToken()) != token) {
+            revert ForkonomicTokenMisMatch();
+        }
 
         uint256 amount = failedRequests[token][beneficiary][requestId].amount;
 
-        require(amount > 0, "Nothing to return");
+        if (amount == 0) {
+            revert NothingToReturn();
+        }
         IForkonomicToken(token).approve(address(bridge), amount);
 
         bytes memory permitData;
