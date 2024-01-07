@@ -9,7 +9,6 @@ import {Vm} from "forge-std/Vm.sol";
 import {Test} from "forge-std/Test.sol";
 import {Arbitrator} from "../contracts/lib/reality-eth/Arbitrator.sol";
 
-
 import {VerifierRollupHelperMock} from "@RealityETH/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol";
 import {IRealityETH} from "../contracts/lib/reality-eth/interfaces/IRealityETH.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
