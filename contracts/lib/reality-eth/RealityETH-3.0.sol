@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.20;
 
-import "./../../interfaces/IRealityETH.sol";
+import "./interfaces/IRealityETH.sol";
 
 import "./BalanceHolder.sol";
 

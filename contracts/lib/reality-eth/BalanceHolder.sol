@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.20;
 
-import "../../interfaces/IBalanceHolder.sol";
+import "./interfaces/IBalanceHolder.sol";
 
 contract BalanceHolder is IBalanceHolder {
     mapping(address => uint256) public balanceOf;

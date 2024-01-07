@@ -7,7 +7,7 @@ pragma solidity ^0.8.20;
 
 import {L2ChainInfo} from "./L2ChainInfo.sol";
 import {L1GlobalForkRequester} from "./L1GlobalForkRequester.sol";
-import {IRealityETH} from "./interfaces/IRealityETH.sol";
+import {IRealityETH} from "./lib/reality-eth/interfaces/IRealityETH.sol";
 import {CalculateMoneyBoxAddress} from "./lib/CalculateMoneyBoxAddress.sol";
 
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
@@ -76,21 +76,21 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
     /// @notice Request arbitration, freezing the question until we send submitAnswerByArbitrator
     /// @dev The bounty can be paid only in part, in which case the last person to pay will be considered the payer
     /// Will trigger an error if the notification fails, eg because the question has already been finalized
-    /// @param question_id The question in question
-    /// @param max_previous If specified, reverts if a bond higher than this was submitted after you sent your transaction.
+    /// @param questionId The question in question
+    /// @param maxPrevious If specified, reverts if a bond higher than this was submitted after you sent your transaction.
     function requestArbitration(
-        bytes32 question_id,
-        uint256 max_previous
+        bytes32 questionId,
+        uint256 maxPrevious
     ) external payable returns (bool) {
-        uint256 arbitration_fee = getDisputeFee(question_id);
+        uint256 arbitration_fee = getDisputeFee(questionId);
         require(arbitration_fee > 0, "fee must be positive");
 
         require(
-            arbitrationRequests[question_id].status == RequestStatus.NONE,
+            arbitrationRequests[questionId].status == RequestStatus.NONE,
             "Already requested"
         );
 
-        arbitrationRequests[question_id] = ArbitrationRequest(
+        arbitrationRequests[questionId] = ArbitrationRequest(
             RequestStatus.QUEUED,
             payable(msg.sender),
             msg.value,
@@ -98,16 +98,15 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
         );
 
         realitio.notifyOfArbitrationRequest(
-            question_id,
+            questionId,
             msg.sender,
-            max_previous
+            maxPrevious
         );
-        emit LogRequestArbitration(question_id, msg.value, msg.sender, 0);
+        emit LogRequestArbitration(questionId, msg.value, msg.sender, 0);
 
         if (!isForkInProgress) {
-            requestActivateFork(question_id);
+            requestActivateFork(questionId);
         }
-
         return true;
     }
 

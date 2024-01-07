@@ -32,8 +32,8 @@ interface IArbitrator {
     ) external;
 
     function requestArbitration(
-        bytes32 question_id,
-        uint256 max_previous
+        bytes32 questionId,
+        uint256 maxPrevious
     ) external payable returns (bool);
 
     function withdraw(address addr) external;

@@ -1,9 +1,10 @@
 pragma solidity ^0.8.20;
+
 import {Test} from "forge-std/Test.sol";
 import {Arbitrator} from "../contracts/lib/reality-eth/Arbitrator.sol";
 
-import {IRealityETH} from "../contracts/interfaces/IRealityETH.sol";
-import {IERC20} from "../contracts/interfaces/IERC20.sol";
+import {IRealityETH} from "../contracts/lib/reality-eth/interfaces/IRealityETH.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract ArbitratorTest is Test {
     Arbitrator public arb;
