@@ -1,5 +1,5 @@
 pragma solidity ^0.8.20;
-import "forge-std/console.sol";
+
 import {Test} from "forge-std/Test.sol";
 import {IterableListWrapper} from "./../testcontract/IterableListWrapper.sol";
 
