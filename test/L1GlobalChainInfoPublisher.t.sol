@@ -5,6 +5,12 @@ pragma solidity ^0.8.20;
 import {Test} from "forge-std/Test.sol";
 
 import {VerifierRollupHelperMock} from "@RealityETH/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol";
+import {IRealityETH} from "../contracts/lib/reality-eth/interfaces/IRealityETH.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ForkableRealityETH_ERC20} from "../contracts/ForkableRealityETH_ERC20.sol";
+import {RealityETH_v3_0} from "../contracts/lib/reality-eth/RealityETH-3.0.sol";
+import {AdjudicationFramework} from "../contracts/AdjudicationFramework/AdjudicationFrameworkForRequestsWithChallengeManagement.sol";
+
 import {IForkableStructure} from "../contracts/interfaces/IForkableStructure.sol";
 import {L1GlobalChainInfoPublisher} from "../contracts/L1GlobalChainInfoPublisher.sol";
 import {L2ChainInfo} from "../contracts/L2ChainInfo.sol";
