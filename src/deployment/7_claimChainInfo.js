@@ -44,7 +44,7 @@ async function main() {
         baseURL,
     });
 
-    const l2BridgeFactory = await ethers.getContractFactory('PolygonZkEVMBridge', deployer);
+    const l2BridgeFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol:PolygonZkEVMBridge', deployer);
     const l2BridgeContract = l2BridgeFactory.attach(l2BridgeAddress);
 
     const sleep = ms => new Promise(r => setTimeout(r, ms));
