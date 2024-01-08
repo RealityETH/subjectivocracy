@@ -8,8 +8,8 @@ pragma solidity ^0.8.20;
 // library EnumerableSet, which is similar, but would require to store everything in bytes32, instead of just addresses.
 
 contract IterableList {
-    address public constant PLACEHOLDER_LAST_ITEM = address(1);
-    address public constant PLACEHOLDER_FIRST_ITEM = address(2);
+    address public constant PLACEHOLDER_LAST_ITEM = address(0x2);
+    address public constant PLACEHOLDER_FIRST_ITEM = address(0x1);
 
     mapping(address => address) public nextItem;
     mapping(address => address) public previousItem;
@@ -28,14 +28,23 @@ contract IterableList {
 
     function _addToList(address item) internal {
         require(item != address(0), "Cannot add zero address");
-        require(item != PLACEHOLDER_LAST_ITEM, "Cannot add last arbitrator");
-        require(item != PLACEHOLDER_FIRST_ITEM, "Cannot add first arbitrator");
+        require(
+            item != PLACEHOLDER_LAST_ITEM,
+            "Cannot add PLACEHOLDER_LAST_ITEM"
+        );
+        require(
+            item != PLACEHOLDER_FIRST_ITEM,
+            "Cannot add PLACEHOLDER_FIRST_ITEM"
+        );
         require(
             nextItem[item] == address(0),
             "Cannot add item that is already in list"
         );
 
         address lastMember = previousItem[PLACEHOLDER_LAST_ITEM];
+        if (lastMember == address(0)) {
+            lastMember = PLACEHOLDER_FIRST_ITEM;
+        }
         nextItem[lastMember] = item;
         previousItem[item] = lastMember;
         nextItem[item] = PLACEHOLDER_LAST_ITEM;
@@ -77,6 +86,9 @@ contract IterableList {
     function getNumberOfListMembers() public view returns (uint256) {
         uint256 count = 0;
         address currentMember = nextItem[PLACEHOLDER_FIRST_ITEM];
+        if (currentMember == address(0)) {
+            return 0;
+        }
         while (currentMember != PLACEHOLDER_LAST_ITEM) {
             count++;
             currentMember = nextItem[currentMember];
@@ -93,7 +105,11 @@ contract IterableList {
         view
         returns (address[] memory members)
     {
-        members = new address[](getNumberOfListMembers());
+        uint256 count = getNumberOfListMembers();
+        if (count == 0) {
+            return new address[](0);
+        }
+        members = new address[](count);
         address currentMember = nextItem[PLACEHOLDER_FIRST_ITEM];
         for (uint256 i = 0; i < members.length; i++) {
             members[i] = currentMember;
