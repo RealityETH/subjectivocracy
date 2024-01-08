@@ -4,8 +4,8 @@ pragma solidity ^0.8.20;
 
 /* solhint-disable contract-name-camelcase */
 
-import {IERC20} from "../../interfaces/IERC20.sol";
-import {IBalanceHolder_ERC20} from "../../interfaces/IBalanceHolder_ERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IBalanceHolder_ERC20} from "./interfaces/IBalanceHolder_ERC20.sol";
 
 contract BalanceHolder_ERC20 is IBalanceHolder_ERC20 {
     IERC20 public token;
