@@ -24,7 +24,11 @@ contract FeedsTest is Test {
         ForkableRealityETH_ERC20 l1RealityEth = new ForkableRealityETH_ERC20();
         l1RealityEth.init(IERC20(address(0x234)), address(0), bytes32(0));
 
-        feeds = new Feeds(address(l1RealityEth), l2Arbitrator, initialArbitrators);
+        feeds = new Feeds(
+            address(l1RealityEth),
+            l2Arbitrator,
+            initialArbitrators
+        );
     }
 
     function testProvideInput() public {
