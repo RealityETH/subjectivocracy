@@ -100,8 +100,7 @@ async function loadOngoingOrDeploy(deployer, contractName, ongoingName, args, on
 function genesisAddressForContractName(contractName) {
     const genesisJSON = require(pathGenesisJson);
     const genesisEntries = genesisJSON.genesis;
-    for (const genesisIdx of Object.entries(genesisEntries)) {
-        const genesisEntry = genesisEntries[genesisIdx];
+    for (const [, genesisEntry] of Object.entries(genesisEntries)) {
         if (genesisEntry.contractName === contractName) {
             return genesisEntry.address;
         }
