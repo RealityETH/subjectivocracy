@@ -1,7 +1,7 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {IterableListWrapper} from "../testContract/IterableListWrapper.sol";
+import {IterableListWrapper} from "./../testContract/IterableListWrapper.sol";
 
 contract IterableListTest is Test {
     IterableListWrapper public iterableList;
