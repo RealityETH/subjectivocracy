@@ -215,7 +215,7 @@ contract ForkableRealityETH_ERC20 is BalanceHolder_ERC20 {
     /// @return The ID of the newly-created template, which is created sequentially.
     function createTemplate(
         string memory content
-    ) private stateAny returns (uint256) {
+    ) public stateAny returns (uint256) {
         uint256 id = nextTemplateID;
         templates[id] = block.number;
         template_hashes[id] = keccak256(abi.encodePacked(content));

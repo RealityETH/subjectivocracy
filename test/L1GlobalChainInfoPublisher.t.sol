@@ -14,7 +14,7 @@ import {IRealityETH} from "../contracts/lib/reality-eth/interfaces/IRealityETH.s
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ForkableRealityETH_ERC20} from "../contracts/ForkableRealityETH_ERC20.sol";
 import {RealityETH_v3_0} from "../contracts/lib/reality-eth/RealityETH-3.0.sol";
-import {AdjudicationFramework} from "../contracts/AdjudicationFramework.sol";
+import {AdjudicationFramework} from "../contracts/AdjudicationFramework/AdjudicationFrameworkForRequestsWithChallengeManagement.sol";
 
 import {IForkableStructure} from "../contracts/interfaces/IForkableStructure.sol";
 import {L2ForkArbitrator} from "../contracts/L2ForkArbitrator.sol";
