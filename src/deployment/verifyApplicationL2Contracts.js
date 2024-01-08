@@ -15,13 +15,15 @@ const deployParameters = require(pathDeployParameters);
 const deployL1OutputParameters = require(pathDeployL1OutputParameters);
 const deployL2OutputParameters = require(pathDeployL2OutputParameters);
 
+const common = require('./common.js');
+
 async function main() {
     // load deployer account
     if (typeof process.env.ETHERSCAN_API_KEY === 'undefined') {
         throw new Error('Etherscan API KEY has not been defined');
     }
 
-    console.log(deployL2OutputParameters);
+    const l2BridgeAddress = common.genesisAddressForContractName("PolygonZkEVMBridge proxy");
 
     try {
         await hre.run(
@@ -49,13 +51,13 @@ async function main() {
 
     try {
 
-        console.log('verify', deployL2OutputParameters.l2ChainInfo, 'using params', deployParameters.l2BridgeAddress, deployL1OutputParameters.l1GlobalChainInfoPublisher);
+        console.log('verify', deployL2OutputParameters.l2ChainInfo, 'using params', l2BridgeAddress, deployL1OutputParameters.l1GlobalChainInfoPublisher);
         await hre.run(
             'verify:verify',
             {
                 address: deployL2OutputParameters.l2ChainInfo
                 ,constructorArguments: [
-                    deployParameters.l2BridgeAddress,
+                    l2BridgeAddress,
                     deployL1OutputParameters.l1GlobalChainInfoPublisher
                 ]
             },
