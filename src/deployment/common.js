@@ -2,13 +2,15 @@
 /* eslint-disable no-console, no-inner-declarations, no-undef, import/no-unresolved, no-restricted-syntax */
 const path = require('path');
 const fs = require('fs');
-const { ethers, upgrades } = require('hardhat');
+const { ethers } = require('hardhat');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const pathGenesisJson = path.join(__dirname, './genesis.json');
 
-async function loadProvider(deployParameters = {}, env) {
-
+async function loadProvider(deployParameters, env) {
+    if (!deployParameters) {
+        deployParameters = {};
+    }
     let currentProvider = ethers.provider;
     if (deployParameters.multiplierGas || deployParameters.maxFeePerGas) {
         if (env.HARDHAT_NETWORK !== 'hardhat') {
@@ -34,11 +36,9 @@ async function loadProvider(deployParameters = {}, env) {
         }
     }
     return currentProvider;
-
-};
+}
 
 async function loadDeployer(currentProvider, deployParameters = {}, idx = '0') {
-
     // Load deployer
     let deployer;
     if (deployParameters.deployerPvtKey) {
@@ -48,7 +48,7 @@ async function loadDeployer(currentProvider, deployParameters = {}, idx = '0') {
         deployer = new ethers.Wallet(deployParameters.deployerPvtKey, currentProvider);
         console.log('Using pvtKey deployer with address: ', deployer.address);
     } else if (process.env.MNEMONIC) {
-        deployer = ethers.Wallet.fromMnemonic(process.env.MNEMONIC, 'm/44\'/60\'/0\'/0/'+idx).connect(currentProvider);
+        deployer = ethers.Wallet.fromMnemonic(process.env.MNEMONIC, `m/44'/60'/0'/0/${idx}`).connect(currentProvider);
         console.log('Using MNEMONIC deployer with address: ', deployer.address);
     } else {
         if (idx > 0) {
@@ -65,10 +65,9 @@ function verifyDeploymentParameters(mandatoryDeploymentParameters, deployParamet
             throw new Error(`Missing parameter: ${parameterName}`);
         }
     }
-};
+}
 
-async function loadOngoingOrDeploy(deployer, contractName, ongoingName, args, ongoingDeploymentEntries, pathOngoingDeploymentJson, externallyDeployedAddress) {
-
+async function loadOngoingOrDeploy(deployer, contractName, ongoingName, args, ongoing, pathOngoing, externallyDeployedAddress) {
     const contractFactory = await ethers.getContractFactory(contractName, {
         signer: deployer,
     });
@@ -76,8 +75,8 @@ async function loadOngoingOrDeploy(deployer, contractName, ongoingName, args, on
     let existingAddress;
     if (externallyDeployedAddress) {
         existingAddress = externallyDeployedAddress;
-    } else if (ongoingDeploymentEntries[ongoingName]) {
-        existingAddress = ongoingDeploymentEntries[ongoingName];
+    } else if (ongoing[ongoingName]) {
+        existingAddress = ongoing[ongoingName];
     }
 
     let contractInstance;
@@ -87,8 +86,8 @@ async function loadOngoingOrDeploy(deployer, contractName, ongoingName, args, on
         console.log(ongoingName, 'deployed to:', contractInstance.address);
 
         // save an ongoing deployment
-        ongoingDeploymentEntries[ongoingName] = contractInstance.address;
-        fs.writeFileSync(pathOngoingDeploymentJson, JSON.stringify(ongoingDeploymentEntries, null, 1));
+        ongoing[ongoingName] = contractInstance.address;
+        fs.writeFileSync(pathOngoing, JSON.stringify(ongoing, null, 1));
     } else {
         contractInstance = contractFactory.attach(existingAddress);
         console.log('#######################\n');
@@ -96,19 +95,20 @@ async function loadOngoingOrDeploy(deployer, contractName, ongoingName, args, on
     }
 
     return contractInstance;
-
-};
+}
 
 function genesisAddressForContractName(contractName) {
     const genesisJSON = require(pathGenesisJson);
     const genesisEntries = genesisJSON.genesis;
-    for(const genesisIdx in genesisEntries) {
+    for (const genesisIdx of Object.entries(genesisEntries)) {
         const genesisEntry = genesisEntries[genesisIdx];
-        if (genesisEntry.contractName == contractName) {
+        if (genesisEntry.contractName === contractName) {
             return genesisEntry.address;
         }
     }
-    throw new Error("Could not find genesis entry "+contractName);
+    throw new Error(`Could not find genesis entry ${contractName}`);
 }
 
-module.exports = { verifyDeploymentParameters, loadProvider, loadDeployer, loadOngoingOrDeploy, genesisAddressForContractName };
+module.exports = {
+    verifyDeploymentParameters, loadProvider, loadDeployer, loadOngoingOrDeploy, genesisAddressForContractName,
+};

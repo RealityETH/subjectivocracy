@@ -26,8 +26,8 @@
     "verify:ZkEVM:mainnet": "npx hardhat run deployment/verifyContracts.js --network mainnet",
     "deployApplications:backstopTestnet0": "npx hardhat run src/deployment/4_deployL1Applications.js --network sepolia && npx hardhat run src/deployment/5_deployL2Applications.js --network backstopTestnet0 && npx hardhat run src/deployment/6_chainInfoUpdate.js --network sepolia && npx hardhat run src/deployment/7_claimChainInfo.js --network backstopTestnet0",
     "compile": "npx hardhat compile",
-    "lintjs": "npx eslint ./src",
-    "lintjs:fix": "npx eslint ./src --fix",
+    "lintjs": "npx eslint ./src && npx eslint ./test",
+    "lintjs:fix": "npx eslint ./src --fix && npx eslint ./test --fix",
     "test": "npx hardhat test"
   },
   "dependencies": {
