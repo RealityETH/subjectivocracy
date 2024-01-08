@@ -57,7 +57,7 @@ contract Feeds is MinimalAdjudicationFramework {
             uint256 lastEntry = INPUT_SIZE - 1;
             for (uint j = 0; j < INPUT_SIZE; j++) {
                 if (
-                    arbitratorInputs[tokens[i]][msg.sender][j].timestamp <
+                    arbitratorInputs[tokens[i]][msg.sender][j].timestamp >
                     arbitratorInputs[tokens[i]][msg.sender][lastEntry].timestamp
                 ) {
                     lastEntry = j;
@@ -129,6 +129,9 @@ contract Feeds is MinimalAdjudicationFramework {
                 sum += prices[i];
                 count++;
             }
+        }
+        if (count == 0) {
+            return 0;
         }
         return sum / count;
     }

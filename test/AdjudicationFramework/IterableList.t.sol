@@ -1,5 +1,5 @@
 pragma solidity ^0.8.20;
-
+import "forge-std/console.sol";
 import {Test} from "forge-std/Test.sol";
 import {IterableListWrapper} from "./../testcontract/IterableListWrapper.sol";
 
@@ -24,7 +24,11 @@ contract IterableListTest is Test {
         assertTrue(iterableList.contains(item1));
 
         // Check if the count is updated
-        assertEq(iterableList.getNumberOfListMembers(), 1);
+        assertEq(
+            iterableList.getNumberOfListMembers(),
+            1,
+            "number of items in the list is not correct"
+        );
     }
 
     function testRemoveFromList() public {
@@ -73,11 +77,13 @@ contract IterableListTest is Test {
         iterableList.addToList(address(0));
 
         // Attempt to add placeholder addresses, expect revert
-        vm.expectRevert("Cannot add last arbitrator");
-        iterableList.addToList(iterableList.PLACEHOLDER_LAST_ITEM());
+        address placeholderLastItem = iterableList.PLACEHOLDER_LAST_ITEM();
+        vm.expectRevert("Cannot add PLACEHOLDER_LAST_ITEM");
+        iterableList.addToList(placeholderLastItem);
 
-        vm.expectRevert("Cannot add first arbitrator");
-        iterableList.addToList(iterableList.PLACEHOLDER_FIRST_ITEM());
+        address placeholderFirstItem = iterableList.PLACEHOLDER_FIRST_ITEM();
+        vm.expectRevert("Cannot add PLACEHOLDER_FIRST_ITEM");
+        iterableList.addToList(placeholderFirstItem);
     }
 
     function testInvalidRemovals() public {
@@ -85,11 +91,13 @@ contract IterableListTest is Test {
         vm.expectRevert("Cannot remove zero address");
         iterableList.removeFromList(address(0));
 
+        address placeholderLastItem = iterableList.PLACEHOLDER_LAST_ITEM();
         // Attempt to remove placeholder addresses, expect revert
         vm.expectRevert("Cannot remove last arbitrator");
-        iterableList.removeFromList(iterableList.PLACEHOLDER_LAST_ITEM());
+        iterableList.removeFromList(placeholderLastItem);
 
+        address placeholderFirstItem = iterableList.PLACEHOLDER_FIRST_ITEM();
         vm.expectRevert("Cannot remove first arbitrator");
-        iterableList.removeFromList(iterableList.PLACEHOLDER_FIRST_ITEM());
+        iterableList.removeFromList(placeholderFirstItem);
     }
 }
