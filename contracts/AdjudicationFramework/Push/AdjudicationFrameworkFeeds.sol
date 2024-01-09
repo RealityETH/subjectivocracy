@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.20;
 
-/* solhint-disable quotes */
 /* solhint-disable not-rely-on-time */
 
 import {BalanceHolder} from "./../../lib/reality-eth/BalanceHolder.sol";
@@ -14,7 +13,6 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 
 /*
 This contract is an example implementation of price feeds using the backstop's arbitration framework.
-The final contract will depend on customer requirements.
 */
 
 contract AdjudicationFrameworkFeeds is MinimalAdjudicationFramework {
@@ -91,10 +89,10 @@ contract AdjudicationFrameworkFeeds is MinimalAdjudicationFramework {
         address token,
         uint256 delay
     ) public view returns (uint256) {
-        uint256 arbitratorCount = arbitrators.length();
+        uint256 arbitratorCount = _arbitrators.length();
         uint256[] memory prices = new uint256[](arbitratorCount);
         for (uint i = 0; i < arbitratorCount; i++) {
-            address arbitrator = arbitrators.at(i);
+            address arbitrator = _arbitrators.at(i);
             if (countArbitratorFreezePropositions[arbitrator] > 0) {
                 continue;
             }

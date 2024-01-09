@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.20;
 
-/* solhint-disable var-name-mixedcase */
 /* solhint-disable quotes */
 /* solhint-disable not-rely-on-time */
 
@@ -10,17 +9,18 @@ import {IRealityETH} from "./../lib/reality-eth/interfaces/IRealityETH.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
 /*
-Minimal Adjudication framework every framework should implement
-Contains an iterableList of Arbitrators.
-Arbitrators can be frozen by providing a bond and be removed by 
-a realityETH question with forking as a final arbitration.
+Minimal Adjudication framework every framework should implement.
+Contains an enumerableSet of Arbitrators.
+Arbitrators can be removed or added by providing a realityETH question with forking as a final arbitration.
+Also, arbitrators who are challenged by a removal question, can be temporarily frozen, if a sufficient bond is provided.
 */
 
 contract MinimalAdjudicationFramework {
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    EnumerableSet.AddressSet internal arbitrators;
+    EnumerableSet.AddressSet internal _arbitrators;
     /// @dev Error thrown when non-allowlisted actor tries to call a function
     error OnlyAllowlistedActor();
 
@@ -55,7 +55,7 @@ contract MinimalAdjudicationFramework {
     IRealityETH public realityETH;
 
     modifier onlyArbitrator() {
-        if (!arbitrators.contains(msg.sender)) {
+        if (!_arbitrators.contains(msg.sender)) {
             revert OnlyAllowlistedActor();
         }
         _;
@@ -106,7 +106,7 @@ contract MinimalAdjudicationFramework {
 
         // Allowlist the initial arbitrators
         for (uint256 i = 0; i < _initialArbitrators.length; i++) {
-            arbitrators.add(_initialArbitrators[i]);
+            _arbitrators.add(_initialArbitrators[i]);
         }
     }
 
@@ -121,17 +121,17 @@ contract MinimalAdjudicationFramework {
         } else if (
             arbitratorsToRemove.length == 0 && arbitratorsToAdd.length >= 1
         ) {
-            question = arrayToString(arbitratorsToAdd);
+            question = _arrayToString(arbitratorsToAdd);
             templateId = templateIdAddArbitrator;
         } else if (
             arbitratorsToRemove.length >= 1 && arbitratorsToAdd.length == 0
         ) {
-            question = arrayToString(arbitratorsToRemove);
+            question = _arrayToString(arbitratorsToRemove);
             templateId = templateIdRemoveArbitrator;
         } else {
             question = string.concat(
-                arrayToString(arbitratorsToRemove),
-                arrayToString(arbitratorsToAdd)
+                _arrayToString(arbitratorsToRemove),
+                _arrayToString(arbitratorsToAdd)
             );
             templateId = templateIdReplaceArbitrator;
         }
@@ -157,7 +157,7 @@ contract MinimalAdjudicationFramework {
         return questionId;
     }
 
-    function arrayToString(
+    function _arrayToString(
         address[] memory _array
     ) internal pure returns (string memory) {
         string memory result = "[";
@@ -185,14 +185,14 @@ contract MinimalAdjudicationFramework {
         require(realityEthResult == bytes32(uint256(1)), "Result was not 1");
         for (uint i = 0; i < arbitratorsToRemove.length; i++) {
             address arbitratorToRemove = arbitratorsToRemove[i];
-            arbitrators.remove(arbitratorToRemove);
+            _arbitrators.remove(arbitratorToRemove);
             if (propositions[questionId].isFrozen) {
                 countArbitratorFreezePropositions[arbitratorToRemove] -= 1;
             }
         }
         for (uint i = 0; i < arbitratorsToAdd.length; i++) {
             address newArbitrator = arbitratorsToAdd[i];
-            arbitrators.add(newArbitrator);
+            _arbitrators.add(newArbitrator);
         }
         delete (propositions[questionId]);
     }
@@ -213,7 +213,7 @@ contract MinimalAdjudicationFramework {
         require(arbitrator != address(0), "Proposition not found");
 
         require(
-            arbitrators.contains(arbitrator),
+            _arbitrators.contains(arbitrator),
             "Arbitrator not allowlisted" // Not allowlisted in the first place
         );
         require(
@@ -282,7 +282,7 @@ contract MinimalAdjudicationFramework {
     }
 
     function isArbitrator(address arbitrator) external view returns (bool) {
-        return arbitrators.contains(arbitrator);
+        return _arbitrators.contains(arbitrator);
     }
 
     function isArbitratorPropositionFrozen(

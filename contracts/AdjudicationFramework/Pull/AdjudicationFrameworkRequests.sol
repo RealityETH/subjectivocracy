@@ -135,7 +135,7 @@ contract AdjudicationFrameworkRequests is
         // The only time you can pick up a question that's already being arbitrated is if it's been removed from the allowlist
         if (questionArbitrations[questionId].arbitrator != address(0)) {
             require(
-                !arbitrators.contains(
+                !_arbitrators.contains(
                     questionArbitrations[questionId].arbitrator
                 ),
                 "Question under arbitration" // Question already taken, and the arbitrator who took it is still active
@@ -160,7 +160,7 @@ contract AdjudicationFrameworkRequests is
         address old_arbitrator = questionArbitrations[questionId].arbitrator;
         require(old_arbitrator != address(0), "No arbitrator to remove");
         require(
-            !arbitrators.contains(old_arbitrator),
+            !_arbitrators.contains(old_arbitrator),
             "Arbitrator not removed" // Arbitrator must no longer be on the allowlist
         );
 
@@ -240,7 +240,7 @@ contract AdjudicationFrameworkRequests is
         address arbitrator = questionArbitrations[questionId].arbitrator;
 
         require(
-            arbitrators.contains(arbitrator),
+            _arbitrators.contains(arbitrator),
             "Arbitrator must be allowlisted"
         );
         require(
