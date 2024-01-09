@@ -6,21 +6,21 @@ pragma solidity ^0.8.20;
 /* solhint-disable not-rely-on-time */
 
 import {BalanceHolder} from "./../../lib/reality-eth/BalanceHolder.sol";
-
 import {IRealityETH} from "./../../lib/reality-eth/interfaces/IRealityETH.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {MinimalAdjudicationFramework} from "./../MinimalAdjudicationFramework.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 /*
 This contract is an example implementation of price feeds using the backstop's arbitration framework.
+The final contract will depend on customer requirements.
 */
 
-contract Feeds is MinimalAdjudicationFramework {
+contract AdjudicationFrameworkFeeds is MinimalAdjudicationFramework {
     using EnumerableSet for EnumerableSet.AddressSet;
 
+    // each arbitrator can provide 5 inputs, before old inputs will be overwritten.
     uint256 public constant INPUT_SIZE = 5;
 
     // Input struct from oracle price providers
@@ -28,7 +28,8 @@ contract Feeds is MinimalAdjudicationFramework {
         uint256 price;
         uint256 timestamp;
     }
-    // token => Arbitrator =>inputNr => Input
+
+    // token => Arbitrator => inputNr % INPUT_SIZE => Input
     mapping(address => mapping(address => mapping(uint256 => Input)))
         public arbitratorInputs;
 
@@ -88,7 +89,7 @@ contract Feeds is MinimalAdjudicationFramework {
      */
     function getPriceConsideringDelay(
         address token,
-        uint256 deplay
+        uint256 delay
     ) public view returns (uint256) {
         uint256 arbitratorCount = arbitrators.length();
         uint256[] memory prices = new uint256[](arbitratorCount);
@@ -103,7 +104,7 @@ contract Feeds is MinimalAdjudicationFramework {
                     arbitratorInputs[token][arbitrator][j].timestamp <
                     arbitratorInputs[token][arbitrator][lastEntry].timestamp &&
                     arbitratorInputs[token][arbitrator][j].timestamp >
-                    block.timestamp - deplay
+                    block.timestamp - delay
                 ) {
                     lastEntry = j;
                 } else {
@@ -114,16 +115,17 @@ contract Feeds is MinimalAdjudicationFramework {
             prices[i] = arbitratorInputs[token][arbitrator][lastEntry].price;
         }
 
-        return calculateAvgerage(prices);
+        //Todo: can we also return the median?
+        return calculateAverage(prices);
     }
 
     /**
     @dev Calculates the average of a list of prices
     @param prices The prices used to calculate the average
      */
-    function calculateAvgerage(
+    function calculateAverage(
         uint256[] memory prices
-    ) internal pure returns (uint256) {
+    ) public pure returns (uint256) {
         uint256 sum = 0;
         uint256 count = 0;
         for (uint i = 0; i < prices.length; i++) {

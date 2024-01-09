@@ -1,12 +1,12 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {Feeds} from "../../contracts/AdjudicationFramework/Push/Feeds.sol";
+import {AdjudicationFrameworkFeeds} from "../../contracts/AdjudicationFramework/Push/AdjudicationFrameworkFeeds.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {RealityETH_v3_0} from "../../contracts/lib/reality-eth/RealityETH-3.0.sol";
 
 contract FeedsTest is Test {
-    Feeds public feeds;
+    AdjudicationFrameworkFeeds public feeds;
     address[] public initialArbitrators;
 
     address public arbitrator1 = address(0x111);
@@ -23,7 +23,7 @@ contract FeedsTest is Test {
 
         RealityETH_v3_0 l2RealityEth = new RealityETH_v3_0();
 
-        feeds = new Feeds(
+        feeds = new AdjudicationFrameworkFeeds(
             address(l2RealityEth),
             l2Arbitrator,
             initialArbitrators
@@ -78,10 +78,4 @@ contract FeedsTest is Test {
         uint256 averagePrice = feeds.getPriceConsideringDelay(token, 0);
         assertEq(averagePrice, (prices1[0] + prices2[0]) / 2);
     }
-
-    // Additional tests can include:
-    // - Testing `getPriceConsideringDelay` with a delay
-    // - Testing invalid inputs or actions by non-arbitrators
-    // - Testing edge cases like providing inputs for non-existing tokens
-    // - Testing inherited functionalities from `MinimalAdjudicationFramework`
 }

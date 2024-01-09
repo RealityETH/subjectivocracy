@@ -34,21 +34,16 @@ contract MinimalAdjudicationFramework {
 
     // Template used to remove arbitrators, in case they are misbehaving
     uint256 public templateIdRemoveArbitrator;
+    uint256 public templateIdAddArbitrator;
+    uint256 public templateIdReplaceArbitrator;
 
     // Contract used for requesting a fork in the L1 chain in remove propositions
     address public forkArbitrator;
 
-    // Propositions to manage arbitrators
-    enum PropositionType {
-        NONE,
-        ADD_ARBITRATOR,
-        REMOVE_ARBITRATOR
-    }
     // Reality.eth questions for propositions we may be asked to rule on
     struct ArbitratorProposition {
-        PropositionType proposition_type;
-        address arbitratorToRemove;
-        address newArbitrator;
+        address[] arbitratorsToRemove;
+        address[] arbitratorsToAdd;
         bool isFrozen;
     }
     mapping(bytes32 => ArbitratorProposition) public propositions;
@@ -76,22 +71,38 @@ contract MinimalAdjudicationFramework {
     ) {
         realityETH = IRealityETH(_realityETH);
         forkArbitrator = _forkArbitrator;
-
-        // Create reality.eth templates for our add and remove questions
+        // Create reality.eth templates for our add questions
         // We'll identify ourselves in the template so we only need a single parameter for questions, the arbitrator in question.
         // TODO: We may want to specify a document with the terms that guide this decision here, rather than just leaving it implicit.
         string
-            memory templatePrefixRemove = '{"title": "Should we remove arbitrator %s and replace them by %s from the framework ';
+            memory templatePrefixReplace = '{"title": "Should we replace the arbitrators %s by the new arbitrators %s to the framework ';
+        string
+            memory templatePrefixAdd = '{"title": "Should we add arbitrator %s to the framework ';
+        string
+            memory templatePrefixRemove = '{"title": "Should we remove arbitrator %s from the framework ';
         string
             memory templateSuffix = '?", "type": "bool", "category": "adjudication", "lang": "en"}';
-
         string memory thisContractStr = Strings.toHexString(address(this));
         string memory removeTemplate = string.concat(
             templatePrefixRemove,
             thisContractStr,
             templateSuffix
         );
+        string memory addTemplate = string.concat(
+            templatePrefixAdd,
+            thisContractStr,
+            templateSuffix
+        );
+        string memory replaceTemplate = string.concat(
+            templatePrefixReplace,
+            thisContractStr,
+            templateSuffix
+        );
         templateIdRemoveArbitrator = realityETH.createTemplate(removeTemplate);
+        templateIdAddArbitrator = realityETH.createTemplate(addTemplate);
+        templateIdReplaceArbitrator = realityETH.createTemplate(
+            replaceTemplate
+        );
 
         // Allowlist the initial arbitrators
         for (uint256 i = 0; i < _initialArbitrators.length; i++) {
@@ -99,16 +110,31 @@ contract MinimalAdjudicationFramework {
         }
     }
 
-    function beginReplaceArbitratorFromAllowList(
-        address arbitratorToRemove,
-        address replacementArbitrator
+    function modifyArbitratorFromAllowList(
+        address[] calldata arbitratorsToRemove,
+        address[] calldata arbitratorsToAdd
     ) external returns (bytes32) {
-        string memory question = string(
-            abi.encodePacked(
-                Strings.toHexString(arbitratorToRemove),
-                Strings.toHexString(replacementArbitrator)
-            )
-        );
+        string memory question;
+        uint256 templateId;
+        if (arbitratorsToRemove.length == 0 && arbitratorsToAdd.length == 0) {
+            revert("No arbitrators to modify");
+        } else if (
+            arbitratorsToRemove.length == 0 && arbitratorsToAdd.length >= 1
+        ) {
+            question = arrayToString(arbitratorsToAdd);
+            templateId = templateIdAddArbitrator;
+        } else if (
+            arbitratorsToRemove.length >= 1 && arbitratorsToAdd.length == 0
+        ) {
+            question = arrayToString(arbitratorsToRemove);
+            templateId = templateIdRemoveArbitrator;
+        } else {
+            question = string.concat(
+                arrayToString(arbitratorsToRemove),
+                arrayToString(arbitratorsToAdd)
+            );
+            templateId = templateIdReplaceArbitrator;
+        }
         bytes32 questionId = realityETH.askQuestionWithMinBond(
             templateIdRemoveArbitrator,
             question,
@@ -119,42 +145,53 @@ contract MinimalAdjudicationFramework {
             REALITY_ETH_BOND_ARBITRATOR_REMOVE
         );
         require(
-            propositions[questionId].proposition_type == PropositionType.NONE,
+            propositions[questionId].arbitratorsToAdd.length == 0 &&
+                propositions[questionId].arbitratorsToRemove.length == 0,
             "Proposition already exists"
         );
         propositions[questionId] = ArbitratorProposition(
-            PropositionType.REMOVE_ARBITRATOR,
-            arbitratorToRemove,
-            replacementArbitrator,
+            arbitratorsToRemove,
+            arbitratorsToAdd,
             false
         );
-
         return questionId;
     }
 
-    function executeReplacementArbitratorFromAllowList(
+    function arrayToString(
+        address[] memory _array
+    ) internal pure returns (string memory) {
+        string memory result = "[";
+        for (uint256 i = 0; i < _array.length; i++) {
+            result = string.concat(result, Strings.toHexString(_array[i]));
+            if (i < _array.length - 1) {
+                result = string.concat(result, ", ");
+            }
+        }
+        result = string.concat(result, "]");
+        return result;
+    }
+
+    function executeModificationArbitratorFromAllowList(
         bytes32 questionId
     ) external {
-        require(
-            propositions[questionId].proposition_type ==
-                PropositionType.REMOVE_ARBITRATOR,
-            "Wrong Proposition type"
-        );
-
         // NB This will run even if the arbitrator has already been removed by another proposition.
         // This is needed so that the freeze can be cleared if the arbitrator is then reinstated.
 
-        address arbitratorToRemove = propositions[questionId]
-            .arbitratorToRemove;
-        address newArbitrator = propositions[questionId].newArbitrator;
+        address[] memory arbitratorsToRemove = propositions[questionId]
+            .arbitratorsToRemove;
+        address[] memory arbitratorsToAdd = propositions[questionId]
+            .arbitratorsToAdd;
         bytes32 realityEthResult = realityETH.resultFor(questionId);
         require(realityEthResult == bytes32(uint256(1)), "Result was not 1");
-
-        arbitrators.remove(arbitratorToRemove);
-        if (propositions[questionId].isFrozen) {
-            countArbitratorFreezePropositions[arbitratorToRemove] -= 1;
+        for (uint i = 0; i < arbitratorsToRemove.length; i++) {
+            address arbitratorToRemove = arbitratorsToRemove[i];
+            arbitrators.remove(arbitratorToRemove);
+            if (propositions[questionId].isFrozen) {
+                countArbitratorFreezePropositions[arbitratorToRemove] -= 1;
+            }
         }
-        if (newArbitrator != address(0)) {
+        for (uint i = 0; i < arbitratorsToAdd.length; i++) {
+            address newArbitrator = arbitratorsToAdd[i];
             arbitrators.add(newArbitrator);
         }
         delete (propositions[questionId]);
@@ -163,17 +200,17 @@ contract MinimalAdjudicationFramework {
     // When an arbitrator is listed for removal, they can be frozen given a sufficient bond
     function freezeArbitrator(
         bytes32 questionId,
+        uint256 arbitratorIndex,
         bytes32[] memory historyHashes,
         address[] memory addrs,
         uint256[] memory bonds,
         bytes32[] memory answers
     ) public {
-        require(
-            propositions[questionId].proposition_type ==
-                PropositionType.REMOVE_ARBITRATOR,
-            "Wrong Proposition type"
-        );
-        address arbitrator = propositions[questionId].arbitratorToRemove;
+        address arbitrator = propositions[questionId].arbitratorsToRemove[
+            arbitratorIndex
+        ];
+
+        require(arbitrator != address(0), "Proposition not found");
 
         require(
             arbitrators.contains(arbitrator),
@@ -220,9 +257,16 @@ contract MinimalAdjudicationFramework {
             1;
     }
 
-    function clearFailedProposition(bytes32 questionId) public {
-        address arbitrator = propositions[questionId].arbitratorToRemove;
+    function clearFailedProposition(
+        bytes32 questionId,
+        uint256 arbitratorIndex
+    ) public {
+        address arbitrator = propositions[questionId].arbitratorsToRemove[
+            arbitratorIndex
+        ];
         require(arbitrator != address(0), "Proposition not found");
+        bytes32 realityEthResult = realityETH.resultFor(questionId);
+        require(realityEthResult == bytes32(uint256(0)), "Result was not 0");
         if (propositions[questionId].isFrozen) {
             countArbitratorFreezePropositions[arbitrator] =
                 countArbitratorFreezePropositions[arbitrator] -
@@ -231,11 +275,19 @@ contract MinimalAdjudicationFramework {
         delete (propositions[questionId]);
     }
 
+    // Getter functions only below here
+
     function realitio() external view returns (address) {
         return address(realityETH);
     }
 
     function isArbitrator(address arbitrator) external view returns (bool) {
         return arbitrators.contains(arbitrator);
+    }
+
+    function isArbitratorPropositionFrozen(
+        bytes32 questionId
+    ) external view returns (bool) {
+        return propositions[questionId].isFrozen;
     }
 }

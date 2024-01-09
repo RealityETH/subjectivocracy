@@ -24,7 +24,10 @@ To Reality.eth it looks like a normal arbitrator, implementing the Arbitrator in
 To the normal Arbitrator contracts that does its arbitration jobs, it looks like Reality.eth.
 */
 
-contract Requests is MinimalAdjudicationFramework, BalanceHolder {
+contract AdjudicationFrameworkRequests is
+    MinimalAdjudicationFramework,
+    BalanceHolder
+{
     using EnumerableSet for EnumerableSet.AddressSet;
 
     event LogRequestArbitration(
