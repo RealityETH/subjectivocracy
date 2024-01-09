@@ -84,6 +84,8 @@ contract AdjudicationFrameworkFeeds is MinimalAdjudicationFramework {
 
     /** 
     @dev Provides the latest price considering a delay, that allows other to escalate and freeze wrong oracle inputs
+    @param token The token for which the price is requested
+    @param delay The delay in seconds between the price supply and consumption. This delay allows other to escalate and freeze wrong oracle inputs
      */
     function getPriceConsideringDelay(
         address token,
