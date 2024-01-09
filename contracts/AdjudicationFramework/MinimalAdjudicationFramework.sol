@@ -110,7 +110,7 @@ contract MinimalAdjudicationFramework {
         }
     }
 
-    function modifyArbitratorFromAllowList(
+    function requestModificationOfArbitrators(
         address[] calldata arbitratorsToRemove,
         address[] calldata arbitratorsToAdd
     ) external returns (bytes32) {

@@ -180,14 +180,14 @@ contract AdjudicationIntegrationTest is Test {
         l2Arbitrator2.setRealitio(address(adjudicationFramework1));
         l2Arbitrator2.setDisputeFee(50);
 
-        // Create a question - from modifyArbitratorFromAllowList
+        // Create a question - from requestModificationOfArbitrators
         // For the setup we'll do this as an uncontested addition.
         // Contested cases should also be tested.
         address[] memory arbitratorsToAdd = new address[](1);
         arbitratorsToAdd[0] = address(l2Arbitrator1);
         address[] memory arbitratorsToRemove = new address[](0);
         addArbitratorQID1 = adjudicationFramework1
-            .modifyArbitratorFromAllowList(
+            .requestModificationOfArbitrators(
                 arbitratorsToRemove,
                 arbitratorsToAdd
             );
@@ -291,7 +291,7 @@ contract AdjudicationIntegrationTest is Test {
         );
     }
 
-    function testModifyArbitratorFromAllowList() public {
+    function testrequestModificationOfArbitrators() public {
         // Scenario 1: Add multiple arbitrators
         address[] memory arbitratorsToAdd = new address[](2);
         address[] memory arbitratorsToRemove = new address[](0);
@@ -299,7 +299,7 @@ contract AdjudicationIntegrationTest is Test {
         arbitratorsToAdd[1] = address(0x1001);
 
         bytes32 questionIdAddMultiple = adjudicationFramework1
-            .modifyArbitratorFromAllowList(
+            .requestModificationOfArbitrators(
                 arbitratorsToRemove,
                 arbitratorsToAdd
             );
@@ -315,7 +315,7 @@ contract AdjudicationIntegrationTest is Test {
         arbitratorsToAdd = new address[](0);
 
         bytes32 questionIdRemove = adjudicationFramework1
-            .modifyArbitratorFromAllowList(
+            .requestModificationOfArbitrators(
                 arbitratorsToRemove,
                 arbitratorsToAdd
             );
@@ -327,14 +327,14 @@ contract AdjudicationIntegrationTest is Test {
 
         // Scenario 3: Invalid case - twice the same arbitrators
         vm.expectRevert("question must not exist");
-        adjudicationFramework1.modifyArbitratorFromAllowList(
+        adjudicationFramework1.requestModificationOfArbitrators(
             arbitratorsToRemove,
             arbitratorsToAdd
         );
 
         // Scenario 4: Invalid case - No arbitrators to modify
         vm.expectRevert("No arbitrators to modify");
-        adjudicationFramework1.modifyArbitratorFromAllowList(
+        adjudicationFramework1.requestModificationOfArbitrators(
             new address[](0),
             new address[](0)
         );
@@ -346,7 +346,7 @@ contract AdjudicationIntegrationTest is Test {
         address[] memory arbitratorsToRemove = new address[](0);
 
         bytes32 questionIdAdd = adjudicationFramework1
-            .modifyArbitratorFromAllowList(
+            .requestModificationOfArbitrators(
                 arbitratorsToRemove,
                 arbitratorsToAdd
             );
@@ -366,7 +366,7 @@ contract AdjudicationIntegrationTest is Test {
         arbitratorsToAdd = new address[](0);
 
         bytes32 questionIdRemove = adjudicationFramework1
-            .modifyArbitratorFromAllowList(
+            .requestModificationOfArbitrators(
                 arbitratorsToRemove,
                 arbitratorsToAdd
             );
@@ -388,7 +388,7 @@ contract AdjudicationIntegrationTest is Test {
         address[] memory arbitratorsToAdd = new address[](0);
 
         bytes32 questionId = adjudicationFramework1
-            .modifyArbitratorFromAllowList(
+            .requestModificationOfArbitrators(
                 arbitratorsToRemove,
                 arbitratorsToAdd
             );
@@ -432,7 +432,7 @@ contract AdjudicationIntegrationTest is Test {
         address[] memory arbitratorsToAdd = new address[](0);
 
         bytes32 questionId = adjudicationFramework1
-            .modifyArbitratorFromAllowList(
+            .requestModificationOfArbitrators(
                 arbitratorsToRemove,
                 arbitratorsToAdd
             );

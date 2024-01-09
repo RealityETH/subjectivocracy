@@ -185,7 +185,7 @@ contract AdjudicationIntegrationTest is Test {
         arbitratorsToAdd[0] = address(l2Arbitrator1);
         address[] memory arbitratorsToRemove = new address[](0);
         addArbitratorQID1 = adjudicationFramework1
-            .modifyArbitratorFromAllowList(
+            .requestModificationOfArbitrators(
                 arbitratorsToRemove,
                 arbitratorsToAdd
             );
@@ -319,7 +319,7 @@ contract AdjudicationIntegrationTest is Test {
         address[] memory arbitratorsToRemove = new address[](1);
         arbitratorsToRemove[0] = address(l2Arbitrator1);
         removalQuestionId = adjudicationFramework1
-            .modifyArbitratorFromAllowList(
+            .requestModificationOfArbitrators(
                 arbitratorsToRemove,
                 arbitratorsToAdd
             );
