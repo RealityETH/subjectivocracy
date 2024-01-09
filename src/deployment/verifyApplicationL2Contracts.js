@@ -1,4 +1,4 @@
-/* eslint-disable import/no-dynamic-require, no-await-in-loop, no-restricted-syntax, guard-for-in */
+/* eslint-disable import/no-dynamic-require, no-await-in-loop, no-restricted-syntax, guard-for-in, no-console */
 
 // Broken and/or not fully tested
 
@@ -15,19 +15,21 @@ const deployParameters = require(pathDeployParameters);
 const deployL1OutputParameters = require(pathDeployL1OutputParameters);
 const deployL2OutputParameters = require(pathDeployL2OutputParameters);
 
+const common = require('./common');
+
 async function main() {
     // load deployer account
     if (typeof process.env.ETHERSCAN_API_KEY === 'undefined') {
         throw new Error('Etherscan API KEY has not been defined');
     }
 
-    console.log(deployL2OutputParameters);
+    const l2BridgeAddress = common.genesisAddressForContractName('PolygonZkEVMBridge proxy');
 
     try {
         await hre.run(
             'verify:verify',
             {
-                address: deployL2OutputParameters.realityETH
+                address: deployL2OutputParameters.realityETH,
             },
         );
     } catch (error) {
@@ -39,7 +41,7 @@ async function main() {
         await hre.run(
             'verify:verify',
             {
-                address: deployL2OutputParameters.arbitrators[0]
+                address: deployL2OutputParameters.arbitrators[0],
             },
         );
     } catch (error) {
@@ -48,16 +50,15 @@ async function main() {
     }
 
     try {
-
-        console.log('verify', deployL2OutputParameters.l2ChainInfo, 'using params', deployParameters.l2BridgeAddress, deployL1OutputParameters.l1GlobalChainInfoPublisher);
+        console.log('verify', deployL2OutputParameters.l2ChainInfo, 'using params', l2BridgeAddress, deployL1OutputParameters.l1GlobalChainInfoPublisher);
         await hre.run(
             'verify:verify',
             {
-                address: deployL2OutputParameters.l2ChainInfo
-                ,constructorArguments: [
-                    deployParameters.l2BridgeAddress,
-                    deployL1OutputParameters.l1GlobalChainInfoPublisher
-                ]
+                address: deployL2OutputParameters.l2ChainInfo,
+                constructorArguments: [
+                    l2BridgeAddress,
+                    deployL1OutputParameters.l1GlobalChainInfoPublisher,
+                ],
             },
         );
     } catch (error) {
@@ -66,17 +67,16 @@ async function main() {
     }
 
     try {
-
         await hre.run(
             'verify:verify',
             {
-                address: deployL2OutputParameters.l2ForkArbitrator
-                ,constructorArguments: [
+                address: deployL2OutputParameters.l2ForkArbitrator,
+                constructorArguments: [
                     deployL2OutputParameters.realityETH,
                     deployL2OutputParameters.l2ChainInfo,
                     deployL1OutputParameters.l1GlobalForkRequester,
-                    deployParameters.forkArbitratorDisputeFee
-                ]
+                    deployParameters.forkArbitratorDisputeFee,
+                ],
             },
         );
     } catch (error) {
@@ -84,28 +84,23 @@ async function main() {
         expect(error.message.toLowerCase().includes('already verified')).to.be.equal(true);
     }
 
-
     try {
-
         await hre.run(
             'verify:verify',
             {
-                address: deployL2OutputParameters.adjudicationFramework
-                ,constructorArguments: [
+                address: deployL2OutputParameters.adjudicationFramework,
+                constructorArguments: [
                     deployL2OutputParameters.realityETH,
                     deployParameters.adjudicationFrameworkDisputeFee,
                     deployL2OutputParameters.l2ForkArbitrator,
-                    deployL2OutputParameters.arbitrators
-                ]
+                    deployL2OutputParameters.arbitrators,
+                ],
             },
         );
     } catch (error) {
         console.log(error);
         expect(error.message.toLowerCase().includes('already verified')).to.be.equal(true);
     }
-
-    return;
-
 }
 
 main()
@@ -114,4 +109,3 @@ main()
         console.error(error);
         process.exit(1);
     });
-
