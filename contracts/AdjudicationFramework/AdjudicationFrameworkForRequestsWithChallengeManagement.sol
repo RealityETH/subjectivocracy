@@ -12,6 +12,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Requests} from "./Pull/Requests.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
 /*
 This contract sits between a Reality.eth instance and an Arbitrator.
 It manages a allowlist of arbitrators, and makes sure questions can be sent to an arbitrator on the allowlist.
@@ -22,6 +24,8 @@ To the normal Arbitrator contracts that does its arbitration jobs, it looks like
 */
 
 contract AdjudicationFramework is Requests {
+    using EnumerableSet for EnumerableSet.AddressSet;
+
     uint32 public constant REALITY_ETH_BOND_ARBITRATOR_ADD = 10000;
 
     uint256 public templateIdAddArbitrator;
@@ -94,7 +98,10 @@ contract AdjudicationFramework is Requests {
             "Wrong Proposition type"
         );
         address arbitrator = propositions[questionId].newArbitrator;
-        require(!contains(arbitrator), "Arbitrator already on allowlist");
+        require(
+            !arbitrators.contains(arbitrator),
+            "Arbitrator already on allowlist"
+        );
         require(
             realityETH.resultFor(questionId) == bytes32(uint256(1)),
             "Question did not return yes"
@@ -102,6 +109,6 @@ contract AdjudicationFramework is Requests {
         delete (propositions[questionId]);
 
         // NB They may still be in a frozen state because of some other proposition
-        _addToList(arbitrator);
+        arbitrators.add(arbitrator);
     }
 }

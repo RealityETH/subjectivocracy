@@ -216,15 +216,17 @@ contract AdjudicationIntegrationTest is Test {
             addArbitratorQID1
         );
 
-        assertTrue(adjudicationFramework1.contains(address(l2Arbitrator1)));
+        assertTrue(adjudicationFramework1.isArbitrator(address(l2Arbitrator1)));
     }
 
     function testInitialArbitrators() public {
         // Initial arbitrators from the contructor should be added
-        assertTrue(adjudicationFramework1.contains(initialArbitrator1));
-        assertTrue(adjudicationFramework1.contains(initialArbitrator2));
+        assertTrue(adjudicationFramework1.isArbitrator(initialArbitrator1));
+        assertTrue(adjudicationFramework1.isArbitrator(initialArbitrator2));
         // This arbitrator may be added in other tests by creating a proposition
-        assertFalse(adjudicationFramework1.contains(address(l2Arbitrator2)));
+        assertFalse(
+            adjudicationFramework1.isArbitrator(address(l2Arbitrator2))
+        );
     }
 
     function testContestedAddArbitrator() public {
@@ -548,11 +550,13 @@ contract AdjudicationIntegrationTest is Test {
             ),
             1
         );
-        assertTrue(adjudicationFramework1.contains(address(l2Arbitrator1)));
+        assertTrue(adjudicationFramework1.isArbitrator(address(l2Arbitrator1)));
         adjudicationFramework1.executeReplacementArbitratorFromAllowList(
             removalQuestionId
         );
-        assertFalse(adjudicationFramework1.contains(address(l2Arbitrator1)));
+        assertFalse(
+            adjudicationFramework1.isArbitrator(address(l2Arbitrator1))
+        );
         assertEq(
             adjudicationFramework1.countArbitratorFreezePropositions(
                 address(l2Arbitrator1)
@@ -642,7 +646,7 @@ contract AdjudicationIntegrationTest is Test {
             ),
             1
         );
-        assertTrue(adjudicationFramework1.contains(address(l2Arbitrator1)));
+        assertTrue(adjudicationFramework1.isArbitrator(address(l2Arbitrator1)));
 
         vm.expectRevert("Result was not 1");
         adjudicationFramework1.executeReplacementArbitratorFromAllowList(
@@ -651,7 +655,7 @@ contract AdjudicationIntegrationTest is Test {
 
         adjudicationFramework1.clearFailedProposition(removalQuestionId);
 
-        assertTrue(adjudicationFramework1.contains(address(l2Arbitrator1)));
+        assertTrue(adjudicationFramework1.isArbitrator(address(l2Arbitrator1)));
         assertEq(
             adjudicationFramework1.countArbitratorFreezePropositions(
                 address(l2Arbitrator1)

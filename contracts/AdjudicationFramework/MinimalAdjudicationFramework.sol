@@ -9,7 +9,7 @@ pragma solidity ^0.8.20;
 import {IRealityETH} from "./../lib/reality-eth/interfaces/IRealityETH.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {IterableList} from "./utils/IterableList.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 /*
 Minimal Adjudication framework every framework should implement
 Contains an iterableList of Arbitrators.
@@ -17,7 +17,10 @@ Arbitrators can be frozen by providing a bond and be removed by
 a realityETH question with forking as a final arbitration.
 */
 
-contract MinimalAdjudicationFramework is IterableList {
+contract MinimalAdjudicationFramework {
+    using EnumerableSet for EnumerableSet.AddressSet;
+
+    EnumerableSet.AddressSet internal arbitrators;
     /// @dev Error thrown when non-allowlisted actor tries to call a function
     error OnlyAllowlistedActor();
 
@@ -57,7 +60,7 @@ contract MinimalAdjudicationFramework is IterableList {
     IRealityETH public realityETH;
 
     modifier onlyArbitrator() {
-        if (!contains(msg.sender)) {
+        if (!arbitrators.contains(msg.sender)) {
             revert OnlyAllowlistedActor();
         }
         _;
@@ -92,7 +95,7 @@ contract MinimalAdjudicationFramework is IterableList {
 
         // Allowlist the initial arbitrators
         for (uint256 i = 0; i < _initialArbitrators.length; i++) {
-            _addToList(_initialArbitrators[i]);
+            arbitrators.add(_initialArbitrators[i]);
         }
     }
 
@@ -147,12 +150,12 @@ contract MinimalAdjudicationFramework is IterableList {
         bytes32 realityEthResult = realityETH.resultFor(questionId);
         require(realityEthResult == bytes32(uint256(1)), "Result was not 1");
 
-        _removeFromList(arbitratorToRemove);
+        arbitrators.remove(arbitratorToRemove);
         if (propositions[questionId].isFrozen) {
             countArbitratorFreezePropositions[arbitratorToRemove] -= 1;
         }
         if (newArbitrator != address(0)) {
-            _addToList(newArbitrator);
+            arbitrators.add(newArbitrator);
         }
         delete (propositions[questionId]);
     }
@@ -173,7 +176,7 @@ contract MinimalAdjudicationFramework is IterableList {
         address arbitrator = propositions[questionId].arbitratorToRemove;
 
         require(
-            contains(arbitrator),
+            arbitrators.contains(arbitrator),
             "Arbitrator not allowlisted" // Not allowlisted in the first place
         );
         require(
@@ -230,5 +233,9 @@ contract MinimalAdjudicationFramework is IterableList {
 
     function realitio() external view returns (address) {
         return address(realityETH);
+    }
+
+    function isArbitrator(address arbitrator) external view returns (bool) {
+        return arbitrators.contains(arbitrator);
     }
 }

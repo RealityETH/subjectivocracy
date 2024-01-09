@@ -13,6 +13,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {MinimalAdjudicationFramework} from "../MinimalAdjudicationFramework.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 /*
 This contract sits between a Reality.eth instance and an Arbitrator.
@@ -24,6 +25,8 @@ To the normal Arbitrator contracts that does its arbitration jobs, it looks like
 */
 
 contract Requests is MinimalAdjudicationFramework, BalanceHolder {
+    using EnumerableSet for EnumerableSet.AddressSet;
+
     event LogRequestArbitration(
         bytes32 indexed questionId,
         uint256 feePaid,
@@ -129,7 +132,9 @@ contract Requests is MinimalAdjudicationFramework, BalanceHolder {
         // The only time you can pick up a question that's already being arbitrated is if it's been removed from the allowlist
         if (questionArbitrations[questionId].arbitrator != address(0)) {
             require(
-                !contains(questionArbitrations[questionId].arbitrator),
+                !arbitrators.contains(
+                    questionArbitrations[questionId].arbitrator
+                ),
                 "Question under arbitration" // Question already taken, and the arbitrator who took it is still active
             );
 
@@ -152,7 +157,7 @@ contract Requests is MinimalAdjudicationFramework, BalanceHolder {
         address old_arbitrator = questionArbitrations[questionId].arbitrator;
         require(old_arbitrator != address(0), "No arbitrator to remove");
         require(
-            !contains(old_arbitrator),
+            !arbitrators.contains(old_arbitrator),
             "Arbitrator not removed" // Arbitrator must no longer be on the allowlist
         );
 
@@ -231,7 +236,10 @@ contract Requests is MinimalAdjudicationFramework, BalanceHolder {
     ) external {
         address arbitrator = questionArbitrations[questionId].arbitrator;
 
-        require(contains(arbitrator), "Arbitrator must be allowlisted");
+        require(
+            arbitrators.contains(arbitrator),
+            "Arbitrator must be allowlisted"
+        );
         require(
             countArbitratorFreezePropositions[arbitrator] == 0,
             "Arbitrator under dispute"

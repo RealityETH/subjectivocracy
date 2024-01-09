@@ -12,12 +12,15 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {MinimalAdjudicationFramework} from "./../MinimalAdjudicationFramework.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 /*
 This contract is an example implementation of price feeds using the backstop's arbitration framework.
 */
 
 contract Feeds is MinimalAdjudicationFramework {
+    using EnumerableSet for EnumerableSet.AddressSet;
+
     uint256 public constant INPUT_SIZE = 5;
 
     // Input struct from oracle price providers
@@ -87,19 +90,19 @@ contract Feeds is MinimalAdjudicationFramework {
         address token,
         uint256 deplay
     ) public view returns (uint256) {
-        address[] memory arbitrators = getAllListMembers();
-        uint256[] memory prices = new uint256[](arbitrators.length);
-        for (uint i = 0; i < arbitrators.length; i++) {
-            if (countArbitratorFreezePropositions[arbitrators[i]] > 0) {
+        uint256 arbitratorCount = arbitrators.length();
+        uint256[] memory prices = new uint256[](arbitratorCount);
+        for (uint i = 0; i < arbitratorCount; i++) {
+            address arbitrator = arbitrators.at(i);
+            if (countArbitratorFreezePropositions[arbitrator] > 0) {
                 continue;
             }
             uint256 lastEntry = 0;
             for (uint j = 0; j < INPUT_SIZE; j++) {
                 if (
-                    arbitratorInputs[token][arbitrators[i]][j].timestamp <
-                    arbitratorInputs[token][arbitrators[i]][lastEntry]
-                        .timestamp &&
-                    arbitratorInputs[token][arbitrators[i]][j].timestamp >
+                    arbitratorInputs[token][arbitrator][j].timestamp <
+                    arbitratorInputs[token][arbitrator][lastEntry].timestamp &&
+                    arbitratorInputs[token][arbitrator][j].timestamp >
                     block.timestamp - deplay
                 ) {
                     lastEntry = j;
@@ -108,8 +111,7 @@ contract Feeds is MinimalAdjudicationFramework {
                     break;
                 }
             }
-            prices[i] = arbitratorInputs[token][arbitrators[i]][lastEntry]
-                .price;
+            prices[i] = arbitratorInputs[token][arbitrator][lastEntry].price;
         }
 
         return calculateAvgerage(prices);
