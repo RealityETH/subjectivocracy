@@ -150,7 +150,7 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
         bridge.bridgeAsset{value: forkFee}(
             uint32(0),
             moneyBox,
-            forkFee, // TODO: Should this be 0 since we already sent the forkFee as msg.value?
+            forkFee, // must be equal to msg.value
             address(0), // Empty address for the native token
             true,
             permitData
