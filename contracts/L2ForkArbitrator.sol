@@ -23,6 +23,33 @@ we are in the 1 week period before a fork) the new one will be queued.
 // NB This doesn't implement IArbitrator because that requires slightly more functions than we need
 // TODO: Would be good to make a stripped-down IArbitrator that only has the essential functions
 contract L2ForkArbitrator is IBridgeMessageReceiver {
+    // @dev Error thrown when the arbitration fee is 0
+    error ArbitrationFeeMustBePositive();
+    // @dev Error thrown when the arbitration request has already been made
+    error ArbitrationAlreadyRequested();
+    // @dev Error thrown when the fork is already in progress over something else
+    error ForkInProgress();
+    // @dev Error thrown when the L2 bridge is not set
+    error L2BridgeNotSet();
+    // @dev Error thrown when the fork is not in progress
+    error QuestionNotForked();
+    // @dev Error thrown when status is not FORK_REQUESTED
+    error StatusNotForkRequested();
+    // @dev Error thrown when status is not FORK_REQUEST_FAILED
+    error StatusNotForkRequestFailed();
+    // @dev Error thrown when the fork is not in progress
+    error WrongStatus();
+    // @dev Error thrown when called with wrong network
+    error WrongNetwork();
+    // @dev Error thrown when called with wrong sender
+    error WrongSender();
+    // @dev Error thrown when called from the wrong bridge
+    error WrongBridge();
+    // @dev Error thrown when the fork is not in progress
+    error ForkNotInProgress();
+    // @dev Error thrown when contract is not awaiting activation
+    error NotAwaitingActivation();
+
     bool public isForkInProgress;
     IRealityETH public realitio;
 
@@ -83,12 +110,12 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
         uint256 maxPrevious
     ) external payable returns (bool) {
         uint256 arbitration_fee = getDisputeFee(questionId);
-        require(arbitration_fee > 0, "fee must be positive");
-
-        require(
-            arbitrationRequests[questionId].status == RequestStatus.NONE,
-            "Already requested"
-        );
+        if (arbitration_fee == 0) {
+            revert ArbitrationFeeMustBePositive();
+        }
+        if (arbitrationRequests[questionId].status != RequestStatus.NONE) {
+            revert ArbitrationAlreadyRequested();
+        }
 
         arbitrationRequests[questionId] = ArbitrationRequest(
             RequestStatus.QUEUED,
@@ -114,22 +141,29 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
     /// @dev Talks to the L1 ForkingManager asynchronously, and may fail.
     /// @param question_id The question in question
     function requestActivateFork(bytes32 question_id) public {
-        require(!isForkInProgress, "Already forking"); // Forking over something else
+        if (isForkInProgress) {
+            revert ForkInProgress(); // Forking over something else
+        }
 
         RequestStatus status = arbitrationRequests[question_id].status;
-        require(
-            status == RequestStatus.QUEUED ||
-                status == RequestStatus.FORK_REQUEST_FAILED,
-            "not awaiting activation"
-        );
+        if (
+            status != RequestStatus.QUEUED &&
+            status != RequestStatus.FORK_REQUEST_FAILED
+        ) {
+            revert NotAwaitingActivation();
+        }
         arbitrationRequests[question_id].status = RequestStatus.FORK_REQUESTED;
 
         uint256 forkFee = chainInfo.getForkFee();
         uint256 paid = arbitrationRequests[question_id].paid;
-        require(paid >= forkFee, "fee paid too low");
+        if (paid < forkFee) {
+            revert ArbitrationFeeMustBePositive();
+        }
 
         address l2Bridge = chainInfo.l2Bridge();
-        require(l2Bridge != address(0), "l2Bridge not set");
+        if (l2Bridge == address(0)) {
+            revert L2BridgeNotSet();
+        }
 
         IPolygonZkEVMBridge bridge = IPolygonZkEVMBridge(l2Bridge);
 
@@ -167,20 +201,24 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
         bytes memory _data
     ) external payable {
         address l2Bridge = chainInfo.l2Bridge();
-        require(msg.sender == l2Bridge, "Not our bridge");
-        require(_originNetwork == uint32(0), "Wrong network, WTF");
-        require(
-            _originAddress == address(l1GlobalForkRequester),
-            "Unexpected sender"
-        );
+        if (msg.sender != l2Bridge) {
+            revert WrongBridge();
+        }
+        if (_originNetwork != uint32(0)) {
+            revert WrongNetwork();
+        }
+        if (_originAddress != address(l1GlobalForkRequester)) {
+            revert WrongSender();
+        }
 
         bytes32 question_id = bytes32(_data);
         RequestStatus status = arbitrationRequests[question_id].status;
-        require(
-            status == RequestStatus.FORK_REQUESTED,
-            "not in fork-requested state"
-        );
-        require(isForkInProgress, "No fork in progress to clear");
+        if (status != RequestStatus.FORK_REQUESTED) {
+            revert WrongStatus();
+        }
+        if (!isForkInProgress) {
+            revert ForkNotInProgress();
+        }
 
         isForkInProgress = false;
         arbitrationRequests[question_id].status = RequestStatus
@@ -202,15 +240,14 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
     ) external {
         // Read from directory what the result was
         RequestStatus status = arbitrationRequests[question_id].status;
-        require(
-            status == RequestStatus.FORK_REQUESTED,
-            "not in fork-requested state"
-        );
-
-        require(
-            chainInfo.questionToChainID(false, address(this), question_id) > 0,
-            "Dispute not found in ChainInfo"
-        );
+        if (status != RequestStatus.FORK_REQUESTED) {
+            revert StatusNotForkRequested();
+        }
+        if (
+            chainInfo.questionToChainID(false, address(this), question_id) == 0
+        ) {
+            revert QuestionNotForked();
+        }
 
         // We get the fork result from the L2ChainInfo contract
         bytes32 answer = chainInfo.forkQuestionResults(
@@ -239,13 +276,14 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
     /// @param question_id The question in question
     function cancelArbitration(bytes32 question_id) external {
         // For simplicity we won't let you cancel until forking is sorted, as you might retry and keep failing for the same reason
-        require(!isForkInProgress, "Fork in progress");
+        if (isForkInProgress) {
+            revert ForkInProgress();
+        }
 
         RequestStatus status = arbitrationRequests[question_id].status;
-        require(
-            status == RequestStatus.FORK_REQUEST_FAILED,
-            "Not in fork-failed state"
-        );
+        if (status != RequestStatus.FORK_REQUEST_FAILED) {
+            revert StatusNotForkRequestFailed();
+        }
 
         address payable payer = arbitrationRequests[question_id].payer;
         realitio.cancelArbitration(question_id);

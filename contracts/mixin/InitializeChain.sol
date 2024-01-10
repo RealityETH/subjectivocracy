@@ -8,16 +8,24 @@ pragma solidity ^0.8.20;
 This contract uses the fact that after a fork the chainId changes and thereby detects forks*/
 
 contract InitializeChain {
+    /// @dev Error thrown when contract is expected to be called on a new fork
+    error NotOnNewFork();
+    /// @dev Error thrown when contract is expected not to be called on a new fork
+    error OnNewFork();
     uint256 public chainId;
 
     modifier onlyChainUninitialized() {
-        require(chainId != block.chainid, "Not on new fork");
+        if (chainId == block.chainid) {
+            revert NotOnNewFork();
+        }
         _;
         chainId = block.chainid;
     }
 
     modifier onlyChainInitialized() {
-        require(chainId == block.chainid, "On new fork");
+        if (chainId != block.chainid) {
+            revert OnNewFork();
+        }
         _;
     }
 

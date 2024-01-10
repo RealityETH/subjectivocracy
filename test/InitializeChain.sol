@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import {Test} from "forge-std/Test.sol";
 import {InitializeChainWrapper} from "./testcontract/InitializeChainWrapper.sol";
+import {InitializeChain} from "../contracts/mixin/InitializeChain.sol";
 
 contract InitializeChainWrapperTest is Test {
     InitializeChainWrapper public wrapper;
@@ -21,13 +22,8 @@ contract InitializeChainWrapperTest is Test {
         wrapper.onlyChainUninitializedWrapper(); // This should pass since it's the first TX after fork
 
         // Subsequent calls should fail
-        try wrapper.onlyChainUninitializedWrapper() {
-            fail(
-                "Should have reverted because it's not the first TX after fork."
-            );
-        } catch Error(string memory reason) {
-            assertEq(reason, "Not on new fork");
-        }
+        vm.expectRevert(InitializeChain.NotOnNewFork.selector);
+        wrapper.onlyChainUninitializedWrapper();
     }
 
     function testonlyChainInitialized() public {
@@ -38,11 +34,8 @@ contract InitializeChainWrapperTest is Test {
         vm.chainId(2);
 
         // This call should fail since it's the first TX after fork
-        try wrapper.onlyChainInitializedWrapper() {
-            fail("Should have reverted because it's the first TX after fork.");
-        } catch Error(string memory reason) {
-            assertEq(reason, "On new fork");
-        }
+        vm.expectRevert(InitializeChain.OnNewFork.selector);
+        wrapper.onlyChainInitializedWrapper();
 
         // Call a function with onlyChainUninitialized to update chainId
         wrapper.onlyChainUninitializedWrapper();
