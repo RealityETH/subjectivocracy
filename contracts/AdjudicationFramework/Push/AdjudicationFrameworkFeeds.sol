@@ -12,24 +12,25 @@ import {MinimalAdjudicationFramework} from "./../MinimalAdjudicationFramework.so
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 /*
-This contract is an example implementation of price feeds using the backstop's arbitration framework.
+This contract is an example contract to govern price feeds using the backstop's arbitration framework.
+The feed is stored as an _arbitrator and can be exchanged using the backstop forking method.
 */
+
+// Interface copied from here:
+// https://github.com/chronicleprotocol/OracleReader-Example/blob/main/src/IChronicle.sol
+
+interface IChronicle {
+    /// @notice Returns the oracle's current value.
+    /// @dev Reverts if no value set.
+    /// @return value The oracle's current value.
+    function read() external view returns (uint value);
+}
 
 contract AdjudicationFrameworkFeeds is MinimalAdjudicationFramework {
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    // each arbitrator can provide 5 inputs, before old inputs will be overwritten.
-    uint256 public constant INPUT_SIZE = 5;
-
-    // Input struct from oracle price providers
-    struct Input {
-        uint256 price;
-        uint256 timestamp;
-    }
-
-    // token => Arbitrator => inputNr % INPUT_SIZE => Input
-    mapping(address => mapping(address => mapping(uint256 => Input)))
-        public arbitratorInputs;
+    // @dev Error thrown when non-allowlisted actor tries to call a function
+    error OracleFrozen();
 
     /// @param _realityETH The reality.eth instance we adjudicate for
     /// @param _forkArbitrator The arbitrator contract that escalates to an L1 fork, used for our governance
@@ -37,108 +38,25 @@ contract AdjudicationFrameworkFeeds is MinimalAdjudicationFramework {
     constructor(
         address _realityETH,
         address _forkArbitrator,
-        address[] memory _initialArbitrators,
-        bool _allowMultipleModificationsAtOnce
+        address[] memory _initialArbitrators
     )
         MinimalAdjudicationFramework(
             _realityETH,
             _forkArbitrator,
             _initialArbitrators,
-            _allowMultipleModificationsAtOnce
+            true // replace method can be used to switch out arbitrators
         )
     {}
 
-    /**
-     @dev Allows an arbitrator to provide price feeds
-     @param tokens The tokens for which the arbitrator provides feeds
-        @param prices The prices for the tokens
-     */
-    function provideInput(
-        address[] calldata tokens,
-        uint256[] calldata prices
-    ) external onlyArbitrator {
-        for (uint256 i = 0; i < tokens.length; i++) {
-            uint256 lastEntry = INPUT_SIZE - 1;
-            for (uint j = 0; j < INPUT_SIZE; j++) {
-                if (
-                    arbitratorInputs[tokens[i]][msg.sender][j].timestamp >
-                    arbitratorInputs[tokens[i]][msg.sender][lastEntry].timestamp
-                ) {
-                    lastEntry = j;
-                } else {
-                    // we can break early, since entries are ordered by timestamp % INPUT_SIZE
-                    break;
-                }
-            }
-            arbitratorInputs[tokens[i]][msg.sender][
-                (lastEntry + 1) % INPUT_SIZE
-            ] = Input(prices[i], block.timestamp);
+    function read() public view returns (uint256) {
+        address oracle = getOracleContract();
+        if (countArbitratorFreezePropositions[oracle] > 0) {
+            revert OracleFrozen();
         }
+        return IChronicle(oracle).read();
     }
 
-    /** 
-    @dev Provides the latest price
-    @return the latest price
-     */
-    function getPrice(address token) external view returns (uint256) {
-        return getPriceConsideringDelay(token, 0);
-    }
-
-    /** 
-    @dev Provides the latest price considering a delay, that allows other to escalate and freeze wrong oracle inputs
-    @param token The token for which the price is requested
-    @param delay The delay in seconds between the price supply and consumption. This delay allows other to escalate and freeze wrong oracle inputs
-     */
-    function getPriceConsideringDelay(
-        address token,
-        uint256 delay
-    ) public view returns (uint256) {
-        uint256 arbitratorCount = _arbitrators.length();
-        uint256[] memory prices = new uint256[](arbitratorCount);
-        for (uint i = 0; i < arbitratorCount; i++) {
-            address arbitrator = _arbitrators.at(i);
-            if (countArbitratorFreezePropositions[arbitrator] > 0) {
-                continue;
-            }
-            uint256 lastEntry = 0;
-            for (uint j = 0; j < INPUT_SIZE; j++) {
-                if (
-                    arbitratorInputs[token][arbitrator][j].timestamp <
-                    arbitratorInputs[token][arbitrator][lastEntry].timestamp &&
-                    arbitratorInputs[token][arbitrator][j].timestamp >
-                    block.timestamp - delay
-                ) {
-                    lastEntry = j;
-                } else {
-                    // we can break early, since entries are ordered by timestamp % INPUT_SIZE
-                    break;
-                }
-            }
-            prices[i] = arbitratorInputs[token][arbitrator][lastEntry].price;
-        }
-
-        //Todo: can we also return the median?
-        return calculateAverage(prices);
-    }
-
-    /**
-    @dev Calculates the average of a list of prices
-    @param prices The prices used to calculate the average
-     */
-    function calculateAverage(
-        uint256[] memory prices
-    ) public pure returns (uint256) {
-        uint256 sum = 0;
-        uint256 count = 0;
-        for (uint i = 0; i < prices.length; i++) {
-            if (prices[i] != 0) {
-                sum += prices[i];
-                count++;
-            }
-        }
-        if (count == 0) {
-            return 0;
-        }
-        return sum / count;
+    function getOracleContract() public view returns (address) {
+        return _arbitrators.at(0);
     }
 }

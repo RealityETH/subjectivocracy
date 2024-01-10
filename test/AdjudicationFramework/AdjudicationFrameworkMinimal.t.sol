@@ -184,13 +184,10 @@ contract AdjudicationIntegrationTest is Test {
         // Create a question - from requestModificationOfArbitrators
         // For the setup we'll do this as an uncontested addition.
         // Contested cases should also be tested.
-        address[] memory arbitratorsToAdd = new address[](1);
-        arbitratorsToAdd[0] = address(l2Arbitrator1);
-        address[] memory arbitratorsToRemove = new address[](0);
         addArbitratorQID1 = adjudicationFramework1
             .requestModificationOfArbitrators(
-                arbitratorsToRemove,
-                arbitratorsToAdd
+                address(0),
+                address(l2Arbitrator1)
             );
         l2RealityEth.submitAnswer{value: 10000}(
             addArbitratorQID1,
@@ -274,7 +271,7 @@ contract AdjudicationIntegrationTest is Test {
         string
             memory removeLog = '{"title": "Should we remove arbitrator %s from the framework 0xfed866a553d106378b828a2e1effb8bed9c9dc28?", "type": "bool", "category": "adjudication", "lang": "en"}';
         string
-            memory replaceLog = '{"title": "Should we replace the arbitrators %s by the new arbitrators %s to the framework 0xfed866a553d106378b828a2e1effb8bed9c9dc28?", "type": "bool", "category": "adjudication", "lang": "en"}';
+            memory replaceLog = '{"title": "Should we replace the arbitrator %s by the new arbitrator %s to the framework 0xfed866a553d106378b828a2e1effb8bed9c9dc28?", "type": "bool", "category": "adjudication", "lang": "en"}';
 
         assertEq(
             abi.decode(entries[0].data, (string)),
@@ -294,17 +291,10 @@ contract AdjudicationIntegrationTest is Test {
     }
 
     function testrequestModificationOfArbitrators() public {
-        // Scenario 1: Add multiple arbitrators
-        address[] memory arbitratorsToAdd = new address[](2);
-        address[] memory arbitratorsToRemove = new address[](0);
-        arbitratorsToAdd[0] = address(0x1000);
-        arbitratorsToAdd[1] = address(0x1001);
+        // Scenario 1: Add 1 arbitrator
 
         bytes32 questionIdAddMultiple = adjudicationFramework1
-            .requestModificationOfArbitrators(
-                arbitratorsToRemove,
-                arbitratorsToAdd
-            );
+            .requestModificationOfArbitrators(address(0), address(0x1000));
         assertNotEq(
             questionIdAddMultiple,
             bytes32(0),
@@ -312,15 +302,9 @@ contract AdjudicationIntegrationTest is Test {
         );
 
         // Scenario 2: Remove an arbitrator
-        arbitratorsToRemove = new address[](1);
-        arbitratorsToRemove[0] = initialArbitrator1;
-        arbitratorsToAdd = new address[](0);
 
         bytes32 questionIdRemove = adjudicationFramework1
-            .requestModificationOfArbitrators(
-                arbitratorsToRemove,
-                arbitratorsToAdd
-            );
+            .requestModificationOfArbitrators(initialArbitrator1, address(0));
         assertNotEq(
             questionIdRemove,
             bytes32(0),
@@ -330,28 +314,22 @@ contract AdjudicationIntegrationTest is Test {
         // Scenario 3: Invalid case - twice the same arbitrators
         vm.expectRevert("question must not exist");
         adjudicationFramework1.requestModificationOfArbitrators(
-            arbitratorsToRemove,
-            arbitratorsToAdd
+            initialArbitrator1,
+            address(0)
         );
 
         // Scenario 4: Invalid case - No arbitrators to modify
         vm.expectRevert("No arbitrators to modify");
         adjudicationFramework1.requestModificationOfArbitrators(
-            new address[](0),
-            new address[](0)
+            address(0),
+            address(0)
         );
     }
     function testExecuteModificationArbitratorFromAllowList() public {
         // Add an arbitrator
-        address[] memory arbitratorsToAdd = new address[](1);
-        arbitratorsToAdd[0] = address(0x2000);
-        address[] memory arbitratorsToRemove = new address[](0);
 
         bytes32 questionIdAdd = adjudicationFramework1
-            .requestModificationOfArbitrators(
-                arbitratorsToRemove,
-                arbitratorsToAdd
-            );
+            .requestModificationOfArbitrators(address(0), address(0x2000));
         _simulateRealityEthAnswer(questionIdAdd, true); // Assuming this is a helper function to simulate the answer from RealityETH
 
         adjudicationFramework1.executeModificationArbitratorFromAllowList(
@@ -363,15 +341,8 @@ contract AdjudicationIntegrationTest is Test {
         );
 
         // Remove an arbitrator
-        arbitratorsToRemove = new address[](1);
-        arbitratorsToRemove[0] = address(0x2000);
-        arbitratorsToAdd = new address[](0);
-
         bytes32 questionIdRemove = adjudicationFramework1
-            .requestModificationOfArbitrators(
-                arbitratorsToRemove,
-                arbitratorsToAdd
-            );
+            .requestModificationOfArbitrators(address(0x2000), address(0));
         _simulateRealityEthAnswer(questionIdRemove, true);
 
         adjudicationFramework1.executeModificationArbitratorFromAllowList(
@@ -385,15 +356,9 @@ contract AdjudicationIntegrationTest is Test {
 
     function testFreezeArbitratorAndClearFailedProposition() public {
         // Freeze an arbitrator
-        address[] memory arbitratorsToRemove = new address[](1);
-        arbitratorsToRemove[0] = initialArbitrator1;
-        address[] memory arbitratorsToAdd = new address[](0);
 
         bytes32 questionId = adjudicationFramework1
-            .requestModificationOfArbitrators(
-                arbitratorsToRemove,
-                arbitratorsToAdd
-            );
+            .requestModificationOfArbitrators(initialArbitrator1, address(0));
 
         // set temp answer to allow freezeArbitrator() to be called
         uint256 tempAnswerInt = 1;
@@ -403,12 +368,11 @@ contract AdjudicationIntegrationTest is Test {
             0
         );
         vm.expectRevert("question must be finalized");
-        adjudicationFramework1.clearFailedProposition(questionId, 0);
+        adjudicationFramework1.clearFailedProposition(questionId);
 
         // Assume freezeArbitrator() will be called here with appropriate parameters
         adjudicationFramework1.freezeArbitrator(
             questionId,
-            0,
             new bytes32[](0),
             new address[](0),
             new uint256[](0),
@@ -418,7 +382,7 @@ contract AdjudicationIntegrationTest is Test {
         _simulateRealityEthAnswer(questionId, false);
 
         // Clear failed proposition
-        adjudicationFramework1.clearFailedProposition(questionId, 0);
+        adjudicationFramework1.clearFailedProposition(questionId);
         assertFalse(
             adjudicationFramework1.isArbitratorPropositionFrozen(questionId),
             "Failed to clear failed proposition"
@@ -429,20 +393,13 @@ contract AdjudicationIntegrationTest is Test {
         public
     {
         // Freeze an arbitrator
-        address[] memory arbitratorsToRemove = new address[](1);
-        arbitratorsToRemove[0] = initialArbitrator1;
-        address[] memory arbitratorsToAdd = new address[](0);
-
         bytes32 questionId = adjudicationFramework1
-            .requestModificationOfArbitrators(
-                arbitratorsToRemove,
-                arbitratorsToAdd
-            );
+            .requestModificationOfArbitrators(initialArbitrator1, address(0));
 
         _simulateRealityEthAnswer(questionId, true);
 
         // Clear failed proposition
         vm.expectRevert("Result was not 0");
-        adjudicationFramework1.clearFailedProposition(questionId, 0);
+        adjudicationFramework1.clearFailedProposition(questionId);
     }
 }

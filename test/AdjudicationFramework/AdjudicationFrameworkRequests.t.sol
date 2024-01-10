@@ -182,13 +182,10 @@ contract AdjudicationIntegrationTest is Test {
         // Create a question - from beginAddArbitratorToWhitelist
         // For the setup we'll do this as an uncontested addition.
         // Contested cases should also be tested.
-        address[] memory arbitratorsToAdd = new address[](1);
-        arbitratorsToAdd[0] = address(l2Arbitrator1);
-        address[] memory arbitratorsToRemove = new address[](0);
         addArbitratorQID1 = adjudicationFramework1
             .requestModificationOfArbitrators(
-                arbitratorsToRemove,
-                arbitratorsToAdd
+                address(0),
+                address(l2Arbitrator1)
             );
         l2RealityEth.submitAnswer{value: 10000}(
             addArbitratorQID1,
@@ -316,13 +313,10 @@ contract AdjudicationIntegrationTest is Test {
         );
 
         // now before we can complete this somebody challenges it
-        address[] memory arbitratorsToAdd = new address[](0);
-        address[] memory arbitratorsToRemove = new address[](1);
-        arbitratorsToRemove[0] = address(l2Arbitrator1);
         removalQuestionId = adjudicationFramework1
             .requestModificationOfArbitrators(
-                arbitratorsToRemove,
-                arbitratorsToAdd
+                address(l2Arbitrator1),
+                address(0)
             );
         l2RealityEth.submitAnswer{value: 10000}(
             removalQuestionId,
@@ -338,7 +332,6 @@ contract AdjudicationIntegrationTest is Test {
         vm.expectRevert("Bond too low to freeze");
         adjudicationFramework1.freezeArbitrator(
             removalQuestionId,
-            0,
             hashes,
             users,
             bonds,
@@ -354,7 +347,6 @@ contract AdjudicationIntegrationTest is Test {
         );
         adjudicationFramework1.freezeArbitrator(
             removalQuestionId,
-            0,
             hashes,
             users,
             bonds,
@@ -442,7 +434,7 @@ contract AdjudicationIntegrationTest is Test {
             ),
             uint256(1)
         );
-        adjudicationFramework1.clearFailedProposition(removalQuestionId, 0);
+        adjudicationFramework1.clearFailedProposition(removalQuestionId);
         assertEq(
             adjudicationFramework1.countArbitratorFreezePropositions(
                 address(l2Arbitrator1)
@@ -631,7 +623,7 @@ contract AdjudicationIntegrationTest is Test {
             removalQuestionId
         );
 
-        adjudicationFramework1.clearFailedProposition(removalQuestionId, 0);
+        adjudicationFramework1.clearFailedProposition(removalQuestionId);
 
         assertTrue(adjudicationFramework1.isArbitrator(address(l2Arbitrator1)));
         assertEq(

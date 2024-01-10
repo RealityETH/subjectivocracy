@@ -64,14 +64,13 @@ contract AdjudicationFrameworkRequests is
         uint256 _disputeFee,
         address _forkArbitrator,
         address[] memory _initialArbitrators,
-                bool _allowMultipleModificationsAtOnce
-
+        bool _allowReplacementModification
     )
         MinimalAdjudicationFramework(
             _realityETH,
             _forkArbitrator,
             _initialArbitrators,
-            _allowMultipleModificationsAtOnce
+            _allowReplacementModification
         )
     {
         dispute_fee = _disputeFee;
