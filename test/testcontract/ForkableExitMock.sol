@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.8.20;
 
-import "../../contracts/ForkableGlobalExitRoot.sol";
+import {ForkableGlobalExitRoot} from "../../contracts/ForkableGlobalExitRoot.sol";
 
 /**
  * Contract responsible for managing the exit roots across multiple networks

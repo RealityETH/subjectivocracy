@@ -16,7 +16,6 @@ import {RealityETH_v3_0} from "../contracts/lib/reality-eth/RealityETH-3.0.sol";
 import {AdjudicationFramework} from "../contracts/AdjudicationFramework.sol";
 
 import {L2ForkArbitrator} from "../contracts/L2ForkArbitrator.sol";
-import {L1GlobalChainInfoPublisher} from "../contracts/L1GlobalChainInfoPublisher.sol";
 import {L1GlobalForkRequester} from "../contracts/L1GlobalForkRequester.sol";
 import {L2ChainInfo} from "../contracts/L2ChainInfo.sol";
 

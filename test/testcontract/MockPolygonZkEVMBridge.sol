@@ -37,6 +37,7 @@ contract MockPolygonZkEVMBridge {
                 (originAddress, originNetwork, metadata)
             )
         );
+        /* solhint-disable custom-errors */
         require(success, "Call failed");
     }
 }

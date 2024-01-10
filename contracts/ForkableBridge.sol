@@ -6,7 +6,6 @@ import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfa
 import {TokenWrapped} from "@RealityETH/zkevm-contracts/contracts/lib/TokenWrapped.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IForkableBridge} from "./interfaces/IForkableBridge.sol";
-import {IForkonomicToken} from "./interfaces/IForkonomicToken.sol";
 import {ForkableStructure} from "./mixin/ForkableStructure.sol";
 import {BridgeAssetOperations} from "./lib/BridgeAssetOperations.sol";
 

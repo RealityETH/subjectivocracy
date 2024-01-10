@@ -4,9 +4,7 @@ import {Test} from "forge-std/Test.sol";
 import {ForkonomicToken} from "../contracts/ForkonomicToken.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC20Upgradeable.sol";
 import {IForkonomicToken} from "../contracts/interfaces/IForkonomicToken.sol";
-import {ForkableBridge} from "../contracts/ForkableBridge.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {Util} from "./utils/Util.sol";
 
 contract ForkonomicTokenTest is Test {
     ForkonomicToken public forkonomicToken;

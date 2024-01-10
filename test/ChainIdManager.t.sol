@@ -2,7 +2,6 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol"; // Hypothetical test library
 import {ChainIdManager} from "../contracts/ChainIdManager.sol"; // Path to the ChainIdManager contract
-import {Util} from "./utils/Util.sol"; // Hypothetical utilities for testing
 
 contract ChainIdManagerTest is Test {
     ChainIdManager public chainIdManager;
@@ -29,7 +28,7 @@ contract ChainIdManagerTest is Test {
         uint256 currentGas = gasleft();
         chainIdManager.denyListChainId(2);
         uint256 finalGas = gasleft();
-        assert(currentGas - finalGas >= chainIdManager.gasBurnAmount());
+        assert(currentGas - finalGas >= chainIdManager.GAS_BURN_AMOUNT());
 
         uint256 currentGas2 = gasleft();
         uint64[] memory newChainIds = new uint64[](6);
@@ -41,7 +40,7 @@ contract ChainIdManagerTest is Test {
         newChainIds[5] = 8;
         chainIdManager.denyListChainIds(newChainIds);
         uint256 finalGas2 = gasleft();
-        assert(currentGas2 - finalGas2 >= chainIdManager.gasBurnAmount() * 6);
+        assert(currentGas2 - finalGas2 >= chainIdManager.GAS_BURN_AMOUNT() * 6);
     }
 
     function testAddChainIds() public {
@@ -90,6 +89,8 @@ contract ChainIdManagerTest is Test {
         uint256 initialGasLeft = gasleft();
         chainIdManager.burnGas();
         uint256 finalGasLeft = gasleft();
-        assert(initialGasLeft - finalGasLeft >= chainIdManager.gasBurnAmount());
+        assert(
+            initialGasLeft - finalGasLeft >= chainIdManager.GAS_BURN_AMOUNT()
+        );
     }
 }
