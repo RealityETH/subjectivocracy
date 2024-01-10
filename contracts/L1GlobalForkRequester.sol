@@ -153,7 +153,7 @@ contract L1GlobalForkRequester {
         );
 
         if (doYesToken) {
-            uint newAmountToMigrate = amount -
+            uint256 newAmountToMigrate = amount -
                 failedRequests[token][requester][requestId].amountMigratedYes;
             failedRequests[yesToken][requester][requestId]
                 .amount += newAmountToMigrate;

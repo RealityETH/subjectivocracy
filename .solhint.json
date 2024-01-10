@@ -9,7 +9,6 @@
     "func-visibility": ["warn",{"ignoreConstructors":true}],
     "custom-errors": "off",
     "reason-string": "off",
-    "explicit-types": "off",
     "one-contract-per-file": "off"
   }
 }

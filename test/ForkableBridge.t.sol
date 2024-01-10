@@ -310,7 +310,7 @@ contract ForkableBridgeTest is Test {
         address forkableToken = forkableBridge.tokenInfoToWrappedToken(
             tokenInfoHash
         );
-        for (uint i = 0; i < 32; i++) {
+        for (uint256 i = 0; i < 32; i++) {
             depositTreeHashes[i] = forkableBridge.branch(i);
         }
         // initialize the child contracts to set the parent contract

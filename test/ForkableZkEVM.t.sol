@@ -124,7 +124,7 @@ contract ForkableZkEVMTest is Test {
         );
         bytes32 newStateRoot = keccak256(abi.encodePacked("newStateRoot"));
         bytes32[24] memory proof;
-        for (uint i = 0; i < 24; i++) {
+        for (uint256 i = 0; i < 24; i++) {
             proof[i] = bytes32(abi.encodePacked("proof", i));
         }
 
@@ -150,7 +150,7 @@ contract ForkableZkEVMTest is Test {
         forkableZkEVM.consolidatePendingState(10);
 
         bytes32[24] memory proof;
-        for (uint i = 0; i < 24; i++) {
+        for (uint256 i = 0; i < 24; i++) {
             proof[i] = bytes32("0x"); // Whatever initialization value you want
         }
 
