@@ -19,7 +19,7 @@ interface IChronicle {
     /// @notice Returns the oracle's current value.
     /// @dev Reverts if no value set.
     /// @return value The oracle's current value.
-    function read() external view returns (uint value);
+    function read() external view returns (uint256 value);
 }
 
 contract AdjudicationFrameworkFeeds is MinimalAdjudicationFramework {

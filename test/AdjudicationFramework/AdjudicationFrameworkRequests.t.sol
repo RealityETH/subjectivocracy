@@ -4,8 +4,6 @@ pragma solidity ^0.8.20;
 /* solhint-disable reentrancy */
 /* solhint-disable quotes */
 
-import {Vm} from "forge-std/Vm.sol";
-
 import {Test} from "forge-std/Test.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ForkableRealityETH_ERC20} from "../../contracts/ForkableRealityETH_ERC20.sol";
@@ -14,7 +12,6 @@ import {IRealityETH} from "../../contracts/lib/reality-eth/interfaces/IRealityET
 import {RealityETH_v3_0} from "../../contracts/lib/reality-eth/RealityETH-3.0.sol";
 import {Arbitrator} from "../../contracts/lib/reality-eth/Arbitrator.sol";
 import {L2ForkArbitrator} from "../../contracts/L2ForkArbitrator.sol";
-import {L1GlobalChainInfoPublisher} from "../../contracts/L1GlobalChainInfoPublisher.sol";
 import {L1GlobalForkRequester} from "../../contracts/L1GlobalForkRequester.sol";
 import {L2ChainInfo} from "../../contracts/L2ChainInfo.sol";
 import {MockPolygonZkEVMBridge} from "../testcontract/MockPolygonZkEVMBridge.sol";
