@@ -6,7 +6,6 @@ pragma solidity ^0.8.20;
 /* solhint-disable not-rely-on-time */
 
 import {IRealityETH} from "./../lib/reality-eth/interfaces/IRealityETH.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 

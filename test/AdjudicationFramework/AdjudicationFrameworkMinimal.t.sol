@@ -16,12 +16,10 @@ import {RealityETH_v3_0} from "../../contracts/lib/reality-eth/RealityETH-3.0.so
 import {AdjudicationFrameworkRequests} from "../../contracts/AdjudicationFramework/Pull/AdjudicationFrameworkRequests.sol";
 
 import {L2ForkArbitrator} from "../../contracts/L2ForkArbitrator.sol";
-import {L1GlobalChainInfoPublisher} from "../../contracts/L1GlobalChainInfoPublisher.sol";
 import {L1GlobalForkRequester} from "../../contracts/L1GlobalForkRequester.sol";
 import {L2ChainInfo} from "../../contracts/L2ChainInfo.sol";
 
 import {MockPolygonZkEVMBridge} from "../testcontract/MockPolygonZkEVMBridge.sol";
-import {MinimalAdjudicationFramework} from "../../contracts/AdjudicationFramework/MinimalAdjudicationFramework.sol";
 
 contract AdjudicationIntegrationTest is Test {
     Arbitrator public govArb;
