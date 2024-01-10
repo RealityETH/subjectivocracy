@@ -2,9 +2,14 @@
   "extends": "solhint:recommended",
   "plugins": ["prettier"],
   "rules": {
+    "no-unused-import": "error",
     "compiler-version": "off",
     "max-states-count": "off",
     "no-empty-blocks": "off",
-    "func-visibility": ["warn",{"ignoreConstructors":true}]
+    "func-visibility": ["warn",{"ignoreConstructors":true}],
+    "custom-errors": "off",
+    "reason-string": "off",
+    "explicit-types": "off",
+    "one-contract-per-file": "off"
   }
 }

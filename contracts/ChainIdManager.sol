@@ -4,10 +4,10 @@ pragma solidity ^0.8.20;
 // The ChainIdManager contract provides a list of new usable chainIds via the getNextUsableChainId function.
 // If a project uses one chainId, it can be added to the deny list and then no other project will use it.
 // The contract does not come with an owner, but anyone can add chainIds to the deny list.
-// It costs just gasBurnAmount to deny list a chainId.
+// It costs just GAS_BURN_AMOUNT to deny list a chainId.
 // The burnGas function introduces this cost to use up chainIds.
 // There are uint64(2**63=9.223372e+18) chainIds minus the publicly used chainIds available.
-// Using all of the chainIds would cost 9.223372e+18 * gasBurnAmount = 9.223372e+24 gas = 6.1489147e+17 blocks = 237226647377 years
+// Using all of the chainIds would cost 9.223372e+18 * GAS_BURN_AMOUNT = 9.223372e+24 gas = 6.1489147e+17 blocks = 237226647377 years
 
 contract ChainIdManager {
     // Counter for the number of Chain IDs
@@ -16,7 +16,7 @@ contract ChainIdManager {
     // they are anyone who is willing to pay the gas to use them.
     mapping(uint64 => bool) public deniedChainIds;
     // Fee to use up a chain ID
-    uint256 public immutable gasBurnAmount = 1000000;
+    uint256 public immutable GAS_BURN_AMOUNT = 1000000;
 
     constructor(uint64 _chainIdCounter) {
         chainIdCounter = _chainIdCounter;
@@ -55,11 +55,11 @@ contract ChainIdManager {
     }
 
     /**
-     * @dev Burns gasBurnAmount gas to incure a cost for everyone calling this function
+     * @dev Burns GAS_BURN_AMOUNT gas to incure a cost for everyone calling this function
      */
     function burnGas() public view {
         uint256 counter = 0;
-        uint256 _lowestLimit = gasleft() - gasBurnAmount;
+        uint256 _lowestLimit = gasleft() - GAS_BURN_AMOUNT;
         while (gasleft() > _lowestLimit) counter++;
     }
 }

@@ -3,11 +3,8 @@ pragma solidity ^0.8.20;
 /* solhint-disable not-rely-on-time */
 /* solhint-disable reentrancy */
 /* solhint-disable quotes */
-
-import {Vm} from "forge-std/Vm.sol";
-
+/* solhint-disable not-rely-on-time */
 import {Test} from "forge-std/Test.sol";
-import {Arbitrator} from "../contracts/lib/reality-eth/Arbitrator.sol";
 
 import {VerifierRollupHelperMock} from "@RealityETH/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol";
 import {IRealityETH} from "../contracts/lib/reality-eth/interfaces/IRealityETH.sol";
@@ -17,28 +14,16 @@ import {RealityETH_v3_0} from "../contracts/lib/reality-eth/RealityETH-3.0.sol";
 import {AdjudicationFramework} from "../contracts/AdjudicationFramework.sol";
 
 import {IForkableStructure} from "../contracts/interfaces/IForkableStructure.sol";
-import {L2ForkArbitrator} from "../contracts/L2ForkArbitrator.sol";
 import {L1GlobalChainInfoPublisher} from "../contracts/L1GlobalChainInfoPublisher.sol";
-import {L1GlobalForkRequester} from "../contracts/L1GlobalForkRequester.sol";
 import {L2ChainInfo} from "../contracts/L2ChainInfo.sol";
-
-import {MockPolygonZkEVMBridge} from "./testcontract/MockPolygonZkEVMBridge.sol";
-
-pragma solidity ^0.8.20;
-
-/* solhint-disable not-rely-on-time */
-
-import {Test} from "forge-std/Test.sol";
 import {ForkingManager} from "../contracts/ForkingManager.sol";
 import {ForkableBridge} from "../contracts/ForkableBridge.sol";
 import {ForkableZkEVM} from "../contracts/ForkableZkEVM.sol";
 import {ForkonomicToken} from "../contracts/ForkonomicToken.sol";
 import {ForkableGlobalExitRoot} from "../contracts/ForkableGlobalExitRoot.sol";
-import {IBasePolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
 import {IForkingManager} from "../contracts/interfaces/IForkingManager.sol";
 import {IVerifierRollup} from "@RealityETH/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
-import {PolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/inheritedMainContracts/PolygonZkEVMBridge.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC20Upgradeable.sol";
 import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";

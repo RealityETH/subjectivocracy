@@ -9,11 +9,8 @@ pragma solidity ^0.8.20;
 */
 
 import {IForkingManager} from "./interfaces/IForkingManager.sol";
-import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
-import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
 import {IForkonomicToken} from "./interfaces/IForkonomicToken.sol";
 import {IForkableBridge} from "./interfaces/IForkableBridge.sol";
-import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 
 import {MoneyBox} from "./mixin/MoneyBox.sol";
 import {CalculateMoneyBoxAddress} from "./lib/CalculateMoneyBoxAddress.sol";
