@@ -165,7 +165,8 @@ contract AdjudicationIntegrationTest is Test {
             address(l2RealityEth),
             123,
             address(l2ForkArbitrator),
-            initialArbitrators
+            initialArbitrators,
+            true
         );
 
         l2Arbitrator1 = new Arbitrator();

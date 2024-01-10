@@ -23,6 +23,8 @@ contract MinimalAdjudicationFramework {
     EnumerableSet.AddressSet internal _arbitrators;
     /// @dev Error thrown when non-allowlisted actor tries to call a function
     error OnlyAllowlistedActor();
+    /// @dev Error thrown when multiple modifications are requested at once
+    error NoMultipleModificationsAtOnce();
 
     // Iterable list contains list of allowlisted arbitrators
     uint256 public constant ARB_DISPUTE_TIMEOUT = 86400;
@@ -36,6 +38,8 @@ contract MinimalAdjudicationFramework {
     uint256 public templateIdRemoveArbitrator;
     uint256 public templateIdAddArbitrator;
     uint256 public templateIdReplaceArbitrator;
+
+    bool public allowMultipleModificationsAtOnce;
 
     // Contract used for requesting a fork in the L1 chain in remove propositions
     address public forkArbitrator;
@@ -64,11 +68,14 @@ contract MinimalAdjudicationFramework {
     /// @param _realityETH The reality.eth instance we adjudicate for
     /// @param _forkArbitrator The arbitrator contract that escalates to an L1 fork, used for our governance
     /// @param _initialArbitrators Arbitrator contracts we initially support
+    /// @param _allowMultipleModificationsAtOnce Whether to allow multiple modifications at once
     constructor(
         address _realityETH,
         address _forkArbitrator,
-        address[] memory _initialArbitrators
+        address[] memory _initialArbitrators,
+        bool _allowMultipleModificationsAtOnce
     ) {
+        allowMultipleModificationsAtOnce = _allowMultipleModificationsAtOnce;
         realityETH = IRealityETH(_realityETH);
         forkArbitrator = _forkArbitrator;
         // Create reality.eth templates for our add questions
@@ -119,16 +126,19 @@ contract MinimalAdjudicationFramework {
         if (arbitratorsToRemove.length == 0 && arbitratorsToAdd.length == 0) {
             revert("No arbitrators to modify");
         } else if (
-            arbitratorsToRemove.length == 0 && arbitratorsToAdd.length >= 1
+            arbitratorsToRemove.length == 0 && arbitratorsToAdd.length == 1
         ) {
             question = _arrayToString(arbitratorsToAdd);
             templateId = templateIdAddArbitrator;
         } else if (
-            arbitratorsToRemove.length >= 1 && arbitratorsToAdd.length == 0
+            arbitratorsToRemove.length == 1 && arbitratorsToAdd.length == 0
         ) {
             question = _arrayToString(arbitratorsToRemove);
             templateId = templateIdRemoveArbitrator;
         } else {
+            if(!allowMultipleModificationsAtOnce) {
+                revert NoMultipleModificationsAtOnce();
+            }
             question = string.concat(
                 _arrayToString(arbitratorsToRemove),
                 _arrayToString(arbitratorsToAdd)
@@ -160,14 +170,17 @@ contract MinimalAdjudicationFramework {
     function _arrayToString(
         address[] memory _array
     ) internal pure returns (string memory) {
-        string memory result = "[";
+        if (_array.length == 0) {
+            return "";
+        }
+        string memory result = "";
         for (uint256 i = 0; i < _array.length; i++) {
             result = string.concat(result, Strings.toHexString(_array[i]));
             if (i < _array.length - 1) {
                 result = string.concat(result, ", ");
             }
         }
-        result = string.concat(result, "]");
+        result = string.concat(result, "");
         return result;
     }
 
