@@ -7,6 +7,11 @@ pragma solidity ^0.8.20;
 import {Vm} from "forge-std/Vm.sol";
 
 import {Test} from "forge-std/Test.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ForkableRealityETH_ERC20} from "../../contracts/ForkableRealityETH_ERC20.sol";
+import {AdjudicationFrameworkRequests} from "../../contracts/AdjudicationFramework/Pull/AdjudicationFrameworkRequests.sol";
+import {IRealityETH} from "../../contracts/lib/reality-eth/interfaces/IRealityETH.sol";
+import {RealityETH_v3_0} from "../../contracts/lib/reality-eth/RealityETH-3.0.sol";
 import {Arbitrator} from "../../contracts/lib/reality-eth/Arbitrator.sol";
 import {L2ForkArbitrator} from "../../contracts/L2ForkArbitrator.sol";
 import {L1GlobalChainInfoPublisher} from "../../contracts/L1GlobalChainInfoPublisher.sol";
