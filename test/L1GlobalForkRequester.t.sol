@@ -269,6 +269,7 @@ contract L1GlobalForkRequesterTest is Test {
         );
         assertFalse(forkmanager.isForkingInitiated());
 
+        uint expectedTimestamp = block.timestamp;
         l1GlobalForkRequester.handlePayment(
             address(forkonomicToken),
             l2Requester,
@@ -279,7 +280,8 @@ contract L1GlobalForkRequesterTest is Test {
         (
             uint256 amount,
             uint256 amountRemainingY,
-            uint256 amountRemainingN
+            uint256 amountRemainingN,
+            uint256 timestamp
         ) = l1GlobalForkRequester.failedRequests(
                 address(forkonomicToken),
                 l2Requester,
@@ -288,6 +290,7 @@ contract L1GlobalForkRequesterTest is Test {
         assertEq(amount, fee);
         assertEq(amountRemainingY, 0);
         assertEq(amountRemainingN, 0);
+        assertEq(timestamp, expectedTimestamp);
     }
 
     function testHandleOtherRequestForksFirst() public {
@@ -342,7 +345,8 @@ contract L1GlobalForkRequesterTest is Test {
         (
             uint256 amount,
             uint256 amountRemainingY,
-            uint256 amountRemainingN
+            uint256 amountRemainingN,
+
         ) = l1GlobalForkRequester.failedRequests(
                 address(forkonomicToken),
                 l2Requester,
@@ -426,18 +430,25 @@ contract L1GlobalForkRequesterTest is Test {
             amount
         );
 
-        // Now we should be able to return the tokens on the child chain
+        vm.expectRevert(L1GlobalForkRequester.ReturnRequestTooEarly.selector);
         l1GlobalForkRequester.returnTokens(
             address(childToken1),
             l2Requester,
             requestId
         );
-        (uint256 amountChild1, , ) = l1GlobalForkRequester.failedRequests(
+        // Now we should be able to return the tokens on the child chain
+        skip(l1GlobalForkRequester.bufferTimeBeforeReturningToken() + 1);
+        l1GlobalForkRequester.returnTokens(
+            address(childToken1),
+            l2Requester,
+            requestId
+        );
+        (uint256 amountChild1, , , ) = l1GlobalForkRequester.failedRequests(
             childToken1,
             l2Requester,
             requestId
         );
-        (uint256 amountChild2, , ) = l1GlobalForkRequester.failedRequests(
+        (uint256 amountChild2, , , ) = l1GlobalForkRequester.failedRequests(
             childToken2,
             l2Requester,
             requestId

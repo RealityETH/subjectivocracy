@@ -29,7 +29,6 @@ contract L1GlobalChainInfoPublisher {
         IForkingManager forkingManager = IForkingManager(
             IForkableStructure(_bridge).forkmanager()
         );
-
         // If we passed an _ancestorForkingManager, crawl up and find that as our ancestor and send data for that over the current bridge.
         // We will refuse to send data about a forkingManager that isn't an ancestor of the one used by the bridge.
         // Normally we won't need to do this because we'll update L2ChainInfo as soon as there's a fork

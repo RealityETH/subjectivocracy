@@ -38,6 +38,8 @@ interface IForkingManager is IForkableStructure {
 
     function arbitrationFee() external returns (uint256);
 
+    function forkPreparationTime() external returns (uint256);
+
     function disputeData()
         external
         returns (bool isL1, address disputeContract, bytes32 disputeContent);

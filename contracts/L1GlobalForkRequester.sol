@@ -28,11 +28,18 @@ contract L1GlobalForkRequester {
     error BridgeForkManagerMismatch();
     /// @dev Error thrown when the forkonomic token and the forkmanager are not related
     error ForkonomicTokenMisMatch();
+    /// @dev Error thrown when returning of funds is requested too early
+    error ReturnRequestTooEarly();
+
+    // The following buffer time is required to ensure that forked tokens can be used to pay for the arbitration fee
+    // before they are returned by the user
+    uint256 public bufferTimeBeforeReturningToken = 1 days;
 
     struct FailedForkRequest {
         uint256 amount;
         uint256 amountMigratedYes;
         uint256 amountMigratedNo;
+        uint256 timestampOfRequest;
     }
 
     // Token => Beneficiary => ID => FailedForkRequest
@@ -108,6 +115,8 @@ contract L1GlobalForkRequester {
             // If the fork has already happened we may have to split them first and do this twice.
             failedRequests[token][beneficiary][requestId]
                 .amount += transferredBalance;
+            failedRequests[token][beneficiary][requestId]
+                .timestampOfRequest = block.timestamp;
         }
     }
 
@@ -183,6 +192,19 @@ contract L1GlobalForkRequester {
         IForkingManager forkingManager = IForkingManager(
             IForkonomicToken(token).forkmanager()
         );
+
+        // The following time buffer ensures that even if the fork is delayed due to another forking request,
+        // the tokens can be used for a fork request before they are returnable
+        if (
+            forkingManager.forkPreparationTime() +
+                failedRequests[token][beneficiary][requestId]
+                    .timestampOfRequest +
+                bufferTimeBeforeReturningToken >
+            block.timestamp
+        ) {
+            revert ReturnRequestTooEarly();
+        }
+
         IForkableBridge bridge = IForkableBridge(forkingManager.bridge());
         if (
             failedRequests[token][beneficiary][requestId].amountMigratedNo !=
