@@ -30,7 +30,7 @@ contract ForkableStructure is IForkableStructure, Initializable {
         if (children[0] == address(0x0)) {
             revert OnlyAfterForking();
         }
-        // The following line is not needed, as both children are created 
+        // The following line is not needed, as both children are created
         // simultaniously
         // if (children[1] == address(0x0)) {
         //     revert OnlyAfterForking();

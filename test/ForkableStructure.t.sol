@@ -83,7 +83,7 @@ contract ForkStructureTest is Test {
         );
     }
 
-    function testModifiers() public{
+    function testModifiers() public {
         forkableStructureImplementation = address(
             new ForkableStructureWrapper()
         );
@@ -103,7 +103,7 @@ contract ForkStructureTest is Test {
         forkStructure.onlyAfterForkingTesting();
 
         forkStructure.createChildren();
-        
+
         vm.expectRevert(IForkableStructure.NoChangesAfterForking.selector);
         forkStructure.onlyBeforeForkingTesting();
         forkStructure.onlyAfterForkingTesting();

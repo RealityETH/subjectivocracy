@@ -15,7 +15,9 @@ contract CreateChildrenTest is Test {
     address public implementation = address(new CreateChildrenWrapper());
     // Deploy the test contract before running tests
     constructor() {
-        testContract = CreateChildrenWrapper(address(new TransparentUpgradeableProxy(implementation, admin, "")));
+        testContract = CreateChildrenWrapper(
+            address(new TransparentUpgradeableProxy(implementation, admin, ""))
+        );
     }
 
     // Test case to check if the implementation address is correctly set
@@ -44,7 +46,7 @@ contract CreateChildrenTest is Test {
             ),
             implementation
         );
-         assertEq(
+        assertEq(
             CreateChildrenWrapper(child1).getImplementation(),
             implementation
         );
@@ -53,10 +55,7 @@ contract CreateChildrenTest is Test {
             Util.bytesToAddress(vm.load(address(child1), Util._ADMIN_SLOT)),
             admin
         );
-        assertEq(
-            CreateChildrenWrapper(child1).getAdmin(),
-            admin
-        );
+        assertEq(CreateChildrenWrapper(child1).getAdmin(), admin);
 
         assertEq(
             Util.bytesToAddress(

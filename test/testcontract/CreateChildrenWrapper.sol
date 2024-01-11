@@ -4,10 +4,9 @@ pragma solidity ^0.8.20;
 // Import the library you want to test
 import {CreateChildren} from "../../contracts/lib/CreateChildren.sol";
 
-contract CreateChildrenWrapper  {
+contract CreateChildrenWrapper {
     // Constructor to set initial values in storage slots
-    constructor(
-    )  {}
+    constructor() {}
 
     // Function to get the current implementation address for testing purposes
     function getImplementation() external view returns (address) {
