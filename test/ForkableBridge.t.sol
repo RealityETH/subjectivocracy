@@ -844,5 +844,27 @@ contract ForkableBridgeWrapperTest is Test {
         ForkableBridgeWrapper(child1).setAndCheckClaimed(index);
         vm.expectRevert(selector);
         ForkableBridgeWrapper(child2).setAndCheckClaimed(index);
+
+        // check that the _verify function within PolygonZkEVMBridge calls really
+        // the _setAndCheckClaimed function of the ForkableBridge contract
+        // and not the _setAndCheckClaimed function of the PolygonZkEVMBridge contract
+        bytes32[32] memory smtProof;
+        for(uint256 i = 0; i < 32; i++) {
+            smtProof[i] = forkableBridge.branch(i);
+        }
+        vm.expectRevert(selector);
+        // forkableBridgeWrapper.claimAsset will call the PolygonZkEVMBridge.claimAsset function
+        ForkableBridgeWrapper(child1).claimAsset(
+            smtProof,
+            uint32(index),
+            bytes32(0),
+            bytes32(0),
+            uint32(0),
+            address(0x1),
+            uint32(1),
+            address(0),
+            uint256(1),
+            bytes("0x")
+        );
     }
 }
