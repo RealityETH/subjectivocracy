@@ -17,9 +17,9 @@ contract ForkonomicToken is
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     /// @dev Mapping that stores burned amounts
-    /// address The address of the token owner
-    /// bool indicating whether the first or second child was burnt
-    /// uint256 The amount of burned tokens
+    /// 1st parameter: address The address of the token owner
+    /// 2nd parameter: bool indicating whether the first or second child was burnt
+    /// 3rd parameter: uint256 The amount of burned tokens
     mapping(address => mapping(bool => uint256)) public childTokenAllowances;
 
     /// @inheritdoc IForkonomicToken
@@ -53,6 +53,7 @@ contract ForkonomicToken is
         return _createChildren();
     }
 
+    /// @inheritdoc IForkonomicToken
     function splitTokenAndMintOneChild(
         uint256 amount,
         bool firstChild,
@@ -82,8 +83,7 @@ contract ForkonomicToken is
         childTokenAllowances[msg.sender][true] += amount;
     }
 
-    /// @dev Allows anyone to split the tokens from the parent contract into the tokens of the children
-    /// @param amount The amount of tokens to split
+    /// @inheritdoc IForkonomicToken
     function splitTokensIntoChildTokens(uint256 amount) external {
         splitTokenAndMintOneChild(amount, true, false);
         splitTokenAndMintOneChild(amount, false, true);

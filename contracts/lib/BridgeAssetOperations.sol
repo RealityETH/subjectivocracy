@@ -8,7 +8,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 library BridgeAssetOperations {
-    // @dev Error thrown when non-forkable token is intended to be used, but it is not forkable
+    // @dev Error thrown when forkable token is intended to be used, but it is not forkable
     error TokenNotForkable();
     // @dev Error thrown when token is not issued before
     error TokenNotIssuedBefore();

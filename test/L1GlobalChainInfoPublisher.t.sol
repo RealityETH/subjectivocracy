@@ -1,9 +1,7 @@
 pragma solidity ^0.8.20;
 
-/* solhint-disable not-rely-on-time */
 /* solhint-disable reentrancy */
 /* solhint-disable quotes */
-/* solhint-disable not-rely-on-time */
 import {Test} from "forge-std/Test.sol";
 
 import {VerifierRollupHelperMock} from "@RealityETH/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol";
@@ -96,10 +94,6 @@ contract L1GlobalChainInfoPublisherTest is Test {
         });
 
     event Transfer(address indexed from, address indexed to, uint256 tokenId);
-
-    function bytesToAddress(bytes32 b) public pure returns (address) {
-        return address(uint160(uint256(b)));
-    }
 
     function setUp() public {
         bridgeImplementation = address(new ForkableBridge());
