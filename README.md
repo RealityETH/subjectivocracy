@@ -113,3 +113,10 @@ run tests:
 ```
 forge test
 ```
+
+run coverage tools:
+```
+forge coverage --ir-minimum --report lcov
+genhtml -o report  lcov.info 
+open index.html in browser
+```

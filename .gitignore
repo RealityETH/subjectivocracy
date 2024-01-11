@@ -41,4 +41,6 @@ artifacts/*
 cache_hardhat/
 .openzeppelin/
 deployment/deploy_output.json
+report
+lcov.info
 
