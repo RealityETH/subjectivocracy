@@ -849,7 +849,7 @@ contract ForkableBridgeWrapperTest is Test {
         // the _setAndCheckClaimed function of the ForkableBridge contract
         // and not the _setAndCheckClaimed function of the PolygonZkEVMBridge contract
         bytes32[32] memory smtProof;
-        for(uint256 i = 0; i < 32; i++) {
+        for (uint256 i = 0; i < 32; i++) {
             smtProof[i] = forkableBridge.branch(i);
         }
         vm.expectRevert(selector);
