@@ -74,7 +74,6 @@ contract ForkonomicToken is
         );
     }
 
-
     /// @inheritdoc IForkonomicToken
     function splitTokensIntoChildTokens(uint256 amount) external {
         splitTokenAndMintOneChild(amount, true, false);
