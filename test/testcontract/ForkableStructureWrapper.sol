@@ -17,4 +17,12 @@ contract ForkableStructureWrapper is ForkableStructure {
     function setChild(uint256 index, address child) public {
         children[index] = child;
     }
+
+    function onlyBeforeForkingTesting() public view onlyBeforeForking {}
+
+    function onlyAfterForkingTesting() public view onlyAfterForking {}
+
+    function onlyParentContractTesting() public view onlyParent {}
+
+    function onlyForkManagerTesting() public view onlyForkManger {}
 }

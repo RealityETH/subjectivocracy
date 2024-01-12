@@ -35,7 +35,10 @@ library CreateChildren {
         return StorageSlot.getAddressSlot(_ADMIN_SLOT).value;
     }
 
-    /// @dev Internal function to create the children contracts.
+    /**
+     * @dev function to create the children contracts.
+     * returns the addresses of the two children
+     */
     function createChildren() public returns (address child1, address child2) {
         address implementation = getImplementation();
         address admin = getAdmin();

@@ -4,6 +4,7 @@ import {Test} from "forge-std/Test.sol";
 import {ForkableStructureWrapper} from "./testcontract/ForkableStructureWrapper.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {Util} from "./utils/Util.sol";
+import {IForkableStructure} from "../contracts/interfaces/IForkableStructure.sol";
 
 contract ForkStructureTest is Test {
     bytes32 internal constant _IMPLEMENTATION_SLOT =
@@ -80,5 +81,43 @@ contract ForkStructureTest is Test {
             Util.bytesToAddress(vm.load(address(child2), _ADMIN_SLOT)),
             admin
         );
+    }
+
+    function testModifiers() public {
+        forkableStructureImplementation = address(
+            new ForkableStructureWrapper()
+        );
+        forkStructure = ForkableStructureWrapper(
+            address(
+                new TransparentUpgradeableProxy(
+                    forkableStructureImplementation,
+                    admin,
+                    ""
+                )
+            )
+        );
+        forkStructure.initialize(forkmanager, parentContract);
+
+        forkStructure.onlyBeforeForkingTesting();
+        vm.expectRevert(IForkableStructure.OnlyAfterForking.selector);
+        forkStructure.onlyAfterForkingTesting();
+
+        forkStructure.createChildren();
+
+        vm.expectRevert(IForkableStructure.NoChangesAfterForking.selector);
+        forkStructure.onlyBeforeForkingTesting();
+        forkStructure.onlyAfterForkingTesting();
+
+        vm.expectRevert(IForkableStructure.OnlyParentIsAllowed.selector);
+        forkStructure.onlyParentContractTesting();
+
+        vm.expectRevert(IForkableStructure.OnlyForkManagerIsAllowed.selector);
+        forkStructure.onlyForkManagerTesting();
+
+        vm.prank(forkStructure.forkmanager());
+        forkStructure.onlyForkManagerTesting();
+
+        vm.prank(forkStructure.parentContract());
+        forkStructure.onlyParentContractTesting();
     }
 }

@@ -3,12 +3,14 @@
   "plugins": ["prettier"],
   "rules": {
     "no-unused-import": "error",
+    "no-global-import": "error",
+    "func-visibility": ["error",{"ignoreConstructors":true}],
     "compiler-version": "off",
     "max-states-count": "off",
     "no-empty-blocks": "off",
-    "func-visibility": ["warn",{"ignoreConstructors":true}],
     "custom-errors": "off",
     "reason-string": "off",
+    "not-rely-on-time": "off",
     "one-contract-per-file": "off"
   }
 }

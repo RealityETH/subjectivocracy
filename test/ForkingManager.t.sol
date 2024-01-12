@@ -19,6 +19,7 @@ import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IP
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ChainIdManager} from "../contracts/ChainIdManager.sol";
 import {ForkableZkEVM} from "../contracts/ForkableZkEVM.sol";
+import {Util} from "./utils/Util.sol";
 
 contract ForkingManagerTest is Test {
     ForkableBridge public bridge;
@@ -85,10 +86,6 @@ contract ForkingManagerTest is Test {
         });
 
     event Transfer(address indexed from, address indexed to, uint256 tokenId);
-
-    function bytesToAddress(bytes32 b) public pure returns (address) {
-        return address(uint160(uint256(b)));
-    }
 
     function setUp() public {
         bridgeImplementation = address(new ForkableBridge());
@@ -282,13 +279,13 @@ contract ForkingManagerTest is Test {
 
         // Assert that the fork managers implementation match the ones we provided
         assertEq(
-            bytesToAddress(
+            Util.bytesToAddress(
                 vm.load(address(childForkmanager1), _IMPLEMENTATION_SLOT)
             ),
             forkmanagerImplementation
         );
         assertEq(
-            bytesToAddress(
+            Util.bytesToAddress(
                 vm.load(address(childForkmanager2), _IMPLEMENTATION_SLOT)
             ),
             forkmanagerImplementation
@@ -300,13 +297,13 @@ contract ForkingManagerTest is Test {
 
             // Assert that the bridges match the ones we provided
             assertEq(
-                bytesToAddress(
+                Util.bytesToAddress(
                     vm.load(address(childBridge1), _IMPLEMENTATION_SLOT)
                 ),
                 bridgeImplementation
             );
             assertEq(
-                bytesToAddress(
+                Util.bytesToAddress(
                     vm.load(address(childBridge2), _IMPLEMENTATION_SLOT)
                 ),
                 bridgeImplementation
@@ -318,13 +315,13 @@ contract ForkingManagerTest is Test {
 
             // Assert that the ZkEVM contracts match the ones we provided
             assertEq(
-                bytesToAddress(
+                Util.bytesToAddress(
                     vm.load(address(childZkevm1), _IMPLEMENTATION_SLOT)
                 ),
                 zkevmImplementation
             );
             assertEq(
-                bytesToAddress(
+                Util.bytesToAddress(
                     vm.load(address(childZkevm2), _IMPLEMENTATION_SLOT)
                 ),
                 zkevmImplementation
@@ -358,7 +355,7 @@ contract ForkingManagerTest is Test {
 
             // Assert that the forkonomic tokens match the ones we provided
             assertEq(
-                bytesToAddress(
+                Util.bytesToAddress(
                     vm.load(
                         address(childForkonomicToken1),
                         _IMPLEMENTATION_SLOT
@@ -367,7 +364,7 @@ contract ForkingManagerTest is Test {
                 forkonomicTokenImplementation
             );
             assertEq(
-                bytesToAddress(
+                Util.bytesToAddress(
                     vm.load(
                         address(childForkonomicToken2),
                         _IMPLEMENTATION_SLOT
@@ -385,13 +382,13 @@ contract ForkingManagerTest is Test {
 
             // Assert that the forkonomic tokens match the ones we provided
             assertEq(
-                bytesToAddress(
+                Util.bytesToAddress(
                     vm.load(address(childGlobalExitRoot1), _IMPLEMENTATION_SLOT)
                 ),
                 globalExitRootImplementation
             );
             assertEq(
-                bytesToAddress(
+                Util.bytesToAddress(
                     vm.load(address(childGlobalExitRoot2), _IMPLEMENTATION_SLOT)
                 ),
                 globalExitRootImplementation
@@ -433,13 +430,13 @@ contract ForkingManagerTest is Test {
 
         // Assert that the fork managers implementation match the ones we provided
         assertEq(
-            bytesToAddress(
+            Util.bytesToAddress(
                 vm.load(address(childForkmanager1), _IMPLEMENTATION_SLOT)
             ),
             forkmanagerImplementation
         );
         assertEq(
-            bytesToAddress(
+            Util.bytesToAddress(
                 vm.load(address(childForkmanager2), _IMPLEMENTATION_SLOT)
             ),
             forkmanagerImplementation
@@ -451,13 +448,13 @@ contract ForkingManagerTest is Test {
 
             // Assert that the bridges match the ones we provided
             assertEq(
-                bytesToAddress(
+                Util.bytesToAddress(
                     vm.load(address(childBridge1), _IMPLEMENTATION_SLOT)
                 ),
                 bridgeImplementation
             );
             assertEq(
-                bytesToAddress(
+                Util.bytesToAddress(
                     vm.load(address(childBridge2), _IMPLEMENTATION_SLOT)
                 ),
                 bridgeImplementation
@@ -469,13 +466,13 @@ contract ForkingManagerTest is Test {
 
             // Assert that the ZkEVM contracts match the ones we provided
             assertEq(
-                bytesToAddress(
+                Util.bytesToAddress(
                     vm.load(address(childZkevm1), _IMPLEMENTATION_SLOT)
                 ),
                 zkevmImplementation
             );
             assertEq(
-                bytesToAddress(
+                Util.bytesToAddress(
                     vm.load(address(childZkevm2), _IMPLEMENTATION_SLOT)
                 ),
                 zkevmImplementation
@@ -509,7 +506,7 @@ contract ForkingManagerTest is Test {
 
             // Assert that the forkonomic tokens match the ones we provided
             assertEq(
-                bytesToAddress(
+                Util.bytesToAddress(
                     vm.load(
                         address(childForkonomicToken1),
                         _IMPLEMENTATION_SLOT
@@ -518,7 +515,7 @@ contract ForkingManagerTest is Test {
                 forkonomicTokenImplementation
             );
             assertEq(
-                bytesToAddress(
+                Util.bytesToAddress(
                     vm.load(
                         address(childForkonomicToken2),
                         _IMPLEMENTATION_SLOT
@@ -536,13 +533,13 @@ contract ForkingManagerTest is Test {
 
             // Assert that the forkonomic tokens match the ones we provided
             assertEq(
-                bytesToAddress(
+                Util.bytesToAddress(
                     vm.load(address(childGlobalExitRoot1), _IMPLEMENTATION_SLOT)
                 ),
                 globalExitRootImplementation
             );
             assertEq(
-                bytesToAddress(
+                Util.bytesToAddress(
                     vm.load(address(childGlobalExitRoot2), _IMPLEMENTATION_SLOT)
                 ),
                 globalExitRootImplementation

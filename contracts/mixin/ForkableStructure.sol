@@ -9,12 +9,14 @@ contract ForkableStructure is IForkableStructure, Initializable {
     // The forkmanager is the only one who can clone the instances and create children
     address public forkmanager;
 
-    // The parent contract is the contract that was holding tokens or logic before the most recent fork
+    // The parent contract is the contract that was creating this contract during the most recent fork
     address public parentContract;
 
     // The children are the two instances that are created during the fork
     // Actually an array like this: address[] public children = new address[](2) would be the natural fit,
     // but this would make the initialization more complex due to proxy construction.
+    // children[0] stores the first child
+    // children[1] stores the second child
     mapping(uint256 => address) public children;
 
     modifier onlyBeforeForking() {
@@ -28,9 +30,11 @@ contract ForkableStructure is IForkableStructure, Initializable {
         if (children[0] == address(0x0)) {
             revert OnlyAfterForking();
         }
-        if (children[1] == address(0x0)) {
-            revert OnlyAfterForking();
-        }
+        // The following line is not needed, as both children are created
+        // simultaniously
+        // if (children[1] == address(0x0)) {
+        //     revert OnlyAfterForking();
+        // }
         _;
     }
 
@@ -49,7 +53,7 @@ contract ForkableStructure is IForkableStructure, Initializable {
     }
 
     /**
-     * @dev Initializes the contract.
+     * @dev Initializes the contract
      * @param _forkmanager The address of the forkmanager contract.
      * @param _parentContract The address of the parent contract.
      */

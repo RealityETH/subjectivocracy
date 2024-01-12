@@ -181,10 +181,11 @@ contract ForkableBridge is
     /**
      * @dev Allows aynone to take out their forkonomic tokens
      * and send them to the children-bridge contracts
-     * Notice that forkonomic tokens are special, as they their main contract
-     * is on L1, but they are still forkable tokens, as their contract is forked as well.
-     * We allow to send tokens only to one child, just in case the one child contract
+     * Notice that forkonomic tokens are special, as their main contract
+     * is on L1, but they are still forkable tokens, as their contract is forkable as well.
+     * We allow to send tokens to one child, just in case the other child contract
      * was updated shortly after the fork and contains an error (e.g. reverts on sending)
+     * But usually a users would want to sent the tokens to both children.
      * @param amount Amount of tokens to be sent to the children-bridge contracts
      * @param useFirstChild boolean indicating for which child the operation should be run
      * @param useChildTokenAllowance boolean indicating if the child token allowance (previously burned tokens) should be used
