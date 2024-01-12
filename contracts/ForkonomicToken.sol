@@ -74,14 +74,6 @@ contract ForkonomicToken is
         );
     }
 
-    /// @dev Allows anyone to prepare the splitting of tokens
-    /// by burning them
-    /// @param amount The amount of tokens to burn
-    function prepareSplittingTokens(uint256 amount) public onlyAfterForking {
-        _burn(msg.sender, amount);
-        childTokenAllowances[msg.sender][false] += amount;
-        childTokenAllowances[msg.sender][true] += amount;
-    }
 
     /// @inheritdoc IForkonomicToken
     function splitTokensIntoChildTokens(uint256 amount) external {
