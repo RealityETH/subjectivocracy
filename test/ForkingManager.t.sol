@@ -144,7 +144,7 @@ contract ForkingManagerTest is Test {
             address(forkmanager),
             address(0x0),
             networkID,
-            globalExitMock,
+            globalExitRoot,
             address(zkevm),
             address(forkonomicToken),
             false,
@@ -696,6 +696,43 @@ contract ForkingManagerTest is Test {
         assertEq(
             IPolygonZkEVMGlobalExitRoot(globalExitRoot).lastRollupExitRoot(),
             IPolygonZkEVMGlobalExitRoot(child2).lastRollupExitRoot()
+        );
+    }
+
+    function testSetsCorrectDepositTreeRoot() public {
+        uint256 depositAmount = 100;
+
+        // Mint and approve the arbitration fee for the test contract
+        forkonomicToken.approve(address(forkmanager), arbitrationFee);
+        vm.prank(address(this));
+        forkonomicToken.mint(address(this), arbitrationFee + depositAmount);
+
+        // Do a deposit to get a proper deposit tree
+        forkonomicToken.approve(address(bridge), depositAmount);
+        bridge.bridgeAsset(
+            1,
+            address(0x123),
+            depositAmount,
+            address(forkonomicToken),
+            false, // don't update the deposit tree, since we want to check that this happens during create children
+            ""
+        );
+        // Call the initiateFork function to create a new fork
+        uint256 testTimestamp = 12355234;
+        vm.warp(testTimestamp);
+        forkmanager.initiateFork(disputeData);
+
+        vm.warp(testTimestamp + forkmanager.forkPreparationTime() + 1);
+        forkmanager.executeFork();
+        (address child1, address child2) = bridge.getChildren();
+
+        assertEq(
+            bridge.getDepositRoot(),
+            ForkableBridge(child1).getDepositRoot()
+        );
+        assertEq(
+            bridge.getDepositRoot(),
+            ForkableBridge(child2).getDepositRoot()
         );
     }
 }
