@@ -34,7 +34,10 @@ that the deposits are registered in the new globalExitRootManager contracts. Aft
 with the newest hahes takes place as usual. This happens by the L2-executor, who sets the newest hashes equal to the data of newest exitRoots and the timestamp to the timestamp of the forking. 
 The newest hashes and the newest timestamp will be accepted in the next "sequenceBatches" call, as this information as the child zkEVM exactly check that the globalExitRootMap of the child globalExitRootManagers have this entry.
 This updading of the exitRootHashes ensures that the withdrawal can be executed successfully. Since on L2 the withdrawal bitmap is not touched in the forking process, it will have the accurate state and works as usual.
-(ensured by unit tests)
+(ensured by unit tests: 
+1) testSetsCorrectGlobalExitRoot -> This ensure that the correct exit root is sent in the children contracts
+2) ForkableBridge:testCreateChildren -> This test ensure that the exit root is updated exactly before creating the children
+)
 
 #### Deposit L2 -> Forking -> Withdrawal L1.
 
