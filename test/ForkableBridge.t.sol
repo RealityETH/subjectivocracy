@@ -69,16 +69,42 @@ contract ForkableBridgeTest is Test {
         vm.expectRevert(IForkableStructure.OnlyForkManagerIsAllowed.selector);
         forkableBridge.createChildren();
         ForkableGlobalExitRoot exitRoot = new ForkableGlobalExitRoot();
+        IERC20 gasToken = IERC20(address(gasTokenAddress));
+        vm.mockCall(
+            gasTokenAddress,
+            abi.encodeWithSelector(
+                gasToken.balanceOf.selector,
+                address(forkableBridge)
+            ),
+            abi.encode(10)
+        );
+
+        forkableBridge.bridgeAsset(
+            1,
+            address(0x123),
+            1,
+            gasTokenAddress,
+            false, // don't update the deposit tree, since we want to check that this happens during create children
+            ""
+        );
+        bytes32 newDepositRoot = forkableBridge.getDepositRoot();
+
+        // If globalExitRootManager is called, it should revert since there is no mock in place.
+        address forkmanager = forkableBridge.forkmanager();
+        vm.expectRevert();
+        vm.prank(forkmanager);
+        forkableBridge.createChildren();
+
+        // Now, also wanna test that it does not revert, if the globalExitRootManager is called with the correct deposit root
         vm.mockCall(
             address(globalExitRootManager),
             abi.encodeWithSelector(
                 exitRoot.updateExitRoot.selector,
-                bytes32("0")
+                newDepositRoot
             ),
             ""
         );
-
-        vm.prank(forkableBridge.forkmanager());
+        vm.prank(forkmanager);
         (address child1, address child2) = forkableBridge.createChildren();
         assertTrue(child1 != address(0));
         assertTrue(child2 != address(0));
