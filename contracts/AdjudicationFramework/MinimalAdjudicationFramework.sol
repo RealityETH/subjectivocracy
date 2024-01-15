@@ -81,11 +81,11 @@ contract MinimalAdjudicationFramework {
         // We'll identify ourselves in the template so we only need a single parameter for questions, the arbitrator in question.
         // TODO: We may want to specify a document with the terms that guide this decision here, rather than just leaving it implicit.
         string
-            memory templatePrefixReplace = '{"title": "Should we replace the arbitrator %s by the new arbitrator %s to the framework ';
+            memory templatePrefixReplace = '{"title": "Should we replace the arbitrator %s by the new arbitrator %s in the framework ';
         string
-            memory templatePrefixAdd = '{"title": "Should we add arbitrator %s to the framework ';
+            memory templatePrefixAdd = '{"title": "Should we add the arbitrator %s to the framework ';
         string
-            memory templatePrefixRemove = '{"title": "Should we remove arbitrator %s from the framework ';
+            memory templatePrefixRemove = '{"title": "Should we remove the arbitrator %s from the framework ';
         string
             memory templateSuffix = '?", "type": "bool", "category": "adjudication", "lang": "en"}';
         string memory thisContractStr = Strings.toHexString(address(this));
@@ -136,6 +136,7 @@ contract MinimalAdjudicationFramework {
             }
             question = string.concat(
                 Strings.toHexString(arbitratorToRemove),
+                "U+241F",
                 Strings.toHexString(arbitratorToAdd)
             );
             templateId = templateIdReplaceArbitrator;

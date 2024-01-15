@@ -265,11 +265,11 @@ contract AdjudicationIntegrationTest is Test {
 
         // We should always get the same contract address because we deploy only this with the same user so the address and nonce shouldn't change
         string
-            memory addLog = '{"title": "Should we add arbitrator %s to the framework 0xfed866a553d106378b828a2e1effb8bed9c9dc28?", "type": "bool", "category": "adjudication", "lang": "en"}';
+            memory addLog = '{"title": "Should we add the arbitrator %s to the framework 0xfed866a553d106378b828a2e1effb8bed9c9dc28?", "type": "bool", "category": "adjudication", "lang": "en"}';
         string
-            memory removeLog = '{"title": "Should we remove arbitrator %s from the framework 0xfed866a553d106378b828a2e1effb8bed9c9dc28?", "type": "bool", "category": "adjudication", "lang": "en"}';
+            memory removeLog = '{"title": "Should we remove the arbitrator %s from the framework 0xfed866a553d106378b828a2e1effb8bed9c9dc28?", "type": "bool", "category": "adjudication", "lang": "en"}';
         string
-            memory replaceLog = '{"title": "Should we replace the arbitrator %s by the new arbitrator %s to the framework 0xfed866a553d106378b828a2e1effb8bed9c9dc28?", "type": "bool", "category": "adjudication", "lang": "en"}';
+            memory replaceLog = '{"title": "Should we replace the arbitrator %s by the new arbitrator %s in the framework 0xfed866a553d106378b828a2e1effb8bed9c9dc28?", "type": "bool", "category": "adjudication", "lang": "en"}';
 
         assertEq(
             abi.decode(entries[0].data, (string)),
