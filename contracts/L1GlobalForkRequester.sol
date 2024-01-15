@@ -60,12 +60,9 @@ contract L1GlobalForkRequester {
             token
         );
 
-        // If for some reason we've already got part of a payment, include it.
-        uint256 initialBalance = failedRequests[token][beneficiary][requestId]
-            .amount;
-
-        uint256 transferredBalance = initialBalance +
-            IForkonomicToken(token).balanceOf(moneyBox);
+        uint256 transferredBalance = IForkonomicToken(token).balanceOf(
+            moneyBox
+        );
 
         if (moneyBox.code.length == 0) {
             new MoneyBox{salt: salt}(token);
@@ -90,10 +87,6 @@ contract L1GlobalForkRequester {
             transferredBalance >= forkingManager.arbitrationFee() &&
             !forkingManager.isForkingInitiated()
         ) {
-            if (initialBalance > 0) {
-                delete (failedRequests[token][beneficiary][requestId]);
-            }
-
             IForkonomicToken(token).approve(
                 address(forkingManager),
                 transferredBalance
