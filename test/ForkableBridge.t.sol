@@ -90,7 +90,6 @@ contract ForkableBridgeTest is Test {
         bytes32 newDepositRoot = forkableBridge.getDepositRoot();
 
         // If globalExitRootManager is called, it should revert since there is no mock in place.
-        address forkmanager = forkableBridge.forkmanager();
         vm.expectRevert();
         vm.prank(forkmanager);
         forkableBridge.createChildren();
