@@ -145,6 +145,10 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
             revert ForkInProgress(); // Forking over something else
         }
 
+        if (msg.sender != arbitrationRequests[question_id].payer) {
+            revert WrongSender();
+        }
+
         RequestStatus status = arbitrationRequests[question_id].status;
         if (
             status != RequestStatus.QUEUED &&
@@ -278,6 +282,10 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
         // For simplicity we won't let you cancel until forking is sorted, as you might retry and keep failing for the same reason
         if (isForkInProgress) {
             revert ForkInProgress();
+        }
+
+        if (msg.sender != arbitrationRequests[question_id].payer) {
+            revert WrongSender();
         }
 
         RequestStatus status = arbitrationRequests[question_id].status;
