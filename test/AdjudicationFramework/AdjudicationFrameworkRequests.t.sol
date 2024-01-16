@@ -421,7 +421,9 @@ contract AdjudicationIntegrationTest is Test {
 
         skip(86401);
 
-        vm.expectRevert(MinimalAdjudicationFramework.PropositionNotAccepted.selector);
+        vm.expectRevert(
+            MinimalAdjudicationFramework.PropositionNotAccepted.selector
+        );
         adjudicationFramework1.executeModificationArbitratorFromAllowList(
             removalQuestionId
         );
@@ -616,7 +618,9 @@ contract AdjudicationIntegrationTest is Test {
         );
         assertTrue(adjudicationFramework1.isArbitrator(address(l2Arbitrator1)));
 
-        vm.expectRevert(MinimalAdjudicationFramework.PropositionNotAccepted.selector);
+        vm.expectRevert(
+            MinimalAdjudicationFramework.PropositionNotAccepted.selector
+        );
         adjudicationFramework1.executeModificationArbitratorFromAllowList(
             removalQuestionId
         );
