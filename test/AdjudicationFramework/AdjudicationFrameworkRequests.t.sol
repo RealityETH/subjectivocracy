@@ -16,6 +16,7 @@ import {L1GlobalForkRequester} from "../../contracts/L1GlobalForkRequester.sol";
 import {L2ChainInfo} from "../../contracts/L2ChainInfo.sol";
 import {MockPolygonZkEVMBridge} from "../testcontract/MockPolygonZkEVMBridge.sol";
 import {MinimalAdjudicationFramework} from "../../contracts/AdjudicationFramework/MinimalAdjudicationFramework.sol";
+import {AdjudicationFrameworkRequests} from "../../contracts/AdjudicationFramework/Pull/AdjudicationFrameworkRequests.sol";
 
 contract AdjudicationIntegrationTest is Test {
     Arbitrator public govArb;
@@ -262,7 +263,9 @@ contract AdjudicationIntegrationTest is Test {
         assertTrue(l2Arbitrator1.requestArbitration{value: 500000}(qid, 0));
         l2Arbitrator1.submitAnswerByArbitrator(qid, bytes32(uint256(1)), user1);
 
-        vm.expectRevert("Challenge deadline not passed");
+        vm.expectRevert(
+            AdjudicationFrameworkRequests.ChallengeDeadlineNotPassed.selector
+        );
         adjudicationFramework1.completeArbitration(
             qid,
             bytes32(uint256(1)),
@@ -301,7 +304,9 @@ contract AdjudicationIntegrationTest is Test {
         assertTrue(l2Arbitrator1.requestArbitration{value: 500000}(qid, 0));
         l2Arbitrator1.submitAnswerByArbitrator(qid, bytes32(uint256(1)), user1);
 
-        vm.expectRevert("Challenge deadline not passed");
+        vm.expectRevert(
+            AdjudicationFrameworkRequests.ChallengeDeadlineNotPassed.selector
+        );
         adjudicationFramework1.completeArbitration(
             qid,
             bytes32(uint256(1)),

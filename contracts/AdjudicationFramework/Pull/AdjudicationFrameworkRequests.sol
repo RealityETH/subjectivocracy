@@ -24,6 +24,36 @@ contract AdjudicationFrameworkRequests is
     BalanceHolder
 {
     using EnumerableSet for EnumerableSet.AddressSet;
+    /// @dev Error thrown when challenge deadline has not passed
+    error ChallengeDeadlineNotPassed();
+    /// @dev Error thrown when submission must have been queued
+    error SubmissionMustHaveBeenQueued();
+    /// @dev Error thrown when resubmission of previous parameters
+    error ResubmissionOfPReviousParameters();
+    /// @dev Error thrown when arbitrator must be allowlisted
+    error ArbitratorMustBeAllowlisted();
+    /// @dev Error thrown when arbitrator under dispute
+    error ArbitratorUnderDispute();
+    /// @dev Error thrown when arbitrator address is zero
+    error ArbitratorAddressZero();
+    /// @dev Error thrown when arbitrator not removed
+    error ArbitratorNotRemoved();
+    /// @dev Error thrown when arbitrator not sender
+    error ArbitratorNotSender();
+    /// @dev Error thrown when question already under arbitration
+    error QuestionAlreadyUnderArbitration();
+    /// @dev Error thrown when question under arbitration
+    error QuestionUnderArbitration();
+    /// @dev Error thrown when question not in queue
+    error QuestionNotFound();
+    /// @dev Error thrown when question must have a fee
+    error QuestionMustHaveAFee();
+    /// @dev Error thrown when insufficient fee
+    error InsufficientFee();
+    /// @dev Error thrown when question not in queue
+    error QuestionNotInQueue();
+    /// @dev Error thrown when too soon to cancel
+    error TooSoonToCancel();
 
     event LogRequestArbitration(
         bytes32 indexed questionId,
@@ -87,11 +117,12 @@ contract AdjudicationFrameworkRequests is
         uint256 max_previous
     ) external payable returns (bool) {
         uint256 arbitration_fee = getDisputeFee(questionId);
-        require(
-            arbitration_fee > 0,
-            "Question must have fee" // "The arbitrator must have set a non-zero fee for the question"
-        );
-        require(msg.value >= arbitration_fee, "Insufficient fee");
+        if (arbitration_fee == 0) {
+            revert QuestionMustHaveAFee();
+        }
+        if (msg.value < arbitration_fee) {
+            revert InsufficientFee();
+        }
 
         realityETH.notifyOfArbitrationRequest(
             questionId,
@@ -124,19 +155,19 @@ contract AdjudicationFrameworkRequests is
         address requester,
         uint256
     ) external onlyArbitrator {
-        require(
-            questionArbitrations[questionId].bounty > 0,
-            "Not in queue" // Question must be in the arbitration queue
-        );
+        if (questionArbitrations[questionId].bounty == 0) {
+            revert QuestionNotInQueue();
+        }
 
         // The only time you can pick up a question that's already being arbitrated is if it's been removed from the allowlist
         if (questionArbitrations[questionId].arbitrator != address(0)) {
-            require(
-                !_arbitrators.contains(
+            if (
+                _arbitrators.contains(
                     questionArbitrations[questionId].arbitrator
-                ),
-                "Question under arbitration" // Question already taken, and the arbitrator who took it is still active
-            );
+                )
+            ) {
+                revert QuestionUnderArbitration();
+            }
 
             // Clear any in-progress data from the arbitrator that has now been removed
             questionArbitrations[questionId].msg_hash = 0x0;
@@ -155,11 +186,12 @@ contract AdjudicationFrameworkRequests is
     /// @dev Not otherwise needed, if another arbitrator shows up they can just take the job from the delisted arbitrator
     function clearRequestFromRemovedArbitrator(bytes32 questionId) external {
         address old_arbitrator = questionArbitrations[questionId].arbitrator;
-        require(old_arbitrator != address(0), "No arbitrator to remove");
-        require(
-            !_arbitrators.contains(old_arbitrator),
-            "Arbitrator not removed" // Arbitrator must no longer be on the allowlist
-        );
+        if (old_arbitrator == address(0)) {
+            revert ArbitratorAddressZero();
+        }
+        if (_arbitrators.contains(old_arbitrator)) {
+            revert ArbitratorNotRemoved();
+        }
 
         questionArbitrations[questionId].arbitrator = address(0);
         questionArbitrations[questionId].msg_hash = 0x0;
@@ -174,16 +206,15 @@ contract AdjudicationFrameworkRequests is
     function cancelUnhandledArbitrationRequest(bytes32 questionId) external {
         uint256 last_action_ts = questionArbitrations[questionId]
             .last_action_ts;
-        require(last_action_ts > 0, "Question not found");
-
-        require(
-            questionArbitrations[questionId].arbitrator == address(0),
-            "Already under arbitration" // Question already accepted by an arbitrator
-        );
-        require(
-            block.timestamp - last_action_ts > QUESTION_UNHANDLED_TIMEOUT,
-            "Too soon to cancel" // You can only cancel questions that no arbitrator has accepted in a reasonable time
-        );
+        if (last_action_ts == 0) {
+            revert QuestionNotFound();
+        }
+        if (questionArbitrations[questionId].arbitrator != address(0)) {
+            revert QuestionAlreadyUnderArbitration(); // Question already accepted by an arbitrator
+        }
+        if (block.timestamp - last_action_ts <= QUESTION_UNHANDLED_TIMEOUT) {
+            revert TooSoonToCancel(); // You can only cancel questions that no arbitrator has accepted in a reasonable time
+        }
 
         // Refund the arbitration bounty
         balanceOf[questionArbitrations[questionId].payer] =
@@ -207,14 +238,12 @@ contract AdjudicationFrameworkRequests is
         bytes32 answer,
         address answerer
     ) public {
-        require(
-            questionArbitrations[questionId].arbitrator == msg.sender,
-            "Sender not the arbitrator" // An arbitrator can only submit their own arbitration result
-        );
-        require(
-            questionArbitrations[questionId].bounty > 0,
-            "Question not in queue"
-        );
+        if (questionArbitrations[questionId].arbitrator != msg.sender) {
+            revert ArbitratorNotSender(); // An arbitrator can only submit their own arbitration result
+        }
+        if (questionArbitrations[questionId].bounty == 0) {
+            revert QuestionNotInQueue(); // Question not in queue
+        }
 
         bytes32 data_hash = keccak256(
             abi.encodePacked(questionId, answer, answerer)
@@ -236,26 +265,27 @@ contract AdjudicationFrameworkRequests is
     ) external {
         address arbitrator = questionArbitrations[questionId].arbitrator;
 
-        require(
-            _arbitrators.contains(arbitrator),
-            "Arbitrator must be allowlisted"
-        );
-        require(
-            countArbitratorFreezePropositions[arbitrator] == 0,
-            "Arbitrator under dispute"
-        );
+        if (!_arbitrators.contains(arbitrator)) {
+            revert ArbitratorMustBeAllowlisted();
+        }
+        if (countArbitratorFreezePropositions[arbitrator] != 0) {
+            revert ArbitratorUnderDispute();
+        }
 
         bytes32 data_hash = keccak256(
             abi.encodePacked(questionId, answer, answerer)
         );
-        require(
-            questionArbitrations[questionId].msg_hash == data_hash,
-            "Resubmit previous parameters"
-        );
+        if (questionArbitrations[questionId].msg_hash != data_hash) {
+            revert ResubmissionOfPReviousParameters();
+        }
 
         uint256 finalize_ts = questionArbitrations[questionId].finalize_ts;
-        require(finalize_ts > 0, "Submission must have been queued");
-        require(finalize_ts < block.timestamp, "Challenge deadline not passed");
+        if (finalize_ts == 0) {
+            revert SubmissionMustHaveBeenQueued();
+        }
+        if (finalize_ts > block.timestamp) {
+            revert ChallengeDeadlineNotPassed();
+        }
 
         balanceOf[questionArbitrations[questionId].payer] =
             balanceOf[questionArbitrations[questionId].payer] +
