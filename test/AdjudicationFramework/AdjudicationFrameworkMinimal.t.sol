@@ -14,7 +14,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ForkableRealityETH_ERC20} from "../../contracts/ForkableRealityETH_ERC20.sol";
 import {RealityETH_v3_0} from "../../contracts/lib/reality-eth/RealityETH-3.0.sol";
 import {AdjudicationFrameworkRequests} from "../../contracts/AdjudicationFramework/Pull/AdjudicationFrameworkRequests.sol";
-
+import {MinimalAdjudicationFramework} from "../../contracts/AdjudicationFramework/MinimalAdjudicationFramework.sol";
 import {L2ForkArbitrator} from "../../contracts/L2ForkArbitrator.sol";
 import {L1GlobalForkRequester} from "../../contracts/L1GlobalForkRequester.sol";
 import {L2ChainInfo} from "../../contracts/L2ChainInfo.sol";
@@ -317,7 +317,9 @@ contract AdjudicationIntegrationTest is Test {
         );
 
         // Scenario 4: Invalid case - No arbitrators to modify
-        vm.expectRevert("No arbitrators to modify");
+        vm.expectRevert(
+            MinimalAdjudicationFramework.NoArbitratorsToModify.selector
+        );
         adjudicationFramework1.requestModificationOfArbitrators(
             address(0),
             address(0)
@@ -397,7 +399,9 @@ contract AdjudicationIntegrationTest is Test {
         _simulateRealityEthAnswer(questionId, true);
 
         // Clear failed proposition
-        vm.expectRevert("Result was not 0");
+        vm.expectRevert(
+            MinimalAdjudicationFramework.PropositionNotFailed.selector
+        );
         adjudicationFramework1.clearFailedProposition(questionId);
     }
 }

@@ -325,7 +325,9 @@ contract AdjudicationIntegrationTest is Test {
         uint256[] memory bonds;
         bytes32[] memory answers;
 
-        vm.expectRevert("Bond too low to freeze");
+        vm.expectRevert(
+            MinimalAdjudicationFramework.BondTooLowToFreeze.selector
+        );
         adjudicationFramework1.freezeArbitrator(
             removalQuestionId,
             hashes,
@@ -419,7 +421,7 @@ contract AdjudicationIntegrationTest is Test {
 
         skip(86401);
 
-        vm.expectRevert("Result was not 1");
+        vm.expectRevert(MinimalAdjudicationFramework.PropositionNotAccepted.selector);
         adjudicationFramework1.executeModificationArbitratorFromAllowList(
             removalQuestionId
         );
@@ -614,7 +616,7 @@ contract AdjudicationIntegrationTest is Test {
         );
         assertTrue(adjudicationFramework1.isArbitrator(address(l2Arbitrator1)));
 
-        vm.expectRevert("Result was not 1");
+        vm.expectRevert(MinimalAdjudicationFramework.PropositionNotAccepted.selector);
         adjudicationFramework1.executeModificationArbitratorFromAllowList(
             removalQuestionId
         );

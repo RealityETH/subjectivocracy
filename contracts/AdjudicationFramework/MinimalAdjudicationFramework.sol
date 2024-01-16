@@ -18,6 +18,27 @@ Also, arbitrators who are challenged by a removal question, can be temporarily f
 
 contract MinimalAdjudicationFramework {
     using EnumerableSet for EnumerableSet.AddressSet;
+    /// @dev Error thrown with illegal modification of arbitrators
+    error NoArbitratorsToModify();
+    /// @dev Error thrown when a proposition already exists
+    error PropositionAlreadyExists();
+    /// @dev Error thrown when a proposition is not found
+    error PropositionNotFound();
+    /// @dev Error thrown when a proposition is not found
+    error ArbitratorNotInAllowList();
+    /// @dev Error thrown when an arbitrator is already frozen
+    error ArbitratorAlreadyFrozen();
+    /// @dev Error thrown when received messages from realityEth is not yes
+    error AnswerNotYes();
+    /// @dev Error thrown when received messages from realityEth is yes, but expected to be no
+    error PropositionNotFailed();
+    /// @dev Error thrown when bond is too low to freeze an arbitrator
+    error BondTooLowToFreeze();
+    /// @dev Error thrown when proposition is not accepted
+    error PropositionNotAccepted();
+
+    // Question delimiter for arbitrator modification questions for reality.eth
+    string internal constant _QUESTION_DELIM = "\u241f";
 
     EnumerableSet.AddressSet internal _arbitrators;
     /// @dev Error thrown when non-allowlisted actor tries to call a function
@@ -123,7 +144,7 @@ contract MinimalAdjudicationFramework {
         string memory question;
         uint256 templateId;
         if (arbitratorToRemove == address(0) && arbitratorToAdd == address(0)) {
-            revert("No arbitrators to modify");
+            revert NoArbitratorsToModify();
         } else if (arbitratorToRemove == address(0)) {
             question = Strings.toHexString(arbitratorToAdd);
             templateId = templateIdAddArbitrator;
@@ -136,7 +157,7 @@ contract MinimalAdjudicationFramework {
             }
             question = string.concat(
                 Strings.toHexString(arbitratorToRemove),
-                "U+241F",
+                _QUESTION_DELIM,
                 Strings.toHexString(arbitratorToAdd)
             );
             templateId = templateIdReplaceArbitrator;
@@ -150,11 +171,12 @@ contract MinimalAdjudicationFramework {
             0,
             REALITY_ETH_BOND_ARBITRATOR_REMOVE
         );
-        require(
-            propositions[questionId].arbitratorToAdd == address(0) &&
-                propositions[questionId].arbitratorToRemove == address(0),
-            "Proposition already exists"
-        );
+        if (
+            propositions[questionId].arbitratorToAdd != address(0) ||
+            propositions[questionId].arbitratorToRemove != address(0)
+        ) {
+            revert PropositionAlreadyExists();
+        }
         propositions[questionId] = ArbitratorProposition(
             arbitratorToRemove,
             arbitratorToAdd,
@@ -173,7 +195,9 @@ contract MinimalAdjudicationFramework {
             .arbitratorToRemove;
         address arbitratorToAdd = propositions[questionId].arbitratorToAdd;
         bytes32 realityEthResult = realityETH.resultFor(questionId);
-        require(realityEthResult == bytes32(uint256(1)), "Result was not 1");
+        if (realityEthResult != bytes32(uint256(1))) {
+            revert PropositionNotAccepted();
+        }
         if (arbitratorToRemove != address(0)) {
             _arbitrators.remove(arbitratorToRemove);
             if (propositions[questionId].isFrozen) {
@@ -196,16 +220,15 @@ contract MinimalAdjudicationFramework {
     ) public {
         address arbitrator = propositions[questionId].arbitratorToRemove;
 
-        require(arbitrator != address(0), "Proposition not found");
-
-        require(
-            _arbitrators.contains(arbitrator),
-            "Arbitrator not allowlisted" // Not allowlisted in the first place
-        );
-        require(
-            !propositions[questionId].isFrozen,
-            "Arbitrator already frozen"
-        );
+        if (arbitrator == address(0)) {
+            revert PropositionNotFound();
+        }
+        if (!_arbitrators.contains(arbitrator)) {
+            revert ArbitratorNotInAllowList();
+        }
+        if (propositions[questionId].isFrozen) {
+            revert ArbitratorAlreadyFrozen();
+        }
 
         // Require a bond of at least the specified level
         // This is only relevant if REALITY_ETH_BOND_ARBITRATOR_FREEZE is higher than REALITY_ETH_BOND_ARBITRATOR_REMOVE
@@ -228,11 +251,12 @@ contract MinimalAdjudicationFramework {
                 );
         }
 
-        require(answer == bytes32(uint256(1)), "Supplied answer is not yes");
-        require(
-            bond >= REALITY_ETH_BOND_ARBITRATOR_FREEZE,
-            "Bond too low to freeze"
-        );
+        if (answer != bytes32(uint256(1))) {
+            revert AnswerNotYes();
+        }
+        if (bond < REALITY_ETH_BOND_ARBITRATOR_FREEZE) {
+            revert BondTooLowToFreeze();
+        }
 
         // TODO: Ideally we would check the bond is for the "remove" answer.
         // #92
@@ -245,9 +269,14 @@ contract MinimalAdjudicationFramework {
 
     function clearFailedProposition(bytes32 questionId) public {
         address arbitrator = propositions[questionId].arbitratorToRemove;
-        require(arbitrator != address(0), "Proposition not found");
+        if (arbitrator == address(0)) {
+            revert PropositionNotFound();
+        }
+
         bytes32 realityEthResult = realityETH.resultFor(questionId);
-        require(realityEthResult == bytes32(uint256(0)), "Result was not 0");
+        if (realityEthResult == bytes32(uint256(1))) {
+            revert PropositionNotFailed();
+        }
         if (propositions[questionId].isFrozen) {
             countArbitratorFreezePropositions[arbitrator] =
                 countArbitratorFreezePropositions[arbitrator] -
