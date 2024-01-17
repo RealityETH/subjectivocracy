@@ -4,22 +4,19 @@ pragma solidity ^0.8.20;
 /* solhint-disable reentrancy */
 /* solhint-disable quotes */
 
-import {Vm} from "forge-std/Vm.sol";
-
 import {Test} from "forge-std/Test.sol";
-import {Arbitrator} from "../contracts/lib/reality-eth/Arbitrator.sol";
-
-import {IRealityETH} from "../contracts/lib/reality-eth/interfaces/IRealityETH.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ForkableRealityETH_ERC20} from "../contracts/ForkableRealityETH_ERC20.sol";
-import {RealityETH_v3_0} from "../contracts/lib/reality-eth/RealityETH-3.0.sol";
-import {AdjudicationFramework} from "../contracts/AdjudicationFramework.sol";
-
-import {L2ForkArbitrator} from "../contracts/L2ForkArbitrator.sol";
-import {L1GlobalForkRequester} from "../contracts/L1GlobalForkRequester.sol";
-import {L2ChainInfo} from "../contracts/L2ChainInfo.sol";
-
-import {MockPolygonZkEVMBridge} from "./testcontract/MockPolygonZkEVMBridge.sol";
+import {ForkableRealityETH_ERC20} from "../../contracts/ForkableRealityETH_ERC20.sol";
+import {AdjudicationFrameworkRequests} from "../../contracts/AdjudicationFramework/Pull/AdjudicationFrameworkRequests.sol";
+import {IRealityETH} from "../../contracts/lib/reality-eth/interfaces/IRealityETH.sol";
+import {RealityETH_v3_0} from "../../contracts/lib/reality-eth/RealityETH-3.0.sol";
+import {Arbitrator} from "../../contracts/lib/reality-eth/Arbitrator.sol";
+import {L2ForkArbitrator} from "../../contracts/L2ForkArbitrator.sol";
+import {L1GlobalForkRequester} from "../../contracts/L1GlobalForkRequester.sol";
+import {L2ChainInfo} from "../../contracts/L2ChainInfo.sol";
+import {MockPolygonZkEVMBridge} from "../testcontract/MockPolygonZkEVMBridge.sol";
+import {MinimalAdjudicationFramework} from "../../contracts/AdjudicationFramework/MinimalAdjudicationFramework.sol";
+import {AdjudicationFrameworkRequests} from "../../contracts/AdjudicationFramework/Pull/AdjudicationFrameworkRequests.sol";
 
 contract AdjudicationIntegrationTest is Test {
     Arbitrator public govArb;
@@ -37,8 +34,8 @@ contract AdjudicationIntegrationTest is Test {
     bytes32 internal upgradePropQID1;
     bytes32 internal upgradePropQID2;
 
-    AdjudicationFramework internal adjudicationFramework1;
-    AdjudicationFramework internal adjudicationFramework2;
+    AdjudicationFrameworkRequests internal adjudicationFramework1;
+    AdjudicationFrameworkRequests internal adjudicationFramework2;
 
     L2ForkArbitrator internal l2ForkArbitrator;
     L2ChainInfo internal l2ChainInfo;
@@ -161,11 +158,12 @@ contract AdjudicationIntegrationTest is Test {
         initialArbitrators[0] = initialArbitrator1;
         initialArbitrators[1] = initialArbitrator2;
         vm.prank(adjudictionDeployer);
-        adjudicationFramework1 = new AdjudicationFramework(
+        adjudicationFramework1 = new AdjudicationFrameworkRequests(
             address(l2RealityEth),
             123,
             address(l2ForkArbitrator),
-            initialArbitrators
+            initialArbitrators,
+            true
         );
 
         l2Arbitrator1 = new Arbitrator();
@@ -181,9 +179,11 @@ contract AdjudicationIntegrationTest is Test {
         // Create a question - from beginAddArbitratorToWhitelist
         // For the setup we'll do this as an uncontested addition.
         // Contested cases should also be tested.
-
         addArbitratorQID1 = adjudicationFramework1
-            .beginAddArbitratorToAllowList(address(l2Arbitrator1));
+            .requestModificationOfArbitrators(
+                address(0),
+                address(l2Arbitrator1)
+            );
         l2RealityEth.submitAnswer{value: 10000}(
             addArbitratorQID1,
             bytes32(uint256(1)),
@@ -207,47 +207,16 @@ contract AdjudicationIntegrationTest is Test {
         );
 
         vm.expectRevert("question must be finalized");
-        adjudicationFramework1.executeAddArbitratorToAllowList(
+        adjudicationFramework1.executeModificationArbitratorFromAllowList(
             addArbitratorQID1
         );
 
         skip(86401);
-        adjudicationFramework1.executeAddArbitratorToAllowList(
+        adjudicationFramework1.executeModificationArbitratorFromAllowList(
             addArbitratorQID1
         );
 
-        assertTrue(adjudicationFramework1.arbitrators(address(l2Arbitrator1)));
-    }
-
-    function testInitialArbitrators() public {
-        // Initial arbitrators from the contructor should be added
-        assertTrue(adjudicationFramework1.arbitrators(initialArbitrator1));
-        assertTrue(adjudicationFramework1.arbitrators(initialArbitrator2));
-        // This arbitrator may be added in other tests by creating a proposition
-        assertFalse(adjudicationFramework1.arbitrators(address(l2Arbitrator2)));
-    }
-
-    function testContestedAddArbitrator() public {
-        addArbitratorQID2 = adjudicationFramework1
-            .beginAddArbitratorToAllowList(address(l2Arbitrator2));
-        l2RealityEth.submitAnswer{value: 10000}(
-            addArbitratorQID2,
-            bytes32(uint256(1)),
-            0
-        );
-        l2RealityEth.submitAnswer{value: 20000}(
-            addArbitratorQID2,
-            bytes32(uint256(0)),
-            0
-        );
-
-        l2ForkArbitrator.requestArbitration{value: 500000}(
-            addArbitratorQID2,
-            0
-        );
-
-        // This talks to the bridge, we fake what happens next.
-        // TODO: Hook this up to the real bridge so we can test it properly.
+        assertTrue(adjudicationFramework1.isArbitrator(address(l2Arbitrator1)));
     }
 
     function _setupContestableQuestion() internal returns (bytes32) {
@@ -280,7 +249,9 @@ contract AdjudicationIntegrationTest is Test {
             )
         );
 
-        vm.expectRevert("Arbitrator not allowlisted");
+        vm.expectRevert(
+            MinimalAdjudicationFramework.OnlyAllowlistedActor.selector
+        );
         l2Arbitrator2.requestArbitration{value: 500000}(questionId, 0);
     }
 
@@ -292,7 +263,9 @@ contract AdjudicationIntegrationTest is Test {
         assertTrue(l2Arbitrator1.requestArbitration{value: 500000}(qid, 0));
         l2Arbitrator1.submitAnswerByArbitrator(qid, bytes32(uint256(1)), user1);
 
-        vm.expectRevert("Challenge deadline not passed");
+        vm.expectRevert(
+            AdjudicationFrameworkRequests.ChallengeDeadlineNotPassed.selector
+        );
         adjudicationFramework1.completeArbitration(
             qid,
             bytes32(uint256(1)),
@@ -331,7 +304,9 @@ contract AdjudicationIntegrationTest is Test {
         assertTrue(l2Arbitrator1.requestArbitration{value: 500000}(qid, 0));
         l2Arbitrator1.submitAnswerByArbitrator(qid, bytes32(uint256(1)), user1);
 
-        vm.expectRevert("Challenge deadline not passed");
+        vm.expectRevert(
+            AdjudicationFrameworkRequests.ChallengeDeadlineNotPassed.selector
+        );
         adjudicationFramework1.completeArbitration(
             qid,
             bytes32(uint256(1)),
@@ -340,7 +315,10 @@ contract AdjudicationIntegrationTest is Test {
 
         // now before we can complete this somebody challenges it
         removalQuestionId = adjudicationFramework1
-            .beginRemoveArbitratorFromAllowList(address(l2Arbitrator1));
+            .requestModificationOfArbitrators(
+                address(l2Arbitrator1),
+                address(0)
+            );
         l2RealityEth.submitAnswer{value: 10000}(
             removalQuestionId,
             bytes32(uint256(1)),
@@ -352,7 +330,9 @@ contract AdjudicationIntegrationTest is Test {
         uint256[] memory bonds;
         bytes32[] memory answers;
 
-        vm.expectRevert("Bond too low to freeze");
+        vm.expectRevert(
+            MinimalAdjudicationFramework.BondTooLowToFreeze.selector
+        );
         adjudicationFramework1.freezeArbitrator(
             removalQuestionId,
             hashes,
@@ -412,13 +392,13 @@ contract AdjudicationIntegrationTest is Test {
         l2RealityEth.resultFor(removalQuestionId);
 
         vm.expectRevert("question must be finalized");
-        adjudicationFramework1.executeRemoveArbitratorFromAllowList(
+        adjudicationFramework1.executeModificationArbitratorFromAllowList(
             removalQuestionId
         );
 
         skip(86401);
 
-        adjudicationFramework1.executeRemoveArbitratorFromAllowList(
+        adjudicationFramework1.executeModificationArbitratorFromAllowList(
             removalQuestionId
         );
     }
@@ -440,14 +420,16 @@ contract AdjudicationIntegrationTest is Test {
         l2RealityEth.resultFor(removalQuestionId);
 
         vm.expectRevert("question must be finalized");
-        adjudicationFramework1.executeRemoveArbitratorFromAllowList(
+        adjudicationFramework1.executeModificationArbitratorFromAllowList(
             removalQuestionId
         );
 
         skip(86401);
 
-        vm.expectRevert("Result was not 1");
-        adjudicationFramework1.executeRemoveArbitratorFromAllowList(
+        vm.expectRevert(
+            MinimalAdjudicationFramework.PropositionNotAccepted.selector
+        );
+        adjudicationFramework1.executeModificationArbitratorFromAllowList(
             removalQuestionId
         );
 
@@ -543,16 +525,19 @@ contract AdjudicationIntegrationTest is Test {
             ),
             1
         );
-        assertTrue(adjudicationFramework1.arbitrators(address(l2Arbitrator1)));
-        adjudicationFramework1.executeRemoveArbitratorFromAllowList(
+        assertTrue(adjudicationFramework1.isArbitrator(address(l2Arbitrator1)));
+        adjudicationFramework1.executeModificationArbitratorFromAllowList(
             removalQuestionId
         );
-        assertFalse(adjudicationFramework1.arbitrators(address(l2Arbitrator1)));
+        assertFalse(
+            adjudicationFramework1.isArbitrator(address(l2Arbitrator1))
+        );
         assertEq(
             adjudicationFramework1.countArbitratorFreezePropositions(
                 address(l2Arbitrator1)
             ),
-            0
+            0,
+            "count Arbitrator freeze propositions not correct"
         );
 
         // TODO: Retry the arbitration with a new arbitrator
@@ -636,16 +621,18 @@ contract AdjudicationIntegrationTest is Test {
             ),
             1
         );
-        assertTrue(adjudicationFramework1.arbitrators(address(l2Arbitrator1)));
+        assertTrue(adjudicationFramework1.isArbitrator(address(l2Arbitrator1)));
 
-        vm.expectRevert("Result was not 1");
-        adjudicationFramework1.executeRemoveArbitratorFromAllowList(
+        vm.expectRevert(
+            MinimalAdjudicationFramework.PropositionNotAccepted.selector
+        );
+        adjudicationFramework1.executeModificationArbitratorFromAllowList(
             removalQuestionId
         );
 
         adjudicationFramework1.clearFailedProposition(removalQuestionId);
 
-        assertTrue(adjudicationFramework1.arbitrators(address(l2Arbitrator1)));
+        assertTrue(adjudicationFramework1.isArbitrator(address(l2Arbitrator1)));
         assertEq(
             adjudicationFramework1.countArbitratorFreezePropositions(
                 address(l2Arbitrator1)
@@ -727,32 +714,6 @@ contract AdjudicationIntegrationTest is Test {
         l2ForkArbitrator.claimRefund();
         assertEq(address(l2ForkArbitrator).balance, 0);
         assertEq(user2.balance, user2Bal + forkFee);
-    }
-
-    function testAdjudicationFrameworkTemplateCreation() public {
-        address[] memory initialArbs;
-        vm.recordLogs();
-
-        // Creates 2 templates, each with a log entry from reality.eth
-        vm.prank(adjudictionDeployer);
-        new AdjudicationFramework(
-            address(l2RealityEth),
-            123,
-            address(l2ForkArbitrator),
-            initialArbs
-        );
-
-        // NB The length and indexes of this may change if we add unrelated log entries to the AdjudicationFramework constructor
-        Vm.Log[] memory entries = vm.getRecordedLogs();
-        assertEq(entries.length, 2);
-
-        // We should always get the same contract address because we deploy only this with the same user so the address and nonce shouldn't change
-        string
-            memory addLog = '{"title": "Should we add arbitrator %s to the framework 0xfed866a553d106378b828a2e1effb8bed9c9dc28?", "type": "bool", "category": "adjudication", "lang": "en"}';
-        string
-            memory removeLog = '{"title": "Should we remove arbitrator %s from the framework 0xfed866a553d106378b828a2e1effb8bed9c9dc28?", "type": "bool", "category": "adjudication", "lang": "en"}';
-        assertEq(abi.decode(entries[0].data, (string)), string(addLog));
-        assertEq(abi.decode(entries[1].data, (string)), string(removeLog));
     }
 
     /*
