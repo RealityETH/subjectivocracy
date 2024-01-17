@@ -8,7 +8,7 @@
     "compiler-version": "off",
     "max-states-count": "off",
     "no-empty-blocks": "off",
-    "custom-errors": "off",
+    "custom-errors": "error",
     "reason-string": "off",
     "not-rely-on-time": "off",
     "one-contract-per-file": "off"
