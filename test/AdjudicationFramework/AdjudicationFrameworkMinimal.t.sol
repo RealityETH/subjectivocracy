@@ -166,7 +166,8 @@ contract AdjudicationIntegrationTest is Test {
             123,
             address(l2ForkArbitrator),
             initialArbitrators,
-            true
+            true,
+            0
         );
 
         l2Arbitrator1 = new Arbitrator();
@@ -256,7 +257,8 @@ contract AdjudicationIntegrationTest is Test {
             123,
             address(l2ForkArbitrator),
             initialArbs,
-            true
+            true,
+            0
         );
 
         // NB The length and indexes of this may change if we add unrelated log entries to the AdjudicationFramework constructor

@@ -11,8 +11,7 @@ import {IRealityETH} from "./lib/reality-eth/interfaces/IRealityETH.sol";
 import {CalculateMoneyBoxAddress} from "./lib/CalculateMoneyBoxAddress.sol";
 
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
-import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
-
+import {IL2ForkArbitrator} from "./interfaces/IL2ForkArbitrator.sol";
 /*
 This contract is the arbitrator used by governance propositions for AdjudicationFramework contracts.
 It charges a dispute fee of 5% of total supply [TODO], which it forwards to L1 when requesting a fork.
@@ -22,33 +21,7 @@ we are in the 1 week period before a fork) the new one will be queued.
 
 // NB This doesn't implement IArbitrator because that requires slightly more functions than we need
 // TODO: Would be good to make a stripped-down IArbitrator that only has the essential functions
-contract L2ForkArbitrator is IBridgeMessageReceiver {
-    // @dev Error thrown when the arbitration fee is 0
-    error ArbitrationFeeMustBePositive();
-    // @dev Error thrown when the arbitration request has already been made
-    error ArbitrationAlreadyRequested();
-    // @dev Error thrown when the fork is already in progress over something else
-    error ForkInProgress();
-    // @dev Error thrown when the L2 bridge is not set
-    error L2BridgeNotSet();
-    // @dev Error thrown when the fork is not in progress
-    error QuestionNotForked();
-    // @dev Error thrown when status is not FORK_REQUESTED
-    error StatusNotForkRequested();
-    // @dev Error thrown when status is not FORK_REQUEST_FAILED
-    error StatusNotForkRequestFailed();
-    // @dev Error thrown when the fork is not in progress
-    error WrongStatus();
-    // @dev Error thrown when called with wrong network
-    error WrongNetwork();
-    // @dev Error thrown when called with wrong sender
-    error WrongSender();
-    // @dev Error thrown when called from the wrong bridge
-    error WrongBridge();
-    // @dev Error thrown when the fork is not in progress
-    error ForkNotInProgress();
-    // @dev Error thrown when contract is not awaiting activation
-    error NotAwaitingActivation();
+contract L2ForkArbitrator is IL2ForkArbitrator {
 
     bool public isForkInProgress;
     IRealityETH public realitio;
@@ -65,6 +38,16 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
         address payable payer;
         uint256 paid;
         bytes32 result;
+        uint256 timeOfRequest;
+    }
+
+    enum ArbitrationStatus {
+        NONE,
+        SOME
+    }
+    struct ArbitrationData {
+        ArbitrationStatus status;
+        uint256 delay; // Delay in seconds before the fork is activated
     }
 
     event LogRequestArbitration(
@@ -75,6 +58,8 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
     );
 
     mapping(bytes32 => ArbitrationRequest) public arbitrationRequests;
+    mapping(bytes32 => ArbitrationData) public arbitrationData;
+
     mapping(address => uint256) public refundsDue;
 
     L2ChainInfo public chainInfo;
@@ -121,7 +106,8 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
             RequestStatus.QUEUED,
             payable(msg.sender),
             msg.value,
-            bytes32(0)
+            bytes32(0),
+            block.timestamp
         );
 
         realitio.notifyOfArbitrationRequest(
@@ -131,21 +117,57 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
         );
         emit LogRequestArbitration(questionId, msg.value, msg.sender, 0);
 
-        if (!isForkInProgress) {
+        if (!isForkInProgress && arbitrationData[questionId].delay == 0) {
             requestActivateFork(questionId);
         }
         return true;
+    }
+
+    function storeInformation(
+        uint256 templateId,
+        uint32 openingTs,
+        string calldata question,
+        uint32 timeout,
+        uint32 minBond,
+        uint256 nonce,
+        uint256 delay
+    ) public {
+        bytes32 contentHash = keccak256(
+            abi.encodePacked(templateId, openingTs, question)
+        );
+        bytes32 question_id = keccak256(
+            abi.encodePacked(
+                contentHash,
+                address(this),
+                timeout,
+                minBond,
+                address(realitio),
+                msg.sender,
+                nonce
+            )
+        );
+        arbitrationData[question_id] = ArbitrationData(ArbitrationStatus.SOME, delay);
     }
 
     /// @notice Request a fork via the bridge
     /// @dev Talks to the L1 ForkingManager asynchronously, and may fail.
     /// @param question_id The question in question
     function requestActivateFork(bytes32 question_id) public {
+        if (arbitrationData[question_id].status == ArbitrationStatus.NONE)
+            revert ArbitrationDataNotSet();
+        if (arbitrationRequests[question_id].timeOfRequest + arbitrationData[question_id].delay > block.timestamp)
+            revert RequestStillInWaitingPeriod();
         if (isForkInProgress) {
             revert ForkInProgress(); // Forking over something else
         }
 
-        if (msg.sender != arbitrationRequests[question_id].payer) {
+        if (
+            arbitrationRequests[question_id].status ==
+            RequestStatus.FORK_REQUEST_FAILED &&
+            msg.sender != arbitrationRequests[question_id].payer
+        ) {
+            // If the fork request is done for the first time, anyone can call it. This ensures that a request will be processed even if the original payer is not available.
+            // Though, if the fork request failed, only the original payer can reinitiate it.
             revert WrongSender();
         }
 

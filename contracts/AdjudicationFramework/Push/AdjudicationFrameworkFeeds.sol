@@ -31,16 +31,19 @@ contract AdjudicationFrameworkFeeds is MinimalAdjudicationFramework {
     /// @param _realityETH The reality.eth instance we adjudicate for
     /// @param _forkArbitrator The arbitrator contract that escalates to an L1 fork, used for our governance
     /// @param _initialArbitrators Arbitrator contracts we initially support
+    /// @param _arbitrationDelayForCollectingEvidence The delay before arbitration can be requested
     constructor(
         address _realityETH,
         address _forkArbitrator,
-        address[] memory _initialArbitrators
+        address[] memory _initialArbitrators,
+        uint256 _arbitrationDelayForCollectingEvidence
     )
         MinimalAdjudicationFramework(
             _realityETH,
             _forkArbitrator,
             _initialArbitrators,
-            true // replace method can be used to switch out arbitrators
+            true, // replace method can be used to switch out arbitrators
+            _arbitrationDelayForCollectingEvidence
         )
     {}
 

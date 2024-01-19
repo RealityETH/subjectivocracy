@@ -24,7 +24,8 @@ contract FeedsTest is Test {
         feeds = new AdjudicationFrameworkFeeds(
             address(l2RealityEth),
             l2Arbitrator,
-            initialArbitrators
+            initialArbitrators,
+            0
         );
     }
 

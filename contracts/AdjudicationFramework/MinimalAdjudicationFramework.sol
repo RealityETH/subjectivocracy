@@ -8,7 +8,7 @@ pragma solidity ^0.8.20;
 import {IRealityETH} from "./../lib/reality-eth/interfaces/IRealityETH.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-
+import {IL2ForkArbitrator} from "../interfaces/IL2ForkArbitrator.sol";
 /*
 Minimal Adjudication framework every framework should implement.
 Contains an enumerableSet of Arbitrators.
@@ -76,6 +76,7 @@ contract MinimalAdjudicationFramework {
     // When they're all cleared they can be unfrozen.
     mapping(address => uint256) public countArbitratorFreezePropositions;
 
+    uint256 public arbitrationDelayForCollectingEvidence;
     IRealityETH public realityETH;
 
     modifier onlyArbitrator() {
@@ -89,15 +90,18 @@ contract MinimalAdjudicationFramework {
     /// @param _forkArbitrator The arbitrator contract that escalates to an L1 fork, used for our governance
     /// @param _initialArbitrators Arbitrator contracts we initially support
     /// @param _allowReplacementModification Whether to allow multiple modifications at once
+    /// @param _arbitrationDelayForCollectingEvidence The delay before arbitration can be requested
     constructor(
         address _realityETH,
         address _forkArbitrator,
         address[] memory _initialArbitrators,
-        bool _allowReplacementModification
+        bool _allowReplacementModification,
+        uint256 _arbitrationDelayForCollectingEvidence
     ) {
         allowReplacementModification = _allowReplacementModification;
         realityETH = IRealityETH(_realityETH);
         forkArbitrator = _forkArbitrator;
+        arbitrationDelayForCollectingEvidence = _arbitrationDelayForCollectingEvidence;
         // Create reality.eth templates for our add questions
         // We'll identify ourselves in the template so we only need a single parameter for questions, the arbitrator in question.
         // TODO: We may want to specify a document with the terms that guide this decision here, rather than just leaving it implicit.
@@ -163,13 +167,22 @@ contract MinimalAdjudicationFramework {
             templateId = templateIdReplaceArbitrator;
         }
         bytes32 questionId = realityETH.askQuestionWithMinBond(
-            templateIdRemoveArbitrator,
+            templateId,
             question,
             forkArbitrator,
             REALITY_ETH_TIMEOUT,
             uint32(block.timestamp),
             0,
             REALITY_ETH_BOND_ARBITRATOR_REMOVE
+        );
+        IL2ForkArbitrator(forkArbitrator).storeInformation(
+            templateId,
+            uint32(block.timestamp),
+            question,
+            REALITY_ETH_TIMEOUT,
+            REALITY_ETH_BOND_ARBITRATOR_REMOVE,
+            0,
+            arbitrationDelayForCollectingEvidence
         );
         if (
             propositions[questionId].arbitratorToAdd != address(0) ||
