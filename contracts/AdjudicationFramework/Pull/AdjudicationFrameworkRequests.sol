@@ -84,7 +84,7 @@ contract AdjudicationFrameworkRequests is
     /// @param _disputeFee The dispute fee we charge reality.eth users
     /// @param _forkArbitrator The arbitrator contract that escalates to an L1 fork, used for our governance
     /// @param _initialArbitrators Arbitrator contracts we initially support
-        /// @param _arbitrationDelayForCollectingEvidence The delay before arbitration can be requested
+    /// @param _arbitrationDelayForCollectingEvidence The delay before arbitration can be requested
 
     constructor(
         address _realityETH,

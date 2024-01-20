@@ -645,7 +645,6 @@ contract AdjudicationIntegrationTest is Test {
     }
 
     function testArbitrationContestForkFailed() public {
-        uint256 additionalDelayForRequest = 100000;
         (, bytes32 removalQuestionId, , , ) = _setupContestedArbitration();
 
         // Currently in the "yes" state, so once it times out we can complete the removal
@@ -686,8 +685,7 @@ contract AdjudicationIntegrationTest is Test {
 
         // l2ForkArbitrator.requestActivateFork(removalQuestionId);
 
-
-        // assertTrue(l2ForkArbitrator.isForkInProgress(), "In forking state");
+        assertTrue(l2ForkArbitrator.isForkInProgress(), "In forking state");
 
         // L1 STUFF HAPPENS HERE
         // Assume somebody else called fork or the fee changed or something.
@@ -695,38 +693,38 @@ contract AdjudicationIntegrationTest is Test {
 
         // NB Here we're sending the payment directly
         // In fact it seems like it would have to be claimed separately
-        // assertEq(address(l2ForkArbitrator).balance, 0);
-        // payable(address(l2Bridge)).transfer(1000000); // Fund it so it can fund the L2ForkArbitrator
-        // bytes memory fakeMessageData = abi.encode(removalQuestionId);
-        // l2Bridge.fakeClaimMessage(
-        //     address(l1GlobalForkRequester),
-        //     uint32(0),
-        //     address(l2ForkArbitrator),
-        //     fakeMessageData,
-        //     forkFee
-        // );
-        // assertEq(address(l2ForkArbitrator).balance, forkFee);
+        assertEq(address(l2ForkArbitrator).balance, 0);
+        payable(address(l2Bridge)).transfer(1000000); // Fund it so it can fund the L2ForkArbitrator
+        bytes memory fakeMessageData = abi.encode(removalQuestionId);
+        l2Bridge.fakeClaimMessage(
+            address(l1GlobalForkRequester),
+            uint32(0),
+            address(l2ForkArbitrator),
+            fakeMessageData,
+            forkFee
+        );
+        assertEq(address(l2ForkArbitrator).balance, forkFee);
 
-        // assertFalse(
-        //     l2ForkArbitrator.isForkInProgress(),
-        //     "Not in forking state"
-        // );
+        assertFalse(
+            l2ForkArbitrator.isForkInProgress(),
+            "Not in forking state"
+        );
 
-        // vm.expectRevert(IL2ForkArbitrator.WrongSender.selector);
-        // l2ForkArbitrator.requestActivateFork(removalQuestionId);
+        vm.expectRevert(IL2ForkArbitrator.WrongSender.selector);
+        l2ForkArbitrator.requestActivateFork(removalQuestionId);
 
-        // vm.expectRevert(IL2ForkArbitrator.WrongSender.selector);
-        // l2ForkArbitrator.cancelArbitration(removalQuestionId);
+        vm.expectRevert(IL2ForkArbitrator.WrongSender.selector);
+        l2ForkArbitrator.cancelArbitration(removalQuestionId);
 
-        // vm.prank(user2);
-        // l2ForkArbitrator.cancelArbitration(removalQuestionId);
-        // assertEq(forkFee, l2ForkArbitrator.refundsDue(user2));
+        vm.prank(user2);
+        l2ForkArbitrator.cancelArbitration(removalQuestionId);
+        assertEq(forkFee, l2ForkArbitrator.refundsDue(user2));
 
-        // uint256 user2Bal = user2.balance;
-        // vm.prank(user2);
-        // l2ForkArbitrator.claimRefund();
-        // assertEq(address(l2ForkArbitrator).balance, 0);
-        // assertEq(user2.balance, user2Bal + forkFee);
+        uint256 user2Bal = user2.balance;
+        vm.prank(user2);
+        l2ForkArbitrator.claimRefund();
+        assertEq(address(l2ForkArbitrator).balance, 0);
+        assertEq(user2.balance, user2Bal + forkFee);
     }
 
     /*

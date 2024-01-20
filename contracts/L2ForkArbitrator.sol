@@ -4,7 +4,6 @@ pragma solidity ^0.8.20;
 
 // Allow mixed-case variables for compatibility with reality.eth, eg it uses question_id not questionId
 /* solhint-disable var-name-mixedcase */
-
 import {L2ChainInfo} from "./L2ChainInfo.sol";
 import {L1GlobalForkRequester} from "./L1GlobalForkRequester.sol";
 import {IRealityETH} from "./lib/reality-eth/interfaces/IRealityETH.sol";
@@ -22,7 +21,6 @@ we are in the 1 week period before a fork) the new one will be queued.
 // NB This doesn't implement IArbitrator because that requires slightly more functions than we need
 // TODO: Would be good to make a stripped-down IArbitrator that only has the essential functions
 contract L2ForkArbitrator is IL2ForkArbitrator {
-
     bool public isForkInProgress;
     IRealityETH public realitio;
 
@@ -128,7 +126,7 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         uint32 openingTs,
         string calldata question,
         uint32 timeout,
-        uint32 minBond,
+        uint256 minBond,
         uint256 nonce,
         uint256 delay
     ) public {
@@ -146,7 +144,10 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
                 nonce
             )
         );
-        arbitrationData[question_id] = ArbitrationData(ArbitrationStatus.SOME, delay);
+        arbitrationData[question_id] = ArbitrationData(
+            ArbitrationStatus.SOME,
+            delay
+        );
     }
 
     /// @notice Request a fork via the bridge
@@ -155,8 +156,11 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
     function requestActivateFork(bytes32 question_id) public {
         if (arbitrationData[question_id].status == ArbitrationStatus.NONE)
             revert ArbitrationDataNotSet();
-        if (arbitrationRequests[question_id].timeOfRequest + arbitrationData[question_id].delay > block.timestamp)
-            revert RequestStillInWaitingPeriod();
+        if (
+            arbitrationRequests[question_id].timeOfRequest +
+                arbitrationData[question_id].delay >
+            block.timestamp
+        ) revert RequestStillInWaitingPeriod();
         if (isForkInProgress) {
             revert ForkInProgress(); // Forking over something else
         }

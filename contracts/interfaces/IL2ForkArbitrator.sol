@@ -5,8 +5,6 @@ pragma solidity ^0.8.20;
 // Allow mixed-case variables for compatibility with reality.eth, eg it uses question_id not questionId
 /* solhint-disable var-name-mixedcase */
 
-
-
 import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 
 /*
@@ -64,16 +62,16 @@ interface IL2ForkArbitrator is IBridgeMessageReceiver {
         uint256 maxPrevious
     ) external payable returns (bool);
 
-   function storeInformation(
+    function storeInformation(
         uint256 templateId,
         uint32 openingTs,
         string calldata question,
         uint32 timeout,
-        uint32 minBond,
+        uint256 minBond,
         uint256 nonce,
         uint256 delay
     ) external;
-    
+
     /// @notice Request a fork via the bridge
     /// @dev Talks to the L1 ForkingManager asynchronously, and may fail.
     /// @param questionId The questionId in the question
