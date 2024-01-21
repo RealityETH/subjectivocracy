@@ -80,12 +80,12 @@ async function main() {
     }
 
     const bridge = await ethers.getContractAt(
-        'ForkableBridge',
+        'contracts/ForkableBridge.sol:ForkableBridge',
         polygonZkEVMBridgeAddress,
     );
 
     const forkonomicToken = await ethers.getContractAt(
-        'ForkonomicToken',
+        'contracts/ForkonomicToken.sol:ForkonomicToken',
         forkonomicTokenAddress,
     );
     const depositAmount = ethers.utils.parseEther('10');
