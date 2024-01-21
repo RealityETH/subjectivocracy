@@ -307,8 +307,8 @@ async function main() {
 
     console.log('nonceProxyGlobalExitRoot', nonceProxyGlobalExitRoot);
 
-    // nonceProxyZkevm :Nonce globalExitRoot + 1 (proxy globalExitRoot) + 1 (impl Zkevm) = +2
-    const nonceProxyZkevm = nonceProxyGlobalExitRoot + 2;
+    // nonceProxyZkevm :Nonce globalExitRoot + 1 (proxy globalExitRoot) + 1 (impl Zkevm)+ initialize global proxy = +3
+    const nonceProxyZkevm = nonceProxyGlobalExitRoot + 3;
     console.log('nonceProxyZkevm', nonceProxyZkevm);
 
     let precalculateGLobalExitRootAddress;
@@ -418,6 +418,7 @@ async function main() {
                 proxyBridgeAddress,
                 ethers.constants.HashZero,
                 ethers.constants.HashZero,
+                { gasLimit: 5000000 },
             );
         } catch (error) {
             console.error('polygonZkEVMGlobalExitRoot initialization error', error.message);
@@ -512,7 +513,7 @@ async function main() {
 
         try {
             const iForkableZkEVM = await ethers.getContractAt('IForkableZkEVM', polygonZkEVMContract.address);
-            await iForkableZkEVM.initialize(
+            const initializeTx = await iForkableZkEVM.initialize(
                 forkingManagerContract.address,
                 parentContract,
                 [
@@ -532,9 +533,11 @@ async function main() {
                 gasTokenAddress,
                 verifierContract.address,
                 polygonZkEVMBridgeContract.address,
+                { gasLimit: 5000000 },
             );
+            console.log('initializeTx', initializeTx.hash);
         } catch (error) {
-            console.log('polygonZkEVMContract initialize threw some error', error.message);
+            console.error('polygonZkEVMContract initialize threw some error', error.message);
         }
 
         expect(precalculateZkevmAddress).to.be.equal(polygonZkEVMContract.address);
