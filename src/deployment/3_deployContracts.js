@@ -416,9 +416,11 @@ async function main() {
                 parentContract,
                 precalculateZkevmAddress,
                 proxyBridgeAddress,
+                ethers.constants.HashZero,
+                ethers.constants.HashZero,
             );
         } catch (error) {
-            console.log('polygonZkEVMGlobalExitRoot initialization error', error.message);
+            console.error('polygonZkEVMGlobalExitRoot initialization error', error.message);
         }
 
         expect(precalculateGLobalExitRootAddress).to.be.equal(polygonZkEVMGlobalExitRoot.address);
