@@ -513,7 +513,7 @@ async function main() {
 
         try {
             const iForkableZkEVM = await ethers.getContractAt('IForkableZkEVM', polygonZkEVMContract.address);
-            const initializeTx = await iForkableZkEVM.initialize(
+            await iForkableZkEVM.initialize(
                 forkingManagerContract.address,
                 parentContract,
                 [
