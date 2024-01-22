@@ -418,7 +418,7 @@ async function main() {
                 proxyBridgeAddress,
                 ethers.constants.HashZero,
                 ethers.constants.HashZero,
-                { gasLimit: 5000000 },
+                { gasLimit: 5000000 }, // required as native gas limit estimation would return a too low result
             );
         } catch (error) {
             console.error('polygonZkEVMGlobalExitRoot initialization error', error.message);
@@ -533,9 +533,8 @@ async function main() {
                 gasTokenAddress,
                 verifierContract.address,
                 polygonZkEVMBridgeContract.address,
-                { gasLimit: 5000000 },
+                { gasLimit: 5000000 }, // required as native gas limit estimation would return a too low result
             );
-            console.log('initializeTx', initializeTx.hash);
         } catch (error) {
             console.error('polygonZkEVMContract initialize threw some error', error.message);
         }
