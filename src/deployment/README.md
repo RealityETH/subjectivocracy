@@ -170,3 +170,19 @@ To safe the deployment, run:
 ```sh
 yarn run saveDeployment:sepolia
 ```
+
+### Run application deployments:
+
+configure the file `deploy_application_parameters`
+
+```sh
+yarn hardhat run src/deployment/4_deployL1Applications.js --network sepolia
+```
+
+```sh
+yarn hardhat run src/deployment/5_deployL2Applications.js --network backstopTestnet0
+```
+
+```sh
+
+```
