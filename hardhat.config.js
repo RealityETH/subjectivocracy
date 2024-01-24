@@ -2,7 +2,7 @@ require('dotenv').config();
 require('@nomiclabs/hardhat-waffle');
 require('hardhat-gas-reporter');
 require('solidity-coverage');
-require('@nomiclabs/hardhat-etherscan');
+require('@nomicfoundation/hardhat-verify');
 require('@openzeppelin/hardhat-upgrades');
 require('hardhat-dependency-compiler');
 require('hardhat-preprocessor');
