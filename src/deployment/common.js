@@ -47,6 +47,9 @@ async function loadDeployer(currentProvider, deployParameters = {}, idx = '0') {
         }
         deployer = new ethers.Wallet(deployParameters.deployerPvtKey, currentProvider);
         console.log('Using pvtKey deployer with address: ', deployer.address);
+    } else if (process.env.PK) {
+        deployer = new ethers.Wallet(process.env.PK, currentProvider);
+        console.log('Using PK deployer with address: ', deployer.address);
     } else if (process.env.MNEMONIC) {
         deployer = ethers.Wallet.fromMnemonic(process.env.MNEMONIC, `m/44'/60'/0'/0/${idx}`).connect(currentProvider);
         console.log('Using MNEMONIC deployer with address: ', deployer.address);
@@ -82,6 +85,7 @@ async function loadOngoingOrDeploy(deployer, contractName, ongoingName, args, on
     let contractInstance;
     if (!existingAddress) {
         contractInstance = await contractFactory.deploy(...args);
+        await contractInstance.deployed();
         console.log('#######################\n');
         console.log(ongoingName, 'deployed to:', contractInstance.address);
 

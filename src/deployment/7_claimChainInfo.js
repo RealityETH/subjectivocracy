@@ -98,9 +98,9 @@ async function main() {
                 currentDeposit.amount,
                 currentDeposit.metadata,
             );
-            console.log('Claim message succesfully sent: ', claimTx.hash);
+            console.log('Claim message successfully sent: ', claimTx.hash);
             await claimTx.wait();
-            console.log('Claim message succesfully mined ', claimTx.hash);
+            console.log('Claim message successfully mined ', claimTx.hash);
         } else {
             console.log('Not ready yet!');
         }

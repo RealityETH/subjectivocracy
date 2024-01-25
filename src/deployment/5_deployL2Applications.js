@@ -95,7 +95,7 @@ async function main() {
 
     const l2ChainInfoContract = await common.loadOngoingOrDeploy(deployer, 'L2ChainInfo', 'l2ChainInfo', [l2BridgeAddress, l1GlobalChainInfoPublisher], ongoingDeployment, pathOngoingDeploymentJson);
     const l2ForkArbitratorContract = await common.loadOngoingOrDeploy(deployer, 'L2ForkArbitrator', 'l2ForkArbitrator', [realityETHContract.address, l2ChainInfoContract.address, l1GlobalForkRequester, forkArbitratorDisputeFee], ongoingDeployment, pathOngoingDeploymentJson);
-    const adjudicationFrameworkContract = await common.loadOngoingOrDeploy(deployer, 'AdjudicationFramework', 'adjudicationFramework', [realityETHContract.address, adjudicationFrameworkDisputeFee, l2ForkArbitratorContract.address, arbitratorAddresses], ongoingDeployment, pathOngoingDeploymentJson);
+    const adjudicationFrameworkContract = await common.loadOngoingOrDeploy(deployer, 'AdjudicationFrameworkRequests', 'adjudicationFramework', [realityETHContract.address, adjudicationFrameworkDisputeFee, l2ForkArbitratorContract.address, arbitratorAddresses, false], ongoingDeployment, pathOngoingDeploymentJson);
 
     const outputJson = {
         realityETH: realityETHContract.address,
