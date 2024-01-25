@@ -73,18 +73,6 @@ async function main() {
         expect(error.message.toLowerCase().includes('already verified')).to.be.equal(true);
     }
 
-    // verify bridge implementation
-    try {
-        await hre.run(
-            'verify:verify',
-            {
-                address: deployOutputParameters.bridgeImplementationAddress,
-            },
-        );
-    } catch (error) {
-        expect(error.message.toLowerCase().includes('already verified')).to.be.equal(true);
-    }
-
     // verify create children implementation
     try {
         await hre.run(
@@ -103,6 +91,18 @@ async function main() {
             'verify:verify',
             {
                 address: deployOutputParameters.bridgeOperationImplementationAddress,
+            },
+        );
+    } catch (error) {
+        expect(error.message.toLowerCase().includes('already verified')).to.be.equal(true);
+    }
+
+    // verify bridge implementation
+    try {
+        await hre.run(
+            'verify:verify',
+            {
+                address: deployOutputParameters.bridgeImplementationAddress,
             },
         );
     } catch (error) {
