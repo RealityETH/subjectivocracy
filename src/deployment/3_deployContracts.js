@@ -717,6 +717,7 @@ async function main() {
         salt,
         version,
         minter,
+        bridgeOperationImplementationAddress,
     };
     fs.writeFileSync(pathOutputJson, JSON.stringify(outputJson, null, 1));
 
