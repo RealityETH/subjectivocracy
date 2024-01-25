@@ -513,7 +513,7 @@ async function main() {
 
         try {
             const iForkableZkEVM = await ethers.getContractAt('IForkableZkEVM', polygonZkEVMContract.address);
-            await iForkableZkEVM.initialize(
+            const initializeTx = await iForkableZkEVM.initialize(
                 forkingManagerContract.address,
                 parentContract,
                 [
@@ -535,6 +535,7 @@ async function main() {
                 polygonZkEVMBridgeContract.address,
                 { gasLimit: 5000000 }, // required as native gas limit estimation would return a too low result
             );
+            console.log('initializeTx', initializeTx.hash);
         } catch (error) {
             console.error('polygonZkEVMContract initialize threw some error', error.message);
         }
