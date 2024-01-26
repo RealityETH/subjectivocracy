@@ -77,17 +77,12 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         disputeFee = _initialDisputeFee;
     }
 
-    /// @notice Return the dispute fee for the specified question. 0 indicates that we won't arbitrate it.
-    /// @dev Uses a general default, takes a question id param for other contracts that may want to set it per-question.
+    /// @inheritdoc IL2ForkArbitrator
     function getDisputeFee(bytes32) public view returns (uint256) {
         return disputeFee;
     }
 
-    /// @notice Request arbitration, freezing the question until we send submitAnswerByArbitrator
-    /// @dev The bounty can be paid only in part, in which case the last person to pay will be considered the payer
-    /// Will trigger an error if the notification fails, eg because the question has already been finalized
-    /// @param questionId The question in question
-    /// @param maxPrevious If specified, reverts if a bond higher than this was submitted after you sent your transaction.
+    /// @inheritdoc IL2ForkArbitrator
     function requestArbitration(
         bytes32 questionId,
         uint256 maxPrevious
@@ -121,6 +116,7 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         return true;
     }
 
+    /// @inheritdoc IL2ForkArbitrator
     function storeInformation(
         uint256 templateId,
         uint32 openingTs,
@@ -150,9 +146,7 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         );
     }
 
-    /// @notice Request a fork via the bridge
-    /// @dev Talks to the L1 ForkingManager asynchronously, and may fail.
-    /// @param question_id The question in question
+    /// @inheritdoc IL2ForkArbitrator
     function requestActivateFork(bytes32 question_id) public {
         if (arbitrationData[question_id].status == ArbitrationStatus.NONE)
             revert ArbitrationDataNotSet();
@@ -223,8 +217,7 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         isForkInProgress = true;
     }
 
-    // If the fork request fails, we will get a message back through the bridge telling us about it
-    // We will set FORK_REQUEST_FAILED which will allow anyone to request cancellation
+    /// @inheritdoc IL2ForkArbitrator
     function onMessageReceived(
         address _originAddress,
         uint32 _originNetwork,
@@ -257,11 +250,7 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         // We don't check the funds are back here, just assume L1GlobalForkRequester send them and they can be recovered.
     }
 
-    /// @notice Submit the arbitrator's answer to a question, assigning the winner automatically.
-    /// @param question_id The question in question
-    /// @param last_history_hash The history hash before the final one
-    /// @param last_answer_or_commitment_id The last answer given, or the commitment ID if it was a commitment.
-    /// @param last_answerer The address that supplied the last answer
+    /// @inheritdoc IL2ForkArbitrator
     function handleCompletedFork(
         bytes32 question_id,
         bytes32 last_history_hash,
@@ -299,11 +288,7 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         delete (arbitrationRequests[question_id]);
     }
 
-    /// @notice Cancel a previous arbitration request
-    /// @dev This is intended for situations where the stuff is happening non-atomically and the fee changes or someone else forks before us
-    /// @dev Another way to handle this might be to go back into QUEUED state and let people keep retrying
-    /// @dev NB This may revert if the contract has returned funds in the bridge but claimAsset hasn't been called yet
-    /// @param question_id The question in question
+    /// @inheritdoc IL2ForkArbitrator
     function cancelArbitration(bytes32 question_id) external {
         // For simplicity we won't let you cancel until forking is sorted, as you might retry and keep failing for the same reason
         if (isForkInProgress) {

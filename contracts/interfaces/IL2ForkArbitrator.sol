@@ -62,6 +62,16 @@ interface IL2ForkArbitrator is IBridgeMessageReceiver {
         uint256 maxPrevious
     ) external payable returns (bool);
 
+
+    /// @notice If the fork request fails, we will get a message back through the bridge telling us about it
+    /// We will set FORK_REQUEST_FAILED which will allow anyone to request cancellation
+    /// @param templateId The templateId of the question
+    /// @param openingTs The opening timestamp of the question
+    /// @param question The question
+    /// @param timeout The timeout of the question
+    /// @param minBond The minimum bond of the question
+    /// @param nonce The nonce of the question
+    /// @param delay The delay for the L2 ForkArbitrator
     function storeInformation(
         uint256 templateId,
         uint32 openingTs,
@@ -103,5 +113,7 @@ interface IL2ForkArbitrator is IBridgeMessageReceiver {
     /// @dev NB This may revert if the contract has returned funds in the bridge but claimAsset hasn't been called yet
     /// @param question_id The question in question
     function cancelArbitration(bytes32 question_id) external;
+
+    /// @notice Claim the refund for a question that was forked
     function claimRefund() external;
 }
