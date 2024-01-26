@@ -676,14 +676,6 @@ contract AdjudicationIntegrationTest is Test {
             removalQuestionId,
             0
         );
-        // vm.expectRevert(IL2ForkArbitrator.RequestStillInWaitingPeriod.selector);
-        // l2ForkArbitrator.requestActivateFork(removalQuestionId);
-
-        // skip(additionalDelayForRequest);
-        // vm.expectRevert(IL2ForkArbitrator.ArbitrationDataNotSet.selector);
-        // l2ForkArbitrator.requestActivateFork(removalQuestionId);
-
-        // l2ForkArbitrator.requestActivateFork(removalQuestionId);
 
         assertTrue(l2ForkArbitrator.isForkInProgress(), "In forking state");
 

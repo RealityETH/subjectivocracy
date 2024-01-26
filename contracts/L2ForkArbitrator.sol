@@ -114,7 +114,11 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         );
         emit LogRequestArbitration(questionId, msg.value, msg.sender, 0);
 
-        if (!isForkInProgress && arbitrationData[questionId].delay == 0) {
+        if (
+            !isForkInProgress &&
+            arbitrationData[questionId].delay == 0 &&
+            arbitrationData[questionId].status == ArbitrationStatus.SOME
+        ) {
             requestActivateFork(questionId);
         }
         return true;
