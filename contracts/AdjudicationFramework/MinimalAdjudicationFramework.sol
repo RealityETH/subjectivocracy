@@ -76,7 +76,8 @@ contract MinimalAdjudicationFramework {
     // When they're all cleared they can be unfrozen.
     mapping(address => uint256) public countArbitratorFreezePropositions;
 
-    uint256 public arbitrationDelayForCollectingEvidence;
+    // extra time period given to the ecosystem before a fork is activated
+    uint256 public forkActivationDeplay;
     IRealityETH public realityETH;
 
     modifier onlyArbitrator() {
@@ -90,18 +91,18 @@ contract MinimalAdjudicationFramework {
     /// @param _forkArbitrator The arbitrator contract that escalates to an L1 fork, used for our governance
     /// @param _initialArbitrators Arbitrator contracts we initially support
     /// @param _allowReplacementModification Whether to allow multiple modifications at once
-    /// @param _arbitrationDelayForCollectingEvidence The delay before arbitration can be requested
+    /// @param _forkActivationDeplay The delay before arbitration can be requested
     constructor(
         address _realityETH,
         address _forkArbitrator,
         address[] memory _initialArbitrators,
         bool _allowReplacementModification,
-        uint256 _arbitrationDelayForCollectingEvidence
+        uint256 _forkActivationDeplay
     ) {
         allowReplacementModification = _allowReplacementModification;
         realityETH = IRealityETH(_realityETH);
         forkArbitrator = _forkArbitrator;
-        arbitrationDelayForCollectingEvidence = _arbitrationDelayForCollectingEvidence;
+        forkActivationDeplay = _forkActivationDeplay;
         // Create reality.eth templates for our add questions
         // We'll identify ourselves in the template so we only need a single parameter for questions, the arbitrator in question.
         // TODO: We may want to specify a document with the terms that guide this decision here, rather than just leaving it implicit.
@@ -182,7 +183,7 @@ contract MinimalAdjudicationFramework {
             REALITY_ETH_TIMEOUT,
             REALITY_ETH_BOND_ARBITRATOR_REMOVE,
             0,
-            arbitrationDelayForCollectingEvidence
+            forkActivationDeplay
         );
         if (
             propositions[questionId].arbitratorToAdd != address(0) ||

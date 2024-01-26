@@ -55,7 +55,11 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         uint256 remaining
     );
 
+    // stores data on the arbitration process
+    // questionId => ArbitrationRequest
     mapping(bytes32 => ArbitrationRequest) public arbitrationRequests;
+    // stores data on the arbitration itself
+    // questionId => ArbitrationData
     mapping(bytes32 => ArbitrationData) public arbitrationData;
 
     mapping(address => uint256) public refundsDue;

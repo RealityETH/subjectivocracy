@@ -62,7 +62,6 @@ interface IL2ForkArbitrator is IBridgeMessageReceiver {
         uint256 maxPrevious
     ) external payable returns (bool);
 
-
     /// @notice If the fork request fails, we will get a message back through the bridge telling us about it
     /// We will set FORK_REQUEST_FAILED which will allow anyone to request cancellation
     /// @param templateId The templateId of the question

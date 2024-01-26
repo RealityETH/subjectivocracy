@@ -290,6 +290,27 @@ contract AdjudicationIntegrationTest is Test {
         );
     }
 
+    function testStoresTheForkDelayCorrectly() public {
+        uint256 delay = 123;
+        address[] memory initialArbs= new address[](2);
+        MinimalAdjudicationFramework adjudicationFrameworkWithDelay = new AdjudicationFrameworkRequests(
+            address(l2RealityEth),
+            123,
+            address(l2ForkArbitrator),
+            initialArbs,
+            true,
+            delay
+        );
+        bytes32 questionIdAddMultiple = adjudicationFrameworkWithDelay
+            .requestModificationOfArbitrators(address(0), address(0x1000));
+        (,uint256 storedDelay) = l2ForkArbitrator.arbitrationData(questionIdAddMultiple);
+        assertEq(
+            delay,
+            storedDelay,
+            "delay not stored correctly"
+        );
+    }
+
     function testrequestModificationOfArbitrators() public {
         // Scenario 1: Add 1 arbitrator
 
