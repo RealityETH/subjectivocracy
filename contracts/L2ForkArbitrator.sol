@@ -23,6 +23,7 @@ we are in the 1 week period before a fork) the new one will be queued.
 contract L2ForkArbitrator is IL2ForkArbitrator {
     bool public isForkInProgress;
     IRealityETH public realitio;
+    uint256 public delayForForkInitiator = 12 hours;
 
     enum RequestStatus {
         NONE,
@@ -37,6 +38,7 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         uint256 paid;
         bytes32 result;
         uint256 timeOfRequest;
+        uint256 timeOfCancellation;
     }
 
     enum ArbitrationStatus {
@@ -104,7 +106,8 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
             payable(msg.sender),
             msg.value,
             bytes32(0),
-            block.timestamp
+            block.timestamp,
+            0
         );
 
         realitio.notifyOfArbitrationRequest(
@@ -170,10 +173,13 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         if (
             arbitrationRequests[question_id].status ==
             RequestStatus.FORK_REQUEST_FAILED &&
+            arbitrationRequests[question_id].timeOfCancellation +
+                delayForForkInitiator >
+            block.timestamp &&
             msg.sender != arbitrationRequests[question_id].payer
         ) {
             // If the fork request is done for the first time, anyone can call it. This ensures that a request will be processed even if the original payer is not available.
-            // Though, if the fork request failed, only the original payer can reinitiate it.
+            // Though, if the fork request failed, only the original payer can reinitiate it for a delayForForkInitiator time period. Later again anyone can do it.
             revert WrongSender();
         }
 
@@ -212,14 +218,13 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
             address(forkonomicToken)
         );
 
-        bytes memory permitData;
         bridge.bridgeAsset{value: forkFee}(
             uint32(0),
             moneyBox,
             forkFee, // must be equal to msg.value
             address(0), // Empty address for the native token
             true,
-            permitData
+            ""
         );
 
         isForkInProgress = true;
@@ -254,6 +259,7 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         isForkInProgress = false;
         arbitrationRequests[question_id].status = RequestStatus
             .FORK_REQUEST_FAILED;
+        arbitrationRequests[question_id].timeOfCancellation = block.timestamp;
 
         // We don't check the funds are back here, just assume L1GlobalForkRequester send them and they can be recovered.
     }
