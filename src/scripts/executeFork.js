@@ -6,7 +6,6 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const common = require('../common/common');
 
-
 async function main() {
     const args = process.argv.slice(2);
     const deploymentName = args[0];
@@ -47,14 +46,19 @@ async function main() {
     }
     console.log('Approving payment');
     await forkonomicTokenContract.connect(deployer).approve(forkingManagerContract.address, payment);
-    console.log("done");
-    await forkingManagerContract.connect(deployer).initiateFork('0x');
+    const disputeData = {
+        isL1: true,
+        disputeContract: ethers.constants.AddressZero,
+        disputeContent: ethers.constants.HashZero,
+    };
+    const tx1 = await forkingManagerContract.connect(deployer).initiateFork(disputeData);
+    await tx1.wait();
     console.log('Fork initiated');
     const sleepTime = await forkingManagerContract.forkPreparationTime();
     console.log('Sleeping for ', sleepTime, 's before executing fork');
     console.log('Alternatively, one can also execute the fork manually later on this contract: https://sepolia.etherscan.com/address/', forkingManager.address, '#writeContract');
     await new Promise((r) => setTimeout(r, sleepTime * 1000));
-    const tx2 = await forkingManagerContract.connect(deployer).executeFork(payment);
+    const tx2 = await forkingManagerContract.connect(deployer).executeFork({ gasLimit: 10000000 });
     console.log('Executed fork with tx: ', tx2.hash);
 }
 
