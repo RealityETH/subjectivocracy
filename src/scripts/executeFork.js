@@ -4,6 +4,9 @@ const path = require('path');
 const { ethers } = require('hardhat');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
+const common = require('../common/common');
+
+
 async function main() {
     const args = process.argv.slice(2);
     const deploymentName = args[0];
@@ -27,25 +30,26 @@ async function main() {
     const currentProvider = await common.loadProvider(deployParameters, process.env);
     const deployer = await common.loadDeployer(currentProvider, deployParameters);
 
-    if (trustedSequencer === undefined || trustedSequencer.toLowerCase() !== deployer.address.toLowerCase()) {
-        throw new Error('Wrong deployer address');
-    }
-
-    const forkingManagerContract = await ethers.getContractAt(
+    const forkingManagerContract = (await ethers.getContractAt(
         'contracts/ForkingManager.sol:ForkingManager',
-        polygonZkEVMBridgeAddress,
-    );
+        forkingManager,
+    )).connect(deployer);
+    console.log('ForkingManager address: ', forkingManagerContract.address);
 
-    const forkonomicTokenContract = await ethers.getContractAt(
+    const forkonomicTokenContract = (await ethers.getContractAt(
         'contracts/ForkonomicToken.sol:ForkonomicToken',
         forkonomicTokenAddress,
-    );
+    )).connect(deployer);
     const payment = await forkingManagerContract.arbitrationFee();
+    console.log('Payment: ', payment.toString());
     if (payment.gt(await forkonomicTokenContract.balanceOf(deployer.address))) {
         throw new Error('Not enough tokens');
     }
-    await forkonomicTokenContract.connect(deployer).approve(forkingManager.address, payment);
+    console.log('Approving payment');
+    await forkonomicTokenContract.connect(deployer).approve(forkingManagerContract.address, payment);
+    console.log("done");
     await forkingManagerContract.connect(deployer).initiateFork('0x');
+    console.log('Fork initiated');
     const sleepTime = await forkingManagerContract.forkPreparationTime();
     console.log('Sleeping for ', sleepTime, 's before executing fork');
     console.log('Alternatively, one can also execute the fork manually later on this contract: https://sepolia.etherscan.com/address/', forkingManager.address, '#writeContract');
