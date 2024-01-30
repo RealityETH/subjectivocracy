@@ -84,7 +84,7 @@ contract AdjudicationFrameworkRequests is
     /// @param _disputeFee The dispute fee we charge reality.eth users
     /// @param _forkArbitrator The arbitrator contract that escalates to an L1 fork, used for our governance
     /// @param _initialArbitrators Arbitrator contracts we initially support
-    /// @param _forkActivationDeplay The delay before arbitration can be requested
+    /// @param _forkActivationDelay The delay before arbitration can be requested
 
     constructor(
         address _realityETH,
@@ -92,14 +92,14 @@ contract AdjudicationFrameworkRequests is
         address _forkArbitrator,
         address[] memory _initialArbitrators,
         bool _allowReplacementModification,
-        uint256 _forkActivationDeplay
+        uint256 _forkActivationDelay
     )
         MinimalAdjudicationFramework(
             _realityETH,
             _forkArbitrator,
             _initialArbitrators,
             _allowReplacementModification,
-            _forkActivationDeplay
+            _forkActivationDelay
         )
     {
         dispute_fee = _disputeFee;
