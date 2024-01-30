@@ -4,6 +4,14 @@ const path = require('path');
 const { ethers } = require('hardhat');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
+function verifyDeploymentParameters(mandatoryDeploymentParameters, deployParameters) {
+    for (const parameterName of mandatoryDeploymentParameters) {
+        if (deployParameters[parameterName] === undefined || deployParameters[parameterName] === '') {
+            throw new Error(`Missing parameter: ${parameterName}`);
+        }
+    }
+}
+
 async function loadProvider(deployParameters, env) {
     if (!deployParameters) {
         deployParameters = {};
@@ -60,5 +68,5 @@ async function loadDeployer(currentProvider, deployParameters = {}, idx = '0') {
 }
 
 module.exports = {
-    loadProvider, loadDeployer,
+    loadProvider, loadDeployer, verifyDeploymentParameters,
 };

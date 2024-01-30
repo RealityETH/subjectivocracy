@@ -14,15 +14,12 @@ async function main() {
         'maticTokenAddress',
         'forkingManager',
     ];
-    for (const parameterName of mandatoryDeploymentOutput) {
-        if (deploymentOutput[parameterName] === undefined || deploymentOutput[parameterName] === '') {
-            throw new Error(`Missing parameter: ${parameterName}`);
-        }
-    }
     const {
         maticTokenAddress,
         forkingManager,
     } = deploymentOutput;
+
+    common.verifyDeploymentParameters(mandatoryDeploymentOutput, deploymentOutput);
 
     const forkonomicTokenAddress = maticTokenAddress;
 

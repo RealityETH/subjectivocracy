@@ -7,14 +7,6 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const pathGenesisJson = path.join(__dirname, './deployment/genesis.json');
 
-function verifyDeploymentParameters(mandatoryDeploymentParameters, deployParameters) {
-    for (const parameterName of mandatoryDeploymentParameters) {
-        if (deployParameters[parameterName] === undefined || deployParameters[parameterName] === '') {
-            throw new Error(`Missing parameter: ${parameterName}`);
-        }
-    }
-}
-
 async function loadOngoingOrDeploy(deployer, contractName, ongoingName, args, ongoing, pathOngoing, externallyDeployedAddress) {
     const contractFactory = await ethers.getContractFactory(contractName, {
         signer: deployer,

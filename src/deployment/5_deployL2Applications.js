@@ -47,7 +47,7 @@ async function main() {
         ongoingDeployment = require(pathOngoingDeploymentJson);
     }
 
-    commonDeployment.verifyDeploymentParameters([
+    common.verifyDeploymentParameters([
         'adjudicationFrameworkDisputeFee',
         'arbitratorDisputeFee',
         'forkArbitratorDisputeFee',
