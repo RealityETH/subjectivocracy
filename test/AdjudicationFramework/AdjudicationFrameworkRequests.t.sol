@@ -17,6 +17,7 @@ import {L2ChainInfo} from "../../contracts/L2ChainInfo.sol";
 import {MockPolygonZkEVMBridge} from "../testcontract/MockPolygonZkEVMBridge.sol";
 import {MinimalAdjudicationFramework} from "../../contracts/AdjudicationFramework/MinimalAdjudicationFramework.sol";
 import {AdjudicationFrameworkRequests} from "../../contracts/AdjudicationFramework/Pull/AdjudicationFrameworkRequests.sol";
+import {IL2ForkArbitrator} from "../../contracts/interfaces/IL2ForkArbitrator.sol";
 
 contract AdjudicationIntegrationTest is Test {
     Arbitrator public govArb;
@@ -90,6 +91,7 @@ contract AdjudicationIntegrationTest is Test {
     uint64 internal l2ChainIdInit = 1;
 
     uint256 internal forkingFee = 5000; // Should ultimately come from l1 forkingmanager
+    uint256 internal additionalDelayToEvaluateTheArbitration = 0;
 
     function setUp() public {
         l2Bridge = new MockPolygonZkEVMBridge();
@@ -163,7 +165,8 @@ contract AdjudicationIntegrationTest is Test {
             123,
             address(l2ForkArbitrator),
             initialArbitrators,
-            true
+            true,
+            0
         );
 
         l2Arbitrator1 = new Arbitrator();
@@ -699,10 +702,10 @@ contract AdjudicationIntegrationTest is Test {
             "Not in forking state"
         );
 
-        vm.expectRevert(L2ForkArbitrator.WrongSender.selector);
+        vm.expectRevert(IL2ForkArbitrator.WrongSender.selector);
         l2ForkArbitrator.requestActivateFork(removalQuestionId);
 
-        vm.expectRevert(L2ForkArbitrator.WrongSender.selector);
+        vm.expectRevert(IL2ForkArbitrator.WrongSender.selector);
         l2ForkArbitrator.cancelArbitration(removalQuestionId);
 
         vm.prank(user2);

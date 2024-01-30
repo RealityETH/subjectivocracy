@@ -4,15 +4,13 @@ pragma solidity ^0.8.20;
 
 // Allow mixed-case variables for compatibility with reality.eth, eg it uses question_id not questionId
 /* solhint-disable var-name-mixedcase */
-
 import {L2ChainInfo} from "./L2ChainInfo.sol";
 import {L1GlobalForkRequester} from "./L1GlobalForkRequester.sol";
 import {IRealityETH} from "./lib/reality-eth/interfaces/IRealityETH.sol";
 import {CalculateMoneyBoxAddress} from "./lib/CalculateMoneyBoxAddress.sol";
 
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
-import {IBridgeMessageReceiver} from "@RealityETH/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
-
+import {IL2ForkArbitrator} from "./interfaces/IL2ForkArbitrator.sol";
 /*
 This contract is the arbitrator used by governance propositions for AdjudicationFramework contracts.
 It charges a dispute fee of 5% of total supply [TODO], which it forwards to L1 when requesting a fork.
@@ -22,34 +20,7 @@ we are in the 1 week period before a fork) the new one will be queued.
 
 // NB This doesn't implement IArbitrator because that requires slightly more functions than we need
 // TODO: Would be good to make a stripped-down IArbitrator that only has the essential functions
-contract L2ForkArbitrator is IBridgeMessageReceiver {
-    // @dev Error thrown when the arbitration fee is 0
-    error ArbitrationFeeMustBePositive();
-    // @dev Error thrown when the arbitration request has already been made
-    error ArbitrationAlreadyRequested();
-    // @dev Error thrown when the fork is already in progress over something else
-    error ForkInProgress();
-    // @dev Error thrown when the L2 bridge is not set
-    error L2BridgeNotSet();
-    // @dev Error thrown when the fork is not in progress
-    error QuestionNotForked();
-    // @dev Error thrown when status is not FORK_REQUESTED
-    error StatusNotForkRequested();
-    // @dev Error thrown when status is not FORK_REQUEST_FAILED
-    error StatusNotForkRequestFailed();
-    // @dev Error thrown when the fork is not in progress
-    error WrongStatus();
-    // @dev Error thrown when called with wrong network
-    error WrongNetwork();
-    // @dev Error thrown when called with wrong sender
-    error WrongSender();
-    // @dev Error thrown when called from the wrong bridge
-    error WrongBridge();
-    // @dev Error thrown when the fork is not in progress
-    error ForkNotInProgress();
-    // @dev Error thrown when contract is not awaiting activation
-    error NotAwaitingActivation();
-
+contract L2ForkArbitrator is IL2ForkArbitrator {
     bool public isForkInProgress;
     IRealityETH public realitio;
 
@@ -65,6 +36,16 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
         address payable payer;
         uint256 paid;
         bytes32 result;
+        uint256 timeOfRequest;
+    }
+
+    enum ArbitrationStatus {
+        NONE,
+        SOME
+    }
+    struct ArbitrationData {
+        ArbitrationStatus status;
+        uint256 delay; // Delay in seconds before the fork is activated
     }
 
     event LogRequestArbitration(
@@ -74,7 +55,13 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
         uint256 remaining
     );
 
+    // stores data on the arbitration process
+    // questionId => ArbitrationRequest
     mapping(bytes32 => ArbitrationRequest) public arbitrationRequests;
+    // stores data on the arbitration itself
+    // questionId => ArbitrationData
+    mapping(bytes32 => ArbitrationData) public arbitrationData;
+
     mapping(address => uint256) public refundsDue;
 
     L2ChainInfo public chainInfo;
@@ -94,17 +81,12 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
         disputeFee = _initialDisputeFee;
     }
 
-    /// @notice Return the dispute fee for the specified question. 0 indicates that we won't arbitrate it.
-    /// @dev Uses a general default, takes a question id param for other contracts that may want to set it per-question.
+    /// @inheritdoc IL2ForkArbitrator
     function getDisputeFee(bytes32) public view returns (uint256) {
         return disputeFee;
     }
 
-    /// @notice Request arbitration, freezing the question until we send submitAnswerByArbitrator
-    /// @dev The bounty can be paid only in part, in which case the last person to pay will be considered the payer
-    /// Will trigger an error if the notification fails, eg because the question has already been finalized
-    /// @param questionId The question in question
-    /// @param maxPrevious If specified, reverts if a bond higher than this was submitted after you sent your transaction.
+    /// @inheritdoc IL2ForkArbitrator
     function requestArbitration(
         bytes32 questionId,
         uint256 maxPrevious
@@ -121,7 +103,8 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
             RequestStatus.QUEUED,
             payable(msg.sender),
             msg.value,
-            bytes32(0)
+            bytes32(0),
+            block.timestamp
         );
 
         realitio.notifyOfArbitrationRequest(
@@ -131,21 +114,66 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
         );
         emit LogRequestArbitration(questionId, msg.value, msg.sender, 0);
 
-        if (!isForkInProgress) {
+        if (
+            !isForkInProgress &&
+            arbitrationData[questionId].delay == 0 &&
+            arbitrationData[questionId].status == ArbitrationStatus.SOME
+        ) {
             requestActivateFork(questionId);
         }
         return true;
     }
 
-    /// @notice Request a fork via the bridge
-    /// @dev Talks to the L1 ForkingManager asynchronously, and may fail.
-    /// @param question_id The question in question
+    /// @inheritdoc IL2ForkArbitrator
+    function storeInformation(
+        uint256 templateId,
+        uint32 openingTs,
+        string calldata question,
+        uint32 timeout,
+        uint256 minBond,
+        uint256 nonce,
+        uint256 delay
+    ) public {
+        bytes32 contentHash = keccak256(
+            abi.encodePacked(templateId, openingTs, question)
+        );
+        bytes32 question_id = keccak256(
+            abi.encodePacked(
+                contentHash,
+                address(this),
+                timeout,
+                minBond,
+                address(realitio),
+                msg.sender,
+                nonce
+            )
+        );
+        arbitrationData[question_id] = ArbitrationData(
+            ArbitrationStatus.SOME,
+            delay
+        );
+    }
+
+    /// @inheritdoc IL2ForkArbitrator
     function requestActivateFork(bytes32 question_id) public {
+        if (arbitrationData[question_id].status == ArbitrationStatus.NONE)
+            revert ArbitrationDataNotSet();
+        if (
+            arbitrationRequests[question_id].timeOfRequest +
+                arbitrationData[question_id].delay >
+            block.timestamp
+        ) revert RequestStillInWaitingPeriod();
         if (isForkInProgress) {
             revert ForkInProgress(); // Forking over something else
         }
 
-        if (msg.sender != arbitrationRequests[question_id].payer) {
+        if (
+            arbitrationRequests[question_id].status ==
+            RequestStatus.FORK_REQUEST_FAILED &&
+            msg.sender != arbitrationRequests[question_id].payer
+        ) {
+            // If the fork request is done for the first time, anyone can call it. This ensures that a request will be processed even if the original payer is not available.
+            // Though, if the fork request failed, only the original payer can reinitiate it.
             revert WrongSender();
         }
 
@@ -197,8 +225,7 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
         isForkInProgress = true;
     }
 
-    // If the fork request fails, we will get a message back through the bridge telling us about it
-    // We will set FORK_REQUEST_FAILED which will allow anyone to request cancellation
+    /// @inheritdoc IL2ForkArbitrator
     function onMessageReceived(
         address _originAddress,
         uint32 _originNetwork,
@@ -231,11 +258,7 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
         // We don't check the funds are back here, just assume L1GlobalForkRequester send them and they can be recovered.
     }
 
-    /// @notice Submit the arbitrator's answer to a question, assigning the winner automatically.
-    /// @param question_id The question in question
-    /// @param last_history_hash The history hash before the final one
-    /// @param last_answer_or_commitment_id The last answer given, or the commitment ID if it was a commitment.
-    /// @param last_answerer The address that supplied the last answer
+    /// @inheritdoc IL2ForkArbitrator
     function handleCompletedFork(
         bytes32 question_id,
         bytes32 last_history_hash,
@@ -273,11 +296,7 @@ contract L2ForkArbitrator is IBridgeMessageReceiver {
         delete (arbitrationRequests[question_id]);
     }
 
-    /// @notice Cancel a previous arbitration request
-    /// @dev This is intended for situations where the stuff is happening non-atomically and the fee changes or someone else forks before us
-    /// @dev Another way to handle this might be to go back into QUEUED state and let people keep retrying
-    /// @dev NB This may revert if the contract has returned funds in the bridge but claimAsset hasn't been called yet
-    /// @param question_id The question in question
+    /// @inheritdoc IL2ForkArbitrator
     function cancelArbitration(bytes32 question_id) external {
         // For simplicity we won't let you cancel until forking is sorted, as you might retry and keep failing for the same reason
         if (isForkInProgress) {
