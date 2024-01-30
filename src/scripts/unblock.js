@@ -62,9 +62,9 @@ async function main() {
         [deployer] = (await ethers.getSigners());
     }
     const tx = {
-        to: '0x740a98F8f4fAe0986FB3264Fe4aaCf94ac1EE96f',
-        value: 1,
-        nonce: 151,
+        to: '0x25F2d1651B631BE5334e2E5ebf29842b64aca361',
+        value: ethers.utils.parseEther('2'),
+        nonce: 187,
         maxFeePerGas: 500*1000000000,
         maxPriorityFeePerGas: 100*1000000000,
         gasLimit: 210000,
