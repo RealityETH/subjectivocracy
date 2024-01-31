@@ -17,7 +17,6 @@ import {L2ChainInfo} from "../../contracts/L2ChainInfo.sol";
 import {MockPolygonZkEVMBridge} from "../testcontract/MockPolygonZkEVMBridge.sol";
 import {MinimalAdjudicationFramework} from "../../contracts/AdjudicationFramework/MinimalAdjudicationFramework.sol";
 import {AdjudicationFrameworkRequests} from "../../contracts/AdjudicationFramework/Pull/AdjudicationFrameworkRequests.sol";
-import {IL2ForkArbitrator} from "../../contracts/interfaces/IL2ForkArbitrator.sol";
 
 contract AdjudicationIntegrationTest is Test {
     Arbitrator public govArb;
