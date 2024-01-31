@@ -100,7 +100,9 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         }
 
         uint256 timeOfFirstRequest = arbitrationRequests[questionId]
-            .timeOfRequest == 0 ? block.timestamp : arbitrationRequests[questionId].timeOfRequest;
+            .timeOfRequest == 0
+            ? block.timestamp
+            : arbitrationRequests[questionId].timeOfRequest;
         arbitrationRequests[questionId] = ArbitrationRequest(
             RequestStatus.QUEUED,
             payable(msg.sender),
@@ -256,7 +258,7 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         isForkInProgress = false;
         arbitrationRequests[question_id].status = RequestStatus
             .FORK_REQUEST_FAILED;
-        
+
         address payable payer = arbitrationRequests[question_id].payer;
 
         refundsDue[payer] =
@@ -303,7 +305,6 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
 
         isForkInProgress = false;
         delete (arbitrationRequests[question_id]);
-        
     }
 
     function deleteArbitrationRequestsData(bytes32 question_id) internal {
