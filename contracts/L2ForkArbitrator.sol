@@ -259,6 +259,7 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         arbitrationRequests[question_id].status = RequestStatus
             .FORK_REQUEST_FAILED;
 
+        realitio.cancelArbitration(question_id);
         address payable payer = arbitrationRequests[question_id].payer;
 
         refundsDue[payer] =
