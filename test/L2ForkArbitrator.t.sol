@@ -185,4 +185,117 @@ contract L2ForkArbitratorTest is Test {
         vm.deal(address(arbitrator), 1 ether);
         arbitrator.requestActivateFork(questionId);
     }
+
+    function testANewRequestDoesNotHaveToWaitAgain() public {
+        uint256 maxPrevious = 0;
+        uint256 delay = 60 * 60; // 1 hour
+        uint256 templateId = 1;
+        string memory question = "TestQuestion";
+        uint256 minBond = 1 ether;
+        uint32 openingTs = uint32(block.timestamp);
+        uint256 nonce = 1;
+        bytes32 contentHash = keccak256(
+            abi.encodePacked(templateId, openingTs, question)
+        );
+        bytes32 questionId = keccak256(
+            abi.encodePacked(
+                contentHash,
+                address(arbitrator),
+                uint32(300), // timeout,
+                minBond,
+                address(realitio),
+                address(this),
+                nonce
+            )
+        );
+
+        vm.mockCall(
+            realitio,
+            abi.encodeWithSelector(
+                IRealityETH.notifyOfArbitrationRequest.selector,
+                questionId,
+                address(this),
+                maxPrevious
+            ),
+            abi.encode()
+        );
+
+        vm.deal(address(this), 1 ether);
+        arbitrator.requestArbitration{value: 1 ether}(questionId, maxPrevious);
+
+        // setup the necessary conditions
+        arbitrator.storeInformation(
+            templateId,
+            openingTs,
+            question,
+            300, // timeout,
+            minBond,
+            nonce,
+            delay
+        );
+
+        // Simulate passage of time
+        vm.warp(block.timestamp + delay + 1);
+        vm.mockCall(
+            chainInfo,
+            abi.encodeWithSelector(L2ChainInfo.getForkFee.selector),
+            abi.encode(1)
+        );
+        vm.mockCall(
+            chainInfo,
+            abi.encodeWithSelector(bytes4(keccak256("l2Bridge()"))),
+            abi.encode(address(0x1654))
+        );
+        vm.mockCall(
+            address(0x1654), // l2 bridge contract
+            abi.encodeWithSelector(bytes4(keccak256("bridgeAsset()"))),
+            abi.encode()
+        );
+        vm.mockCall(
+            chainInfo,
+            abi.encodeWithSelector(bytes4(keccak256("getForkonomicToken()"))),
+            abi.encode(address(0x16542))
+        );
+        vm.deal(address(arbitrator), 1 ether);
+        arbitrator.requestActivateFork(questionId);
+
+        // Simulate a cancellation
+        vm.mockCall(
+            chainInfo,
+            abi.encodeWithSelector(bytes4(keccak256("l2Bridge()"))),
+            abi.encode(address(this))
+        );
+        vm.deal(address(this), 1 ether);
+        arbitrator.onMessageReceived{value: 1 ether}(
+            address(l1GlobalForkRequester),
+            0,
+            abi.encode(questionId)
+        );
+
+        vm.deal(address(this), 1 ether);
+        arbitrator.requestArbitration{value: 1 ether}(questionId, maxPrevious);
+        // now the requestArbitationFork can be called immediately, without waiting for the delay
+        vm.mockCall(
+            chainInfo,
+            abi.encodeWithSelector(L2ChainInfo.getForkFee.selector),
+            abi.encode(1)
+        );
+        vm.mockCall(
+            chainInfo,
+            abi.encodeWithSelector(bytes4(keccak256("l2Bridge()"))),
+            abi.encode(address(0x1654))
+        );
+        vm.mockCall(
+            address(0x1654), // l2 bridge contract
+            abi.encodeWithSelector(bytes4(keccak256("bridgeAsset()"))),
+            abi.encode()
+        );
+        vm.mockCall(
+            chainInfo,
+            abi.encodeWithSelector(bytes4(keccak256("getForkonomicToken()"))),
+            abi.encode(address(0x16542))
+        );
+        vm.deal(address(arbitrator), 1 ether);
+        arbitrator.requestActivateFork(questionId);
+    }
 }
