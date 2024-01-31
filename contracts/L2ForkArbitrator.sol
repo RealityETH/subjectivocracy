@@ -117,7 +117,6 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
             maxPrevious
         );
         emit LogRequestArbitration(questionId, msg.value, msg.sender, 0);
-
         if (
             !isForkInProgress &&
             arbitrationData[questionId].delay == 0 &&
@@ -266,7 +265,6 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
             refundsDue[payer] +
             arbitrationRequests[question_id].paid;
         deleteArbitrationRequestsData(question_id);
-
         // We don't check the funds are back here, just assume L1GlobalForkRequester send them and they can be recovered.
     }
 
