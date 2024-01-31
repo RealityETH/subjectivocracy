@@ -27,7 +27,7 @@ const axios = require('axios').create({
 });
 
 const deployParameters = require('./deploy_application_parameters.json');
-const common = require('./common');
+const common = require('../common/common');
 
 const l2Applications = require('./deploy_output_l2_applications.json');
 

@@ -10,7 +10,7 @@ const l1Applications = require('./deploy_output_l1_applications.json');
 const l2Applications = require('./deploy_output_l2_applications.json');
 const l1SystemAddresses = require('./deploy_output.json');
 
-const common = require('./common');
+const common = require('../common/common');
 
 async function main() {
     const currentProvider = await common.loadProvider(deployParameters, process.env);

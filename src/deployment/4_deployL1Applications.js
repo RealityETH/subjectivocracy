@@ -10,7 +10,8 @@ const pathOngoingDeploymentJson = path.join(__dirname, './deploy_ongoing_l1_appl
 
 const deployParameters = {};
 
-const common = require('./common');
+const common = require('../common/common');
+const commonDeployment = require('./common');
 
 async function main() {
     // Check if there's an ongoing deployment
@@ -26,8 +27,8 @@ async function main() {
     const deployerBalance = await currentProvider.getBalance(deployer.address);
     console.log('using deployer: ', deployer.address, 'balance is ', deployerBalance.toString());
 
-    const l1GlobalChainInfoPublisherContract = await common.loadOngoingOrDeploy(deployer, 'L1GlobalChainInfoPublisher', 'l1GlobalChainInfoPublisher', [], ongoingDeployment, pathOngoingDeploymentJson);
-    const l1GlobalForkRequesterContract = await common.loadOngoingOrDeploy(deployer, 'L1GlobalForkRequester', 'l1GlobalForkRequester', [], ongoingDeployment, pathOngoingDeploymentJson);
+    const l1GlobalChainInfoPublisherContract = await commonDeployment.loadOngoingOrDeploy(deployer, 'L1GlobalChainInfoPublisher', 'l1GlobalChainInfoPublisher', [], ongoingDeployment, pathOngoingDeploymentJson);
+    const l1GlobalForkRequesterContract = await commonDeployment.loadOngoingOrDeploy(deployer, 'L1GlobalForkRequester', 'l1GlobalForkRequester', [], ongoingDeployment, pathOngoingDeploymentJson);
 
     const outputJson = {
         l1GlobalChainInfoPublisher: l1GlobalChainInfoPublisherContract.address,

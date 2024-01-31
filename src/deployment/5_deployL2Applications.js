@@ -13,7 +13,8 @@ const pathOngoingDeploymentJson = path.join(__dirname, './deploy_ongoing_l2_appl
 
 const deployParameters = require('./deploy_application_parameters.json');
 
-const common = require('./common');
+const commonDeployment = require('./common');
+const common = require('../common/common');
 
 async function main() {
     // Check that we already have the L1 settings we need
@@ -26,7 +27,7 @@ async function main() {
 
     const l1ApplicationAddresses = require(pathOutputJsonL1Applications);
 
-    const l2BridgeAddress = common.genesisAddressForContractName('PolygonZkEVMBridge proxy');
+    const l2BridgeAddress = commonDeployment.genesisAddressForContractName('PolygonZkEVMBridge proxy');
 
     const {
         l1GlobalChainInfoPublisher,
@@ -78,9 +79,9 @@ async function main() {
     const deployerBalance = await currentProvider.getBalance(deployer.address);
     console.log('using deployer: ', deployer.address, 'balance is ', deployerBalance.toString());
 
-    const realityETHContract = await common.loadOngoingOrDeploy(deployer, 'RealityETH_v3_0', 'realityETH', [], ongoingDeployment, pathOngoingDeploymentJson, realityETHAddress);
+    const realityETHContract = await commonDeployment.loadOngoingOrDeploy(deployer, 'RealityETH_v3_0', 'realityETH', [], ongoingDeployment, pathOngoingDeploymentJson, realityETHAddress);
     if (arbitratorAddresses.length === 0) {
-        const arbitratorContract = await common.loadOngoingOrDeploy(deployer, 'Arbitrator', 'initialArbitrator', [], ongoingDeployment, pathOngoingDeploymentJson);
+        const arbitratorContract = await commonDeployment.loadOngoingOrDeploy(deployer, 'Arbitrator', 'initialArbitrator', [], ongoingDeployment, pathOngoingDeploymentJson);
 
         const initialFee = await arbitratorContract.getDisputeFee(ethers.constants.HashZero);
         if (initialFee.eq(0)) {
@@ -93,9 +94,9 @@ async function main() {
         console.log('Using arbitrators from config: ', arbitratorAddresses);
     }
 
-    const l2ChainInfoContract = await common.loadOngoingOrDeploy(deployer, 'L2ChainInfo', 'l2ChainInfo', [l2BridgeAddress, l1GlobalChainInfoPublisher], ongoingDeployment, pathOngoingDeploymentJson);
-    const l2ForkArbitratorContract = await common.loadOngoingOrDeploy(deployer, 'L2ForkArbitrator', 'l2ForkArbitrator', [realityETHContract.address, l2ChainInfoContract.address, l1GlobalForkRequester, forkArbitratorDisputeFee], ongoingDeployment, pathOngoingDeploymentJson);
-    const adjudicationFrameworkContract = await common.loadOngoingOrDeploy(deployer, 'AdjudicationFrameworkRequests', 'adjudicationFramework', [realityETHContract.address, adjudicationFrameworkDisputeFee, l2ForkArbitratorContract.address, arbitratorAddresses, false], ongoingDeployment, pathOngoingDeploymentJson);
+    const l2ChainInfoContract = await commonDeployment.loadOngoingOrDeploy(deployer, 'L2ChainInfo', 'l2ChainInfo', [l2BridgeAddress, l1GlobalChainInfoPublisher], ongoingDeployment, pathOngoingDeploymentJson);
+    const l2ForkArbitratorContract = await commonDeployment.loadOngoingOrDeploy(deployer, 'L2ForkArbitrator', 'l2ForkArbitrator', [realityETHContract.address, l2ChainInfoContract.address, l1GlobalForkRequester, forkArbitratorDisputeFee], ongoingDeployment, pathOngoingDeploymentJson);
+    const adjudicationFrameworkContract = await commonDeployment.loadOngoingOrDeploy(deployer, 'AdjudicationFrameworkRequests', 'adjudicationFramework', [realityETHContract.address, adjudicationFrameworkDisputeFee, l2ForkArbitratorContract.address, arbitratorAddresses, false], ongoingDeployment, pathOngoingDeploymentJson);
 
     const outputJson = {
         realityETH: realityETHContract.address,
