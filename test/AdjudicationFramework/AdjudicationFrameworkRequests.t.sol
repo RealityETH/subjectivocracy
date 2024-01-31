@@ -702,14 +702,6 @@ contract AdjudicationIntegrationTest is Test {
             "Not in forking state"
         );
 
-        vm.expectRevert(IL2ForkArbitrator.WrongSender.selector);
-        l2ForkArbitrator.requestActivateFork(removalQuestionId);
-
-        vm.expectRevert(IL2ForkArbitrator.WrongSender.selector);
-        l2ForkArbitrator.cancelArbitration(removalQuestionId);
-
-        vm.prank(user2);
-        l2ForkArbitrator.cancelArbitration(removalQuestionId);
         assertEq(forkFee, l2ForkArbitrator.refundsDue(user2));
 
         uint256 user2Bal = user2.balance;

@@ -99,12 +99,14 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
             revert ArbitrationAlreadyRequested();
         }
 
+        uint256 timeOfFirstRequest = arbitrationRequests[questionId]
+            .timeOfRequest == 0 ? block.timestamp : arbitrationRequests[questionId].timeOfRequest;
         arbitrationRequests[questionId] = ArbitrationRequest(
             RequestStatus.QUEUED,
             payable(msg.sender),
             msg.value,
             bytes32(0),
-            block.timestamp
+            timeOfFirstRequest
         );
 
         realitio.notifyOfArbitrationRequest(
@@ -254,6 +256,13 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         isForkInProgress = false;
         arbitrationRequests[question_id].status = RequestStatus
             .FORK_REQUEST_FAILED;
+        
+        address payable payer = arbitrationRequests[question_id].payer;
+
+        refundsDue[payer] =
+            refundsDue[payer] +
+            arbitrationRequests[question_id].paid;
+        deleteArbitrationRequestsData(question_id);
 
         // We don't check the funds are back here, just assume L1GlobalForkRequester send them and they can be recovered.
     }
@@ -294,31 +303,16 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
 
         isForkInProgress = false;
         delete (arbitrationRequests[question_id]);
+        
     }
 
-    /// @inheritdoc IL2ForkArbitrator
-    function cancelArbitration(bytes32 question_id) external {
-        // For simplicity we won't let you cancel until forking is sorted, as you might retry and keep failing for the same reason
-        if (isForkInProgress) {
-            revert ForkInProgress();
-        }
-
-        if (msg.sender != arbitrationRequests[question_id].payer) {
-            revert WrongSender();
-        }
-
-        RequestStatus status = arbitrationRequests[question_id].status;
-        if (status != RequestStatus.FORK_REQUEST_FAILED) {
-            revert StatusNotForkRequestFailed();
-        }
-
-        address payable payer = arbitrationRequests[question_id].payer;
-        realitio.cancelArbitration(question_id);
-
-        refundsDue[payer] =
-            refundsDue[payer] +
-            arbitrationRequests[question_id].paid;
-        delete (arbitrationRequests[question_id]);
+    function deleteArbitrationRequestsData(bytes32 question_id) internal {
+        arbitrationRequests[question_id].status = RequestStatus.NONE;
+        // the following data does not need to be deleted, and with the new removal of restore opcode, we could leave them as they are.
+        arbitrationRequests[question_id].payer = payable(address(0));
+        arbitrationRequests[question_id].paid = 0;
+        arbitrationRequests[question_id].result = bytes32(0);
+        // we don't delete the timeOfRequest on purpose because it will be relevant for the next request
     }
 
     function claimRefund() external {

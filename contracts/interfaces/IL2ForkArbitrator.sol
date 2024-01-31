@@ -106,13 +106,6 @@ interface IL2ForkArbitrator is IBridgeMessageReceiver {
         address last_answerer
     ) external;
 
-    /// @notice Cancel a previous arbitration request
-    /// @dev This is intended for situations where the stuff is happening non-atomically and the fee changes or someone else forks before us
-    /// @dev Another way to handle this might be to go back into QUEUED state and let people keep retrying
-    /// @dev NB This may revert if the contract has returned funds in the bridge but claimAsset hasn't been called yet
-    /// @param question_id The question in question
-    function cancelArbitration(bytes32 question_id) external;
-
     /// @notice Claim the refund for a question that was forked
     function claimRefund() external;
 }
