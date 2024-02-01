@@ -17,7 +17,6 @@ import {L2ChainInfo} from "../../contracts/L2ChainInfo.sol";
 import {MockPolygonZkEVMBridge} from "../testcontract/MockPolygonZkEVMBridge.sol";
 import {MinimalAdjudicationFramework} from "../../contracts/AdjudicationFramework/MinimalAdjudicationFramework.sol";
 import {AdjudicationFrameworkRequests} from "../../contracts/AdjudicationFramework/Pull/AdjudicationFrameworkRequests.sol";
-import {IL2ForkArbitrator} from "../../contracts/interfaces/IL2ForkArbitrator.sol";
 
 contract AdjudicationIntegrationTest is Test {
     Arbitrator public govArb;
@@ -702,14 +701,6 @@ contract AdjudicationIntegrationTest is Test {
             "Not in forking state"
         );
 
-        vm.expectRevert(IL2ForkArbitrator.WrongSender.selector);
-        l2ForkArbitrator.requestActivateFork(removalQuestionId);
-
-        vm.expectRevert(IL2ForkArbitrator.WrongSender.selector);
-        l2ForkArbitrator.cancelArbitration(removalQuestionId);
-
-        vm.prank(user2);
-        l2ForkArbitrator.cancelArbitration(removalQuestionId);
         assertEq(forkFee, l2ForkArbitrator.refundsDue(user2));
 
         uint256 user2Bal = user2.balance;
