@@ -18,7 +18,6 @@ import {MinimalAdjudicationFramework} from "../../contracts/AdjudicationFramewor
 import {L2ForkArbitrator} from "../../contracts/L2ForkArbitrator.sol";
 import {L1GlobalForkRequester} from "../../contracts/L1GlobalForkRequester.sol";
 import {L2ChainInfo} from "../../contracts/L2ChainInfo.sol";
-import {IMinimalAdjudicationFramework} from "../../contracts/AdjudicationFramework/interface/IMinimalAdjudicationFramework.sol";
 import {IMinimalAdjudicationFrameworkErrors} from "../../contracts/AdjudicationFramework/interface/IMinimalAdjudicationFrameworkErrors.sol";
 
 import {MockPolygonZkEVMBridge} from "../testcontract/MockPolygonZkEVMBridge.sol";

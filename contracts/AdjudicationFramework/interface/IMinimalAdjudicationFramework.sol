@@ -5,17 +5,7 @@ pragma solidity ^0.8.20;
 /* solhint-disable quotes */
 /* solhint-disable not-rely-on-time */
 
-import {IRealityETH} from "./../../lib/reality-eth/interfaces/IRealityETH.sol";
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {IL2ForkArbitrator} from "../../interfaces/IL2ForkArbitrator.sol";
 import {IMinimalAdjudicationFrameworkErrors} from "./IMinimalAdjudicationFrameworkErrors.sol";
-/*
-Minimal Adjudication framework every framework should implement.
-Contains an enumerableSet of Arbitrators.
-Arbitrators can be removed or added by providing a realityETH question with forking as a final arbitration.
-Also, arbitrators who are challenged by a removal question, can be temporarily frozen, if a sufficient bond is provided.
-*/
 
 interface IMinimalAdjudicationFramework is IMinimalAdjudicationFrameworkErrors {
     // Reality.eth questions for propositions we may be asked to rule on

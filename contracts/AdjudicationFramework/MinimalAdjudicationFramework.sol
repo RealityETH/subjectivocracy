@@ -8,7 +8,6 @@ pragma solidity ^0.8.20;
 import {IRealityETH} from "./../lib/reality-eth/interfaces/IRealityETH.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {IL2ForkArbitrator} from "../interfaces/IL2ForkArbitrator.sol";
 import {IMinimalAdjudicationFramework} from "./interface/IMinimalAdjudicationFramework.sol";
 /*
 Minimal Adjudication framework every framework should implement.
