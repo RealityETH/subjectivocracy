@@ -4,7 +4,6 @@ pragma solidity ^0.8.20;
 
 import "./interfaces/IRealityETH.sol";
 import "./BalanceHolder.sol";
-import "forge-std/console.sol";
 
 contract RealityETH_v3_0 is BalanceHolder, IRealityETH {
     address constant NULL_ADDRESS = address(0);
