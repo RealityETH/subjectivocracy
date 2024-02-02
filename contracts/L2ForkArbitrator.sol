@@ -51,7 +51,6 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
     // questionId => ArbitrationRequest
     mapping(bytes32 => ArbitrationRequest) public arbitrationRequests;
 
-
     mapping(address => uint256) public refundsDue;
 
     L2ChainInfo public chainInfo;
