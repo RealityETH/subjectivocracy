@@ -67,43 +67,6 @@ contract L2ForkArbitratorTest is Test {
         );
     }
 
-    function testStoreInformation() public {
-        uint256 delay = 60 * 60; // 1 hour
-        uint256 templateId = 1;
-        string memory question = "TestQuestion";
-        uint32 timeout = 300;
-        uint256 minBond = 1 ether;
-        uint32 openingTs = uint32(block.timestamp);
-        uint256 nonce = 1;
-        arbitrator.storeInformation(
-            templateId,
-            openingTs,
-            question,
-            timeout,
-            minBond,
-            nonce,
-            delay
-        );
-
-        bytes32 contentHash = keccak256(
-            abi.encodePacked(templateId, openingTs, question)
-        );
-        bytes32 questionId = keccak256(
-            abi.encodePacked(
-                contentHash,
-                address(arbitrator),
-                timeout,
-                minBond,
-                address(realitio),
-                address(this),
-                nonce
-            )
-        );
-
-        (, uint256 storedDelay) = arbitrator.arbitrationData(questionId);
-        assertEq(storedDelay, delay, "Stored delay is incorrect");
-    }
-
     function testRequestActivateFork() public {
         uint256 maxPrevious = 0;
         uint256 delay = 60 * 60; // 1 hour
@@ -230,17 +193,6 @@ contract L2ForkArbitratorTest is Test {
 
         vm.deal(address(this), 1 ether);
         arbitrator.requestArbitration{value: 1 ether}(questionId, maxPrevious);
-
-        // setup the necessary conditions
-        arbitrator.storeInformation(
-            templateId,
-            openingTs,
-            question,
-            300, // timeout,
-            minBond,
-            nonce,
-            delay
-        );
 
         // Simulate passage of time
         vm.warp(block.timestamp + delay + 1);

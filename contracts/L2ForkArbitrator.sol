@@ -40,15 +40,6 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         uint256 timeOfRequest;
     }
 
-    enum ArbitrationStatus {
-        NONE,
-        SOME
-    }
-    struct ArbitrationData {
-        ArbitrationStatus status;
-        uint256 delay; // Delay in seconds before the fork is activated
-    }
-
     event LogRequestArbitration(
         bytes32 indexed question_id,
         uint256 fee_paid,
@@ -59,9 +50,7 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
     // stores data on the arbitration process
     // questionId => ArbitrationRequest
     mapping(bytes32 => ArbitrationRequest) public arbitrationRequests;
-    // stores data on the arbitration itself
-    // questionId => ArbitrationData
-    mapping(bytes32 => ArbitrationData) public arbitrationData;
+
 
     mapping(address => uint256) public refundsDue;
 
@@ -126,36 +115,6 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         //     requestActivateFork(questionId);
         // }
         return true;
-    }
-
-    /// @inheritdoc IL2ForkArbitrator
-    function storeInformation(
-        uint256 templateId,
-        uint32 openingTs,
-        string calldata question,
-        uint32 timeout,
-        uint256 minBond,
-        uint256 nonce,
-        uint256 delay
-    ) public {
-        bytes32 contentHash = keccak256(
-            abi.encodePacked(templateId, openingTs, question)
-        );
-        bytes32 question_id = keccak256(
-            abi.encodePacked(
-                contentHash,
-                address(this),
-                timeout,
-                minBond,
-                address(realitio),
-                msg.sender,
-                nonce
-            )
-        );
-        arbitrationData[question_id] = ArbitrationData(
-            ArbitrationStatus.SOME,
-            delay
-        );
     }
 
     /// @inheritdoc IL2ForkArbitrator
