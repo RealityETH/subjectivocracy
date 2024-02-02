@@ -9,6 +9,7 @@ import {IRealityETH} from "./../lib/reality-eth/interfaces/IRealityETH.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IL2ForkArbitrator} from "../interfaces/IL2ForkArbitrator.sol";
+import {IMinimalAdjudicationFramework} from "./interface/IMinimalAdjudicationFramework.sol";
 /*
 Minimal Adjudication framework every framework should implement.
 Contains an enumerableSet of Arbitrators.
@@ -16,26 +17,8 @@ Arbitrators can be removed or added by providing a realityETH question with fork
 Also, arbitrators who are challenged by a removal question, can be temporarily frozen, if a sufficient bond is provided.
 */
 
-contract MinimalAdjudicationFramework {
+contract MinimalAdjudicationFramework is IMinimalAdjudicationFramework {
     using EnumerableSet for EnumerableSet.AddressSet;
-    /// @dev Error thrown with illegal modification of arbitrators
-    error NoArbitratorsToModify();
-    /// @dev Error thrown when a proposition already exists
-    error PropositionAlreadyExists();
-    /// @dev Error thrown when a proposition is not found
-    error PropositionNotFound();
-    /// @dev Error thrown when a proposition is not found
-    error ArbitratorNotInAllowList();
-    /// @dev Error thrown when an arbitrator is already frozen
-    error ArbitratorAlreadyFrozen();
-    /// @dev Error thrown when received messages from realityEth is not yes
-    error AnswerNotYes();
-    /// @dev Error thrown when received messages from realityEth is yes, but expected to be no
-    error PropositionNotFailed();
-    /// @dev Error thrown when bond is too low to freeze an arbitrator
-    error BondTooLowToFreeze();
-    /// @dev Error thrown when proposition is not accepted
-    error PropositionNotAccepted();
 
     // Question delimiter for arbitrator modification questions for reality.eth
     string internal constant _QUESTION_DELIM = "\u241f";
@@ -64,12 +47,6 @@ contract MinimalAdjudicationFramework {
     // Contract used for requesting a fork in the L1 chain in remove propositions
     address public forkArbitrator;
 
-    // Reality.eth questions for propositions we may be asked to rule on
-    struct ArbitratorProposition {
-        address arbitratorToRemove;
-        address arbitratorToAdd;
-        bool isFrozen;
-    }
     mapping(bytes32 => ArbitratorProposition) public propositions;
 
     // Keep a count of active propositions that freeze an arbitrator.
@@ -175,15 +152,6 @@ contract MinimalAdjudicationFramework {
             uint32(block.timestamp),
             0,
             REALITY_ETH_BOND_ARBITRATOR_REMOVE
-        );
-        IL2ForkArbitrator(forkArbitrator).storeInformation(
-            templateId,
-            uint32(block.timestamp),
-            question,
-            REALITY_ETH_TIMEOUT,
-            REALITY_ETH_BOND_ARBITRATOR_REMOVE,
-            0,
-            forkActivationDelay
         );
         if (
             propositions[questionId].arbitratorToAdd != address(0) ||
@@ -313,5 +281,9 @@ contract MinimalAdjudicationFramework {
         bytes32 questionId
     ) external view returns (bool) {
         return propositions[questionId].isFrozen;
+    }
+
+    function getInvestigationDelay() external view returns (uint256) {
+        return forkActivationDelay;
     }
 }

@@ -5,6 +5,7 @@ pragma solidity ^0.8.20;
 /* solhint-disable quotes */
 
 import {Test} from "forge-std/Test.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ForkableRealityETH_ERC20} from "../../contracts/ForkableRealityETH_ERC20.sol";
 import {AdjudicationFrameworkRequests} from "../../contracts/AdjudicationFramework/Pull/AdjudicationFrameworkRequests.sol";
@@ -17,6 +18,7 @@ import {L2ChainInfo} from "../../contracts/L2ChainInfo.sol";
 import {MockPolygonZkEVMBridge} from "../testcontract/MockPolygonZkEVMBridge.sol";
 import {MinimalAdjudicationFramework} from "../../contracts/AdjudicationFramework/MinimalAdjudicationFramework.sol";
 import {AdjudicationFrameworkRequests} from "../../contracts/AdjudicationFramework/Pull/AdjudicationFrameworkRequests.sol";
+import {IMinimalAdjudicationFrameworkErrors} from "../../contracts/AdjudicationFramework/interface/IMinimalAdjudicationFrameworkErrors.sol";
 
 contract AdjudicationIntegrationTest is Test {
     Arbitrator public govArb;
@@ -295,7 +297,8 @@ contract AdjudicationIntegrationTest is Test {
             bytes32 removalQuestionId,
             bytes32 lastHistoryHash,
             bytes32 lastAnswer,
-            address lastAnswerer
+            address lastAnswerer,
+            uint32 questionTimestamp
         )
     {
         bytes32 qid = _setupContestableQuestion();
@@ -316,6 +319,8 @@ contract AdjudicationIntegrationTest is Test {
         );
 
         // now before we can complete this somebody challenges it
+        uint256 questionTimestamp2 = block.timestamp + 1;
+        vm.warp(questionTimestamp2);
         removalQuestionId = adjudicationFramework1
             .requestModificationOfArbitrators(
                 address(l2Arbitrator1),
@@ -333,7 +338,7 @@ contract AdjudicationIntegrationTest is Test {
         bytes32[] memory answers;
 
         vm.expectRevert(
-            MinimalAdjudicationFramework.BondTooLowToFreeze.selector
+            IMinimalAdjudicationFrameworkErrors.BondTooLowToFreeze.selector
         );
         adjudicationFramework1.freezeArbitrator(
             removalQuestionId,
@@ -379,13 +384,14 @@ contract AdjudicationIntegrationTest is Test {
             removalQuestionId,
             lastHistoryHash,
             bytes32(uint256(1)),
-            user2
+            user2,
+            uint32(questionTimestamp2)
         );
     }
 
     function testArbitrationContestPassedWithoutFork() public {
         // (bytes32 qid, bytes32 removalQuestionId, bytes32 lastHistoryHash, bytes32 lastAnswer, address lastAnswerer) = _setupContestedArbitration();
-        (, bytes32 removalQuestionId, , , ) = _setupContestedArbitration();
+        (, bytes32 removalQuestionId, , , , ) = _setupContestedArbitration();
 
         // Currently in the "yes" state, so once it times out we can complete the removal
 
@@ -407,7 +413,7 @@ contract AdjudicationIntegrationTest is Test {
 
     function testArbitrationContestRejectedWithoutFork() public {
         //(bytes32 qid, bytes32 removalQuestionId, bytes32 lastHistoryHash, bytes32 lastAnswer, address lastAnswerer) = _setupContestedArbitration();
-        (, bytes32 removalQuestionId, , , ) = _setupContestedArbitration();
+        (, bytes32 removalQuestionId, , , , ) = _setupContestedArbitration();
 
         // Put the proposition to remove the arbitrator into the "no" state
         l2RealityEth.submitAnswer{value: 40000}(
@@ -429,7 +435,7 @@ contract AdjudicationIntegrationTest is Test {
         skip(86401);
 
         vm.expectRevert(
-            MinimalAdjudicationFramework.PropositionNotAccepted.selector
+            IMinimalAdjudicationFrameworkErrors.PropositionNotAccepted.selector
         );
         adjudicationFramework1.executeModificationArbitratorFromAllowList(
             removalQuestionId
@@ -457,7 +463,8 @@ contract AdjudicationIntegrationTest is Test {
             bytes32 removalQuestionId,
             bytes32 lastHistoryHash,
             bytes32 lastAnswer,
-            address lastAnswerer
+            address lastAnswerer,
+            uint32 removalQuestionOpeningTimestamp
         ) = _setupContestedArbitration();
 
         // Currently in the "yes" state, so once it times out we can complete the removal
@@ -486,6 +493,29 @@ contract AdjudicationIntegrationTest is Test {
         l2ForkArbitrator.requestArbitration{value: forkFee}(
             removalQuestionId,
             0
+        );
+
+        vm.mockCall(
+            address(adjudicationFramework1),
+            abi.encodeWithSelector(
+                bytes4(keccak256("getInvestigationDelay()"))
+            ),
+            abi.encode(0)
+        );
+        string memory question = Strings.toHexString(address(l2Arbitrator1));
+        assertEq(
+            address(l2ForkArbitrator),
+            adjudicationFramework1.forkArbitrator(),
+            "ForkArbitrator is set"
+        );
+        l2ForkArbitrator.requestActivateFork(
+            adjudicationFramework1.templateIdRemoveArbitrator(),
+            removalQuestionOpeningTimestamp,
+            question,
+            adjudicationFramework1.REALITY_ETH_TIMEOUT(),
+            adjudicationFramework1.REALITY_ETH_BOND_ARBITRATOR_REMOVE(),
+            0,
+            address(adjudicationFramework1)
         );
 
         // IMAGINE THE FORK HAPPENED HERE
@@ -552,7 +582,8 @@ contract AdjudicationIntegrationTest is Test {
             bytes32 removalQuestionId,
             bytes32 lastHistoryHash,
             bytes32 lastAnswer,
-            address lastAnswerer
+            address lastAnswerer,
+            uint32 removalQuestionOpeningTimestamp
         ) = _setupContestedArbitration();
 
         // Currently in the "yes" state, so once it times out we can complete the removal
@@ -582,6 +613,28 @@ contract AdjudicationIntegrationTest is Test {
         l2ForkArbitrator.requestArbitration{value: forkFee}(
             removalQuestionId,
             0
+        );
+        vm.mockCall(
+            address(adjudicationFramework1),
+            abi.encodeWithSelector(
+                bytes4(keccak256("getInvestigationDelay()"))
+            ),
+            abi.encode(0)
+        );
+        string memory question = Strings.toHexString(address(l2Arbitrator1));
+        assertEq(
+            address(l2ForkArbitrator),
+            adjudicationFramework1.forkArbitrator(),
+            "ForkArbitrator is set"
+        );
+        l2ForkArbitrator.requestActivateFork(
+            adjudicationFramework1.templateIdRemoveArbitrator(),
+            removalQuestionOpeningTimestamp,
+            question,
+            adjudicationFramework1.REALITY_ETH_TIMEOUT(),
+            adjudicationFramework1.REALITY_ETH_BOND_ARBITRATOR_REMOVE(),
+            0,
+            address(adjudicationFramework1)
         );
 
         // IMAGINE THE FORK HAPPENED HERE
@@ -626,7 +679,7 @@ contract AdjudicationIntegrationTest is Test {
         assertTrue(adjudicationFramework1.isArbitrator(address(l2Arbitrator1)));
 
         vm.expectRevert(
-            MinimalAdjudicationFramework.PropositionNotAccepted.selector
+            IMinimalAdjudicationFrameworkErrors.PropositionNotAccepted.selector
         );
         adjudicationFramework1.executeModificationArbitratorFromAllowList(
             removalQuestionId
@@ -644,7 +697,14 @@ contract AdjudicationIntegrationTest is Test {
     }
 
     function testArbitrationContestForkFailed() public {
-        (, bytes32 removalQuestionId, , , ) = _setupContestedArbitration();
+        (
+            ,
+            bytes32 removalQuestionId,
+            ,
+            ,
+            ,
+            uint32 removalQuestionOpeningTimestamp
+        ) = _setupContestedArbitration();
 
         // Currently in the "yes" state, so once it times out we can complete the removal
 
@@ -675,6 +735,28 @@ contract AdjudicationIntegrationTest is Test {
             removalQuestionId,
             0
         );
+        vm.mockCall(
+            address(adjudicationFramework1),
+            abi.encodeWithSelector(
+                bytes4(keccak256("getInvestigationDelay()"))
+            ),
+            abi.encode(0)
+        );
+        string memory question = Strings.toHexString(address(l2Arbitrator1));
+        assertEq(
+            address(l2ForkArbitrator),
+            adjudicationFramework1.forkArbitrator(),
+            "ForkArbitrator is set"
+        );
+        l2ForkArbitrator.requestActivateFork(
+            adjudicationFramework1.templateIdRemoveArbitrator(),
+            removalQuestionOpeningTimestamp,
+            question,
+            adjudicationFramework1.REALITY_ETH_TIMEOUT(),
+            adjudicationFramework1.REALITY_ETH_BOND_ARBITRATOR_REMOVE(),
+            0,
+            address(adjudicationFramework1)
+        );
 
         assertTrue(l2ForkArbitrator.isForkInProgress(), "In forking state");
 
@@ -701,7 +783,7 @@ contract AdjudicationIntegrationTest is Test {
             "Not in forking state"
         );
 
-        assertEq(forkFee, l2ForkArbitrator.refundsDue(user2));
+        assertEq(forkFee, l2ForkArbitrator.refundsDue(user2), "forkfee wrong");
 
         uint256 user2Bal = user2.balance;
         vm.prank(user2);

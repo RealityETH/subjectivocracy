@@ -83,8 +83,15 @@ interface IL2ForkArbitrator is IBridgeMessageReceiver {
 
     /// @notice Request a fork via the bridge
     /// @dev Talks to the L1 ForkingManager asynchronously, and may fail.
-    /// @param questionId The questionId in the question
-    function requestActivateFork(bytes32 questionId) external;
+    function requestActivateFork(
+        uint256 templateId,
+        uint32 openingTs,
+        string calldata question,
+        uint32 timeout,
+        uint256 minBond,
+        uint256 nonce,
+        address adjudicationFramework
+    ) external;
 
     // If the fork request fails, we will get a message back through the bridge telling us about it
     // We will set FORK_REQUEST_FAILED which will allow anyone to request cancellation

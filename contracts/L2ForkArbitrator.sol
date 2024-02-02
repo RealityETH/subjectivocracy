@@ -11,6 +11,7 @@ import {CalculateMoneyBoxAddress} from "./lib/CalculateMoneyBoxAddress.sol";
 
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
 import {IL2ForkArbitrator} from "./interfaces/IL2ForkArbitrator.sol";
+import {IMinimalAdjudicationFramework} from "./AdjudicationFramework/interface/IMinimalAdjudicationFramework.sol";
 /*
 This contract is the arbitrator used by governance propositions for AdjudicationFramework contracts.
 It charges a dispute fee of 5% of total supply [TODO], which it forwards to L1 when requesting a fork.
@@ -117,13 +118,13 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
             maxPrevious
         );
         emit LogRequestArbitration(questionId, msg.value, msg.sender, 0);
-        if (
-            !isForkInProgress &&
-            arbitrationData[questionId].delay == 0 &&
-            arbitrationData[questionId].status == ArbitrationStatus.SOME
-        ) {
-            requestActivateFork(questionId);
-        }
+        // if (
+        //     !isForkInProgress &&
+        //     arbitrationData[questionId].delay == 0 &&
+        //     arbitrationData[questionId].status == ArbitrationStatus.SOME
+        // ) {
+        //     requestActivateFork(questionId);
+        // }
         return true;
     }
 
@@ -158,14 +159,37 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
     }
 
     /// @inheritdoc IL2ForkArbitrator
-    function requestActivateFork(bytes32 question_id) public {
-        if (arbitrationData[question_id].status == ArbitrationStatus.NONE)
-            revert ArbitrationDataNotSet();
+    function requestActivateFork(
+        uint256 templateId,
+        uint32 openingTs,
+        string calldata question,
+        uint32 timeout,
+        uint256 minBond,
+        uint256 nonce,
+        address adjudicationFramework
+    ) public {
+        bytes32 contentHash = keccak256(
+            abi.encodePacked(templateId, openingTs, question)
+        );
+        bytes32 question_id = keccak256(
+            abi.encodePacked(
+                contentHash,
+                address(this),
+                timeout,
+                minBond,
+                address(realitio),
+                adjudicationFramework,
+                nonce
+            )
+        );
+        uint256 delay = IMinimalAdjudicationFramework(adjudicationFramework)
+            .getInvestigationDelay();
+
         if (
-            arbitrationRequests[question_id].timeOfRequest +
-                arbitrationData[question_id].delay >
+            arbitrationRequests[question_id].timeOfRequest + delay >
             block.timestamp
         ) revert RequestStillInWaitingPeriod();
+
         if (isForkInProgress) {
             revert ForkInProgress(); // Forking over something else
         }
