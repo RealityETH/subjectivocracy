@@ -26,5 +26,5 @@ jobs:
         node-version: 16
         cache: 'npm'
         cache-dependency-path: ./package-lock.json
-    # - run: npm install
+    - run: npm install
     - run: npx hardhat test
