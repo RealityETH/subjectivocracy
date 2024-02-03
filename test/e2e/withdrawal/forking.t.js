@@ -274,7 +274,7 @@ describe('Simulating first proof after a fork', () => {
                 currentBatchData.oldAccInputHash,
                 calculateBatchHashData(currentBatchData.batchL2Data),
                 currentBatchData.globalExitRoot,
-                currentBatchData.timestamp,
+                currentBatchData.timestamp.toString(),
                 currentBatchData.sequencerAddr, // fix
             );
             expect(batchAccInputHashJs).to.be.eq(currentBatchData.newAccInputHash);
