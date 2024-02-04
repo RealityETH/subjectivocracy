@@ -64,6 +64,13 @@ interface IL2ForkArbitrator is IBridgeMessageReceiver {
 
     /// @notice Request a fork via the bridge
     /// @dev Talks to the L1 ForkingManager asynchronously, and may fail.
+    /// @param templateId The template id of the question during requestArbitration call
+    /// @param openingTs The opening timestamp of the question during requestArbitration call
+    /// @param question The question during requestArbitration call
+    /// @param timeout The timeout of the question during requestArbitration call
+    /// @param minBond The min bond of the question during requestArbitration call
+    /// @param nonce The nonce of the question during requestArbitration call
+    /// @param adjudicationFramework The address of the adjudication framework
     function requestActivateFork(
         uint256 templateId,
         uint32 openingTs,

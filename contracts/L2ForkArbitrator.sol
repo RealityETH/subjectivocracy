@@ -106,17 +106,13 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
             maxPrevious
         );
         emit LogRequestArbitration(questionId, msg.value, msg.sender, 0);
-        // if (
-        //     !isForkInProgress &&
-        //     arbitrationData[questionId].delay == 0 &&
-        //     arbitrationData[questionId].status == ArbitrationStatus.SOME
-        // ) {
-        //     requestActivateFork(questionId);
-        // }
         return true;
     }
 
     /// @inheritdoc IL2ForkArbitrator
+    // @note This function requires all the information from the original question,
+    // to verify the address of the adjudication framework that initially asked the question
+    // With the address of the adjudication framework, we can get the investigation delay
     function requestActivateFork(
         uint256 templateId,
         uint32 openingTs,
