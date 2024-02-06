@@ -47,6 +47,11 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         uint256 remaining
     );
 
+    event LogRequestArbitrationTopUp(
+        bytes32 indexed question_id,
+        uint256 fee_paid
+    );
+
     // stores data on the arbitration process
     // questionId => ArbitrationRequest
     mapping(bytes32 => ArbitrationRequest) public arbitrationRequests;
@@ -112,10 +117,11 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
     /// @inheritdoc IL2ForkArbitrator
     function topUpArbitrationRequest(bytes32 questionId) external payable {
         ArbitrationRequest storage request = arbitrationRequests[questionId];
-        if (request.status == RequestStatus.NONE) {
-            revert ArbitrationDataNotSet();
+        if (request.status != RequestStatus.QUEUED) {
+            revert NotAwaitingActivation();
         }
         request.paid = request.paid + msg.value;
+        emit LogRequestArbitrationTopUp(questionId, msg.value);
     }
 
     /// @inheritdoc IL2ForkArbitrator

@@ -327,9 +327,9 @@ contract L2ForkArbitratorTest is Test {
             "Top-up amount not added to the paid total"
         );
 
-        // Test for non-existent arbitration request
+        // Test for non-existent, non-queued arbitration request
         bytes32 invalidQuestionId = keccak256("invalidQuestion");
-        vm.expectRevert(IL2ForkArbitrator.ArbitrationDataNotSet.selector);
+        vm.expectRevert(IL2ForkArbitrator.NotAwaitingActivation.selector);
         vm.deal(address(this), topUpAmount);
         arbitrator.topUpArbitrationRequest{value: topUpAmount}(
             invalidQuestionId
