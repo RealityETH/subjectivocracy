@@ -47,6 +47,8 @@ interface IL2ForkArbitrator is IBridgeMessageReceiver {
     error NotAwaitingActivation();
     // @dev Error thrown when the request is still in the waiting period
     error RequestStillInWaitingPeriod();
+    // @dev Error thrown when the arbitration can not be canceled
+    error ArbitrationCanNotBeCanceled();
 
     /// @notice Return the dispute fee for the specified question. 0 indicates that we won't arbitrate it.
     /// @dev Uses a general default, takes a question id param for other contracts that may want to set it per-question.
@@ -67,6 +69,10 @@ interface IL2ForkArbitrator is IBridgeMessageReceiver {
     /// the requestArbitration call and the arbitration request being processed.
     /// @param questionId The question in question
     function topUpArbitrationRequest(bytes32 questionId) external payable;
+
+    /// @notice Cancel a previous arbitration request
+    /// @dev This can only be used, if the request is still queued and the arbitration fee was increased unexpectedly
+    function cancelArbitration(bytes32 questionId) external;
 
     /// @notice Request a fork via the bridge
     /// @dev Talks to the L1 ForkingManager asynchronously, and may fail.
