@@ -62,6 +62,12 @@ interface IL2ForkArbitrator is IBridgeMessageReceiver {
         uint256 maxPrevious
     ) external payable returns (bool);
 
+    /// @notice Allows a requestor to top up their arbitration fee
+    /// This function needs to be used, in case the arbitration fee was increased in the time period between
+    /// the requestArbitration call and the arbitration request being processed.
+    /// @param questionId The question in question
+    function topUpArbitrationRequest(bytes32 questionId) external payable;
+
     /// @notice Request a fork via the bridge
     /// @dev Talks to the L1 ForkingManager asynchronously, and may fail.
     /// @param templateId The template id of the question during requestArbitration call

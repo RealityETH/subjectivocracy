@@ -110,6 +110,15 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
     }
 
     /// @inheritdoc IL2ForkArbitrator
+    function topUpArbitrationRequest(bytes32 questionId) external payable {
+        ArbitrationRequest storage request = arbitrationRequests[questionId];
+        if (request.status == RequestStatus.NONE) {
+            revert ArbitrationDataNotSet();
+        }
+        request.paid = request.paid + msg.value;
+    }
+
+    /// @inheritdoc IL2ForkArbitrator
     // @note This function requires all the information from the original question,
     // to verify the address of the adjudication framework that initially asked the question
     // With the address of the adjudication framework, we can get the investigation delay

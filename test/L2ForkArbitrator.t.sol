@@ -290,4 +290,49 @@ contract L2ForkArbitratorTest is Test {
             address(this)
         );
     }
+
+    function testTopUpArbitrationRequest() public {
+        bytes32 questionId = keccak256("testQuestion");
+        uint256 maxPrevious = 0;
+        uint256 arbitrationFee = arbitrator.getDisputeFee(questionId);
+
+        // Mock call to realitio and simulate arbitration request
+        vm.mockCall(
+            address(realitio),
+            abi.encodeWithSelector(
+                IRealityETH.notifyOfArbitrationRequest.selector,
+                questionId,
+                address(this),
+                maxPrevious
+            ),
+            abi.encode()
+        );
+
+        vm.deal(address(this), arbitrationFee);
+        arbitrator.requestArbitration{value: arbitrationFee}(
+            questionId,
+            maxPrevious
+        );
+
+        // Top up the arbitration request
+        uint256 topUpAmount = 0.5 ether;
+        vm.deal(address(this), topUpAmount);
+        arbitrator.topUpArbitrationRequest{value: topUpAmount}(questionId);
+
+        // Verify the top-up was successful
+        (, , uint256 paid, , ) = arbitrator.arbitrationRequests(questionId);
+        assertEq(
+            paid,
+            arbitrationFee + topUpAmount,
+            "Top-up amount not added to the paid total"
+        );
+
+        // Test for non-existent arbitration request
+        bytes32 invalidQuestionId = keccak256("invalidQuestion");
+        vm.expectRevert(IL2ForkArbitrator.ArbitrationDataNotSet.selector);
+        vm.deal(address(this), topUpAmount);
+        arbitrator.topUpArbitrationRequest{value: topUpAmount}(
+            invalidQuestionId
+        );
+    }
 }
