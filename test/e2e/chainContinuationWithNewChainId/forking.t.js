@@ -37,6 +37,7 @@ const inputJson = require('./input.json');
  */
 
 describe('Simulating first proof after a fork', () => {
+    const hiGit = 3;
     let verifierContract;
     let maticTokenContract;
     let polygonZkEVMBridgeContract;
