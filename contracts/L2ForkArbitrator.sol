@@ -285,26 +285,27 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
     }
 
     /// @inheritdoc IL2ForkArbitrator
-    function cancelArbitration(bytes question_id)external {
-        RequestStatus arbitrationStatus = arbitrationRequests[question_id].status;
+    function cancelArbitration(bytes32 questionId) external {
+        RequestStatus arbitrationStatus = arbitrationRequests[questionId]
+            .status;
         if (arbitrationStatus != RequestStatus.QUEUED) {
             revert NotAwaitingActivation();
         }
 
         uint256 forkFee = chainInfo.getForkFee();
-        uint256 paid = arbitrationRequests[question_id].paid;
+        uint256 paid = arbitrationRequests[questionId].paid;
         if (paid >= forkFee) {
             // We only allow the cancellation if the fee is not enough to trigger the fork
             // due to a fee modification happening after the arbitration request
             revert ArbitrationCanNotBeCanceled();
         }
-        realitio.cancelArbitration(question_id);
-        address payable payer = arbitrationRequests[question_id].payer;
+        realitio.cancelArbitration(questionId);
+        address payable payer = arbitrationRequests[questionId].payer;
 
         refundsDue[payer] =
             refundsDue[payer] +
-            arbitrationRequests[question_id].paid;
-        deleteArbitrationRequestsData(question_id);
+            arbitrationRequests[questionId].paid;
+        deleteArbitrationRequestsData(questionId);
     }
 
     function deleteArbitrationRequestsData(bytes32 question_id) internal {

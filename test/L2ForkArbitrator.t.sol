@@ -290,4 +290,102 @@ contract L2ForkArbitratorTest is Test {
             address(this)
         );
     }
+
+   
+    function testCancelArbitrationSuccess() public {
+        bytes32 questionId = keccak256("cancelTestQuestion");
+        uint256 maxPrevious = 0;
+        uint256 arbitrationFee = arbitrator.getDisputeFee(questionId);
+
+        // Mock call to realitio and simulate arbitration request
+        vm.mockCall(
+            address(realitio),
+            abi.encodeWithSelector(
+                IRealityETH.notifyOfArbitrationRequest.selector,
+                questionId,
+                address(this),
+                maxPrevious
+            ),
+            abi.encode()
+        );
+
+        vm.deal(address(this), arbitrationFee);
+        arbitrator.requestArbitration{value: arbitrationFee}(
+            questionId,
+            maxPrevious
+        );
+
+        // Assert initial state
+        (L2ForkArbitrator.RequestStatus status, , uint256 paid, , ) = arbitrator
+            .arbitrationRequests(questionId);
+        assertEq(
+            uint256(status),
+            uint256(L2ForkArbitrator.RequestStatus.QUEUED),
+            "Initial status is not QUEUED"
+        );
+        assertEq(
+            paid,
+            arbitrationFee,
+            "Paid amount does not match arbitration fee"
+        );
+
+        // Cancel the arbitration request
+        vm.mockCall(
+            chainInfo,
+            abi.encodeWithSelector(L2ChainInfo.getForkFee.selector),
+            abi.encode(arbitrationFee + 1)
+        );
+        arbitrator.cancelArbitration(questionId);
+
+        // Assert arbitration request is deleted
+        (status, , paid, , ) = arbitrator.arbitrationRequests(questionId);
+        assertEq(
+            uint256(status),
+            uint256(L2ForkArbitrator.RequestStatus.NONE),
+            "Arbitration status should be reset to NONE"
+        );
+        assertEq(paid, 0, "Paid amount should be reset to 0");
+
+        // Assert refund is due
+        uint256 refund = arbitrator.refundsDue(address(this));
+        assertEq(
+            refund,
+            arbitrationFee,
+            "Refund due does not match arbitration fee"
+        );
+    }
+
+    function testCancelArbitrationFailure() public {
+        bytes32 questionId = keccak256("cancelTestQuestionFailure");
+        uint256 maxPrevious = 0;
+        uint256 arbitrationFee = arbitrator.getDisputeFee(questionId) +
+            0.5 ether; // Assume top-up to meet or exceed forkFee
+
+        // Mock call to realitio and simulate arbitration request with additional top-up
+        vm.mockCall(
+            address(realitio),
+            abi.encodeWithSelector(
+                IRealityETH.notifyOfArbitrationRequest.selector,
+                questionId,
+                address(this),
+                maxPrevious
+            ),
+            abi.encode()
+        );
+
+        vm.deal(address(this), arbitrationFee);
+        arbitrator.requestArbitration{value: arbitrationFee}(
+            questionId,
+            maxPrevious
+        );
+
+        // Attempt to cancel the arbitration request with sufficient funds (assuming forkFee is met or exceeded)
+        vm.expectRevert(IL2ForkArbitrator.ArbitrationCanNotBeCanceled.selector);
+        vm.mockCall(
+            chainInfo,
+            abi.encodeWithSelector(L2ChainInfo.getForkFee.selector),
+            abi.encode(arbitrationFee)
+        );
+        arbitrator.cancelArbitration(questionId);
+    }
 }
