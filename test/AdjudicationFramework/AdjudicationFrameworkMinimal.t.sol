@@ -18,6 +18,7 @@ import {MinimalAdjudicationFramework} from "../../contracts/AdjudicationFramewor
 import {L2ForkArbitrator} from "../../contracts/L2ForkArbitrator.sol";
 import {L1GlobalForkRequester} from "../../contracts/L1GlobalForkRequester.sol";
 import {L2ChainInfo} from "../../contracts/L2ChainInfo.sol";
+import {IMinimalAdjudicationFrameworkErrors} from "../../contracts/AdjudicationFramework/interface/IMinimalAdjudicationFrameworkErrors.sol";
 
 import {MockPolygonZkEVMBridge} from "../testcontract/MockPolygonZkEVMBridge.sol";
 
@@ -301,12 +302,9 @@ contract AdjudicationIntegrationTest is Test {
                 true,
                 delay
             );
-        bytes32 questionIdAddMultiple = adjudicationFrameworkWithDelay
-            .requestModificationOfArbitrators(address(0), address(0x1000));
-        (, uint256 storedDelay) = l2ForkArbitrator.arbitrationData(
-            questionIdAddMultiple
-        );
-        assertEq(delay, storedDelay, "delay not stored correctly");
+        uint256 receivedDelay = adjudicationFrameworkWithDelay
+            .getInvestigationDelay();
+        assertEq(delay, receivedDelay, "delay not stored correctly");
     }
 
     function testrequestModificationOfArbitrators() public {
@@ -339,7 +337,7 @@ contract AdjudicationIntegrationTest is Test {
 
         // Scenario 4: Invalid case - No arbitrators to modify
         vm.expectRevert(
-            MinimalAdjudicationFramework.NoArbitratorsToModify.selector
+            IMinimalAdjudicationFrameworkErrors.NoArbitratorsToModify.selector
         );
         adjudicationFramework1.requestModificationOfArbitrators(
             address(0),
@@ -421,7 +419,7 @@ contract AdjudicationIntegrationTest is Test {
 
         // Clear failed proposition
         vm.expectRevert(
-            MinimalAdjudicationFramework.PropositionNotFailed.selector
+            IMinimalAdjudicationFrameworkErrors.PropositionNotFailed.selector
         );
         adjudicationFramework1.clearFailedProposition(questionId);
     }

@@ -11,6 +11,7 @@ import {CalculateMoneyBoxAddress} from "./lib/CalculateMoneyBoxAddress.sol";
 
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
 import {IL2ForkArbitrator} from "./interfaces/IL2ForkArbitrator.sol";
+import {IMinimalAdjudicationFramework} from "./AdjudicationFramework/interface/IMinimalAdjudicationFramework.sol";
 /*
 This contract is the arbitrator used by governance propositions for AdjudicationFramework contracts.
 It charges a dispute fee of 5% of total supply [TODO], which it forwards to L1 when requesting a fork.
@@ -39,15 +40,6 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         uint256 timeOfRequest;
     }
 
-    enum ArbitrationStatus {
-        NONE,
-        SOME
-    }
-    struct ArbitrationData {
-        ArbitrationStatus status;
-        uint256 delay; // Delay in seconds before the fork is activated
-    }
-
     event LogRequestArbitration(
         bytes32 indexed question_id,
         uint256 fee_paid,
@@ -58,9 +50,6 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
     // stores data on the arbitration process
     // questionId => ArbitrationRequest
     mapping(bytes32 => ArbitrationRequest) public arbitrationRequests;
-    // stores data on the arbitration itself
-    // questionId => ArbitrationData
-    mapping(bytes32 => ArbitrationData) public arbitrationData;
 
     mapping(address => uint256) public refundsDue;
 
@@ -117,25 +106,21 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
             maxPrevious
         );
         emit LogRequestArbitration(questionId, msg.value, msg.sender, 0);
-        if (
-            !isForkInProgress &&
-            arbitrationData[questionId].delay == 0 &&
-            arbitrationData[questionId].status == ArbitrationStatus.SOME
-        ) {
-            requestActivateFork(questionId);
-        }
         return true;
     }
 
     /// @inheritdoc IL2ForkArbitrator
-    function storeInformation(
+    // @note This function requires all the information from the original question,
+    // to verify the address of the adjudication framework that initially asked the question
+    // With the address of the adjudication framework, we can get the investigation delay
+    function requestActivateFork(
         uint256 templateId,
         uint32 openingTs,
         string calldata question,
         uint32 timeout,
         uint256 minBond,
         uint256 nonce,
-        uint256 delay
+        address adjudicationFramework
     ) public {
         bytes32 contentHash = keccak256(
             abi.encodePacked(templateId, openingTs, question)
@@ -147,25 +132,18 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
                 timeout,
                 minBond,
                 address(realitio),
-                msg.sender,
+                adjudicationFramework,
                 nonce
             )
         );
-        arbitrationData[question_id] = ArbitrationData(
-            ArbitrationStatus.SOME,
-            delay
-        );
-    }
+        uint256 delay = IMinimalAdjudicationFramework(adjudicationFramework)
+            .getInvestigationDelay();
 
-    /// @inheritdoc IL2ForkArbitrator
-    function requestActivateFork(bytes32 question_id) public {
-        if (arbitrationData[question_id].status == ArbitrationStatus.NONE)
-            revert ArbitrationDataNotSet();
         if (
-            arbitrationRequests[question_id].timeOfRequest +
-                arbitrationData[question_id].delay >
+            arbitrationRequests[question_id].timeOfRequest + delay >
             block.timestamp
         ) revert RequestStillInWaitingPeriod();
+
         if (isForkInProgress) {
             revert ForkInProgress(); // Forking over something else
         }
