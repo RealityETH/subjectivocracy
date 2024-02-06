@@ -1,0 +1,84 @@
+Forking models
+
+
+Augur model
+: The system can be forked but forkable token is only used for governance
+
+- Manages: Forkable-Gov, Hard-ETH, Hard-DAI
+- Delay before fork (slow resolution)
+- Both forks viable, value may split
+- Token is duplicated
+- Token fork choice controls ETH/DAI
+- Value resolution: Early (done by the time the fork is born)
+- All assets always movable unless tied up in bets
+
+Security properties:
+- Subjectivocracy with respect to gov token, protects against bribery attacks
+- Economic security with respect to unforkable assets, limited by gov token value
+
+
+Backstop Conventional
+: The system can be forked, and value is managed in forkable tokens. Bridged assets follow the most valuable branch (although other models also possible)
+
+Manages: Forkable-Gov, Forkable-User1, Forkable-User2, Hard-ETH (bridged), Hard-DAI (bridged), Forkable-DAI (synthetic)
+- Delay before fork (slow resolution)
+- Both forks viable, value may split
+- Forkable-Gov and Forkable... are duplicated
+- Forkable-Gov (maybe also Forkable-User*) controls Hard-ETH, Hard-DAI
+- Value resolution: Early (done by the time the fork is born)
+- Bridges are always active, targets change at moment of fork
+
+Properties:
+- Subjectivocracy with respect to gov token and forkable tokens
+- Economic security with respect to bridged tokens, limited by forkable token value
+- Since value may split in a fork, synthetic assets need to be specially designed to avoid liquidating.
+
+
+Backstop Fast
+: Like Backstop conventional but run at 128x speed
+- Delay before fork but not long (fast resolution)
+- Both forks viable, value may split
+- Forkable-Gov and Forkable... are duplicated
+- Forkable-Gov (maybe also Forkable-User*) controls Hard-ETH, Hard-DAI
+- Value resolution: Early (done by the time the fork is born) but fast
+
+Properties
+- Same as Backstop Conventional but network effects and liquidations etc may be exploitable by an attacker with a preparation advantage
+- Good for narrowly-defined problems that can be managed by bots?
+
+
+Hypothesis L3
+: Uses temporary chains guarantee fast liquidations etc on the "correct" chain, but resolves them slowly and expects to erase one chain, so it doesn't matter what you did on it
+
+- Manages: Forkable-L3-User1, Forkable-L3-User2, Forkable-Gov, Forkable-User1, Forkable-User2, Hard-ETH (bridged), Hard-DAI (bridged), Forkable-DAI (synthetic)
+- Immediate fork, but slow resolution
+- Both usually unviable, expect to resolve to 1 with Backstop Conventional. May both be viable if Backstop Conventional also forks
+- Tokens are duplicated, but duplicate is temporary
+- Given Backstop conventional fork, Forkable-Gov (maybe also Forkable-User*) controls Hard-ETH, Hard-DAI
+- Value resolution: Late, but you can work on the assumption that your fork will win immediately
+- Freezes bridges until resolution
+
+Properties
+- Should allow fast reactions without compromising the resolution process
+- If the fork of the underlying system is *expected*, it becomes more like "Backstop Fast" and an attacker with a preparation advantage may be able to exploit chaotic liquidations etc
+
+
+Proposed Maker Variant
+: Like Backstop Fast but also used for Maker
+
+- Manages: Forkable-Gov, Forkable-Maker, Forkable-User1, Forkable-User2, Hard-ETH (bridged), Temporarily-Forkable-DAI 
+- Delay before fork but not long (fast resolution)
+- Both forks theoretically viable, but if the DAI on one fork lose their value in an economic attack then the other may not be viable even if it's correct (mitigated if they're defacto backed by a trusted legal entity)
+- Forkable-Gov + Forkable-Maker controls Hard-ETH, Hard-DAI
+- Value resolution: Late (forks are alive before the correct fork is resolved, although hopefully in brazen attack scenarios this will be obvious in practice)
+- Freezes bridges until resolution (???)
+
+Properties
+- As with Backstop Fast, liquidations etc may be exploitable by an attacker with a preparation advantage
+- If DAI are on L1, limited to economic security for most of the assets being managed. This in turn makes an attack potentially profitable
+- Since both forks may be viable, assets on the forks may lose part of their expected value resulting in chaotic liquidations. Our synthetic asset design doesn't work because resolution is Late.
+- Not sure whether or not the above ends up working OK for DAI positions or not, but it will be bad for *other* things on the chain
+
+
+
+
