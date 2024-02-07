@@ -11,7 +11,7 @@ const ChildConfig = {
 };
 
 async function main() {
-    const childConfig = ChildConfig.secondChild;
+    const childConfig = ChildConfig.firstChild;
     /*
      * Check deploy parameters
      * Check that every necessary parameter is fullfilled
@@ -63,11 +63,13 @@ async function main() {
     )).connect(deployer);
 
     const tx1 = await forkonomicTokenChild.approve(zkevmChildAddress, ethers.constants.MaxUint256);
+    await tx1.wait();
     console.log('Approved zkevm to spend forkonomic tokens');
     console.log('by the following tx: ', tx1.hash);
 
     const splitAmount = await forkonomicToken.balanceOf(deployer.address);
     const tx2 = await forkonomicTokenChild.splitTokensIntoChildTokens(splitAmount, { gasLimit: 1000000 });
+    await tx2.wait();
     console.log('Splitting tokens into their child tokens');
     console.log('by the following tx: ', tx2.hash);
 }
