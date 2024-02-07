@@ -41,7 +41,6 @@ async function main() {
     const currentProvider = await common.loadProvider(deployParameters, process.env);
     const deployer = await common.loadDeployer(currentProvider, deployParameters);
 
-
     if (trustedSequencer === undefined || trustedSequencer.toLowerCase() !== deployer.address.toLowerCase()) {
         throw new Error('Wrong deployer address');
     }
