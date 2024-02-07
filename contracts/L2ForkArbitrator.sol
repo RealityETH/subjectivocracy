@@ -284,6 +284,30 @@ contract L2ForkArbitrator is IL2ForkArbitrator {
         delete (arbitrationRequests[question_id]);
     }
 
+    /// @inheritdoc IL2ForkArbitrator
+    function cancelArbitration(bytes32 questionId) external {
+        RequestStatus arbitrationStatus = arbitrationRequests[questionId]
+            .status;
+        if (arbitrationStatus != RequestStatus.QUEUED) {
+            revert NotAwaitingActivation();
+        }
+
+        uint256 forkFee = chainInfo.getForkFee();
+        uint256 paid = arbitrationRequests[questionId].paid;
+        if (paid >= forkFee) {
+            // We only allow the cancellation if the fee is not enough to trigger the fork
+            // due to a fee modification happening after the arbitration request
+            revert ArbitrationCanNotBeCanceled();
+        }
+        realitio.cancelArbitration(questionId);
+        address payable payer = arbitrationRequests[questionId].payer;
+
+        refundsDue[payer] =
+            refundsDue[payer] +
+            arbitrationRequests[questionId].paid;
+        deleteArbitrationRequestsData(questionId);
+    }
+
     function deleteArbitrationRequestsData(bytes32 question_id) internal {
         arbitrationRequests[question_id].status = RequestStatus.NONE;
         // the following data does not need to be deleted, and with the new removal of restore opcode, we could leave them as they are.
