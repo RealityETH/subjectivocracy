@@ -291,7 +291,6 @@ contract L2ForkArbitratorTest is Test {
         );
     }
 
-   
     function testCancelArbitrationSuccess() public {
         bytes32 questionId = keccak256("cancelTestQuestion");
         uint256 maxPrevious = 0;
