@@ -68,7 +68,7 @@ async function main() {
     console.log('by the following tx: ', tx1.hash);
 
     const splitAmount = await forkonomicToken.balanceOf(deployer.address);
-    const tx2 = await forkonomicTokenChild.splitTokensIntoChildTokens(splitAmount, { gasLimit: 1000000 });
+    const tx2 = await forkonomicToken.splitTokensIntoChildTokens(splitAmount, { gasLimit: 1000000 });
     await tx2.wait();
     console.log('Splitting tokens into their child tokens');
     console.log('by the following tx: ', tx2.hash);
