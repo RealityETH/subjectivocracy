@@ -9,22 +9,21 @@ on:
   pull_request:
     branches: [main, develop]
 
-# Temporary disabled due to a dependency issue. Locally the tests are running fine.
-# jobs:
-#   lint-and-test:
-#     runs-on: ubuntu-latest
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
 
-#     strategy:
-#         matrix:
-#           node-version: [16.x]
-#           os: [ubuntu-latest]
+    strategy:
+        matrix:
+          node-version: [16.x]
+          os: [ubuntu-latest]
 
-#     steps:
-#     - uses: actions/checkout@v3
-#     - uses: actions/setup-node@v3
-#       with:
-#         node-version: 16
-#         cache: 'npm'
-#         cache-dependency-path: ./package-lock.json
-#     - run: npm install
-#     - run: npx hardhat test
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+        cache: 'npm'
+        cache-dependency-path: ./package-lock.json
+    - run: npm install
+    - run: npx hardhat test
