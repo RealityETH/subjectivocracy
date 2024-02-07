@@ -3,8 +3,15 @@
 const path = require('path');
 const { ethers } = require('hardhat');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+const common = require('../common/common');
+
+const ChildConfig = {
+    firstChild: 0,
+    secondChild: 1,
+};
 
 async function main() {
+    const childConfig = ChildConfig.secondChild;
     /*
      * Check deploy parameters
      * Check that every necessary parameter is fullfilled
@@ -31,48 +38,38 @@ async function main() {
     } = deploymentOutput;
 
     const forkonomicTokenAddress = maticTokenAddress;
-
-    // Load provider
     const currentProvider = await common.loadProvider(deployParameters, process.env);
     const deployer = await common.loadDeployer(currentProvider, deployParameters);
- 
+
 
     if (trustedSequencer === undefined || trustedSequencer.toLowerCase() !== deployer.address.toLowerCase()) {
         throw new Error('Wrong deployer address');
     }
-
-    const zkevm = await ethers.getContractAt(
+    console.log('polygonZkEVMAddress: ', polygonZkEVMAddress);
+    const zkevm = (await ethers.getContractAt(
         'contracts/ForkableZkEVM.sol:ForkableZkEVM',
         polygonZkEVMAddress,
-    );
+    )).connect(deployer);
+    const zkevmChildren = await zkevm.getChildren();
+    const zkevmChildAddress = zkevmChildren[childConfig];
 
-    const forkonomicToken = await ethers.getContractAt(
+    const forkonomicToken = (await ethers.getContractAt(
         'contracts/ForkonomicToken.sol:ForkonomicToken',
         forkonomicTokenAddress,
-    );
+    )).connect(deployer);
     const children = await forkonomicToken.getChildren();
-    const forkonomicTokenChild = 
-    await ethers.getContractAt(
+    const forkonomicTokenChild = (await ethers.getContractAt(
         'contracts/ForkonomicToken.sol:ForkonomicToken',
-        children.children[0],
-        );
+        children[childConfig],
+    )).connect(deployer);
 
-    const depositAmount = ethers.utils.parseEther('10');
-    const tx1 = await forkonomicTokenChild.connect(deployer).approve(polygonZkEVMAddress, ethers.constants.MaxUint256);
+    const tx1 = await forkonomicTokenChild.approve(zkevmChildAddress, ethers.constants.MaxUint256);
     console.log('Approved zkevm to spend forkonomic tokens');
     console.log('by the following tx: ', tx1.hash);
 
-
-    const tx2 = await forkonomicToken.connect(deployer).bridgeAsset(
-        1,
-        deployer.address,
-        depositAmount,
-        forkonomicTokenAddress,
-        true,
-        '0x',
-        { gasLimit: 5000000 },
-    );
-    console.log('Deposited forkonomic tokens into bridge');
+    const splitAmount = await forkonomicToken.balanceOf(deployer.address);
+    const tx2 = await forkonomicTokenChild.splitTokensIntoChildTokens(splitAmount, { gasLimit: 1000000 });
+    console.log('Splitting tokens into their child tokens');
     console.log('by the following tx: ', tx2.hash);
 }
 
