@@ -11,7 +11,6 @@ const ChildConfig = {
 };
 
 async function main() {
-    const childConfig = ChildConfig.firstChild;
     /*
      * Check deploy parameters
      * Check that every necessary parameter is fullfilled
@@ -50,28 +49,36 @@ async function main() {
         polygonZkEVMAddress,
     )).connect(deployer);
     const zkevmChildren = await zkevm.getChildren();
-    const zkevmChildAddress = zkevmChildren[childConfig];
 
     const forkonomicToken = (await ethers.getContractAt(
         'contracts/ForkonomicToken.sol:ForkonomicToken',
         forkonomicTokenAddress,
     )).connect(deployer);
     const children = await forkonomicToken.getChildren();
-    const forkonomicTokenChild = (await ethers.getContractAt(
+    const forkonomicTokenChild1 = (await ethers.getContractAt(
         'contracts/ForkonomicToken.sol:ForkonomicToken',
-        children[childConfig],
+        children[ChildConfig.firstChild],
+    )).connect(deployer);
+    const forkonomicTokenChild2 = (await ethers.getContractAt(
+        'contracts/ForkonomicToken.sol:ForkonomicToken',
+        children[ChildConfig.secondChild],
     )).connect(deployer);
 
-    const tx1 = await forkonomicTokenChild.approve(zkevmChildAddress, ethers.constants.MaxUint256);
+    const tx1 = await forkonomicTokenChild1.approve(zkevmChildren[ChildConfig.firstChild], ethers.constants.MaxUint256);
     await tx1.wait();
-    console.log('Approved zkevm to spend forkonomic tokens');
+    console.log('Approved first zkevm to spend forkonomic tokens');
     console.log('by the following tx: ', tx1.hash);
 
-    const splitAmount = await forkonomicToken.balanceOf(deployer.address);
-    const tx2 = await forkonomicToken.splitTokensIntoChildTokens(splitAmount, { gasLimit: 1000000 });
+    const tx2 = await forkonomicTokenChild2.approve(zkevmChildren[ChildConfig.secondChild], ethers.constants.MaxUint256);
     await tx2.wait();
-    console.log('Splitting tokens into their child tokens');
+    console.log('Approved 2nd zkevm to spend forkonomic tokens');
     console.log('by the following tx: ', tx2.hash);
+
+    const splitAmount = await forkonomicToken.balanceOf(deployer.address);
+    const tx3 = await forkonomicToken.splitTokensIntoChildTokens(splitAmount, { gasLimit: 1000000 });
+    await tx3.wait();
+    console.log('Splitting tokens into their child tokens');
+    console.log('by the following tx: ', tx3.hash);
 }
 
 main().catch((e) => {
