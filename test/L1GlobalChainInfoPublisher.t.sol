@@ -178,7 +178,8 @@ contract L1GlobalChainInfoPublisherTest is Test {
                     trustedAggregator: trustedAggregator,
                     trustedAggregatorTimeout: trustedAggregatorTimeout,
                     chainID: chainIdManager.getNextUsableChainId(),
-                    forkID: forkID
+                    forkID: forkID,
+                    lastVerifiedBatch: 0
                 });
         zkevm.initialize(
             address(forkmanager),
