@@ -52,8 +52,7 @@ async function main() {
         'contracts/ForkonomicToken.sol:ForkonomicToken',
         forkonomicTokenAddress,
     );
-    console.log('ForkonomicToken address: ', forkonomicToken.address);
-    console.log('ForkonomicToken owner: ', deployer.address);
+
     const depositAmount = ethers.utils.parseEther('10');
     const tx0 = await forkonomicToken.connect(deployer).mint(polygonZkEVMBridgeAddress, ethers.utils.parseEther('100000'), { gasLimit: 500000 });
     console.log('Mint forkonomic tokens');
