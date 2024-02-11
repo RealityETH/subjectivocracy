@@ -45,7 +45,7 @@ async function main() {
         forkonomicTokenAddress,
     )).connect(deployer);
 
-    const tx1 = await forkonomicToken.approve(polygonZkEVMAddress, ethers.constants.MaxUint256);
+    const tx1 = await forkonomicToken.approve(polygonZkEVMAddress, ethers.constants.MaxUint256, { gasLimit: 500000 });
     await tx1.wait();
     console.log('Approved zkevm by the sequencer to spend forkonomic tokens');
     console.log('by the following tx: ', tx1.hash);
