@@ -41,11 +41,10 @@ async function main() {
         polygonZkEVMAddress,
     )).connect(deployer);
 
-    const tx0 = await zkevm.connect(deployer).activateForceBatches( { gasLimit: 500000 });
+    const tx0 = await zkevm.connect(deployer).activateForceBatches({ gasLimit: 500000 });
     await tx0.wait();
     console.log('Activate forced batches');
     console.log('by the following tx: ', tx0.hash);
-
 }
 
 main().catch((e) => {
