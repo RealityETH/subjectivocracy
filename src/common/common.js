@@ -67,6 +67,10 @@ async function loadDeployer(currentProvider, deployParameters = {}, idx = '0') {
     return deployer;
 }
 
+async function getNonceWithoutInFlightTxs(provider, address) {
+    return (await provider.getTransactionCount(address, 'latest')) + 1;
+}
+
 module.exports = {
-    loadProvider, loadDeployer, verifyDeploymentParameters,
+    loadProvider, loadDeployer, verifyDeploymentParameters, getNonceWithoutInFlightTxs,
 };

@@ -1,4 +1,4 @@
-/* eslint-disable no-await-in-loop, no-use-before-define, no-lonely-if, import/no-dynamic-require, global-require */
+/* eslint-disable import/no-dynamic-require, global-require */
 /* eslint-disable no-console, no-inner-declarations, no-undef, import/no-unresolved, no-restricted-syntax */
 const path = require('path');
 const { ethers } = require('hardhat');
@@ -16,11 +16,9 @@ async function main() {
     const deploymentOutput = require(`../../deployments/${deploymentName}/deploy_output.json`);
 
     const mandatoryDeploymentOutput = [
-        'polygonZkEVMBridgeAddress',
-        'bridgeImplementationAddress',
         'maticTokenAddress',
-        'createChildrenImplementationAddress',
-
+        'trustedSequencer',
+        'deployerAddress',
     ];
     for (const parameterName of mandatoryDeploymentOutput) {
         if (deploymentOutput[parameterName] === undefined || deploymentOutput[parameterName] === '') {
@@ -28,55 +26,33 @@ async function main() {
         }
     }
     const {
-        polygonZkEVMBridgeAddress,
         maticTokenAddress,
         trustedSequencer,
+        deployerAddress,
     } = deploymentOutput;
 
     const forkonomicTokenAddress = maticTokenAddress;
-
-    // Load provider
     const currentProvider = await common.loadProvider(deployParameters, process.env);
     const deployer = await common.loadDeployer(currentProvider, deployParameters);
 
-    if (trustedSequencer === undefined || trustedSequencer.toLowerCase() !== deployer.address.toLowerCase()) {
+    if (deployerAddress === undefined || deployerAddress.toLowerCase() !== deployer.address.toLowerCase()) {
         throw new Error('Wrong deployer address');
     }
 
-    const bridge = await ethers.getContractAt(
-        'contracts/ForkableBridge.sol:ForkableBridge',
-        polygonZkEVMBridgeAddress,
-    );
-
-    const forkonomicToken = await ethers.getContractAt(
+    const forkonomicToken = (await ethers.getContractAt(
         'contracts/ForkonomicToken.sol:ForkonomicToken',
         forkonomicTokenAddress,
-    );
+    )).connect(deployer);
 
-    const depositAmount = ethers.utils.parseEther('10');
-    const balance = await forkonomicToken.connect(deployer).balanceOf(deployer.address);
-    if (balance.lt(depositAmount)) {
-        throw new Error('Not enough tokens');
-    }
+    const tx0 = await forkonomicToken.connect(deployer).mint(deployer.address, ethers.utils.parseEther('100000'), { gasLimit: 500000 });
+    await tx0.wait();
+    console.log('Mint forkonomic tokens for deployer');
+    console.log('by the following tx: ', tx0.hash);
 
-    const tx1 = await forkonomicToken.connect(deployer).approve(polygonZkEVMBridgeAddress, depositAmount, { gasLimit: 500000 });
-    console.log('Approved bridge to spend forkonomic tokens');
+    const tx1 = await forkonomicToken.connect(deployer).mint(trustedSequencer, ethers.utils.parseEther('100000'), { gasLimit: 500000 });
+    await tx1.wait();
+    console.log('Mint forkonomic tokens for trusted sequencer');
     console.log('by the following tx: ', tx1.hash);
-
-    // sleep for 3 secs to wait until tx is mined and nonce increase is reflected
-    await new Promise((r) => setTimeout(r, 3000));
-
-    const tx2 = await bridge.connect(deployer).bridgeAsset(
-        1,
-        deployer.address,
-        depositAmount,
-        forkonomicTokenAddress,
-        true,
-        '0x',
-        { gasLimit: 5000000 },
-    );
-    console.log('Deposited forkonomic tokens into bridge');
-    console.log('by the following tx: ', tx2.hash);
 }
 
 main().catch((e) => {
