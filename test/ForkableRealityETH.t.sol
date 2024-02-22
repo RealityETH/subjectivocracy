@@ -7,7 +7,6 @@ import {ForkonomicToken} from "../contracts/ForkonomicToken.sol";
 import {IForkableStructure} from "../contracts/interfaces/IForkableStructure.sol";
 import {IForkonomicToken} from "../contracts/interfaces/IForkonomicToken.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 // import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
