@@ -10,7 +10,6 @@ import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 // import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract ForkableRealityETHTest is Test {
@@ -59,12 +58,12 @@ contract ForkableRealityETHTest is Test {
     function setUp() public {
         forkonomicTokenImplementation = address(new ForkonomicToken());
         forkonomicToken = address(
-                new TransparentUpgradeableProxy(
-                    forkonomicTokenImplementation,
-                    admin,
-                    ""
-                )
-            );
+            new TransparentUpgradeableProxy(
+                forkonomicTokenImplementation,
+                admin,
+                ""
+            )
+        );
         ForkonomicToken(forkonomicToken).initialize(
             forkmanager,
             parentContract,
@@ -72,7 +71,9 @@ contract ForkableRealityETHTest is Test {
             "ForkonomicToken",
             "FTK"
         );
-        forkableRealityETHImplementation = address(new ForkableRealityETH_ERC20());
+        forkableRealityETHImplementation = address(
+            new ForkableRealityETH_ERC20()
+        );
         forkableRealityETH = address(
             ForkableRealityETH_ERC20(
                 address(
@@ -85,88 +86,215 @@ contract ForkableRealityETHTest is Test {
             )
         );
 
-        ForkableRealityETH_ERC20(forkableRealityETH).initialize(forkmanager, address(0), forkonomicToken,  bytes32(0));
+        ForkableRealityETH_ERC20(forkableRealityETH).initialize(
+            forkmanager,
+            address(0),
+            forkonomicToken,
+            bytes32(0)
+        );
 
         _setupAnswererBalances();
         _setupInitialQuestions();
         _setupHistoryHashes();
-    
     }
 
     function _setupAnswererBalances() public {
         vm.prank(minter);
-        IForkonomicToken(forkonomicToken).mint(answerGuyYes1, answerGuyMintAmount);
+        IForkonomicToken(forkonomicToken).mint(
+            answerGuyYes1,
+            answerGuyMintAmount
+        );
         vm.prank(minter);
-        IForkonomicToken(forkonomicToken).mint(answerGuyYes2, answerGuyMintAmount);
+        IForkonomicToken(forkonomicToken).mint(
+            answerGuyYes2,
+            answerGuyMintAmount
+        );
         vm.prank(minter);
-        IForkonomicToken(forkonomicToken).mint(answerGuyNo1, answerGuyMintAmount);
+        IForkonomicToken(forkonomicToken).mint(
+            answerGuyNo1,
+            answerGuyMintAmount
+        );
         vm.prank(minter);
-        IForkonomicToken(forkonomicToken).mint(answerGuyNo2, answerGuyMintAmount);
+        IForkonomicToken(forkonomicToken).mint(
+            answerGuyNo2,
+            answerGuyMintAmount
+        );
     }
 
     function _setupInitialQuestions() public {
-
-        address l1ForkArbitrator = ForkableRealityETH_ERC20(forkableRealityETH).l1ForkArbitrator();
+        address l1ForkArbitrator = ForkableRealityETH_ERC20(forkableRealityETH)
+            .l1ForkArbitrator();
 
         vm.prank(forkmanager);
-        forkOverQuestionId = ForkableRealityETH_ERC20(forkableRealityETH).askQuestion(UPGRADE_TEMPLATE_ID, "import me", l1ForkArbitrator, 60, 0, 0);
+        forkOverQuestionId = ForkableRealityETH_ERC20(forkableRealityETH)
+            .askQuestion(
+                UPGRADE_TEMPLATE_ID,
+                "import me",
+                l1ForkArbitrator,
+                60,
+                0,
+                0
+            );
         _setupInitialAnswers(forkOverQuestionId);
 
         // Just a 1 second window so we can finalize this one without finalizing the others
         vm.prank(forkmanager);
-        importFinalizedUnclaimedQuestionId = ForkableRealityETH_ERC20(forkableRealityETH).askQuestion(UPGRADE_TEMPLATE_ID, "finalize me but do not claim", l1ForkArbitrator, 1, 0, 0);
+        importFinalizedUnclaimedQuestionId = ForkableRealityETH_ERC20(
+            forkableRealityETH
+        ).askQuestion(
+                UPGRADE_TEMPLATE_ID,
+                "finalize me but do not claim",
+                l1ForkArbitrator,
+                1,
+                0,
+                0
+            );
         _setupInitialAnswers(importFinalizedUnclaimedQuestionId);
 
         vm.prank(forkmanager);
-        importFinalizedClaimedQuestionId = ForkableRealityETH_ERC20(forkableRealityETH).askQuestion(UPGRADE_TEMPLATE_ID, "finalize me then claim", l1ForkArbitrator, 1, 0, 0);
+        importFinalizedClaimedQuestionId = ForkableRealityETH_ERC20(
+            forkableRealityETH
+        ).askQuestion(
+                UPGRADE_TEMPLATE_ID,
+                "finalize me then claim",
+                l1ForkArbitrator,
+                1,
+                0,
+                0
+            );
         _setupInitialAnswers(importFinalizedClaimedQuestionId);
 
-        // Push the time forward 
+        // Push the time forward
         vm.warp(block.timestamp + 2);
-        assert(ForkableRealityETH_ERC20(forkableRealityETH).isFinalized(importFinalizedUnclaimedQuestionId));
-        assert(ForkableRealityETH_ERC20(forkableRealityETH).isFinalized(importFinalizedClaimedQuestionId));
+        assert(
+            ForkableRealityETH_ERC20(forkableRealityETH).isFinalized(
+                importFinalizedUnclaimedQuestionId
+            )
+        );
+        assert(
+            ForkableRealityETH_ERC20(forkableRealityETH).isFinalized(
+                importFinalizedClaimedQuestionId
+            )
+        );
 
-        assertFalse(ForkableRealityETH_ERC20(forkableRealityETH).isFinalized(forkOverQuestionId));
+        assertFalse(
+            ForkableRealityETH_ERC20(forkableRealityETH).isFinalized(
+                forkOverQuestionId
+            )
+        );
 
         vm.prank(forkmanager);
-        importUnansweredQuestionId = ForkableRealityETH_ERC20(forkableRealityETH).askQuestion(UPGRADE_TEMPLATE_ID, "do not answer me", l1ForkArbitrator, 60, 0, 0);
+        importUnansweredQuestionId = ForkableRealityETH_ERC20(
+            forkableRealityETH
+        ).askQuestion(
+                UPGRADE_TEMPLATE_ID,
+                "do not answer me",
+                l1ForkArbitrator,
+                60,
+                0,
+                0
+            );
 
         vm.prank(forkmanager);
-        importAnsweredQuestionId = ForkableRealityETH_ERC20(forkableRealityETH).askQuestion(UPGRADE_TEMPLATE_ID, "answer me but do not finalize", l1ForkArbitrator, 60, 0, 0);
+        importAnsweredQuestionId = ForkableRealityETH_ERC20(forkableRealityETH)
+            .askQuestion(
+                UPGRADE_TEMPLATE_ID,
+                "answer me but do not finalize",
+                l1ForkArbitrator,
+                60,
+                0,
+                0
+            );
 
         _setupInitialAnswers(importAnsweredQuestionId);
-
     }
 
     // We use the same set of answers for various different questions
     function _setupInitialAnswers(bytes32 _questionId) public {
         vm.prank(answerGuyYes1);
-        ForkonomicToken(forkonomicToken).approve(forkableRealityETH, uint256(bond1));
+        ForkonomicToken(forkonomicToken).approve(
+            forkableRealityETH,
+            uint256(bond1)
+        );
         vm.prank(answerGuyYes1);
-        ForkableRealityETH_ERC20(forkableRealityETH).submitAnswerERC20(_questionId, answer1, 0, bond1);
+        ForkableRealityETH_ERC20(forkableRealityETH).submitAnswerERC20(
+            _questionId,
+            answer1,
+            0,
+            bond1
+        );
 
         vm.prank(answerGuyNo1);
-        ForkonomicToken(forkonomicToken).approve(forkableRealityETH, uint256(bond2));
+        ForkonomicToken(forkonomicToken).approve(
+            forkableRealityETH,
+            uint256(bond2)
+        );
         vm.prank(answerGuyNo1);
-        ForkableRealityETH_ERC20(forkableRealityETH).submitAnswerERC20(_questionId, answer2, 0, bond2);
+        ForkableRealityETH_ERC20(forkableRealityETH).submitAnswerERC20(
+            _questionId,
+            answer2,
+            0,
+            bond2
+        );
 
         vm.prank(answerGuyYes2);
-        ForkonomicToken(forkonomicToken).approve(forkableRealityETH, uint256(bond3));
+        ForkonomicToken(forkonomicToken).approve(
+            forkableRealityETH,
+            uint256(bond3)
+        );
         vm.prank(answerGuyYes2);
-        ForkableRealityETH_ERC20(forkableRealityETH).submitAnswerERC20(_questionId, answer3, 0, bond3);
+        ForkableRealityETH_ERC20(forkableRealityETH).submitAnswerERC20(
+            _questionId,
+            answer3,
+            0,
+            bond3
+        );
     }
 
     // Record what should have been the history hashes for the answers we hard-coded in _setupInitialAnswers
     function _setupHistoryHashes() internal {
-        historyHashes.push(keccak256(abi.encodePacked(bytes32(0),       answer1, bond1, answerGuyYes1, false)));
-        historyHashes.push(keccak256(abi.encodePacked(historyHashes[0], answer2, bond2, answerGuyNo1,  false)));
-        historyHashes.push(keccak256(abi.encodePacked(historyHashes[1], answer3, bond3, answerGuyYes2, false)));
+        historyHashes.push(
+            keccak256(
+                abi.encodePacked(
+                    bytes32(0),
+                    answer1,
+                    bond1,
+                    answerGuyYes1,
+                    false
+                )
+            )
+        );
+        historyHashes.push(
+            keccak256(
+                abi.encodePacked(
+                    historyHashes[0],
+                    answer2,
+                    bond2,
+                    answerGuyNo1,
+                    false
+                )
+            )
+        );
+        historyHashes.push(
+            keccak256(
+                abi.encodePacked(
+                    historyHashes[1],
+                    answer3,
+                    bond3,
+                    answerGuyYes2,
+                    false
+                )
+            )
+        );
     }
 
     // This does the claim on a finalized question.
     // NB doesn't call withdraw, it just leaves the funds in the balance.
     // TODO: Also test a partway claim
-    function _doClaim(address _forkableRealityETH, bytes32 _questionId) internal {
+    function _doClaim(
+        address _forkableRealityETH,
+        bytes32 _questionId
+    ) internal {
         uint256 ln = historyHashes.length;
         bytes32[] memory myHistoryHashes = new bytes32[](ln);
         uint256[] memory myBonds = new uint256[](ln);
@@ -189,22 +317,31 @@ contract ForkableRealityETHTest is Test {
         myAnswers[1] = answer2;
         myAnswers[2] = answer1;
 
-        ForkableRealityETH_ERC20(_forkableRealityETH).claimWinnings(_questionId, myHistoryHashes, myAnswerers, myBonds, myAnswers);
+        ForkableRealityETH_ERC20(_forkableRealityETH).claimWinnings(
+            _questionId,
+            myHistoryHashes,
+            myAnswerers,
+            myBonds,
+            myAnswers
+        );
     }
 
-    function _forkTokens(address _forkonomicToken, address _forkmanager1, address _forkmanager2) public returns (address, address) {
-
+    function _forkTokens(
+        address _forkonomicToken,
+        address _forkmanager1,
+        address _forkmanager2
+    ) public returns (address, address) {
         address forkonomicToken1;
         address forkonomicToken2;
 
-        address parentForkmanager = ForkonomicToken(_forkonomicToken).forkmanager();
+        address parentForkmanager = ForkonomicToken(_forkonomicToken)
+            .forkmanager();
 
         vm.prank(parentForkmanager);
-        // Fork the token like the forkmanager would do in executeFork 
-        (
-            forkonomicToken1,
-            forkonomicToken2
-        ) = IForkonomicToken(_forkonomicToken).createChildren();
+        // Fork the token like the forkmanager would do in executeFork
+        (forkonomicToken1, forkonomicToken2) = IForkonomicToken(
+            _forkonomicToken
+        ).createChildren();
 
         vm.prank(parentForkmanager);
         IForkonomicToken(forkonomicToken1).initialize(
@@ -222,37 +359,65 @@ contract ForkableRealityETHTest is Test {
             "Child2", // string.concat(IERC20Metadata(address(_forkonomicToken)).name(), "1"),
             "Child2" // IERC20Metadata(address(_forkonomicToken)).symbol()
         );
-        
-        return (forkonomicToken1, forkonomicToken2);
 
+        return (forkonomicToken1, forkonomicToken2);
     }
 
-    function _forkRealityETH(address _forkableRealityETH, address _forkonomicToken1, address _forkonomicToken2, bytes32 _forkOverQuestionId) internal returns (address, address) {
-
-        address parentForkmanager = ForkableRealityETH_ERC20(_forkableRealityETH).forkmanager();
+    function _forkRealityETH(
+        address _forkableRealityETH,
+        address _forkonomicToken1,
+        address _forkonomicToken2,
+        bytes32 _forkOverQuestionId
+    ) internal returns (address, address) {
+        address parentForkmanager = ForkableRealityETH_ERC20(
+            _forkableRealityETH
+        ).forkmanager();
 
         vm.prank(parentForkmanager);
-        (address forkableRealityETH1, address forkableRealityETH2) = ForkableRealityETH_ERC20(_forkableRealityETH).createChildren();
+        (
+            address forkableRealityETH1,
+            address forkableRealityETH2
+        ) = ForkableRealityETH_ERC20(_forkableRealityETH).createChildren();
 
         vm.prank(parentForkmanager);
-        ForkableRealityETH_ERC20(forkableRealityETH1).initialize(ForkonomicToken(_forkonomicToken1).forkmanager(), _forkableRealityETH, _forkonomicToken1, _forkOverQuestionId);
+        ForkableRealityETH_ERC20(forkableRealityETH1).initialize(
+            ForkonomicToken(_forkonomicToken1).forkmanager(),
+            _forkableRealityETH,
+            _forkonomicToken1,
+            _forkOverQuestionId
+        );
         vm.prank(parentForkmanager);
-        ForkableRealityETH_ERC20(forkableRealityETH2).initialize(ForkonomicToken(_forkonomicToken2).forkmanager(), _forkableRealityETH, _forkonomicToken2, _forkOverQuestionId);
+        ForkableRealityETH_ERC20(forkableRealityETH2).initialize(
+            ForkonomicToken(_forkonomicToken2).forkmanager(),
+            _forkableRealityETH,
+            _forkonomicToken2,
+            _forkOverQuestionId
+        );
 
         vm.prank(parentForkmanager);
         ForkableRealityETH_ERC20(_forkableRealityETH).handleFork();
 
         return (forkableRealityETH1, forkableRealityETH2);
-
     }
 
     function _testInitialize(address _forkonomicToken) internal {
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH).forkmanager(), forkmanager);
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH).parentContract(), address(0));
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH).forkmanager(),
+            forkmanager
+        );
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH).parentContract(),
+            address(0)
+        );
 
         vm.expectRevert("Initializable: contract is already initialized");
         // vm.expectRevert(IForkableStructure.NotInitializing.selector); In future will be this
-        ForkableRealityETH_ERC20(forkableRealityETH).initialize(forkmanager2, forkableRealityETH, _forkonomicToken, bytes32(0));
+        ForkableRealityETH_ERC20(forkableRealityETH).initialize(
+            forkmanager2,
+            forkableRealityETH,
+            _forkonomicToken,
+            bytes32(0)
+        );
     }
 
     function testInitialize() public {
@@ -271,9 +436,23 @@ contract ForkableRealityETHTest is Test {
     }
 
     function _testTemplateCreation(address _forkableRealityETH) internal {
-        assertEq(ForkableRealityETH_ERC20(_forkableRealityETH).templates(UPGRADE_TEMPLATE_ID), block.number, "Template should have been created at the initial block number");
-        assertEq(ForkableRealityETH_ERC20(_forkableRealityETH).templates(0), 0, "Standard initial template 0 is not created");
-        assertEq(ForkableRealityETH_ERC20(_forkableRealityETH).templates(1), 0, "Standard initial template 1 is not created");
+        assertEq(
+            ForkableRealityETH_ERC20(_forkableRealityETH).templates(
+                UPGRADE_TEMPLATE_ID
+            ),
+            block.number,
+            "Template should have been created at the initial block number"
+        );
+        assertEq(
+            ForkableRealityETH_ERC20(_forkableRealityETH).templates(0),
+            0,
+            "Standard initial template 0 is not created"
+        );
+        assertEq(
+            ForkableRealityETH_ERC20(_forkableRealityETH).templates(1),
+            0,
+            "Standard initial template 1 is not created"
+        );
     }
 
     function testInitialRealityETHTemplateCreation() public {
@@ -281,130 +460,351 @@ contract ForkableRealityETHTest is Test {
     }
 
     function testRealityETHTemplateCreationOnFork() public {
-        (address _forkonomicToken1, address _forkonomicToken2) = _forkTokens(forkonomicToken, forkmanager1, forkmanager2);
-        (address forkableRealityETH1, address forkableRealityETH2) = _forkRealityETH(forkableRealityETH, _forkonomicToken1, _forkonomicToken2, forkOverQuestionId);
+        (address _forkonomicToken1, address _forkonomicToken2) = _forkTokens(
+            forkonomicToken,
+            forkmanager1,
+            forkmanager2
+        );
+        (
+            address forkableRealityETH1,
+            address forkableRealityETH2
+        ) = _forkRealityETH(
+                forkableRealityETH,
+                _forkonomicToken1,
+                _forkonomicToken2,
+                forkOverQuestionId
+            );
         _testTemplateCreation(forkableRealityETH1);
         _testTemplateCreation(forkableRealityETH2);
     }
 
     function testSplitTokenIntoChildTokens() public {
-
-        uint256 initialBalance = ForkonomicToken(forkonomicToken).balanceOf(forkableRealityETH);
+        uint256 initialBalance = ForkonomicToken(forkonomicToken).balanceOf(
+            forkableRealityETH
+        );
         assert(initialBalance > 0);
 
-        (address _forkonomicToken1, address _forkonomicToken2) = _forkTokens(forkonomicToken, forkmanager1, forkmanager2);
-        (address _forkableRealityETH1, address _forkableRealityETH2) = _forkRealityETH(forkableRealityETH, _forkonomicToken1, _forkonomicToken2, forkOverQuestionId);
+        (address _forkonomicToken1, address _forkonomicToken2) = _forkTokens(
+            forkonomicToken,
+            forkmanager1,
+            forkmanager2
+        );
+        (
+            address _forkableRealityETH1,
+            address _forkableRealityETH2
+        ) = _forkRealityETH(
+                forkableRealityETH,
+                _forkonomicToken1,
+                _forkonomicToken2,
+                forkOverQuestionId
+            );
 
         // The child reality.eth instances should know which token they belong to
-        assertEq(_forkonomicToken1, address(ForkableRealityETH_ERC20(_forkableRealityETH1).token()), "child 1 has appropriate token");
-        assertEq(_forkonomicToken2, address(ForkableRealityETH_ERC20(_forkableRealityETH2).token()), "child 2 has appropriate token");
+        assertEq(
+            _forkonomicToken1,
+            address(ForkableRealityETH_ERC20(_forkableRealityETH1).token()),
+            "child 1 has appropriate token"
+        );
+        assertEq(
+            _forkonomicToken2,
+            address(ForkableRealityETH_ERC20(_forkableRealityETH2).token()),
+            "child 2 has appropriate token"
+        );
 
-        assertEq(ForkonomicToken(forkonomicToken).balanceOf(forkableRealityETH), 0, "Parent token balance should be gone");
-        assertEq(ForkonomicToken(_forkonomicToken1).balanceOf(forkableRealityETH), 0, "Parent reality.eth has nothing in child");
-        assertEq(ForkonomicToken(_forkonomicToken1).balanceOf(_forkableRealityETH1), initialBalance);
-        assertEq(ForkonomicToken(_forkonomicToken2).balanceOf(_forkableRealityETH2), initialBalance);
-
+        assertEq(
+            ForkonomicToken(forkonomicToken).balanceOf(forkableRealityETH),
+            0,
+            "Parent token balance should be gone"
+        );
+        assertEq(
+            ForkonomicToken(_forkonomicToken1).balanceOf(forkableRealityETH),
+            0,
+            "Parent reality.eth has nothing in child"
+        );
+        assertEq(
+            ForkonomicToken(_forkonomicToken1).balanceOf(_forkableRealityETH1),
+            initialBalance
+        );
+        assertEq(
+            ForkonomicToken(_forkonomicToken2).balanceOf(_forkableRealityETH2),
+            initialBalance
+        );
     }
 
     function testInitialQuestionImport() public {
-        
-        (address forkonomicToken1, address forkonomicToken2) = _forkTokens(forkonomicToken, forkmanager1, forkmanager2);
-        (address forkableRealityETH1, address forkableRealityETH2) = _forkRealityETH(forkableRealityETH, forkonomicToken1, forkonomicToken2, forkOverQuestionId);
+        (address forkonomicToken1, address forkonomicToken2) = _forkTokens(
+            forkonomicToken,
+            forkmanager1,
+            forkmanager2
+        );
+        (
+            address forkableRealityETH1,
+            address forkableRealityETH2
+        ) = _forkRealityETH(
+                forkableRealityETH,
+                forkonomicToken1,
+                forkonomicToken2,
+                forkOverQuestionId
+            );
 
         // Both the new reality.eths have the question we forked over, and the original one also still has it
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH).getBestAnswer(forkOverQuestionId), bytes32(uint256(1)));
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH1).getBestAnswer(forkOverQuestionId), bytes32(uint256(1)));
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH2).getBestAnswer(forkOverQuestionId), bytes32(uint256(1)));
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH2).getHistoryHash(forkOverQuestionId), ForkableRealityETH_ERC20(forkableRealityETH).getHistoryHash(forkOverQuestionId));
-        assertNotEq(ForkableRealityETH_ERC20(forkableRealityETH2).getHistoryHash(forkOverQuestionId), bytes32(0));
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH).getBestAnswer(
+                forkOverQuestionId
+            ),
+            bytes32(uint256(1))
+        );
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH1).getBestAnswer(
+                forkOverQuestionId
+            ),
+            bytes32(uint256(1))
+        );
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).getBestAnswer(
+                forkOverQuestionId
+            ),
+            bytes32(uint256(1))
+        );
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).getHistoryHash(
+                forkOverQuestionId
+            ),
+            ForkableRealityETH_ERC20(forkableRealityETH).getHistoryHash(
+                forkOverQuestionId
+            )
+        );
+        assertNotEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).getHistoryHash(
+                forkOverQuestionId
+            ),
+            bytes32(0)
+        );
 
         // The arbitrator for the imported question will be the arbitrator of the original reality.eth, not the child.
-        assertNotEq(ForkableRealityETH_ERC20(forkableRealityETH2).getArbitrator(forkOverQuestionId), ForkableRealityETH_ERC20(forkableRealityETH2).l1ForkArbitrator());
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH2).getArbitrator(forkOverQuestionId), ForkableRealityETH_ERC20(forkableRealityETH).l1ForkArbitrator());
-
+        assertNotEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).getArbitrator(
+                forkOverQuestionId
+            ),
+            ForkableRealityETH_ERC20(forkableRealityETH2).l1ForkArbitrator()
+        );
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).getArbitrator(
+                forkOverQuestionId
+            ),
+            ForkableRealityETH_ERC20(forkableRealityETH).l1ForkArbitrator()
+        );
     }
 
     function testNoQuestionImport() public {
         // If there's no question to import it should simply complete normally without error
-        (address forkonomicToken1, address forkonomicToken2) = _forkTokens(forkonomicToken, forkmanager1, forkmanager2);
-        _forkRealityETH(forkableRealityETH, forkonomicToken1, forkonomicToken2, bytes32(0));
+        (address forkonomicToken1, address forkonomicToken2) = _forkTokens(
+            forkonomicToken,
+            forkmanager1,
+            forkmanager2
+        );
+        _forkRealityETH(
+            forkableRealityETH,
+            forkonomicToken1,
+            forkonomicToken2,
+            bytes32(0)
+        );
     }
 
     function testAnsweredQuestionImport() public {
-        
-        (address forkonomicToken1, address forkonomicToken2) = _forkTokens(forkonomicToken, forkmanager1, forkmanager2);
-        (address forkableRealityETH1, address forkableRealityETH2) = _forkRealityETH(forkableRealityETH, forkonomicToken1, forkonomicToken2, forkOverQuestionId);
+        (address forkonomicToken1, address forkonomicToken2) = _forkTokens(
+            forkonomicToken,
+            forkmanager1,
+            forkmanager2
+        );
+        (
+            address forkableRealityETH1,
+            address forkableRealityETH2
+        ) = _forkRealityETH(
+                forkableRealityETH,
+                forkonomicToken1,
+                forkonomicToken2,
+                forkOverQuestionId
+            );
 
         // Question not imported until we import it
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH2).getHistoryHash(importAnsweredQuestionId), bytes32(0));
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).getHistoryHash(
+                importAnsweredQuestionId
+            ),
+            bytes32(0)
+        );
 
         // Push the time forward to past the time when the original question would normally finalize
         vm.warp(block.timestamp + 120);
 
-        ForkableRealityETH_ERC20(forkableRealityETH2).importQuestion(importAnsweredQuestionId);
-        assertNotEq(ForkableRealityETH_ERC20(forkableRealityETH2).getHistoryHash(importAnsweredQuestionId), bytes32(0));
+        ForkableRealityETH_ERC20(forkableRealityETH2).importQuestion(
+            importAnsweredQuestionId
+        );
+        assertNotEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).getHistoryHash(
+                importAnsweredQuestionId
+            ),
+            bytes32(0)
+        );
 
         // The arbitrator will be set to the child's arbitrator
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH2).getArbitrator(importAnsweredQuestionId), ForkableRealityETH_ERC20(forkableRealityETH2).l1ForkArbitrator());
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).getArbitrator(
+                importAnsweredQuestionId
+            ),
+            ForkableRealityETH_ERC20(forkableRealityETH2).l1ForkArbitrator()
+        );
 
-        assertFalse(ForkableRealityETH_ERC20(forkableRealityETH2).isFinalized(importAnsweredQuestionId));
+        assertFalse(
+            ForkableRealityETH_ERC20(forkableRealityETH2).isFinalized(
+                importAnsweredQuestionId
+            )
+        );
         vm.warp(block.timestamp + 62);
-        assertTrue(ForkableRealityETH_ERC20(forkableRealityETH2).isFinalized(importAnsweredQuestionId));
+        assertTrue(
+            ForkableRealityETH_ERC20(forkableRealityETH2).isFinalized(
+                importAnsweredQuestionId
+            )
+        );
 
         // Also check the basic import features with the other version
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH1).getHistoryHash(importAnsweredQuestionId), bytes32(0));
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH1).getHistoryHash(
+                importAnsweredQuestionId
+            ),
+            bytes32(0)
+        );
 
-        ForkableRealityETH_ERC20(forkableRealityETH1).importQuestion(importAnsweredQuestionId);
-        assertNotEq(ForkableRealityETH_ERC20(forkableRealityETH1).getHistoryHash(importAnsweredQuestionId), bytes32(0));
+        ForkableRealityETH_ERC20(forkableRealityETH1).importQuestion(
+            importAnsweredQuestionId
+        );
+        assertNotEq(
+            ForkableRealityETH_ERC20(forkableRealityETH1).getHistoryHash(
+                importAnsweredQuestionId
+            ),
+            bytes32(0)
+        );
 
         // The arbitrator will be set to the child's arbitrator
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH1).getArbitrator(importAnsweredQuestionId), ForkableRealityETH_ERC20(forkableRealityETH1).l1ForkArbitrator());
-
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH1).getArbitrator(
+                importAnsweredQuestionId
+            ),
+            ForkableRealityETH_ERC20(forkableRealityETH1).l1ForkArbitrator()
+        );
     }
 
     function testUnansweredQuestionImport() public {
-        
-        (address forkonomicToken1, address forkonomicToken2) = _forkTokens(forkonomicToken, forkmanager1, forkmanager2);
-        (address forkableRealityETH1, address forkableRealityETH2) = _forkRealityETH(forkableRealityETH, forkonomicToken1, forkonomicToken2, forkOverQuestionId);
+        (address forkonomicToken1, address forkonomicToken2) = _forkTokens(
+            forkonomicToken,
+            forkmanager1,
+            forkmanager2
+        );
+        (
+            address forkableRealityETH1,
+            address forkableRealityETH2
+        ) = _forkRealityETH(
+                forkableRealityETH,
+                forkonomicToken1,
+                forkonomicToken2,
+                forkOverQuestionId
+            );
 
         // Question not imported until we import it
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH1).getHistoryHash(importUnansweredQuestionId), bytes32(0));
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH2).getHistoryHash(importUnansweredQuestionId), bytes32(0));
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH1).getHistoryHash(
+                importUnansweredQuestionId
+            ),
+            bytes32(0)
+        );
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).getHistoryHash(
+                importUnansweredQuestionId
+            ),
+            bytes32(0)
+        );
 
         // Push the time forward to past the time when the original question would normally finalize if it had been answered
         vm.warp(block.timestamp + 120);
-        assertFalse(ForkableRealityETH_ERC20(forkableRealityETH2).isFinalized(importUnansweredQuestionId));
+        assertFalse(
+            ForkableRealityETH_ERC20(forkableRealityETH2).isFinalized(
+                importUnansweredQuestionId
+            )
+        );
 
-        ForkableRealityETH_ERC20(forkableRealityETH2).importQuestion(importUnansweredQuestionId);
+        ForkableRealityETH_ERC20(forkableRealityETH2).importQuestion(
+            importUnansweredQuestionId
+        );
 
         // The arbitrator will be set to the child's arbitrator
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH2).getArbitrator(importUnansweredQuestionId), ForkableRealityETH_ERC20(forkableRealityETH2).l1ForkArbitrator());
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).getArbitrator(
+                importUnansweredQuestionId
+            ),
+            ForkableRealityETH_ERC20(forkableRealityETH2).l1ForkArbitrator()
+        );
 
         // Even after the timeout elapses again, we're still not finalized
         vm.warp(block.timestamp + 62);
-        assertFalse(ForkableRealityETH_ERC20(forkableRealityETH2).isFinalized(importUnansweredQuestionId));
-
+        assertFalse(
+            ForkableRealityETH_ERC20(forkableRealityETH2).isFinalized(
+                importUnansweredQuestionId
+            )
+        );
     }
 
     function testFinalizedUnclaimedQuestionImport() public {
-        
-        (address forkonomicToken1, address forkonomicToken2) = _forkTokens(forkonomicToken, forkmanager1, forkmanager2);
-        (address forkableRealityETH1, address forkableRealityETH2) = _forkRealityETH(forkableRealityETH, forkonomicToken1, forkonomicToken2, forkOverQuestionId);
+        (address forkonomicToken1, address forkonomicToken2) = _forkTokens(
+            forkonomicToken,
+            forkmanager1,
+            forkmanager2
+        );
+        (
+            address forkableRealityETH1,
+            address forkableRealityETH2
+        ) = _forkRealityETH(
+                forkableRealityETH,
+                forkonomicToken1,
+                forkonomicToken2,
+                forkOverQuestionId
+            );
 
         // Question not imported until we import it
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH2).getHistoryHash(importFinalizedUnclaimedQuestionId), bytes32(0));
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).getHistoryHash(
+                importFinalizedUnclaimedQuestionId
+            ),
+            bytes32(0)
+        );
 
         // Push the time forward to past the time when the original question would normally finalize
         vm.warp(block.timestamp + 120);
 
-        ForkableRealityETH_ERC20(forkableRealityETH2).importQuestion(importFinalizedUnclaimedQuestionId);
-        assertNotEq(ForkableRealityETH_ERC20(forkableRealityETH2).getHistoryHash(importFinalizedUnclaimedQuestionId), bytes32(0));
+        ForkableRealityETH_ERC20(forkableRealityETH2).importQuestion(
+            importFinalizedUnclaimedQuestionId
+        );
+        assertNotEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).getHistoryHash(
+                importFinalizedUnclaimedQuestionId
+            ),
+            bytes32(0)
+        );
 
         // The arbitrator will be set to the child's arbitrator
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH2).getArbitrator(importFinalizedUnclaimedQuestionId), ForkableRealityETH_ERC20(forkableRealityETH2).l1ForkArbitrator());
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).getArbitrator(
+                importFinalizedUnclaimedQuestionId
+            ),
+            ForkableRealityETH_ERC20(forkableRealityETH2).l1ForkArbitrator()
+        );
 
         // Since this was finalized when we did the fork, it's already finalized now.
-        assertTrue(ForkableRealityETH_ERC20(forkableRealityETH2).isFinalized(importFinalizedUnclaimedQuestionId));
+        assertTrue(
+            ForkableRealityETH_ERC20(forkableRealityETH2).isFinalized(
+                importFinalizedUnclaimedQuestionId
+            )
+        );
 
         // The claim against the parent should fail even though it would have worked before the fork
         vm.expectRevert(IRealityETHErrors.ContractIsFrozen.selector);
@@ -413,63 +813,146 @@ contract ForkableRealityETHTest is Test {
         _doClaim(forkableRealityETH2, importFinalizedUnclaimedQuestionId);
 
         // Also check the basic import features with the other version
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH1).getHistoryHash(importFinalizedUnclaimedQuestionId), bytes32(0));
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH1).getHistoryHash(
+                importFinalizedUnclaimedQuestionId
+            ),
+            bytes32(0)
+        );
 
-        ForkableRealityETH_ERC20(forkableRealityETH1).importQuestion(importFinalizedUnclaimedQuestionId);
-        assertNotEq(ForkableRealityETH_ERC20(forkableRealityETH1).getHistoryHash(importFinalizedUnclaimedQuestionId), bytes32(0));
+        ForkableRealityETH_ERC20(forkableRealityETH1).importQuestion(
+            importFinalizedUnclaimedQuestionId
+        );
+        assertNotEq(
+            ForkableRealityETH_ERC20(forkableRealityETH1).getHistoryHash(
+                importFinalizedUnclaimedQuestionId
+            ),
+            bytes32(0)
+        );
 
         // The arbitrator will be set to the child's arbitrator
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH1).getArbitrator(importFinalizedUnclaimedQuestionId), ForkableRealityETH_ERC20(forkableRealityETH1).l1ForkArbitrator());
-
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH1).getArbitrator(
+                importFinalizedUnclaimedQuestionId
+            ),
+            ForkableRealityETH_ERC20(forkableRealityETH1).l1ForkArbitrator()
+        );
     }
 
     function testFinalizedClaimedQuestionImport() public {
-
         // We start out already finalized on the parent
-        assertTrue(ForkableRealityETH_ERC20(forkableRealityETH).isFinalized(importFinalizedClaimedQuestionId));
+        assertTrue(
+            ForkableRealityETH_ERC20(forkableRealityETH).isFinalized(
+                importFinalizedClaimedQuestionId
+            )
+        );
 
-        assertNotEq(ForkableRealityETH_ERC20(forkableRealityETH).getHistoryHash(importFinalizedClaimedQuestionId), bytes32(0));
+        assertNotEq(
+            ForkableRealityETH_ERC20(forkableRealityETH).getHistoryHash(
+                importFinalizedClaimedQuestionId
+            ),
+            bytes32(0)
+        );
         _doClaim(forkableRealityETH, importFinalizedClaimedQuestionId);
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH).getHistoryHash(importFinalizedClaimedQuestionId), bytes32(0));
-        
-        (address _forkonomicToken1, address _forkonomicToken2) = _forkTokens(forkonomicToken, forkmanager1, forkmanager2);
-        (address forkableRealityETH1, address forkableRealityETH2) = _forkRealityETH(forkableRealityETH, _forkonomicToken1, _forkonomicToken2, forkOverQuestionId);
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH).getHistoryHash(
+                importFinalizedClaimedQuestionId
+            ),
+            bytes32(0)
+        );
+
+        (address _forkonomicToken1, address _forkonomicToken2) = _forkTokens(
+            forkonomicToken,
+            forkmanager1,
+            forkmanager2
+        );
+        (
+            address forkableRealityETH1,
+            address forkableRealityETH2
+        ) = _forkRealityETH(
+                forkableRealityETH,
+                _forkonomicToken1,
+                _forkonomicToken2,
+                forkOverQuestionId
+            );
 
         // Question not imported until we import it
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH1).getTimeout(importFinalizedClaimedQuestionId), 0);
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH2).getTimeout(importFinalizedClaimedQuestionId), 0);
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH1).getTimeout(
+                importFinalizedClaimedQuestionId
+            ),
+            0
+        );
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).getTimeout(
+                importFinalizedClaimedQuestionId
+            ),
+            0
+        );
 
-        ForkableRealityETH_ERC20(forkableRealityETH2).importQuestion(importFinalizedClaimedQuestionId);
-        assert(ForkableRealityETH_ERC20(forkableRealityETH2).getTimeout(importFinalizedClaimedQuestionId) > 0);
-        assertNotEq(ForkableRealityETH_ERC20(forkableRealityETH2).getArbitrator(importFinalizedClaimedQuestionId), address(0));
+        ForkableRealityETH_ERC20(forkableRealityETH2).importQuestion(
+            importFinalizedClaimedQuestionId
+        );
+        assert(
+            ForkableRealityETH_ERC20(forkableRealityETH2).getTimeout(
+                importFinalizedClaimedQuestionId
+            ) > 0
+        );
+        assertNotEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).getArbitrator(
+                importFinalizedClaimedQuestionId
+            ),
+            address(0)
+        );
 
         // Since this was finalized when we did the fork, it's already finalized now.
-        assertTrue(ForkableRealityETH_ERC20(forkableRealityETH2).isFinalized(importFinalizedClaimedQuestionId));
+        assertTrue(
+            ForkableRealityETH_ERC20(forkableRealityETH2).isFinalized(
+                importFinalizedClaimedQuestionId
+            )
+        );
 
         // The claim will fail as it's already been done
         vm.expectRevert(IRealityETHErrors.ContractIsFrozen.selector);
         _doClaim(forkableRealityETH, importFinalizedClaimedQuestionId);
-
     }
 
     function testMoveBalanceToChildren() public {
-
         // We'll use the claimed question to create an unclaimed balance
         _doClaim(forkableRealityETH, importFinalizedClaimedQuestionId);
-        
+
         // Too early to do this
         vm.expectRevert();
-        ForkableRealityETH_ERC20(forkableRealityETH).moveBalanceToChildren(answerGuyYes1);
+        ForkableRealityETH_ERC20(forkableRealityETH).moveBalanceToChildren(
+            answerGuyYes1
+        );
 
-        (address forkonomicToken1, address forkonomicToken2) = _forkTokens(forkonomicToken, forkmanager1, forkmanager2);
-        (address forkableRealityETH1, address forkableRealityETH2) = _forkRealityETH(forkableRealityETH, forkonomicToken1, forkonomicToken2, forkOverQuestionId);
+        (address forkonomicToken1, address forkonomicToken2) = _forkTokens(
+            forkonomicToken,
+            forkmanager1,
+            forkmanager2
+        );
+        (
+            address forkableRealityETH1,
+            address forkableRealityETH2
+        ) = _forkRealityETH(
+                forkableRealityETH,
+                forkonomicToken1,
+                forkonomicToken2,
+                forkOverQuestionId
+            );
 
         // This moves the internal record that we owe the user money.
         // The actual tokens were already transferred in handleFork()
-        
+
         // User 1 should have got his bond, then the same again as the takeover fee, minus the claim fee.
-        uint256 expectedBalanceYes1 = bond1 + bond1 - (bond1/40);
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH).balanceOf(answerGuyYes1), expectedBalanceYes1);
+        uint256 expectedBalanceYes1 = bond1 + bond1 - (bond1 / 40);
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH).balanceOf(
+                answerGuyYes1
+            ),
+            expectedBalanceYes1
+        );
 
         // Withdraw is banned because we're frozen
         vm.prank(answerGuyYes1);
@@ -478,63 +961,183 @@ contract ForkableRealityETHTest is Test {
         ForkableRealityETH_ERC20(forkableRealityETH).withdraw();
 
         // No balance on the child yet
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH2).balanceOf(answerGuyYes1), 0);
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).balanceOf(
+                answerGuyYes1
+            ),
+            0
+        );
 
         // Anyone can call this for any beneficiary
-        ForkableRealityETH_ERC20(forkableRealityETH).moveBalanceToChildren(answerGuyYes1);
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH).balanceOf(answerGuyYes1), 0);
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH2).balanceOf(answerGuyYes1), expectedBalanceYes1);
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH1).balanceOf(answerGuyYes1), expectedBalanceYes1);
-
+        ForkableRealityETH_ERC20(forkableRealityETH).moveBalanceToChildren(
+            answerGuyYes1
+        );
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH).balanceOf(
+                answerGuyYes1
+            ),
+            0
+        );
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).balanceOf(
+                answerGuyYes1
+            ),
+            expectedBalanceYes1
+        );
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH1).balanceOf(
+                answerGuyYes1
+            ),
+            expectedBalanceYes1
+        );
     }
 
     function testQuestionAskerRestriction() public {
-        address l1ForkArbitrator = ForkableRealityETH_ERC20(forkableRealityETH).l1ForkArbitrator();
+        address l1ForkArbitrator = ForkableRealityETH_ERC20(forkableRealityETH)
+            .l1ForkArbitrator();
         vm.expectRevert(IRealityETHErrors.PermittedQuestionerOnly.selector);
-        ForkableRealityETH_ERC20(forkableRealityETH).askQuestion(UPGRADE_TEMPLATE_ID, "questioner restriction question", l1ForkArbitrator, 60, 0, 0);
+        ForkableRealityETH_ERC20(forkableRealityETH).askQuestion(
+            UPGRADE_TEMPLATE_ID,
+            "questioner restriction question",
+            l1ForkArbitrator,
+            60,
+            0,
+            0
+        );
 
         vm.prank(forkmanager);
-        ForkableRealityETH_ERC20(forkableRealityETH).askQuestion(UPGRADE_TEMPLATE_ID, "questioner restriction question", l1ForkArbitrator, 60, 0, 0);
+        ForkableRealityETH_ERC20(forkableRealityETH).askQuestion(
+            UPGRADE_TEMPLATE_ID,
+            "questioner restriction question",
+            l1ForkArbitrator,
+            60,
+            0,
+            0
+        );
     }
 
     function testNextLevelFork() public {
-        (address forkonomicToken1, address forkonomicToken2) = _forkTokens(forkonomicToken, forkmanager1, forkmanager2);
-        (address forkableRealityETH1, address forkableRealityETH2) = _forkRealityETH(forkableRealityETH, forkonomicToken1, forkonomicToken2, forkOverQuestionId);
+        (address forkonomicToken1, address forkonomicToken2) = _forkTokens(
+            forkonomicToken,
+            forkmanager1,
+            forkmanager2
+        );
+        (
+            address forkableRealityETH1,
+            address forkableRealityETH2
+        ) = _forkRealityETH(
+                forkableRealityETH,
+                forkonomicToken1,
+                forkonomicToken2,
+                forkOverQuestionId
+            );
 
         // Import a question into both forks
-        ForkableRealityETH_ERC20(forkableRealityETH1).importQuestion(importFinalizedUnclaimedQuestionId);
-        ForkableRealityETH_ERC20(forkableRealityETH2).importQuestion(importFinalizedUnclaimedQuestionId);
-        assertNotEq(ForkableRealityETH_ERC20(forkableRealityETH2).getHistoryHash(importFinalizedUnclaimedQuestionId), bytes32(0));
+        ForkableRealityETH_ERC20(forkableRealityETH1).importQuestion(
+            importFinalizedUnclaimedQuestionId
+        );
+        ForkableRealityETH_ERC20(forkableRealityETH2).importQuestion(
+            importFinalizedUnclaimedQuestionId
+        );
+        assertNotEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).getHistoryHash(
+                importFinalizedUnclaimedQuestionId
+            ),
+            bytes32(0)
+        );
 
         // We'll do the claim on one fork, then fork again on the other fork
         _doClaim(forkableRealityETH1, importFinalizedUnclaimedQuestionId);
 
-        (address forkonomicToken2a, address forkonomicToken2b) = _forkTokens(forkonomicToken2, forkmanager2a, forkmanager2b);
+        (address forkonomicToken2a, address forkonomicToken2b) = _forkTokens(
+            forkonomicToken2,
+            forkmanager2a,
+            forkmanager2b
+        );
 
-        assertEq(IForkonomicToken(forkonomicToken2).parentContract(), forkonomicToken);
-        assertEq(IForkonomicToken(forkonomicToken2a).parentContract(), forkonomicToken2);
-        assertEq(IForkonomicToken(forkonomicToken2a).forkmanager(), forkmanager2a);
-        assertEq(IForkonomicToken(forkonomicToken2b).forkmanager(), forkmanager2b);
-        assertEq(IForkonomicToken(forkonomicToken2).forkmanager(), ForkableRealityETH_ERC20(forkableRealityETH2).forkmanager());
+        assertEq(
+            IForkonomicToken(forkonomicToken2).parentContract(),
+            forkonomicToken
+        );
+        assertEq(
+            IForkonomicToken(forkonomicToken2a).parentContract(),
+            forkonomicToken2
+        );
+        assertEq(
+            IForkonomicToken(forkonomicToken2a).forkmanager(),
+            forkmanager2a
+        );
+        assertEq(
+            IForkonomicToken(forkonomicToken2b).forkmanager(),
+            forkmanager2b
+        );
+        assertEq(
+            IForkonomicToken(forkonomicToken2).forkmanager(),
+            ForkableRealityETH_ERC20(forkableRealityETH2).forkmanager()
+        );
 
-        (address forkableRealityETH2a, address forkableRealityETH2b) = _forkRealityETH(forkableRealityETH2, forkonomicToken2a, forkonomicToken2b, forkOverQuestionId);
+        (
+            address forkableRealityETH2a,
+            address forkableRealityETH2b
+        ) = _forkRealityETH(
+                forkableRealityETH2,
+                forkonomicToken2a,
+                forkonomicToken2b,
+                forkOverQuestionId
+            );
 
         // The arbitrator will be set to the child's arbitrator
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH1).getArbitrator(importFinalizedUnclaimedQuestionId), ForkableRealityETH_ERC20(forkableRealityETH1).l1ForkArbitrator());
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH2).getArbitrator(importFinalizedUnclaimedQuestionId), ForkableRealityETH_ERC20(forkableRealityETH2).l1ForkArbitrator());
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH1).getArbitrator(
+                importFinalizedUnclaimedQuestionId
+            ),
+            ForkableRealityETH_ERC20(forkableRealityETH1).l1ForkArbitrator()
+        );
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2).getArbitrator(
+                importFinalizedUnclaimedQuestionId
+            ),
+            ForkableRealityETH_ERC20(forkableRealityETH2).l1ForkArbitrator()
+        );
 
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH2a).getArbitrator(importFinalizedUnclaimedQuestionId), address(0));
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH2b).getArbitrator(importFinalizedUnclaimedQuestionId), address(0));
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2a).getArbitrator(
+                importFinalizedUnclaimedQuestionId
+            ),
+            address(0)
+        );
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2b).getArbitrator(
+                importFinalizedUnclaimedQuestionId
+            ),
+            address(0)
+        );
 
-
-        ForkableRealityETH_ERC20(forkableRealityETH2a).importQuestion(importFinalizedUnclaimedQuestionId);
-        assertEq(ForkableRealityETH_ERC20(forkableRealityETH2a).getArbitrator(importFinalizedUnclaimedQuestionId), ForkableRealityETH_ERC20(forkableRealityETH2a).l1ForkArbitrator());
+        ForkableRealityETH_ERC20(forkableRealityETH2a).importQuestion(
+            importFinalizedUnclaimedQuestionId
+        );
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2a).getArbitrator(
+                importFinalizedUnclaimedQuestionId
+            ),
+            ForkableRealityETH_ERC20(forkableRealityETH2a).l1ForkArbitrator()
+        );
 
         // Since this was finalized when we did the fork, it's already finalized now.
-        assertTrue(ForkableRealityETH_ERC20(forkableRealityETH).isFinalized(importFinalizedUnclaimedQuestionId));
-        assertTrue(ForkableRealityETH_ERC20(forkableRealityETH2).isFinalized(importFinalizedUnclaimedQuestionId));
-        assertTrue(ForkableRealityETH_ERC20(forkableRealityETH2a).isFinalized(importFinalizedUnclaimedQuestionId));
-        
+        assertTrue(
+            ForkableRealityETH_ERC20(forkableRealityETH).isFinalized(
+                importFinalizedUnclaimedQuestionId
+            )
+        );
+        assertTrue(
+            ForkableRealityETH_ERC20(forkableRealityETH2).isFinalized(
+                importFinalizedUnclaimedQuestionId
+            )
+        );
+        assertTrue(
+            ForkableRealityETH_ERC20(forkableRealityETH2a).isFinalized(
+                importFinalizedUnclaimedQuestionId
+            )
+        );
     }
-
 }

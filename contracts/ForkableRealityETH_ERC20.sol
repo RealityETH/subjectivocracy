@@ -15,13 +15,15 @@ import {L1ForkArbitrator} from "./L1ForkArbitrator.sol";
 This is a forkable version of the Reality.eth contract for use on L1.
 */
 
-contract ForkableRealityETH_ERC20 is RealityETHFreezable_ERC20, ForkableStructure {
-
+contract ForkableRealityETH_ERC20 is
+    RealityETHFreezable_ERC20,
+    ForkableStructure
+{
     // Asking questions is locked down the the forkmanager.
     // This isn't strictly necessary but it reduces the attack surface.
     // TODO: We might want to replace this with a governance contract owned by the forkmanager.
     modifier permittedQuestionerOnly() override {
-        if (msg.sender != forkmanager) revert PermittedQuestionerOnly();        
+        if (msg.sender != forkmanager) revert PermittedQuestionerOnly();
         _;
     }
 
@@ -30,16 +32,21 @@ contract ForkableRealityETH_ERC20 is RealityETHFreezable_ERC20, ForkableStructur
 
     uint256 constant UPGRADE_TEMPLATE_ID = 1048576;
 
-    function initialize (
+    function initialize(
         address _forkmanager,
         address _parentContract,
         address _token,
         bytes32 _questionIdWeForkedOver
-    ) initializer public {
-
+    ) public initializer {
         // We do this with a new contract instead of a proxy as it's pretty tiny
         // TODO: Should we use a proxy pattern like elsewhere?
-        l1ForkArbitrator = address(new L1ForkArbitrator(address(this), address(_forkmanager), address(_token)));
+        l1ForkArbitrator = address(
+            new L1ForkArbitrator(
+                address(this),
+                address(_forkmanager),
+                address(_token)
+            )
+        );
 
         ForkableStructure.initialize(_forkmanager, _parentContract);
 
@@ -49,12 +56,13 @@ contract ForkableRealityETH_ERC20 is RealityETHFreezable_ERC20, ForkableStructur
         // We immediately import the initial question we forked over, which keep its original arbitrator.
         // (Any other imported question will use the new l1ForkArbitrator)
         if (_questionIdWeForkedOver != bytes32(0x0)) {
-            address parentArbitrator = ForkableRealityETH_ERC20(parentContract).l1ForkArbitrator();
+            address parentArbitrator = ForkableRealityETH_ERC20(parentContract)
+                .l1ForkArbitrator();
             _importQuestion(_questionIdWeForkedOver, parentArbitrator);
         }
     }
 
-    function _createInitialTemplates() override internal {
+    function _createInitialTemplates() internal override {
         // TODO: Decide if we want to include the original templates for consistency/flexibility
         // ...even though they won't be used unless we upgrade the forkmanager or whatever governs this.
 
@@ -71,15 +79,23 @@ contract ForkableRealityETH_ERC20 is RealityETHFreezable_ERC20, ForkableStructur
     /// NB The question ID will no longer match the hash of the content, as the arbitrator has changed
     /// @param _questionId - The ID of the question to import
     /// @param _newArbitrator - The new arbitrator we should use.
-    function _importQuestion(bytes32 _questionId, address _newArbitrator) internal {
-
-        IForkableRealityETH_ERC20 parent = IForkableRealityETH_ERC20(parentContract);
+    function _importQuestion(
+        bytes32 _questionId,
+        address _newArbitrator
+    ) internal {
+        IForkableRealityETH_ERC20 parent = IForkableRealityETH_ERC20(
+            parentContract
+        );
         uint32 timeout = parent.getTimeout(_questionId);
         uint32 finalizeTS = parent.getFinalizeTS(_questionId);
         bool isPendingArbitration = parent.isPendingArbitration(_questionId);
 
         // For any open question, bump the finalization time to the import time plus a normal timeout period.
-        if (finalizeTS > 0 && !isPendingArbitration && !parent.isFinalized(_questionId)) {
+        if (
+            finalizeTS > 0 &&
+            !isPendingArbitration &&
+            !parent.isFinalized(_questionId)
+        ) {
             finalizeTS = uint32(block.timestamp + timeout);
         }
 
@@ -99,7 +115,9 @@ contract ForkableRealityETH_ERC20 is RealityETHFreezable_ERC20, ForkableStructur
     }
 
     // Anyone can import any question if it has not already been imported.
-    function importQuestion(bytes32 questionId) stateNotCreated(questionId) external {
+    function importQuestion(
+        bytes32 questionId
+    ) external stateNotCreated(questionId) {
         _importQuestion(questionId, l1ForkArbitrator);
     }
 
@@ -110,32 +128,47 @@ contract ForkableRealityETH_ERC20 is RealityETHFreezable_ERC20, ForkableStructur
     {
         return _createChildren();
     }
- 
+
     // Move our internal balance record for a single address to the child contracts after a fork.
-    function moveBalanceToChildren(address beneficiary) onlyAfterForking external {
+    function moveBalanceToChildren(
+        address beneficiary
+    ) external onlyAfterForking {
         uint256 bal = balanceOf[beneficiary];
         balanceOf[beneficiary] = 0;
-        IForkableRealityETH_ERC20(children[0]).creditBalanceFromParent(beneficiary, bal);
-        IForkableRealityETH_ERC20(children[1]).creditBalanceFromParent(beneficiary, bal);
+        IForkableRealityETH_ERC20(children[0]).creditBalanceFromParent(
+            beneficiary,
+            bal
+        );
+        IForkableRealityETH_ERC20(children[1]).creditBalanceFromParent(
+            beneficiary,
+            bal
+        );
     }
 
-    function creditBalanceFromParent(address beneficiary, uint256 amount) onlyParent external {
+    function creditBalanceFromParent(
+        address beneficiary,
+        uint256 amount
+    ) external onlyParent {
         balanceOf[beneficiary] = balanceOf[beneficiary] + amount;
     }
 
-    function _moveTokensToChild(address _childRealityETH, uint256 amount) internal {
-        address childToken = address(IForkableRealityETH_ERC20(_childRealityETH).token());
+    function _moveTokensToChild(
+        address _childRealityETH,
+        uint256 amount
+    ) internal {
+        address childToken = address(
+            IForkableRealityETH_ERC20(_childRealityETH).token()
+        );
         IForkonomicToken(childToken).transfer(_childRealityETH, amount);
     }
 
     // TODO: Make sure this gets called on initiateFork, it can't wait until executeFork because we can't arbitrate anything else that happens
     // It may be simpler to let anybody call it and have it check with the fork manager that we're forking
-    function handleFork() onlyForkManger onlyAfterForking external {
+    function handleFork() external onlyForkManger onlyAfterForking {
         uint256 balance = token.balanceOf(address(this));
         IForkonomicToken(address(token)).splitTokensIntoChildTokens(balance);
         _moveTokensToChild(children[0], balance);
         _moveTokensToChild(children[1], balance);
-    	freezeTs = uint32(block.timestamp);
+        freezeTs = uint32(block.timestamp);
     }
-
 }
