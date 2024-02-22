@@ -3,3 +3,4 @@ forge-std/=lib/forge-std/src/
 @openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/
 @openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
 @RealityETH/zkevm-contracts/=lib/zkevm-contracts/
+@reality.eth/contracts/=node_modules/@reality.eth/contracts

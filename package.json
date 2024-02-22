@@ -47,6 +47,7 @@
     "@openzeppelin/contracts": "^4.9.5",
     "@openzeppelin/contracts-upgradeable": "^4.9.5",
     "@openzeppelin/hardhat-upgrades": "1.22.1",
+    "@reality.eth/contracts": "4.0.0-rc.5",
     "@RealityETH/zkevm-contracts": "github:RealityETH/zkevm-contracts#v3.0.0-RealityETH",
     "@types/sinon-chai": "^3.2.3",
     "circomlibjs": "0.1.1",
