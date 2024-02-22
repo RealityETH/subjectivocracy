@@ -127,7 +127,12 @@ contract AdjudicationIntegrationTest is Test {
         );
 
         l1RealityEth = new ForkableRealityETH_ERC20();
-        l1RealityEth.initialize(address(l1ForkingManager), address(0), address(tokenMock), (0));
+        l1RealityEth.initialize(
+            address(l1ForkingManager),
+            address(0),
+            address(tokenMock),
+            (0)
+        );
 
         /*
         Creates templates 1, 2, 3 as
