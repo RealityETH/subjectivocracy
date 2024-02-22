@@ -36,7 +36,7 @@ interface IForkingManager is IForkableStructure {
 
     function globalExitRoot() external returns (address);
 
-    function arbitrationFee() external returns (uint256);
+    function arbitrationFee() external view returns (uint256);
 
     function disputeData()
         external
