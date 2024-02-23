@@ -101,7 +101,7 @@ Tests for the above are in [tests/python/test.py](tests/python/test.py).
 
 install dependencies:
 ```
-yarn
+npm install
 ```
 
 compile contracts:
