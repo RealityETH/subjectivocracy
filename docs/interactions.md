@@ -111,14 +111,14 @@ Next step:
                     RealityETH.resultFor(contest_question_id)
 
 ```
-Next step: 
+Next step:
 * [Redeem an arbitration](#redeem-an-arbitration)
 
-### Execute an arbitrator removal   
+### Execute an arbitrator removal
 ```
-    Charlie L2  AdjudicationFramework.removeArbitrator(contest_question_id) 
+    Charlie L2  AdjudicationFramework.removeArbitrator(contest_question_id)
                     RealityETH.resultFor(contest_question_id)
-
+```
 Next step:
 * [Handle an arbitration](#handle-an-arbitration) to arbitrate the question again with a different arbitrator
 
@@ -267,6 +267,7 @@ It's its own transaction on the forkable version because forking for one questio
                     GovToken.transfer(Bob, 100)
                     GovToken.transfer(Charlie, 200)
 ```
+
 Next step:
 * If the question is still relevant it can be begun again on either chain or both.
 
