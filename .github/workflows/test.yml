@@ -26,6 +26,8 @@ jobs:
         with:
           version: nightly
 
+      - run: npm install
+
       - name: Run Forge build
         run: |
           forge --version
