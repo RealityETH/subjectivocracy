@@ -162,13 +162,14 @@ contract ForkableRealityETH_ERC20 is
         IForkonomicToken(childToken).transfer(_childRealityETH, amount);
     }
 
-    // TODO: Make sure this gets called on initiateFork, it can't wait until executeFork because we can't arbitrate anything else that happens
-    // It may be simpler to let anybody call it and have it check with the fork manager that we're forking
-    function handleFork() external onlyForkManger onlyAfterForking {
+    function handleInitiateFork() external onlyForkManger {
+        freezeTs = uint32(block.timestamp);
+    }
+
+    function handleExecuteFork() external onlyAfterForking {
         uint256 balance = token.balanceOf(address(this));
         IForkonomicToken(address(token)).splitTokensIntoChildTokens(balance);
         _moveTokensToChild(children[0], balance);
         _moveTokensToChild(children[1], balance);
-        freezeTs = uint32(block.timestamp);
     }
 }

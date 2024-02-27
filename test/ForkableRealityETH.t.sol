@@ -394,7 +394,9 @@ contract ForkableRealityETHTest is Test {
         );
 
         vm.prank(parentForkmanager);
-        ForkableRealityETH_ERC20(_forkableRealityETH).handleFork();
+        ForkableRealityETH_ERC20(_forkableRealityETH).handleInitiateFork();
+
+        ForkableRealityETH_ERC20(_forkableRealityETH).handleExecuteFork();
 
         return (forkableRealityETH1, forkableRealityETH2);
     }
@@ -430,8 +432,9 @@ contract ForkableRealityETHTest is Test {
     function testHandleForkOnlyAfterForking() public {
         // Testing revert if children are not yet created
         vm.prank(forkmanager);
+        ForkableRealityETH_ERC20(forkableRealityETH).handleInitiateFork();
         vm.expectRevert(IForkableStructure.OnlyAfterForking.selector);
-        ForkableRealityETH_ERC20(forkableRealityETH).handleFork();
+        ForkableRealityETH_ERC20(forkableRealityETH).handleExecuteFork();
     }
 
     function _testTemplateCreation(address _forkableRealityETH) internal {
@@ -942,7 +945,7 @@ contract ForkableRealityETHTest is Test {
             );
 
         // This moves the internal record that we owe the user money.
-        // The actual tokens were already transferred in handleFork()
+        // The actual tokens were already transferred in handleExecuteFork()
 
         // User 1 should have got his bond, then the same again as the takeover fee, minus the claim fee.
         uint256 expectedBalanceYes1 = bond1 + bond1 - (bond1 / 40);
