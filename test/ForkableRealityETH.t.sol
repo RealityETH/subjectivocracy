@@ -1103,8 +1103,7 @@ contract ForkableRealityETHTest is Test {
 
         // Withdraw is banned because we're frozen
         vm.prank(answerGuyYes1);
-        //vm.expectRevert(ForkableRealityETH_ERC20.ContractIsFrozen.selector);
-        vm.expectRevert();
+        vm.expectRevert(IRealityETHErrors.ContractIsFrozen.selector);
         ForkableRealityETH_ERC20(forkableRealityETH).withdraw();
 
         // No balance on the child yet
