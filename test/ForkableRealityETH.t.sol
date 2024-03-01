@@ -7,14 +7,25 @@ import {ForkonomicToken} from "../contracts/ForkonomicToken.sol";
 import {IForkableStructure} from "../contracts/interfaces/IForkableStructure.sol";
 import {IForkonomicToken} from "../contracts/interfaces/IForkonomicToken.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
+import {IPolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
+import {IVerifierRollup} from "@RealityETH/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
+import {L1ForkArbitrator} from "../contracts/L1ForkArbitrator.sol";
+import {ForkingManager} from "../contracts/ForkingManager.sol";
+import {ChainIdManager} from "../contracts/ChainIdManager.sol";
+import {ForkableBridge} from "../contracts/ForkableBridge.sol";
+import {ForkableZkEVM} from "../contracts/ForkableZkEVM.sol";
+import {ForkableGlobalExitRoot} from "../contracts/ForkableGlobalExitRoot.sol";
+import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
+
 // import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract ForkableRealityETHTest is Test {
-    IERC20Upgradeable public token = IERC20Upgradeable(address(0x987654));
+    // IERC20Upgradeable public token = IERC20Upgradeable(address(0x987654));
 
-    address public forkmanager = address(0xabc);
+    address public forkmanager;
     address public forkmanager1 = address(0xabc1);
     address public forkmanager2 = address(0xabc2);
     address public forkmanager2a = address(0xabc2a);
@@ -44,6 +55,10 @@ contract ForkableRealityETHTest is Test {
     uint256 public answerGuyMintAmount = 1000000;
     bytes32[] public historyHashes;
 
+    address public forkRequester = address(0xc01);
+    uint256 public arbitrationFee = 9999999;
+    uint64 public initialChainId = 1;
+
     uint256 public bond1 = 10000;
     uint256 public bond2 = 20000;
     uint256 public bond3 = 40000;
@@ -54,7 +69,67 @@ contract ForkableRealityETHTest is Test {
 
     uint256 public constant UPGRADE_TEMPLATE_ID = 1048576;
 
+    bytes32[32] public depositTree;
+    address public hardAssetManger =
+        address(0x1234567890123456789012345678901234567891);
+    uint32 public networkID = 10;
+
+    uint64 public forkID = 3;
+    uint64 public pendingStateTimeout = 123;
+    uint64 public trustedAggregatorTimeout = 124235;
+    address public trustedSequencer =
+        address(0x1234567890123456789012345678901234567899);
+    address public trustedAggregator =
+        address(0x1234567890123456789012345678901234567898);
+
+    function _initializeZKEVM(
+        address _zkevm,
+        uint64 _chainId,
+        address _bridge,
+        address _globalExitRoot
+    ) public {
+        IPolygonZkEVM.InitializePackedParameters
+            memory initializePackedParameters = IPolygonZkEVM
+                .InitializePackedParameters({
+                    admin: admin,
+                    trustedSequencer: trustedSequencer,
+                    pendingStateTimeout: pendingStateTimeout,
+                    trustedAggregator: trustedAggregator,
+                    trustedAggregatorTimeout: trustedAggregatorTimeout,
+                    chainID: _chainId,
+                    forkID: forkID
+                });
+        ForkableZkEVM(_zkevm).initialize(
+            address(forkmanager),
+            address(0x0),
+            initializePackedParameters,
+            bytes32(
+                0x827a9240c96ccb855e4943cc9bc49a50b1e91ba087007441a1ae5f9df8d1c57c
+            ),
+            "trustedSequencerURL",
+            "test network",
+            "0.0.1",
+            IPolygonZkEVMGlobalExitRoot(_globalExitRoot),
+            IERC20Upgradeable(address(forkonomicToken)),
+            IVerifierRollup(0x1234567890123456789012345678901234567893),
+            IPolygonZkEVMBridge(address(_bridge))
+        );
+    }
+
     function setUp() public {
+        address bridgeImplementation = address(new ForkableBridge());
+        address bridge = address(
+            new TransparentUpgradeableProxy(bridgeImplementation, admin, "")
+        );
+
+        address forkmanagerImplementation = address(new ForkingManager());
+        forkmanager = address(
+            new TransparentUpgradeableProxy(
+                forkmanagerImplementation,
+                admin,
+                ""
+            )
+        );
         forkonomicTokenImplementation = address(new ForkonomicToken());
         forkonomicToken = address(
             new TransparentUpgradeableProxy(
@@ -63,6 +138,12 @@ contract ForkableRealityETHTest is Test {
                 ""
             )
         );
+
+        address zkevmImplementation = address(new ForkableZkEVM());
+        address zkevm = address(
+            new TransparentUpgradeableProxy(zkevmImplementation, admin, "")
+        );
+
         ForkonomicToken(forkonomicToken).initialize(
             forkmanager,
             parentContract,
@@ -70,6 +151,59 @@ contract ForkableRealityETHTest is Test {
             "ForkonomicToken",
             "FTK"
         );
+        address globalExitRootImplementation = address(
+            new ForkableGlobalExitRoot()
+        );
+        address globalExitRoot = address(
+            new TransparentUpgradeableProxy(
+                globalExitRootImplementation,
+                admin,
+                ""
+            )
+        );
+        ForkableGlobalExitRoot(globalExitRoot).initialize(
+            address(forkmanager),
+            address(0x0),
+            address(zkevm),
+            bridge,
+            bytes32(0),
+            bytes32(0)
+        );
+        ForkableBridge(bridge).initialize(
+            address(forkmanager),
+            address(0x0),
+            networkID,
+            ForkableGlobalExitRoot(globalExitRoot),
+            address(zkevm),
+            address(forkonomicToken),
+            false,
+            hardAssetManger,
+            0,
+            depositTree
+        );
+        address chainIdManager = address(new ChainIdManager(initialChainId));
+
+        _initializeZKEVM(
+            zkevm,
+            ChainIdManager(chainIdManager).getNextUsableChainId(),
+            bridge,
+            globalExitRoot
+        );
+
+        ForkingManager(forkmanager).initialize(
+            address(zkevm),
+            address(bridge),
+            address(forkonomicToken),
+            address(0x0),
+            address(globalExitRoot),
+            arbitrationFee,
+            chainIdManager,
+            uint256(60)
+        );
+
+        vm.prank(minter);
+        IForkonomicToken(forkonomicToken).mint(forkRequester, arbitrationFee);
+
         forkableRealityETHImplementation = address(
             new ForkableRealityETH_ERC20()
         );
@@ -84,7 +218,6 @@ contract ForkableRealityETHTest is Test {
                 )
             )
         );
-
         ForkableRealityETH_ERC20(forkableRealityETH).initialize(
             forkmanager,
             address(0),
@@ -366,11 +499,17 @@ contract ForkableRealityETHTest is Test {
         address _forkableRealityETH,
         address _forkonomicToken1,
         address _forkonomicToken2,
-        bytes32 _forkOverQuestionId
+        bytes32 _forkOverQuestionId,
+        bool _isAlreadyInitialized
     ) internal returns (address, address) {
         address parentForkmanager = ForkableRealityETH_ERC20(
             _forkableRealityETH
         ).forkmanager();
+
+        if (!_isAlreadyInitialized) {
+            vm.prank(parentForkmanager);
+            ForkableRealityETH_ERC20(_forkableRealityETH).handleInitiateFork();
+        }
 
         vm.prank(parentForkmanager);
         (
@@ -392,9 +531,6 @@ contract ForkableRealityETHTest is Test {
             _forkonomicToken2,
             _forkOverQuestionId
         );
-
-        vm.prank(parentForkmanager);
-        ForkableRealityETH_ERC20(_forkableRealityETH).handleInitiateFork();
 
         ForkableRealityETH_ERC20(_forkableRealityETH).handleExecuteFork();
 
@@ -474,7 +610,8 @@ contract ForkableRealityETHTest is Test {
                 forkableRealityETH,
                 _forkonomicToken1,
                 _forkonomicToken2,
-                forkOverQuestionId
+                forkOverQuestionId,
+                false
             );
         _testTemplateCreation(forkableRealityETH1);
         _testTemplateCreation(forkableRealityETH2);
@@ -498,7 +635,8 @@ contract ForkableRealityETHTest is Test {
                 forkableRealityETH,
                 _forkonomicToken1,
                 _forkonomicToken2,
-                forkOverQuestionId
+                forkOverQuestionId,
+                false
             );
 
         // The child reality.eth instances should know which token they belong to
@@ -546,7 +684,8 @@ contract ForkableRealityETHTest is Test {
                 forkableRealityETH,
                 forkonomicToken1,
                 forkonomicToken2,
-                forkOverQuestionId
+                forkOverQuestionId,
+                false
             );
 
         // Both the new reality.eths have the question we forked over, and the original one also still has it
@@ -609,7 +748,8 @@ contract ForkableRealityETHTest is Test {
             forkableRealityETH,
             forkonomicToken1,
             forkonomicToken2,
-            bytes32(0)
+            bytes32(0),
+            false
         );
     }
 
@@ -626,7 +766,8 @@ contract ForkableRealityETHTest is Test {
                 forkableRealityETH,
                 forkonomicToken1,
                 forkonomicToken2,
-                forkOverQuestionId
+                forkOverQuestionId,
+                false
             );
 
         // Question not imported until we import it
@@ -710,7 +851,8 @@ contract ForkableRealityETHTest is Test {
                 forkableRealityETH,
                 forkonomicToken1,
                 forkonomicToken2,
-                forkOverQuestionId
+                forkOverQuestionId,
+                false
             );
 
         // Question not imported until we import it
@@ -769,7 +911,8 @@ contract ForkableRealityETHTest is Test {
                 forkableRealityETH,
                 forkonomicToken1,
                 forkonomicToken2,
-                forkOverQuestionId
+                forkOverQuestionId,
+                false
             );
 
         // Question not imported until we import it
@@ -875,7 +1018,8 @@ contract ForkableRealityETHTest is Test {
                 forkableRealityETH,
                 _forkonomicToken1,
                 _forkonomicToken2,
-                forkOverQuestionId
+                forkOverQuestionId,
+                false
             );
 
         // Question not imported until we import it
@@ -941,7 +1085,8 @@ contract ForkableRealityETHTest is Test {
                 forkableRealityETH,
                 forkonomicToken1,
                 forkonomicToken2,
-                forkOverQuestionId
+                forkOverQuestionId,
+                false
             );
 
         // This moves the internal record that we owe the user money.
@@ -1031,7 +1176,8 @@ contract ForkableRealityETHTest is Test {
                 forkableRealityETH,
                 forkonomicToken1,
                 forkonomicToken2,
-                forkOverQuestionId
+                forkOverQuestionId,
+                false
             );
 
         // Import a question into both forks
@@ -1085,7 +1231,8 @@ contract ForkableRealityETHTest is Test {
                 forkableRealityETH2,
                 forkonomicToken2a,
                 forkonomicToken2b,
-                forkOverQuestionId
+                forkOverQuestionId,
+                false
             );
 
         // The arbitrator will be set to the child's arbitrator
@@ -1140,6 +1287,132 @@ contract ForkableRealityETHTest is Test {
             ForkableRealityETH_ERC20(forkableRealityETH2a).isFinalized(
                 importFinalizedUnclaimedQuestionId
             )
+        );
+    }
+
+    function _setupArbitrationRequest(
+        address _forkableRealityETH,
+        address _forkRequester,
+        bytes32 _forkOverQuestionId,
+        address _forkmanager
+    ) internal returns (address) {
+        L1ForkArbitrator l1ForkArbitrator = L1ForkArbitrator(
+            ForkableRealityETH_ERC20(forkableRealityETH).l1ForkArbitrator()
+        );
+        assertEq(ForkableRealityETH_ERC20(_forkableRealityETH).freezeTs(), 0);
+        ForkonomicToken token = ForkonomicToken(
+            address(ForkableRealityETH_ERC20(forkableRealityETH).token())
+        );
+        uint256 fee = l1ForkArbitrator.getDisputeFee(bytes32(0));
+        vm.prank(_forkRequester);
+        token.approve(address(l1ForkArbitrator), fee);
+        vm.prank(_forkRequester);
+        l1ForkArbitrator.requestArbitration(_forkOverQuestionId, 0);
+        vm.prank(_forkmanager);
+        // TODO: The add code to the ForkingManager to call this in `initiateFork` which should be called by `requestArbitration`
+        // Alternatively change the flow so that someone else can do this. See #243
+        ForkableRealityETH_ERC20(forkableRealityETH).handleInitiateFork();
+        return address(l1ForkArbitrator);
+    }
+
+    function testRequestArbitration() public {
+        L1ForkArbitrator l1ForkArbitrator = L1ForkArbitrator(
+            _setupArbitrationRequest(
+                forkableRealityETH,
+                forkRequester,
+                forkOverQuestionId,
+                forkmanager
+            )
+        );
+        assertEq(l1ForkArbitrator.payer(), forkRequester);
+        assertEq(l1ForkArbitrator.arbitratingQuestionId(), forkOverQuestionId);
+        assert(ForkableRealityETH_ERC20(forkableRealityETH).freezeTs() > 0);
+        assert(
+            ForkingManager(forkmanager).executionTimeForProposal() >
+                block.timestamp
+        );
+    }
+
+    function testPostForkHandling() public {
+        L1ForkArbitrator l1ForkArbitrator = L1ForkArbitrator(
+            _setupArbitrationRequest(
+                forkableRealityETH,
+                forkRequester,
+                forkOverQuestionId,
+                forkmanager
+            )
+        );
+        vm.warp(ForkingManager(forkmanager).executionTimeForProposal() + 1);
+        address originalToken = ForkingManager(forkmanager).forkonomicToken();
+        uint256 originalBalance = IForkonomicToken(originalToken).balanceOf(
+            forkableRealityETH
+        );
+        assert(originalBalance > 0);
+
+        ForkingManager(forkmanager).executeFork();
+        vm.prank(forkmanager);
+        (address childForkmanager1, address childForkmanager2) = ForkingManager(
+            forkmanager
+        ).getChildren();
+        address childToken1 = ForkingManager(childForkmanager1)
+            .forkonomicToken();
+        address childToken2 = ForkingManager(childForkmanager2)
+            .forkonomicToken();
+
+        // TODO: Add this logic to executeFork() so we don't need to call it here.
+        // This will call forkableRealityETH.handleExecuteFork();
+        (
+            address forkableRealityETH2a,
+            address forkableRealityETH2b
+        ) = _forkRealityETH(
+                forkableRealityETH,
+                childToken1,
+                childToken2,
+                forkOverQuestionId,
+                true
+            );
+        assertEq(
+            IForkonomicToken(originalToken).balanceOf(forkableRealityETH),
+            0
+        );
+        assertEq(
+            IForkonomicToken(childToken1).balanceOf(forkableRealityETH2a),
+            originalBalance
+        );
+        assertEq(
+            IForkonomicToken(childToken2).balanceOf(forkableRealityETH2b),
+            originalBalance
+        );
+
+        vm.expectRevert(IRealityETHErrors.QuestionMustBeFinalized.selector);
+        ForkableRealityETH_ERC20(forkableRealityETH).resultFor(
+            forkOverQuestionId
+        );
+        vm.expectRevert(IRealityETHErrors.QuestionMustBeFinalized.selector);
+        ForkableRealityETH_ERC20(forkableRealityETH2a).resultFor(
+            forkOverQuestionId
+        );
+        vm.expectRevert(IRealityETHErrors.QuestionMustBeFinalized.selector);
+        ForkableRealityETH_ERC20(forkableRealityETH2b).resultFor(
+            forkOverQuestionId
+        );
+
+        l1ForkArbitrator.settleChildren(
+            historyHashes[historyHashes.length - 2],
+            answer3,
+            answerGuyYes2
+        );
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2a).resultFor(
+                forkOverQuestionId
+            ),
+            bytes32(uint256(1))
+        );
+        assertEq(
+            ForkableRealityETH_ERC20(forkableRealityETH2b).resultFor(
+                forkOverQuestionId
+            ),
+            bytes32(uint256(0))
         );
     }
 }
