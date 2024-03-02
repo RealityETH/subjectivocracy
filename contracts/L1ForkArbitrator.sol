@@ -103,7 +103,7 @@ contract L1ForkArbitrator is IArbitratorCore, IArbitratorErrors {
         if (child1 == address(0) || child2 == address(0)) revert NotForkedYet();
         IRealityETH(child1).assignWinnerAndSubmitAnswerByArbitrator(
             arbitratingQuestionId,
-            bytes32(uint256(0)),
+            bytes32(uint256(1)),
             payer,
             lastHistoryHash,
             lastAnswer,
@@ -111,7 +111,7 @@ contract L1ForkArbitrator is IArbitratorCore, IArbitratorErrors {
         );
         IRealityETH(child2).assignWinnerAndSubmitAnswerByArbitrator(
             arbitratingQuestionId,
-            bytes32(uint256(1)),
+            bytes32(uint256(0)),
             payer,
             lastHistoryHash,
             lastAnswer,
