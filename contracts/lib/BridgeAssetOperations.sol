@@ -66,10 +66,27 @@ library BridgeAssetOperations {
         if (tokenInfo.originNetwork == 0) {
             revert TokenNotForkable();
         }
+		(bool successNameCall, bytes memory name) = IERC20Metadata(token).staticcall(
+            /// encoding the function signature of N
+            abi.encodeWithSignature("name()")
+        );
+        if (!successNameCall) {
+            name = abi.encode("unknown-", token);
+        }
+		(bool successSymbolCall, bytes memory symbol) = address(token).staticcall(abi.encodeWithSignature("symbol()"));
+        if (!successSymbolCall) {
+            symbol = abi.encode("UNKNOWN");
+        }
+		(bool successDecimalsCall, bytes memory decimals) = address(token).staticcall(abi.encodeWithSignature("decimals()"));
+        if (!successDecimalsCall) {
+			// setting the standard of 18 decimals might be wrong, but its better than locking the tokens for-ever in the forked bridge contract.
+			// we could also during deposits enforce that decimals() is readable
+            decimals = abi.encode("18");
+        }
         bytes memory metadata = abi.encode(
-            IERC20Metadata(token).name(),
-            IERC20Metadata(token).symbol(),
-            IERC20Metadata(token).decimals()
+            name,
+			symbol,
+            decimals
         );
         ForkableBridge(child).mintForkableToken(
             tokenInfo.originTokenAddress,
