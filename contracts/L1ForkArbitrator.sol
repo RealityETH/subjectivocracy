@@ -41,6 +41,7 @@ contract L1ForkArbitrator is IArbitratorCore, IArbitratorErrors {
     }
 
     /* solhint-disable quotes */
+    // Tells the UI to know that it should prompt the user to use ERC20 instead of the native token.
     string public metadata = '{"erc20": true}';
 
     /// @notice Return the dispute fee for the specified question. 0 indicates that we won't arbitrate it.
