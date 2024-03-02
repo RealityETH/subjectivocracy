@@ -19,6 +19,9 @@ contract L1ForkArbitrator is IArbitratorCore, IArbitratorErrors {
     IRealityETH public realitio;
     IForkonomicToken public token;
 
+    /// @notice Could not approve the transfer for some reason
+    error CouldNotApproveTransfer();
+
     /// @notice Could not deduct fee
     error CouldNotDeductFee();
 
@@ -82,7 +85,7 @@ contract L1ForkArbitrator is IArbitratorCore, IArbitratorErrors {
 
         // Now approve so that the fee can be transferred right out to the ForkingManager
         if (!token.approve(address(forkmanager), fee))
-            revert CouldNotDeductFee();
+            revert CouldNotApproveTransfer();
         IForkingManager.DisputeData memory disputeData = IForkingManager
             .DisputeData(true, address(this), _questionId);
         IForkingManager(forkmanager).initiateFork(disputeData);
