@@ -1405,13 +1405,13 @@ contract ForkableRealityETHTest is Test {
             ForkableRealityETH_ERC20(forkableRealityETH2a).resultFor(
                 forkOverQuestionId
             ),
-            bytes32(uint256(1))
+            bytes32(uint256(0))
         );
         assertEq(
             ForkableRealityETH_ERC20(forkableRealityETH2b).resultFor(
                 forkOverQuestionId
             ),
-            bytes32(uint256(0))
+            bytes32(uint256(1))
         );
     }
 }
