@@ -2,7 +2,8 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {L2ForkArbitrator} from "../contracts/L2ForkArbitrator.sol";
-import {IRealityETH} from "../contracts/lib/reality-eth/interfaces/IRealityETH.sol";
+import {IRealityETH} from "@reality.eth/contracts/development/contracts/IRealityETH.sol";
+import {IRealityETHCore_Common} from "@reality.eth/contracts/development/contracts/IRealityETHCore_Common.sol";
 import {L2ChainInfo} from "../contracts/L2ChainInfo.sol";
 import {L1GlobalForkRequester} from "../contracts/L1GlobalForkRequester.sol";
 import {IL2ForkArbitrator} from "../contracts/interfaces/IL2ForkArbitrator.sol";
@@ -43,7 +44,7 @@ contract L2ForkArbitratorTest is Test {
         vm.mockCall(
             realitio,
             abi.encodeWithSelector(
-                IRealityETH.notifyOfArbitrationRequest.selector,
+                IRealityETHCore_Common.notifyOfArbitrationRequest.selector,
                 questionId,
                 address(this),
                 maxPrevious
@@ -93,7 +94,7 @@ contract L2ForkArbitratorTest is Test {
         vm.mockCall(
             realitio,
             abi.encodeWithSelector(
-                IRealityETH.notifyOfArbitrationRequest.selector,
+                IRealityETHCore_Common.notifyOfArbitrationRequest.selector,
                 questionId,
                 address(this),
                 maxPrevious
@@ -183,7 +184,7 @@ contract L2ForkArbitratorTest is Test {
         vm.mockCall(
             realitio,
             abi.encodeWithSelector(
-                IRealityETH.notifyOfArbitrationRequest.selector,
+                IRealityETHCore_Common.notifyOfArbitrationRequest.selector,
                 questionId,
                 address(this),
                 maxPrevious
@@ -300,7 +301,7 @@ contract L2ForkArbitratorTest is Test {
         vm.mockCall(
             address(realitio),
             abi.encodeWithSelector(
-                IRealityETH.notifyOfArbitrationRequest.selector,
+                IRealityETHCore_Common.notifyOfArbitrationRequest.selector,
                 questionId,
                 address(this),
                 maxPrevious
@@ -364,7 +365,7 @@ contract L2ForkArbitratorTest is Test {
         vm.mockCall(
             address(realitio),
             abi.encodeWithSelector(
-                IRealityETH.notifyOfArbitrationRequest.selector,
+                IRealityETHCore_Common.notifyOfArbitrationRequest.selector,
                 questionId,
                 address(this),
                 maxPrevious

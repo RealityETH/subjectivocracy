@@ -2,7 +2,7 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {AdjudicationFrameworkFeeds} from "../../contracts/AdjudicationFramework/Push/AdjudicationFrameworkFeeds.sol";
-import {RealityETH_v3_0} from "../../contracts/lib/reality-eth/RealityETH-3.0.sol";
+import {RealityETH_v4_0} from "@reality.eth/contracts/development/contracts/RealityETH-4.0.sol";
 
 contract FeedsTest is Test {
     AdjudicationFrameworkFeeds public feeds;
@@ -19,7 +19,7 @@ contract FeedsTest is Test {
         initialArbitrators = new address[](1);
         initialArbitrators[0] = arbitrator1;
 
-        RealityETH_v3_0 l2RealityEth = new RealityETH_v3_0();
+        RealityETH_v4_0 l2RealityEth = new RealityETH_v4_0();
 
         feeds = new AdjudicationFrameworkFeeds(
             address(l2RealityEth),

@@ -9,9 +9,10 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ForkableRealityETH_ERC20} from "../../contracts/ForkableRealityETH_ERC20.sol";
 import {AdjudicationFrameworkRequests} from "../../contracts/AdjudicationFramework/Pull/AdjudicationFrameworkRequests.sol";
-import {IRealityETH} from "../../contracts/lib/reality-eth/interfaces/IRealityETH.sol";
-import {RealityETH_v3_0} from "../../contracts/lib/reality-eth/RealityETH-3.0.sol";
-import {Arbitrator} from "../../contracts/lib/reality-eth/Arbitrator.sol";
+import {IRealityETH} from "@reality.eth/contracts/development/contracts/IRealityETH.sol";
+import {IRealityETHErrors} from "@reality.eth/contracts/development/contracts/IRealityETHErrors.sol";
+import {RealityETH_v4_0} from "@reality.eth/contracts/development/contracts/RealityETH-4.0.sol";
+import {Arbitrator} from "@reality.eth/contracts/development/contracts/Arbitrator.sol";
 import {L2ForkArbitrator} from "../../contracts/L2ForkArbitrator.sol";
 import {L1GlobalForkRequester} from "../../contracts/L1GlobalForkRequester.sol";
 import {L2ChainInfo} from "../../contracts/L2ChainInfo.sol";
@@ -27,7 +28,7 @@ contract AdjudicationIntegrationTest is Test {
         IERC20(0x1234567890123456789012345678901234567890);
 
     ForkableRealityETH_ERC20 internal l1RealityEth;
-    RealityETH_v3_0 internal l2RealityEth;
+    RealityETH_v4_0 internal l2RealityEth;
 
     bytes32 internal addArbitratorQID1;
     bytes32 internal addArbitratorQID2;
@@ -131,7 +132,7 @@ contract AdjudicationIntegrationTest is Test {
             address(l1ForkingManager),
             address(0),
             address(tokenMock),
-            (0)
+            bytes32(0)
         );
 
         /*
@@ -151,10 +152,10 @@ contract AdjudicationIntegrationTest is Test {
         user2.transfer(1000000);
 
         // NB we're modelling this on the same chain but it should really be the l2
-        l2RealityEth = new RealityETH_v3_0();
+        l2RealityEth = new RealityETH_v4_0();
 
         l2ForkArbitrator = new L2ForkArbitrator(
-            IRealityETH(l2RealityEth),
+            IRealityETH(address(l2RealityEth)),
             L2ChainInfo(l2ChainInfo),
             L1GlobalForkRequester(l1GlobalForkRequester),
             forkingFee
@@ -208,14 +209,14 @@ contract AdjudicationIntegrationTest is Test {
             "finalization ts should be passed block ts"
         );
 
-        vm.expectRevert("question must be finalized");
+        vm.expectRevert(IRealityETHErrors.QuestionMustBeFinalized.selector);
         l2RealityEth.resultFor(addArbitratorQID1);
         assertTrue(
             finalizeTs > block.timestamp,
             "finalization ts should be passed block ts"
         );
 
-        vm.expectRevert("question must be finalized");
+        vm.expectRevert(IRealityETHErrors.QuestionMustBeFinalized.selector);
         adjudicationFramework1.executeModificationArbitratorFromAllowList(
             addArbitratorQID1
         );
@@ -401,10 +402,10 @@ contract AdjudicationIntegrationTest is Test {
         // Currently in the "yes" state, so once it times out we can complete the removal
 
         // Now wait for the timeout and settle the proposition
-        vm.expectRevert("question must be finalized");
+        vm.expectRevert(IRealityETHErrors.QuestionMustBeFinalized.selector);
         l2RealityEth.resultFor(removalQuestionId);
 
-        vm.expectRevert("question must be finalized");
+        vm.expectRevert(IRealityETHErrors.QuestionMustBeFinalized.selector);
         adjudicationFramework1.executeModificationArbitratorFromAllowList(
             removalQuestionId
         );
@@ -429,10 +430,10 @@ contract AdjudicationIntegrationTest is Test {
 
         // Now wait for the timeout and settle the proposition
 
-        vm.expectRevert("question must be finalized");
+        vm.expectRevert(IRealityETHErrors.QuestionMustBeFinalized.selector);
         l2RealityEth.resultFor(removalQuestionId);
 
-        vm.expectRevert("question must be finalized");
+        vm.expectRevert(IRealityETHErrors.QuestionMustBeFinalized.selector);
         adjudicationFramework1.executeModificationArbitratorFromAllowList(
             removalQuestionId
         );
@@ -475,7 +476,7 @@ contract AdjudicationIntegrationTest is Test {
         // Currently in the "yes" state, so once it times out we can complete the removal
 
         // Now wait for the timeout and settle the proposition
-        vm.expectRevert("question must be finalized");
+        vm.expectRevert(IRealityETHErrors.QuestionMustBeFinalized.selector);
         l2RealityEth.resultFor(removalQuestionId);
 
         assertEq(
@@ -594,7 +595,7 @@ contract AdjudicationIntegrationTest is Test {
         // Currently in the "yes" state, so once it times out we can complete the removal
 
         // Now wait for the timeout and settle the proposition
-        vm.expectRevert("question must be finalized");
+        vm.expectRevert(IRealityETHErrors.QuestionMustBeFinalized.selector);
         bytes32 result = l2RealityEth.resultFor(removalQuestionId);
         assertEq(result, bytes32(uint256(0)));
 
@@ -714,7 +715,7 @@ contract AdjudicationIntegrationTest is Test {
         // Currently in the "yes" state, so once it times out we can complete the removal
 
         // Now wait for the timeout and settle the proposition
-        vm.expectRevert("question must be finalized");
+        vm.expectRevert(IRealityETHErrors.QuestionMustBeFinalized.selector);
         bytes32 result = l2RealityEth.resultFor(removalQuestionId);
         assertEq(result, bytes32(uint256(0)));
 

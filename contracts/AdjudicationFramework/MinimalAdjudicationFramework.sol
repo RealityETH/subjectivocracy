@@ -5,7 +5,8 @@ pragma solidity ^0.8.20;
 /* solhint-disable quotes */
 /* solhint-disable not-rely-on-time */
 
-import {IRealityETH} from "./../lib/reality-eth/interfaces/IRealityETH.sol";
+import {IRealityETH} from "@reality.eth/contracts/development/contracts/IRealityETH.sol";
+import {IRealityETHHistoryVerification} from "@reality.eth/contracts/development/contracts/IRealityETHHistoryVerification.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IMinimalAdjudicationFramework} from "./interface/IMinimalAdjudicationFramework.sol";
@@ -27,6 +28,8 @@ contract MinimalAdjudicationFramework is IMinimalAdjudicationFramework {
     error OnlyAllowlistedActor();
     /// @dev Error thrown when multiple modifications are requested at once
     error NoMultipleModificationsAtOnce();
+    /// @dev Invalid history supplied for unfinalized question
+    error InvalidHistorySupplied();
 
     // Iterable list contains list of allowlisted arbitrators
     uint256 public constant ARB_DISPUTE_TIMEOUT = 86400;
@@ -216,20 +219,24 @@ contract MinimalAdjudicationFramework is IMinimalAdjudicationFramework {
 
         bytes32 answer;
         uint256 bond;
-        // Normally you call this right after posting your answer so your final answer will be the current answer
-        // If someone has since submitted a different answer, you need to pass in the history from now until yours
+        // Normally you call this right after posting your answer so your final answer will be the current best answer
+        // If someone has since submitted a different answer, you need to pass in the history from now back to yours
         if (historyHashes.length == 0) {
             answer = realityETH.getBestAnswer(questionId);
             bond = realityETH.getBond(questionId);
         } else {
-            (answer, bond) = realityETH
-                .getEarliestAnswerFromSuppliedHistoryOrRevert(
-                    questionId,
-                    historyHashes,
-                    addrs,
-                    bonds,
-                    answers
-                );
+            if (
+                !IRealityETHHistoryVerification(address(realityETH))
+                    .isHistoryOfUnfinalizedQuestionValid(
+                        questionId,
+                        historyHashes,
+                        addrs,
+                        bonds,
+                        answers
+                    )
+            ) revert InvalidHistorySupplied();
+            answer = answers[answers.length - 1];
+            bond = bonds[bonds.length - 1];
         }
 
         if (answer != bytes32(uint256(1))) {
