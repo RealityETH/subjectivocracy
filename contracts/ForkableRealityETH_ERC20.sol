@@ -22,7 +22,7 @@ contract ForkableRealityETH_ERC20 is
     // Asking questions is locked down the the forkmanager.
     // This isn't strictly necessary but it reduces the attack surface.
     // TODO: We might want to replace this with a governance contract owned by the forkmanager.
-    modifier permittedQuestionerOnly() override {
+    modifier onlyPermittedQuestioner() override {
         if (msg.sender != forkmanager) revert PermittedQuestionerOnly();
         _;
     }
