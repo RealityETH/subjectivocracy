@@ -6,9 +6,9 @@ pragma solidity ^0.8.20;
 /* solhint-disable quotes */
 /* solhint-disable not-rely-on-time */
 
-import {BalanceHolder} from "./../../lib/reality-eth/BalanceHolder.sol";
 import {MinimalAdjudicationFramework} from "../MinimalAdjudicationFramework.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {BalanceHolder} from "@reality.eth/contracts/development/contracts/BalanceHolder.sol";
 
 /*
 This contract sits between a Reality.eth instance and an Arbitrator.

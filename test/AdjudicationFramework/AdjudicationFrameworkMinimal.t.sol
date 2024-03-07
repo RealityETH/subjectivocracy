@@ -7,12 +7,13 @@ pragma solidity ^0.8.20;
 import {Vm} from "forge-std/Vm.sol";
 
 import {Test} from "forge-std/Test.sol";
-import {Arbitrator} from "../../contracts/lib/reality-eth/Arbitrator.sol";
+import {Arbitrator} from "@reality.eth/contracts/development/contracts/Arbitrator.sol";
 
-import {IRealityETH} from "../../contracts/lib/reality-eth/interfaces/IRealityETH.sol";
+import {IRealityETH} from "@reality.eth/contracts/development/contracts/IRealityETH.sol";
+import {IRealityETHErrors} from "@reality.eth/contracts/development/contracts/IRealityETHErrors.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ForkableRealityETH_ERC20} from "../../contracts/ForkableRealityETH_ERC20.sol";
-import {RealityETH_v3_0} from "../../contracts/lib/reality-eth/RealityETH-3.0.sol";
+import {RealityETH_v4_0} from "@reality.eth/contracts/development/contracts//RealityETH-4.0.sol";
 import {AdjudicationFrameworkRequests} from "../../contracts/AdjudicationFramework/Pull/AdjudicationFrameworkRequests.sol";
 import {MinimalAdjudicationFramework} from "../../contracts/AdjudicationFramework/MinimalAdjudicationFramework.sol";
 import {L2ForkArbitrator} from "../../contracts/L2ForkArbitrator.sol";
@@ -29,7 +30,7 @@ contract AdjudicationIntegrationTest is Test {
         IERC20(0x1234567890123456789012345678901234567890);
 
     ForkableRealityETH_ERC20 internal l1RealityEth;
-    RealityETH_v3_0 internal l2RealityEth;
+    RealityETH_v4_0 internal l2RealityEth;
 
     bytes32 internal addArbitratorQID1;
     bytes32 internal addArbitratorQID2;
@@ -152,10 +153,10 @@ contract AdjudicationIntegrationTest is Test {
         user2.transfer(1000000);
 
         // NB we're modelling this on the same chain but it should really be the l2
-        l2RealityEth = new RealityETH_v3_0();
+        l2RealityEth = new RealityETH_v4_0();
 
         l2ForkArbitrator = new L2ForkArbitrator(
-            IRealityETH(l2RealityEth),
+            IRealityETH(address(l2RealityEth)),
             L2ChainInfo(l2ChainInfo),
             L1GlobalForkRequester(l1GlobalForkRequester),
             forkingFee
@@ -209,14 +210,14 @@ contract AdjudicationIntegrationTest is Test {
             "finalization ts should be passed block ts"
         );
 
-        vm.expectRevert("question must be finalized");
+        vm.expectRevert(IRealityETHErrors.QuestionMustBeFinalized.selector);
         l2RealityEth.resultFor(addArbitratorQID1);
         assertTrue(
             finalizeTs > block.timestamp,
             "finalization ts should be passed block ts"
         );
 
-        vm.expectRevert("question must be finalized");
+        vm.expectRevert(IRealityETHErrors.QuestionMustBeFinalized.selector);
         adjudicationFramework1.executeModificationArbitratorFromAllowList(
             addArbitratorQID1
         );
@@ -334,7 +335,7 @@ contract AdjudicationIntegrationTest is Test {
         );
 
         // Scenario 3: Invalid case - twice the same arbitrators
-        vm.expectRevert("question must not exist");
+        vm.expectRevert(IRealityETHErrors.QuestionMustNotExist.selector);
         adjudicationFramework1.requestModificationOfArbitrators(
             initialArbitrator1,
             address(0)
@@ -391,7 +392,7 @@ contract AdjudicationIntegrationTest is Test {
             bytes32(tempAnswerInt),
             0
         );
-        vm.expectRevert("question must be finalized");
+        vm.expectRevert(IRealityETHErrors.QuestionMustBeFinalized.selector);
         adjudicationFramework1.clearFailedProposition(questionId);
 
         // Assume freezeArbitrator() will be called here with appropriate parameters
