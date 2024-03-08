@@ -275,10 +275,6 @@ contract MinimalAdjudicationFramework is IMinimalAdjudicationFramework {
 
     // Getter functions only below here
 
-    function realitio() external view returns (address) {
-        return address(realityETH);
-    }
-
     function isArbitrator(address arbitrator) external view returns (bool) {
         return _arbitrators.contains(arbitrator);
     }
