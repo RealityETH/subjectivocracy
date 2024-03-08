@@ -15,6 +15,7 @@ import {IForkableZkEVM} from "./interfaces/IForkableZkEVM.sol";
 import {IForkingManager} from "./interfaces/IForkingManager.sol";
 import {IForkonomicToken} from "./interfaces/IForkonomicToken.sol";
 import {IForkableGlobalExitRoot} from "./interfaces/IForkableGlobalExitRoot.sol";
+import {IForkableRealityETH_ERC20} from "./interfaces/IForkableRealityETH_ERC20.sol";
 import {ChainIdManager} from "./ChainIdManager.sol";
 
 contract ForkingManager is IForkingManager, ForkableStructure {
@@ -30,6 +31,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     address public forkonomicToken;
     address public globalExitRoot;
     address public chainIdManager;
+    address public realityETH;
 
     // Fee that needs to be paid to initiate a fork
     uint256 public arbitrationFee;
@@ -52,7 +54,8 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         address _globalExitRoot,
         uint256 _arbitrationFee,
         address _chainIdManager,
-        uint256 _forkPreparationTime
+        uint256 _forkPreparationTime,
+        address _realityETH
     ) external initializer {
         zkEVM = _zkEVM;
         bridge = _bridge;
@@ -61,6 +64,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         globalExitRoot = _globalExitRoot;
         arbitrationFee = _arbitrationFee;
         chainIdManager = _chainIdManager;
+        realityETH = _realityETH;
         executionTimeForProposal = 0;
         forkPreparationTime = _forkPreparationTime;
         ForkableStructure.initialize(address(this), _parentContract);
@@ -131,6 +135,23 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             newInstances.globalExitRoot.one,
             newInstances.globalExitRoot.two
         ) = IForkableGlobalExitRoot(globalExitRoot).createChildren();
+        (
+            newInstances.realityETH.one,
+            newInstances.realityETH.two
+        ) = IForkableRealityETH_ERC20(realityETH).createChildren();
+
+        IForkableRealityETH_ERC20(newInstances.realityETH.one).initialize(
+            newInstances.forkingManager.one,
+            realityETH,
+            newInstances.forkonomicToken.one,
+            disputeData.isL1 ? disputeData.disputeContent : bytes32(0)
+        );
+        IForkableRealityETH_ERC20(newInstances.realityETH.two).initialize(
+            newInstances.forkingManager.two,
+            realityETH,
+            newInstances.forkonomicToken.two,
+            disputeData.isL1 ? disputeData.disputeContent : bytes32(0)
+        );
 
         // Initialize the zkEVM contracts
         IPolygonZkEVM.InitializePackedParameters
@@ -240,7 +261,8 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             newInstances.globalExitRoot.one,
             arbitrationFee,
             chainIdManager,
-            forkPreparationTime
+            forkPreparationTime,
+            newInstances.realityETH.one
         );
         IForkingManager(newInstances.forkingManager.two).initialize(
             newInstances.zkEVM.two,
@@ -250,7 +272,8 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             newInstances.globalExitRoot.two,
             arbitrationFee,
             chainIdManager,
-            forkPreparationTime
+            forkPreparationTime,
+            newInstances.realityETH.two
         );
 
         //Initialize the global exit root contracts

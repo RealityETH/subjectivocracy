@@ -38,6 +38,8 @@ interface IForkingManager is IForkableStructure {
 
     function arbitrationFee() external view returns (uint256);
 
+    function realityETH() external view returns (address);
+
     function disputeData()
         external
         returns (bool isL1, address disputeContract, bytes32 disputeContent);
@@ -61,6 +63,7 @@ interface IForkingManager is IForkableStructure {
         AddressPair zkEVM;
         AddressPair forkonomicToken;
         AddressPair globalExitRoot;
+        AddressPair realityETH;
     }
 
     /**
@@ -82,7 +85,8 @@ interface IForkingManager is IForkableStructure {
         address _globalExitRoot,
         uint256 _arbitrationFee,
         address _chainIdManager,
-        uint256 _forkPreparationTime
+        uint256 _forkPreparationTime,
+        address _realityETH
     ) external;
 
     function initiateFork(DisputeData memory _disputeData) external;

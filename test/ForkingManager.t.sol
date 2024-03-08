@@ -5,6 +5,7 @@ pragma solidity ^0.8.20;
 import {Test} from "forge-std/Test.sol";
 import {VerifierRollupHelperMock} from "@RealityETH/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol";
 import {ForkingManager} from "../contracts/ForkingManager.sol";
+import {ForkableRealityETH_ERC20} from "../contracts/ForkableRealityETH_ERC20.sol";
 import {ForkableBridge} from "../contracts/ForkableBridge.sol";
 import {ForkableZkEVM} from "../contracts/ForkableZkEVM.sol";
 import {ForkonomicToken} from "../contracts/ForkonomicToken.sol";
@@ -177,6 +178,26 @@ contract ForkingManagerTest is Test {
             rollupVerifierMock,
             IPolygonZkEVMBridge(address(bridge))
         );
+
+        address forkableRealityETHImplementation = address(
+            new ForkableRealityETH_ERC20()
+        );
+        ForkableRealityETH_ERC20 forkableRealityETH = ForkableRealityETH_ERC20(
+            address(
+                new TransparentUpgradeableProxy(
+                    forkableRealityETHImplementation,
+                    admin,
+                    ""
+                )
+            )
+        );
+        forkableRealityETH.initialize(
+            address(forkmanager),
+            address(0),
+            address(forkonomicToken),
+            bytes32(0)
+        );
+
         forkmanager.initialize(
             address(zkevm),
             address(bridge),
@@ -185,7 +206,8 @@ contract ForkingManagerTest is Test {
             address(globalExitRoot),
             arbitrationFee,
             chainIdManagerAddress,
-            forkPreparationTime
+            forkPreparationTime,
+            address(forkableRealityETH)
         );
         forkonomicToken.initialize(
             address(forkmanager),

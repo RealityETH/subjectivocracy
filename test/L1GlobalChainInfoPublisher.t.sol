@@ -12,6 +12,7 @@ import {ForkingManager} from "../contracts/ForkingManager.sol";
 import {ForkableBridge} from "../contracts/ForkableBridge.sol";
 import {ForkableZkEVM} from "../contracts/ForkableZkEVM.sol";
 import {ForkonomicToken} from "../contracts/ForkonomicToken.sol";
+import {ForkableRealityETH_ERC20} from "../contracts/ForkableRealityETH_ERC20.sol";
 import {ForkableGlobalExitRoot} from "../contracts/ForkableGlobalExitRoot.sol";
 import {IForkingManager} from "../contracts/interfaces/IForkingManager.sol";
 import {IVerifierRollup} from "@RealityETH/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
@@ -193,6 +194,24 @@ contract L1GlobalChainInfoPublisherTest is Test {
             rollupVerifierMock,
             IPolygonZkEVMBridge(address(bridge))
         );
+        address forkableRealityETHImplementation = address(
+            new ForkableRealityETH_ERC20()
+        );
+        ForkableRealityETH_ERC20 forkableRealityETH = ForkableRealityETH_ERC20(
+            address(
+                new TransparentUpgradeableProxy(
+                    forkableRealityETHImplementation,
+                    admin,
+                    ""
+                )
+            )
+        );
+        forkableRealityETH.initialize(
+            address(forkmanager),
+            address(0),
+            address(forkonomicToken),
+            bytes32(0)
+        );
         forkmanager.initialize(
             address(zkevm),
             address(bridge),
@@ -201,7 +220,8 @@ contract L1GlobalChainInfoPublisherTest is Test {
             address(globalExitRoot),
             arbitrationFee,
             chainIdManagerAddress,
-            forkPreparationTime
+            forkPreparationTime,
+            address(forkableRealityETH)
         );
         forkonomicToken.initialize(
             address(forkmanager),

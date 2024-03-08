@@ -183,6 +183,21 @@ contract ForkableRealityETHTest is Test {
         );
         address chainIdManager = address(new ChainIdManager(initialChainId));
 
+        forkableRealityETHImplementation = address(
+            new ForkableRealityETH_ERC20()
+        );
+        forkableRealityETH = address(
+            ForkableRealityETH_ERC20(
+                address(
+                    new TransparentUpgradeableProxy(
+                        forkableRealityETHImplementation,
+                        admin,
+                        ""
+                    )
+                )
+            )
+        );
+
         _initializeZKEVM(
             zkevm,
             ChainIdManager(chainIdManager).getNextUsableChainId(),
@@ -198,26 +213,13 @@ contract ForkableRealityETHTest is Test {
             address(globalExitRoot),
             arbitrationFee,
             chainIdManager,
-            uint256(60)
+            uint256(60),
+            forkableRealityETH
         );
 
         vm.prank(minter);
         IForkonomicToken(forkonomicToken).mint(forkRequester, arbitrationFee);
 
-        forkableRealityETHImplementation = address(
-            new ForkableRealityETH_ERC20()
-        );
-        forkableRealityETH = address(
-            ForkableRealityETH_ERC20(
-                address(
-                    new TransparentUpgradeableProxy(
-                        forkableRealityETHImplementation,
-                        admin,
-                        ""
-                    )
-                )
-            )
-        );
         ForkableRealityETH_ERC20(forkableRealityETH).initialize(
             forkmanager,
             address(0),
