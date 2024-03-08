@@ -37,8 +37,6 @@ interface IMinimalAdjudicationFramework is IMinimalAdjudicationFrameworkErrors {
 
     // Getter functions only below here
 
-    function realitio() external view returns (address);
-
     function isArbitrator(address arbitrator) external view returns (bool);
 
     function isArbitratorPropositionFrozen(
