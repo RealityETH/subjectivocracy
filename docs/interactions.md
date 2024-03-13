@@ -315,7 +315,18 @@ TODO: Build this
 #### Next step
 
  * [Execute a contract upgrade](#execute-a-contract-upgrade) on one fork.
+ * [Import a reality.eth question after a fork](#import-a-reality.eth-question-after-a-fork) for any question we didn't fork over
 
+### Import a reality.eth question after a fork
+
+If an upgrade proposition had been made in parallel when a fork was triggered, it is in a frozen state.
+It can be imported to continue the resolution process.
+If there are unclaimed funds their questions also need to be imported.
+
+```
+    Alice   L1.ForkableRealityETH_ERC20-1.importQuestion(question_id)
+    Alice   L1.ForkableRealityETH_ERC20-2.importQuestion(question_id)
+```
 
 ### Moving gov tokens L2->L1
 ```
