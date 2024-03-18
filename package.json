@@ -39,7 +39,7 @@
     "hardhat": "^2.19.4"
   },
   "devDependencies": {
-    "@0xpolygonhermez/zkevm-commonjs": "github:0xPolygonHermez/zkevm-commonjs#v3.0.0-fork.6",
+    "@0xpolygonhermez/zkevm-commonjs": "github:0xPolygonHermez/zkevm-commonjs#2a5fee0cfd47d4d538270a0345dd1f062dba783d",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
     "@nomicfoundation/hardhat-verify": "^2.0.3",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
@@ -47,7 +47,8 @@
     "@openzeppelin/contracts": "^4.9.5",
     "@openzeppelin/contracts-upgradeable": "^4.9.5",
     "@openzeppelin/hardhat-upgrades": "1.22.1",
-    "@RealityETH/zkevm-contracts": "github:RealityETH/zkevm-contracts#2f2a60aacc63cb18c9078ec9a779966eb16ebc1f",
+    "@reality.eth/contracts": "4.0.0-rc.8",
+    "@RealityETH/zkevm-contracts": "github:RealityETH/zkevm-contracts#38dd8579b1a644ddebd59226d571b2574c76fd35",
     "@types/sinon-chai": "^3.2.3",
     "circomlibjs": "0.1.1",
     "dotenv": "^8.6.0",

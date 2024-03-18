@@ -6,9 +6,11 @@ pragma solidity ^0.8.20;
 /* solhint-disable quotes */
 /* solhint-disable not-rely-on-time */
 
-import {BalanceHolder} from "./../../lib/reality-eth/BalanceHolder.sol";
 import {MinimalAdjudicationFramework} from "../MinimalAdjudicationFramework.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {BalanceHolder} from "@reality.eth/contracts/development/contracts/BalanceHolder.sol";
+import {IRealityETH} from "@reality.eth/contracts/development/contracts/IRealityETH.sol";
+import {IArbitratorCore} from "@reality.eth/contracts/development/contracts/IArbitratorCore.sol";
 
 /*
 This contract sits between a Reality.eth instance and an Arbitrator.
@@ -20,6 +22,7 @@ To the normal Arbitrator contracts that does its arbitration jobs, it looks like
 */
 
 contract AdjudicationFrameworkRequests is
+    IArbitratorCore,
     MinimalAdjudicationFramework,
     BalanceHolder
 {
@@ -55,18 +58,6 @@ contract AdjudicationFrameworkRequests is
     /// @dev Error thrown when too soon to cancel
     error TooSoonToCancel();
 
-    event LogRequestArbitration(
-        bytes32 indexed questionId,
-        uint256 feePaid,
-        address requester,
-        uint256 remaining
-    );
-
-    event LogNotifyOfArbitrationRequest(
-        bytes32 indexed questionId,
-        address indexed user
-    );
-
     uint256 public dispute_fee;
 
     struct ArbitrationRequest {
@@ -79,6 +70,10 @@ contract AdjudicationFrameworkRequests is
     }
 
     mapping(bytes32 => ArbitrationRequest) public questionArbitrations;
+
+    // Metadata for anything the UI needs to know.
+    // TODO: Add a "tos" parameter pointing to a document that explains the adjudication principles, see #256
+    string public metadata = "{}";
 
     /// @param _realityETH The reality.eth instance we adjudicate for
     /// @param _disputeFee The dispute fee we charge reality.eth users
@@ -180,8 +175,6 @@ contract AdjudicationFrameworkRequests is
 
         questionArbitrations[questionId].payer = requester;
         questionArbitrations[questionId].arbitrator = msg.sender;
-
-        emit LogNotifyOfArbitrationRequest(questionId, requester);
     }
 
     /// @notice Clear the arbitrator setting of an arbitrator that has been delisted
@@ -296,5 +289,9 @@ contract AdjudicationFrameworkRequests is
             questionArbitrations[questionId].bounty;
 
         realityETH.submitAnswerByArbitrator(questionId, answer, answerer);
+    }
+
+    function realitio() external view returns (IRealityETH) {
+        return realityETH;
     }
 }

@@ -5,7 +5,7 @@ import {TokenWrapped} from "@RealityETH/zkevm-contracts/contracts/lib/TokenWrapp
 import {ForkableBridge} from "../ForkableBridge.sol";
 import {IForkonomicToken} from "../interfaces/IForkonomicToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {IERC20MetadataUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 
 library BridgeAssetOperations {
     // @dev Error thrown when forkable token is intended to be used, but it is not forkable
@@ -67,9 +67,9 @@ library BridgeAssetOperations {
             revert TokenNotForkable();
         }
         bytes memory metadata = abi.encode(
-            IERC20Metadata(token).name(),
-            IERC20Metadata(token).symbol(),
-            IERC20Metadata(token).decimals()
+            _safeName(token),
+            _safeSymbol(token),
+            _safeDecimals(token)
         );
         ForkableBridge(child).mintForkableToken(
             tokenInfo.originTokenAddress,
@@ -120,6 +120,73 @@ library BridgeAssetOperations {
             IERC20(forkonomicToken1).transfer(child, amount);
         } else {
             IERC20(forkonomicToken2).transfer(child, amount);
+        }
+    }
+    // Helpers to safely get the metadata from a token, copied from here: https://github.com/0xPolygonHermez/zkevm-contracts/blob/d70266b8742672d59d4060019538d03fe0aac181/contracts/PolygonZkEVMBridge.sol#L800
+
+    /**
+     * @notice Provides a safe ERC20.symbol version which returns 'NO_SYMBOL' as fallback string
+     * @param token The address of the ERC-20 token contract
+     */
+    function _safeSymbol(address token) internal view returns (string memory) {
+        (bool success, bytes memory data) = address(token).staticcall(
+            abi.encodeCall(IERC20MetadataUpgradeable.symbol, ())
+        );
+        return success ? _returnDataToString(data) : "NO_SYMBOL";
+    }
+
+    /**
+     * @notice  Provides a safe ERC20.name version which returns 'NO_NAME' as fallback string.
+     * @param token The address of the ERC-20 token contract.
+     */
+    function _safeName(address token) internal view returns (string memory) {
+        (bool success, bytes memory data) = address(token).staticcall(
+            abi.encodeCall(IERC20MetadataUpgradeable.name, ())
+        );
+        return success ? _returnDataToString(data) : "NO_NAME";
+    }
+
+    /**
+     * @notice Provides a safe ERC20.decimals version which returns '18' as fallback value.
+     * Note Tokens with (decimals > 255) are not supported
+     * @param token The address of the ERC-20 token contract
+     */
+    function _safeDecimals(address token) internal view returns (uint8) {
+        (bool success, bytes memory data) = address(token).staticcall(
+            abi.encodeCall(IERC20MetadataUpgradeable.decimals, ())
+        );
+        return success && data.length == 32 ? abi.decode(data, (uint8)) : 18;
+    }
+
+    /**
+     * @notice Function to convert returned data to string
+     * returns 'NOT_VALID_ENCODING' as fallback value.
+     * @param data returned data
+     */
+    function _returnDataToString(
+        bytes memory data
+    ) internal pure returns (string memory) {
+        if (data.length >= 64) {
+            return abi.decode(data, (string));
+        } else if (data.length == 32) {
+            // Since the strings on bytes32 are encoded left-right, check the first zero in the data
+            uint256 nonZeroBytes;
+            while (nonZeroBytes < 32 && data[nonZeroBytes] != 0) {
+                nonZeroBytes++;
+            }
+
+            // If the first one is 0, we do not handle the encoding
+            if (nonZeroBytes == 0) {
+                return "NOT_VALID_ENCODING";
+            }
+            // Create a byte array with nonZeroBytes length
+            bytes memory bytesArray = new bytes(nonZeroBytes);
+            for (uint256 i = 0; i < nonZeroBytes; i++) {
+                bytesArray[i] = data[i];
+            }
+            return string(bytesArray);
+        } else {
+            return "NOT_VALID_ENCODING";
         }
     }
 }

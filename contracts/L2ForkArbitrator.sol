@@ -6,7 +6,7 @@ pragma solidity ^0.8.20;
 /* solhint-disable var-name-mixedcase */
 import {L2ChainInfo} from "./L2ChainInfo.sol";
 import {L1GlobalForkRequester} from "./L1GlobalForkRequester.sol";
-import {IRealityETH} from "./lib/reality-eth/interfaces/IRealityETH.sol";
+import {IRealityETH} from "@reality.eth/contracts/development/contracts/IRealityETH.sol";
 import {CalculateMoneyBoxAddress} from "./lib/CalculateMoneyBoxAddress.sol";
 
 import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";

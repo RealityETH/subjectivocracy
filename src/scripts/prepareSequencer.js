@@ -16,11 +16,9 @@ async function main() {
     const deploymentOutput = require(`../../deployments/${deploymentName}/deploy_output.json`);
 
     const mandatoryDeploymentOutput = [
-        'polygonZkEVMBridgeAddress',
-        'bridgeImplementationAddress',
+        'polygonZkEVMAddress',
         'maticTokenAddress',
-        'createChildrenImplementationAddress',
-
+        'trustedSequencer',
     ];
     for (const parameterName of mandatoryDeploymentOutput) {
         if (deploymentOutput[parameterName] === undefined || deploymentOutput[parameterName] === '') {
@@ -28,55 +26,29 @@ async function main() {
         }
     }
     const {
-        polygonZkEVMBridgeAddress,
+        polygonZkEVMAddress,
         maticTokenAddress,
         trustedSequencer,
     } = deploymentOutput;
 
     const forkonomicTokenAddress = maticTokenAddress;
-
-    // Load provider
     const currentProvider = await common.loadProvider(deployParameters, process.env);
     const deployer = await common.loadDeployer(currentProvider, deployParameters);
 
     if (trustedSequencer === undefined || trustedSequencer.toLowerCase() !== deployer.address.toLowerCase()) {
         throw new Error('Wrong deployer address');
     }
+    console.log('polygonZkEVMAddress: ', polygonZkEVMAddress);
 
-    const bridge = await ethers.getContractAt(
-        'contracts/ForkableBridge.sol:ForkableBridge',
-        polygonZkEVMBridgeAddress,
-    );
-
-    const forkonomicToken = await ethers.getContractAt(
+    const forkonomicToken = (await ethers.getContractAt(
         'contracts/ForkonomicToken.sol:ForkonomicToken',
         forkonomicTokenAddress,
-    );
+    )).connect(deployer);
 
-    const depositAmount = ethers.utils.parseEther('10');
-    const balance = await forkonomicToken.connect(deployer).balanceOf(deployer.address);
-    if (balance.lt(depositAmount)) {
-        throw new Error('Not enough tokens');
-    }
-
-    const tx1 = await forkonomicToken.connect(deployer).approve(polygonZkEVMBridgeAddress, depositAmount, { gasLimit: 500000 });
-    console.log('Approved bridge to spend forkonomic tokens');
+    const tx1 = await forkonomicToken.approve(polygonZkEVMAddress, ethers.constants.MaxUint256, { gasLimit: 500000 });
+    await tx1.wait();
+    console.log('Approved zkevm by the sequencer to spend forkonomic tokens');
     console.log('by the following tx: ', tx1.hash);
-
-    // sleep for 3 secs to wait until tx is mined and nonce increase is reflected
-    await new Promise((r) => setTimeout(r, 3000));
-
-    const tx2 = await bridge.connect(deployer).bridgeAsset(
-        1,
-        deployer.address,
-        depositAmount,
-        forkonomicTokenAddress,
-        true,
-        '0x',
-        { gasLimit: 5000000 },
-    );
-    console.log('Deposited forkonomic tokens into bridge');
-    console.log('by the following tx: ', tx2.hash);
 }
 
 main().catch((e) => {
