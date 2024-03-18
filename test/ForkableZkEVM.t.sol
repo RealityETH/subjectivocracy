@@ -71,7 +71,8 @@ contract ForkableZkEVMTest is Test {
                     trustedAggregator: trustedAggregator,
                     trustedAggregatorTimeout: trustedAggregatorTimeout,
                     chainID: chainID,
-                    forkID: forkID
+                    forkID: forkID,
+                    lastVerifiedBatch: 0
                 });
         forkableZkEVM.initialize(
             forkmanager,
