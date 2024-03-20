@@ -20,7 +20,6 @@ import {ChainIdManager} from "./ChainIdManager.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract ForkingManager is IForkingManager, ForkableStructure {
-
     using SafeERC20 for IERC20;
 
     // The depth of the deposit contract tree

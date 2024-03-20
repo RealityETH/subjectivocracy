@@ -109,8 +109,8 @@ contract ForkingManagerTest is Test {
                     lastVerifiedBatch: 0
                 });
 
-        IForkingManager.DeploymentConfig memory deploymentConfig = IForkingManager
-            .DeploymentConfig({
+        IForkingManager.DeploymentConfig
+            memory deploymentConfig = IForkingManager.DeploymentConfig({
                 genesisRoot: genesisRoot,
                 trustedSequencerURL: "trustedSequencerURL",
                 networkName: "my network",
