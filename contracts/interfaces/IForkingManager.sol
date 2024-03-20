@@ -48,19 +48,12 @@ interface IForkingManager is IForkableStructure {
 
     function isForkingExecuted() external returns (bool);
 
-    // Struct that holds an address pair used to store the new child contracts
-    struct AddressPair {
-        address one;
-        address two;
-    }
-
-    // Struct containing the addresses of the new instances
-    struct NewInstances {
-        AddressPair forkingManager;
-        AddressPair bridge;
-        AddressPair zkEVM;
-        AddressPair forkonomicToken;
-        AddressPair globalExitRoot;
+    struct NewInstance {
+        address zkEVM;
+        address bridge;
+        address forkonomicToken;
+        address globalExitRoot;
+        address forkingManager;
     }
 
     /**
