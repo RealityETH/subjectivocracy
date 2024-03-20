@@ -34,6 +34,7 @@ The first step is deploying and verifying the `PolygonZkEVMDeployer`, this will 
 This contract is deployed using a keyless deployment, therefore the gasPrice is hardcoded.
 The value is on `100 gweis`, if it's necessary to update it go to `helpers/deployment-helpers.js` and update the `gasPriceKeylessDeployment` constant.
 Note that this operation will change all the deterministic address deployed.
+This may fail with some RPC endpoints as they reject pre-eip1559 transaction types, but it seems to work with Infura.
 
 ```
 npm run deploy:deployer:ZkEVM:goerli
@@ -101,7 +102,7 @@ Start a node by running:
 npx hardhat node
 ```
 
-Prefill deploy_parameters where possible
+Prefill deploy_parameters where possible. See docs/deployment_params.txt for details.
 
 ```sh
 cd src/deployment

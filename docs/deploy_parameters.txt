@@ -1,0 +1,80 @@
+The following parameters need to be set for deploy_parameters:
+
+ // True once we start using actual proofs
+ "realVerifier": false 
+
+ // The external IP of the sequencer. TODO: can we change this to DNS?
+ "trustedSequencerURL": "http://16.171.204.163:8123" 
+
+ // The name of the network. Use backstop-testnetx for testnets. Use "backstop" for mainnet when we do that
+ "networkName": "backstop-testnet0", 
+
+ // ? How is this used ? 
+ "version": "0.0.1", 
+
+ // The required seconds to wait until a fork is executed. Using 60 seconds so we can test forks quickly.
+ "forkPreparationTime": 60, 
+
+ // The address that is allowed to sequence batches. TODO where is this set in the docker-compose etc?
+ "trustedSequencer": "0x740a98F8f4fAe0986FB3264Fe4aaCf94ac1EE96f", 
+
+ // The chainid of the initial chain
+ "chainID": 10101061, 
+
+ // The address that is allowed to aggregate batches. TODO where is this set in the docker-compose etc?
+ "trustedAggregator": "0x5669C63E3B461cf50696AD0378fE2E66b982D4A7", 
+
+ // 
+ "trustedAggregatorTimeout": 604799, 
+ "pendingStateTimeout": 604799,
+
+ // fork id per the polygon codebase
+ "forkID": 6, 
+
+ // the account that can upgrade contracts. Will ultimately be a contract enforcing a governance process, something like L1Governor
+ "admin": "0x7913d0bac6Fa2f423924B8cd28b9444FB9Ae271C", 
+
+ // same as admin???
+ "zkEVMOwner": "0x7913d0bac6Fa2f423924B8cd28b9444FB9Ae271C",
+
+ // the address of the timelock contract used in governance. Not used in backstop???
+ "timelockAddress": "0x617b3a3528F9cDd6630fd3301B9c8911F7Bf063D",
+
+ // the minimum delay for the timelock. Should ultimately be applied to L1Governor etc
+ "minDelayTimelock": 60,
+
+ // ???
+ "salt": "0x0000000000000000000000000000000000000000000000000000000000000012",
+
+ // Same as zkEVMOwner??? Maybe needs to be recorded for some reason to do with deterministic addresses?
+ "initialZkEVMDeployerOwner": "0x7913d0bac6Fa2f423924B8cd28b9444FB9Ae271C",
+
+ // Not used, we use a hardhat mnemonic in .env instead
+ "deployerPvtKey": "",
+
+ // Fee for deployments other than the deployer contract with the keyless deployment, which is hard-coded in the deployment script
+ "maxFeePerGas": "10",
+ "maxPriorityFeePerGas": "2",
+
+ // This is ignored as we use maxPriorityFeePerGas etc instead
+ "multiplierGas": "2",
+
+ // The fee in our tokens for requesting arbitration-by-fork
+ "arbitrationFee": "1000000000000000000",
+
+ // zkEVMOwner/admin yet again?
+ "proxyAdminAddress": "0x560338C0Edf0fa92e00e858Cd68058b99daC0C51",
+
+ // The address of our gas token on L1. Populated automatically during deployment.
+ "maticTokenAddress": "0xdc5f7e0f317346c1910315355A36Fc32461561CD",
+
+ // Library address populated automatically during deployment
+ "createChildrenImplementationAddress": "0x4faFF26665E2eFa7E0dAF7111bF60d7b9bCEd7ce",
+
+ // Address of keyless deployer, populated automatically during deployment
+ "zkEVMDeployerAddress": "0xC5C89037B07d9C04195788Cd79FAf798f68Cd9A0",
+
+ // The address of the contract that will manage which fork should be used for unforkable assets
+ // Will ultimately be a contract, but for now use an EOA
+ "hardAssetManagerAddress": "0x7913d0bac6Fa2f423924B8cd28b9444FB9Ae271C"
+
