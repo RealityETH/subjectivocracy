@@ -97,7 +97,6 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         address _bridgeImplementation,
         address _forkonomicTokenImplementation,
         address _globalExitRootImplementation,
-        uint64 _genesisChainId,
         DeploymentConfig memory _deploymentConfig,
         IPolygonZkEVM.InitializePackedParameters
             memory _initializePackedParameters
@@ -134,7 +133,6 @@ contract ForkingManager is IForkingManager, ForkableStructure {
             address(new TransparentUpgradeableProxy(address(this), _admin, ""))
         );
         _initializeStack(
-            _genesisChainId,
             instance,
             _deploymentConfig,
             _initializePackedParameters
@@ -178,7 +176,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
 
     function _prepareInitializePackedParameters(
         uint64 _newChainId
-    ) internal returns (IPolygonZkEVM.InitializePackedParameters memory) {
+    ) internal view returns (IPolygonZkEVM.InitializePackedParameters memory) {
         return
             IPolygonZkEVM.InitializePackedParameters({
                 admin: IPolygonZkEVM(zkEVM).admin(),
@@ -194,14 +192,12 @@ contract ForkingManager is IForkingManager, ForkableStructure {
     }
 
     function _initializeStack(
-        uint64 _chainId,
         NewInstance memory _newInstance,
         DeploymentConfig memory _deploymentConfig,
         IPolygonZkEVM.InitializePackedParameters
             memory initializePackedParameters
     ) internal {
         {
-            string memory networkName = _deploymentConfig.networkName;
             IForkableZkEVM(_newInstance.zkEVM).initialize(
                 _newInstance.forkingManager,
                 _deploymentConfig.parentZkEVM,
@@ -355,13 +351,11 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         DeploymentConfig memory deploymentConfig = _cloneDeploymentConfig();
 
         _initializeStack(
-            reservedChainIdForFork1,
             child1,
             deploymentConfig,
             _prepareInitializePackedParameters(reservedChainIdForFork1)
         );
         _initializeStack(
-            reservedChainIdForFork2,
             child2,
             deploymentConfig,
             _prepareInitializePackedParameters(reservedChainIdForFork2)
