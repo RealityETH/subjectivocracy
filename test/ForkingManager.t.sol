@@ -13,10 +13,7 @@ import {IForkableStructure} from "../contracts/interfaces/IForkableStructure.sol
 import {IPolygonZkEVMGlobalExitRoot} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMGlobalExitRoot.sol";
 import {IForkingManager} from "../contracts/interfaces/IForkingManager.sol";
 import {IVerifierRollup} from "@RealityETH/zkevm-contracts/contracts/interfaces/IVerifierRollup.sol";
-import {IPolygonZkEVMBridge} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVMBridge.sol";
-import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC20Upgradeable.sol";
 import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IPolygonZkEVM.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ChainIdManager} from "../contracts/ChainIdManager.sol";
 import {ForkableZkEVM} from "../contracts/ForkableZkEVM.sol";
 import {Util} from "./utils/Util.sol";
@@ -88,70 +85,16 @@ contract ForkingManagerTest is Test {
     event Transfer(address indexed from, address indexed to, uint256 tokenId);
 
     function setUp() public {
-        bridgeImplementation = address(new ForkableBridge());
-        bridge = ForkableBridge(
-            address(
-                new TransparentUpgradeableProxy(bridgeImplementation, admin, "")
-            )
-        );
         forkmanagerImplementation = address(new ForkingManager());
-        forkmanager = ForkingManager(
-            address(
-                new TransparentUpgradeableProxy(
-                    forkmanagerImplementation,
-                    admin,
-                    ""
-                )
-            )
-        );
-        zkevmImplementation = address(new ForkableZkEVM());
-        zkevm = ForkableZkEVM(
-            address(
-                new TransparentUpgradeableProxy(zkevmImplementation, admin, "")
-            )
-        );
+        bridgeImplementation = address(new ForkableBridge());
         forkonomicTokenImplementation = address(new ForkonomicToken());
-        forkonomicToken = ForkonomicToken(
-            address(
-                new TransparentUpgradeableProxy(
-                    forkonomicTokenImplementation,
-                    admin,
-                    ""
-                )
-            )
-        );
+        zkevmImplementation = address(new ForkableZkEVM());
         globalExitRootImplementation = address(new ForkableGlobalExitRoot());
-        globalExitRoot = ForkableGlobalExitRoot(
-            address(
-                new TransparentUpgradeableProxy(
-                    globalExitRootImplementation,
-                    admin,
-                    ""
-                )
-            )
-        );
+
         ChainIdManager chainIdManager = new ChainIdManager(initialChainId);
         chainIdManagerAddress = address(chainIdManager);
-        globalExitRoot.initialize(
-            address(forkmanager),
-            address(0x0),
-            address(zkevm),
-            address(bridge),
-            bytes32(0),
-            bytes32(0)
-        );
-        bridge.initialize(
-            address(forkmanager),
-            address(0x0),
-            networkID,
-            globalExitRoot,
-            address(zkevm),
-            address(forkonomicToken),
-            false,
-            hardAssetManger,
-            0,
-            depositTree
-        );
+
+        uint64 chainId = chainIdManager.getNextUsableChainId();
 
         IPolygonZkEVM.InitializePackedParameters
             memory initializePackedParameters = IPolygonZkEVM
@@ -161,40 +104,50 @@ contract ForkingManagerTest is Test {
                     pendingStateTimeout: pendingStateTimeout,
                     trustedAggregator: trustedAggregator,
                     trustedAggregatorTimeout: trustedAggregatorTimeout,
-                    chainID: chainIdManager.getNextUsableChainId(),
+                    chainID: chainId,
                     forkID: forkID,
                     lastVerifiedBatch: 0
                 });
-        zkevm.initialize(
-            address(forkmanager),
-            address(0x0),
-            initializePackedParameters,
-            genesisRoot,
-            "trustedSequencerURL",
-            "test network",
-            "0.0.1",
-            globalExitRoot,
-            IERC20Upgradeable(address(forkonomicToken)),
-            rollupVerifierMock,
-            IPolygonZkEVMBridge(address(bridge))
+
+        IForkingManager.DeploymentConfig
+            memory deploymentConfig = IForkingManager.DeploymentConfig({
+                genesisRoot: genesisRoot,
+                trustedSequencerURL: "trustedSequencerURL",
+                networkName: "my network",
+                version: "0.0.1",
+                rollupVerifier: address(rollupVerifierMock),
+                minter: address(this),
+                tokenName: "Fork",
+                tokenSymbol: "FORK",
+                arbitrationFee: arbitrationFee,
+                chainIdManager: chainIdManagerAddress,
+                forkPreparationTime: forkPreparationTime,
+                hardAssetManager: hardAssetManger,
+                lastUpdatedDepositCount: 0,
+                lastMainnetExitRoot: bytes32(0),
+                lastRollupExitRoot: bytes32(0),
+                parentGlobalExitRoot: address(0),
+                parentZkEVM: address(0),
+                parentForkonomicToken: address(0),
+                parentBridge: address(0)
+            });
+
+        forkmanager = ForkingManager(
+            ForkingManager(forkmanagerImplementation).spawnInstance(
+                admin,
+                zkevmImplementation,
+                bridgeImplementation,
+                forkonomicTokenImplementation,
+                globalExitRootImplementation,
+                deploymentConfig,
+                initializePackedParameters
+            )
         );
-        forkmanager.initialize(
-            address(zkevm),
-            address(bridge),
-            address(forkonomicToken),
-            address(0x0),
-            address(globalExitRoot),
-            arbitrationFee,
-            chainIdManagerAddress,
-            forkPreparationTime
-        );
-        forkonomicToken.initialize(
-            address(forkmanager),
-            address(0x0),
-            address(this),
-            "Fork",
-            "FORK"
-        );
+
+        bridge = ForkableBridge(forkmanager.bridge());
+        zkevm = ForkableZkEVM(forkmanager.zkEVM());
+        forkonomicToken = ForkonomicToken(forkmanager.forkonomicToken());
+        globalExitRoot = ForkableGlobalExitRoot(forkmanager.globalExitRoot());
     }
 
     function testForkingStatusFunctions() public {

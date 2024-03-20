@@ -28,6 +28,28 @@ interface IForkingManager is IForkableStructure {
         uint64 forkID;
     }
 
+    struct DeploymentConfig {
+        bytes32 genesisRoot;
+        string trustedSequencerURL;
+        string networkName;
+        string version;
+        address rollupVerifier;
+        address minter;
+        string tokenName;
+        string tokenSymbol;
+        uint256 arbitrationFee;
+        address chainIdManager;
+        uint256 forkPreparationTime;
+        address hardAssetManager;
+        uint32 lastUpdatedDepositCount; // starts at 0
+        bytes32 lastMainnetExitRoot;
+        bytes32 lastRollupExitRoot;
+        address parentGlobalExitRoot;
+        address parentZkEVM;
+        address parentForkonomicToken;
+        address parentBridge;
+    }
+
     function zkEVM() external returns (address);
 
     function bridge() external returns (address);
@@ -48,19 +70,12 @@ interface IForkingManager is IForkableStructure {
 
     function isForkingExecuted() external returns (bool);
 
-    // Struct that holds an address pair used to store the new child contracts
-    struct AddressPair {
-        address one;
-        address two;
-    }
-
-    // Struct containing the addresses of the new instances
-    struct NewInstances {
-        AddressPair forkingManager;
-        AddressPair bridge;
-        AddressPair zkEVM;
-        AddressPair forkonomicToken;
-        AddressPair globalExitRoot;
+    struct NewInstance {
+        address zkEVM;
+        address bridge;
+        address forkonomicToken;
+        address globalExitRoot;
+        address forkingManager;
     }
 
     /**
