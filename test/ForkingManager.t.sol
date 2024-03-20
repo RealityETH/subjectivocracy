@@ -109,13 +109,13 @@ contract ForkingManagerTest is Test {
                     lastVerifiedBatch: 0
                 });
 
-        ForkingManager.DeploymentConfig memory deploymentConfig = ForkingManager
+        IForkingManager.DeploymentConfig memory deploymentConfig = IForkingManager
             .DeploymentConfig({
                 genesisRoot: genesisRoot,
                 trustedSequencerURL: "trustedSequencerURL",
                 networkName: "my network",
                 version: "0.0.1",
-                rollupVerifier: IVerifierRollup(rollupVerifierMock),
+                rollupVerifier: address(rollupVerifierMock),
                 minter: address(this),
                 tokenName: "Fork",
                 tokenSymbol: "FORK",

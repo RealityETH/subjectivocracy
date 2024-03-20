@@ -20,27 +20,6 @@ import {ChainIdManager} from "./ChainIdManager.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract ForkingManager is IForkingManager, ForkableStructure {
-    struct DeploymentConfig {
-        bytes32 genesisRoot;
-        string trustedSequencerURL;
-        string networkName;
-        string version;
-        IVerifierRollup rollupVerifier;
-        address minter;
-        string tokenName;
-        string tokenSymbol;
-        uint256 arbitrationFee;
-        address chainIdManager;
-        uint256 forkPreparationTime;
-        address hardAssetManager;
-        uint32 lastUpdatedDepositCount; // starts at 0
-        bytes32 lastMainnetExitRoot;
-        bytes32 lastRollupExitRoot;
-        address parentGlobalExitRoot;
-        address parentZkEVM;
-        address parentForkonomicToken;
-        address parentBridge;
-    }
 
     using SafeERC20 for IERC20;
 
@@ -97,7 +76,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         address _bridgeImplementation,
         address _forkonomicTokenImplementation,
         address _globalExitRootImplementation,
-        DeploymentConfig memory _deploymentConfig,
+        IForkingManager.DeploymentConfig memory _deploymentConfig,
         IPolygonZkEVM.InitializePackedParameters
             memory _initializePackedParameters
     ) external returns (address) {
@@ -193,7 +172,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
 
     function _initializeStack(
         NewInstance memory _newInstance,
-        DeploymentConfig memory _deploymentConfig,
+        IForkingManager.DeploymentConfig memory _deploymentConfig,
         IPolygonZkEVM.InitializePackedParameters
             memory initializePackedParameters
     ) internal {
@@ -208,7 +187,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
                 _deploymentConfig.version,
                 IPolygonZkEVMGlobalExitRoot(_newInstance.globalExitRoot),
                 IERC20Upgradeable(_newInstance.forkonomicToken),
-                _deploymentConfig.rollupVerifier,
+                IVerifierRollup(_deploymentConfig.rollupVerifier),
                 IPolygonZkEVMBridge(_newInstance.bridge)
             );
         }
@@ -279,7 +258,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
                 trustedSequencerURL: IPolygonZkEVM(zkEVM).trustedSequencerURL(),
                 networkName: IPolygonZkEVM(zkEVM).networkName(),
                 version: "0.0.1", // hardcoded as the version is not stored in the zkEVM contract, only emitted as event
-                rollupVerifier: IForkableZkEVM(zkEVM).rollupVerifier(),
+                rollupVerifier: address(IForkableZkEVM(zkEVM).rollupVerifier()),
                 minter: address(0), // We only mint against genesis
                 tokenName: string.concat(
                     IERC20Metadata(forkonomicToken).name(),

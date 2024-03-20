@@ -28,6 +28,28 @@ interface IForkingManager is IForkableStructure {
         uint64 forkID;
     }
 
+    struct DeploymentConfig {
+        bytes32 genesisRoot;
+        string trustedSequencerURL;
+        string networkName;
+        string version;
+        address rollupVerifier;
+        address minter;
+        string tokenName;
+        string tokenSymbol;
+        uint256 arbitrationFee;
+        address chainIdManager;
+        uint256 forkPreparationTime;
+        address hardAssetManager;
+        uint32 lastUpdatedDepositCount; // starts at 0
+        bytes32 lastMainnetExitRoot;
+        bytes32 lastRollupExitRoot;
+        address parentGlobalExitRoot;
+        address parentZkEVM;
+        address parentForkonomicToken;
+        address parentBridge;
+    }
+
     function zkEVM() external returns (address);
 
     function bridge() external returns (address);
