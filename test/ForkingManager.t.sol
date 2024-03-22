@@ -17,6 +17,7 @@ import {IPolygonZkEVM} from "@RealityETH/zkevm-contracts/contracts/interfaces/IP
 import {ChainIdManager} from "../contracts/ChainIdManager.sol";
 import {ForkableZkEVM} from "../contracts/ForkableZkEVM.sol";
 import {Util} from "./utils/Util.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract ForkingManagerTest is Test {
     ForkableBridge public bridge;
@@ -134,10 +135,16 @@ contract ForkingManagerTest is Test {
 
         forkmanager = ForkingManager(
             ForkingManager(forkmanagerImplementation).spawnInstance(
+                address(
+                    new TransparentUpgradeableProxy(
+                        forkonomicTokenImplementation,
+                        admin,
+                        ""
+                    )
+                ),
                 admin,
                 zkevmImplementation,
                 bridgeImplementation,
-                forkonomicTokenImplementation,
                 globalExitRootImplementation,
                 deploymentConfig,
                 initializePackedParameters

@@ -70,10 +70,10 @@ contract ForkingManager is IForkingManager, ForkableStructure {
 
     // This can be called against the initial ForkingManager implementation to spawn a ForkingManager instance and all the other contracts involved
     function spawnInstance(
+        address _forkonomicToken, // This should be deployed but not initialized as its address is needed to create genesis.json
         address _admin,
         address _zkEVMImplementation,
         address _bridgeImplementation,
-        address _forkonomicTokenImplementation,
         address _globalExitRootImplementation,
         IForkingManager.DeploymentConfig memory _deploymentConfig,
         IPolygonZkEVM.InitializePackedParameters
@@ -94,13 +94,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
                     ""
                 )
             ),
-            address(
-                new TransparentUpgradeableProxy(
-                    _forkonomicTokenImplementation,
-                    _admin,
-                    ""
-                )
-            ),
+            _forkonomicToken,
             address(
                 new TransparentUpgradeableProxy(
                     _globalExitRootImplementation,
