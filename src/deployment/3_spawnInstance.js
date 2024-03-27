@@ -61,7 +61,6 @@ async function doSpawnInstance() {
         'minDelayTimelock',
         'salt',
         'zkEVMDeployerAddress',
-        'createChildrenImplementationAddress',
         'hardAssetManagerAddress',
         'arbitrationFee',
     ];
@@ -98,7 +97,6 @@ async function doSpawnInstance() {
         minDelayTimelock,
         salt,
         zkEVMDeployerAddress,
-        createChildrenImplementationAddress,
         hardAssetManagerAddress,
         arbitrationFee,
     } = deployParameters;
@@ -191,6 +189,7 @@ async function doSpawnInstance() {
          forkingManager: generated['forkingManagerPredicted'],
          maticTokenAddress: generated['forkonomicTokenPredicted'],
          createChildrenImplementationAddress: generated['createChildren'],
+         bridgeOperationImplementationAddress: generated['bridgeAssetOperations'],
          bridgeImplementationAddress: generated['forkableBridge'],
          verifierAddress: generated['verifierContract'],
          zkEVMDeployerContract: generated['zkEVMDeployerAddress'],

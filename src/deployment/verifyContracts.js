@@ -50,8 +50,10 @@ async function main() {
         expect(error.message.toLowerCase().includes('already verified')).to.be.equal(true);
     }
 
+    /*
     // verify timelock
     const { minDelayTimelock } = deployParameters;
+
     const { timelockAddress } = deployParameters;
     try {
         await hre.run(
@@ -70,6 +72,7 @@ async function main() {
     } catch (error) {
         expect(error.message.toLowerCase().includes('already verified')).to.be.equal(true);
     }
+    */
 
     // verify proxy admin
     try {
@@ -88,7 +91,7 @@ async function main() {
         await hre.run(
             'verify:verify',
             {
-                address: deployParameters.createChildrenImplementationAddress,
+                address: deployOutputParameters.createChildrenImplementationAddress,
             },
         );
     } catch (error) {
