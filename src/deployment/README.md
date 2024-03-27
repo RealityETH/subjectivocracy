@@ -101,7 +101,7 @@ Start a node by running:
 npx hardhat node
 ```
 
-Prefill deploy_parameters where possible
+Prefill deploy_parameters
 
 ```sh
 cd src/deployment
@@ -114,7 +114,7 @@ You can just take the first address from the output of `npx hardhat node`
 Then run:
 
 ```sh
-yarn hardhat run src/deployment/1_deployforkableToken.js --network localhost
+yarn hardhat run src/deployment/1_deployBase.js --network localhost
 ```
 
 This will fill your forkonomic(= maticTokenAddress) in deploy_parameters.
@@ -127,7 +127,7 @@ yarn hardhat run src/deployment/2_creategenesis.js --network hardhat
 
 ```sh
 rm .openzeppelin/$HARDHAT_NETWORK.json
-yarn hardhat run src/deployment/3_deployContracts.js --network localhost
+yarn hardhat run src/deployment/3_spawnInstance.js --network localhost
 ```
 
 If precalculated addresses are not correct, its due to false nonces. Make sure to delete the deploy_ongoing.json and restart the process and the nonce situation should clear itself or adopt the nonces.
@@ -146,7 +146,7 @@ cp deploy_parameters.json.example deploy_parameters.json
 run
 
 ```sh
-yarn hardhat run src/deployment/1_deployforkableToken.js --network sepolia
+yarn hardhat run src/deployment/1_deployBase.js --network sepolia
 ```
 
 This will fill your maticTokenAddress in deploy_parameters.
@@ -157,7 +157,7 @@ yarn hardhat run src/deployment/2_creategenesis.js --network hardhat
 
 ```sh
 rm .openzeppelin/$HARDHAT_NETWORK.json
-yarn hardhat run src/deployment/3_deployContracts.js --network sepolia
+yarn hardhat run src/deployment/3_spawnInstance.js --network sepolia
 ```
 
 and verify all contracts by:
