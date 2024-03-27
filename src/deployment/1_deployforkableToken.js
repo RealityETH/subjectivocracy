@@ -1,3 +1,5 @@
+// This deploys the keyless deployer, then uses it deploy implementations with create2
+
 /* eslint-disable no-await-in-loop, no-use-before-define, no-lonely-if, import/no-dynamic-require, global-require */
 /* eslint-disable no-console, no-inner-declarations, no-undef, import/no-unresolved, no-restricted-syntax */
 const path = require('path');
@@ -10,146 +12,120 @@ const { deployPolygonZkEVMDeployer } = require('./helpers/deployment-helpers');
 const { create2Deployment } = require('./helpers/deployment-helpers');
 const deployParameters = require('./deploy_parameters.json');
 
+const generatedPath = path.join(__dirname, './deploy_generated.json');
+
 const pathDeployParameters = path.join(__dirname, './deploy_parameters.json');
 
+const commonDeployment = require('./common');
+const common = require('../common/common');
+
 async function main() {
-    const attemptsDeployProxy = 5;
-    // Load provider
-    let currentProvider = ethers.provider;
-    if (process.env.HARDHAT_NETWORK === 'localhost') {
-        currentProvider = new ethers.providers.JsonRpcProvider('https://127.0.0.1:8454');
-    } else {
-        if (deployParameters.multiplierGas || deployParameters.maxFeePerGas) {
-            if (process.env.HARDHAT_NETWORK !== 'hardhat') {
-                currentProvider = new ethers.providers.JsonRpcProvider(`https://${process.env.HARDHAT_NETWORK}.infura.io/v3/${process.env.INFURA_PROJECT_ID}`);
-                if (deployParameters.maxPriorityFeePerGas && deployParameters.maxFeePerGas) {
-                    console.log(`Hardcoded gas used: MaxPriority${deployParameters.maxPriorityFeePerGas} gwei, MaxFee${deployParameters.maxFeePerGas} gwei`);
-                    const FEE_DATA = {
-                        maxFeePerGas: ethers.utils.parseUnits(deployParameters.maxFeePerGas, 'gwei'),
-                        maxPriorityFeePerGas: ethers.utils.parseUnits(deployParameters.maxPriorityFeePerGas, 'gwei'),
-                    };
-                    currentProvider.getFeeData = async () => FEE_DATA;
-                } else {
-                    console.log('Multiplier gas used: ', deployParameters.multiplierGas);
-                    async function overrideFeeData() {
-                        const feedata = await ethers.provider.getFeeData();
-                        return {
-                            maxFeePerGas: feedata.maxFeePerGas.mul(deployParameters.multiplierGas).div(1000),
-                            maxPriorityFeePerGas: feedata.maxPriorityFeePerGas.mul(deployParameters.multiplierGas).div(1000),
-                        };
-                    }
-                    currentProvider.getFeeData = overrideFeeData;
-                }
-            }
-        }
+
+    // Hardhat needs a special gas override to avoid errors about the block gas limit.
+    // Sepolia doesn't seem to care.
+    const overrideGasLimit = (process.env.HARDHAT_NETWORK == 'hardhat') ? ethers.BigNumber.from(6500000) : null;
+
+    // Check if there's an ongoing deployment
+    let generated = {};
+    if (fs.existsSync(generatedPath)) {
+        generated = require(generatedPath);
     }
-    // Load deployer
-    let deployer;
-    if (deployParameters.deployerPvtKey) {
-        deployer = new ethers.Wallet(deployParameters.deployerPvtKey, currentProvider);
-    } else if (process.env.HARDHAT_NETWORK === 'localhost') {
-        [deployer] = (await ethers.getSigners());
-    } else if (process.env.MNEMONIC) {
-        deployer = ethers.Wallet.fromMnemonic(process.env.MNEMONIC, 'm/44\'/60\'/0\'/0/0').connect(currentProvider);
-    } else {
-        [deployer] = (await ethers.getSigners());
-    }
+
+    const currentProvider = await common.loadProvider(deployParameters, process.env);
+    const deployer = await common.loadDeployer(currentProvider, deployParameters);
     console.log('Deployer: ', deployer.address);
 
     // Load initialZkEVMDeployerOwner
-    const {
+    let {
+        realVerifier,
+        chainID,
+        admin,
         initialZkEVMDeployerOwner,
         salt,
+        maticTokenAddressFromConfig
     } = deployParameters;
 
-    if (initialZkEVMDeployerOwner === undefined || initialZkEVMDeployerOwner === '') {
-        throw new Error('Missing parameter: initialZkEVMDeployerOwner');
+    if (!initialZkEVMDeployerOwner) {
+        initialZkEVMDeployerOwner = deployer.address;
+        console.log('initialZkEVMDeployerOwner not set, using deployer,', initialZkEVMDeployerOwner);
     }
 
     // Deploy PolygonZkEVMDeployer if is not deployed already using keyless deployment
     const [zkEVMDeployerContract, keylessDeployer] = await deployPolygonZkEVMDeployer(initialZkEVMDeployerOwner, deployer);
     if (keylessDeployer === ethers.constants.AddressZero) {
-        console.log('#######################\n');
-        console.log('polygonZkEVMDeployer already deployed on: ', zkEVMDeployerContract.address);
+        console.log('PolygonZkEVMDeployer was already deployed on: ', zkEVMDeployerContract.address);
     } else {
-        console.log('#######################\n');
-        console.log('polygonZkEVMDeployer deployed on: ', zkEVMDeployerContract.address);
+        console.log('PolygonZkEVMDeployer deployed on: ', zkEVMDeployerContract.address);
     }
 
     expect(deployer.address).to.be.equal(await zkEVMDeployerContract.owner());
 
-    const proxyAdminFactory = await ethers.getContractFactory('ProxyAdmin', deployer);
-    const deployTransactionAdmin = (proxyAdminFactory.getDeployTransaction()).data;
-    const dataCallAdmin = proxyAdminFactory.interface.encodeFunctionData('transferOwnership', [deployer.address]);
-    const [proxyAdminAddress, isProxyAdminDeployed] = await create2Deployment(
-        zkEVMDeployerContract,
-        salt,
-        deployTransactionAdmin,
-        dataCallAdmin,
-        deployer,
-    );
+    const createChildrenImplementationContract = await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, 'CreateChildren', 'createChildren', [], generated, generatedPath, overrideGasLimit, null, true); 
 
-    if (isProxyAdminDeployed) {
-        console.log('#######################\n');
-        console.log('proxyAdmin deployed on: ', proxyAdminAddress);
-    } else {
-        console.log('#######################\n');
-        console.log('proxyAdmin already deployed on: ', proxyAdminAddress);
+    const bridgeAssetOperationImplementationContract =  await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, 'BridgeAssetOperations', 'bridgeAssetOperations', [], generated, generatedPath);
+
+    const bridgeLibs = {
+        CreateChildren: createChildrenImplementationContract.address,
+        BridgeAssetOperations: bridgeAssetOperationImplementationContract.address
     }
 
-    // Deploy implementation PolygonZkEVMBridge
-    const createChildrenLib = await ethers.getContractFactory('CreateChildren', deployer);
-    const createChildrenLibDeployTransaction = (createChildrenLib.getDeployTransaction()).data;
-    const overrideGasLimit = ethers.BigNumber.from(6500000);
-    const [createChildrenImplementationAddress] = await create2Deployment(
-        zkEVMDeployerContract,
-        salt,
-        createChildrenLibDeployTransaction,
-        null,
-        deployer,
-        overrideGasLimit,
-    );
+    // TODO I wanted to use create2 for this but it runs into some block size limitation with hardhat
+    //const bridgeImplementationContract =  await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, 'ForkableBridge', 'forkableBridge', [], generated, generatedPath, null, bridgeLibs);
+    const forkableBridgeImplementationContract = await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, 'ForkableBridge', 'forkableBridge', [], generated, generatedPath, overrideGasLimit, bridgeLibs);
 
-    console.log('#######################\n');
-    console.log('createChildrenImplementation deployed on: ', createChildrenImplementationAddress);
-
-    const forkonomicTokenFactory = await ethers.getContractFactory('ForkonomicToken', {
-        signer: deployer,
-        libraries: { CreateChildren: createChildrenImplementationAddress },
-    });
-    for (let i = 0; i < attemptsDeployProxy; i++) {
-        try {
-            forkonomicTokenProxy = await upgrades.deployProxy(forkonomicTokenFactory, [], {
-                initializer: false,
-                libraries: {
-                    CreateChildren: createChildrenImplementationAddress,
-                },
-                constructorArgs: [],
-                unsafeAllowLinkedLibraries: true,
-            });
-            break;
-        } catch (error) {
-            console.log(`attempt ${i}`);
-            console.log('upgrades.deployProxy of forkonomicToken ', error.message);
-        }
-
-        // reach limits of attempts
-        if (i + 1 === attemptsDeployProxy) {
-            throw new Error('forkonomicToken contract has not been deployed');
-        }
+    const forkableLibs = {
+        CreateChildren: createChildrenImplementationContract.address
     }
-    console.log('#######################\n');
-    console.log('forkonomicToken deployed on: ', forkonomicTokenProxy.address);
-    console.log(
-        ' Use this forkonomic token instead of the matic token in the next steps.',
-    );
 
-    // append the new address to the deploy_parameters.json file as the maticTokenAddress, even though we use it as native token
-    deployParameters.proxyAdminAddress = proxyAdminAddress;
-    deployParameters.maticTokenAddress = forkonomicTokenProxy.address;
-    deployParameters.createChildrenImplementationAddress = createChildrenImplementationAddress;
-    deployParameters.zkEVMDeployerAddress = zkEVMDeployerContract.address;
-    fs.writeFileSync(pathDeployParameters, JSON.stringify(deployParameters, null, 1));
+    const forkonomicTokenImplementationContract = await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, 'ForkonomicToken', 'forkonomicToken', [], generated, generatedPath, null, forkableLibs);
+
+    const chainIdManagerContract = await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, 'ChainIdManager', 'chainIdManager', [chainID], generated, generatedPath);
+
+    const verifierPath = realVerifier ? '@RealityETH/zkevm-contracts/contracts/verifiers/FflonkVerifier.sol:FflonkVerifier' : '@RealityETH/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol:VerifierRollupHelperMock';
+    const verifierContract = await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, verifierPath, 'verifierContract', [], generated, generatedPath);
+
+    const forkableZkEVMImplmentationContract = await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, 'ForkableZkEVM', 'forkableZkEVM', [], generated, generatedPath, overrideGasLimit, forkableLibs);
+
+    const forkableGlobalExitRootImplementationContract = await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, 'ForkableGlobalExitRoot', 'forkableGlobalExitRoot', [], generated, generatedPath, null, forkableLibs);
+
+    const forkingManagerImplementationContract = await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, 'ForkingManager', 'forkingManager', [], generated, generatedPath, overrideGasLimit, forkableLibs); 
+
+    /*
+     * We use a Proxy Admin to control the contracts instead of an EOA as recommended here:
+     * https://docs.openzeppelin.com/contracts/4.x/api/proxy#TransparentUpgradeableProxy
+     * Do not initialize directly the proxy since we want to deploy the same code on L2 and this will alter the bytecode deployed of the proxy
+     */
+    const proxyAdminPath = "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol:ProxyAdmin";
+    const proxyAdminFactory = await ethers.getContractFactory(proxyAdminPath, deployer);
+    const dataCallAdmin = proxyAdminFactory.interface.encodeFunctionData("transferOwnership", [admin]);
+    const proxyAdminContract = await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, proxyAdminPath, 'proxyAdmin', [], generated, generatedPath, overrideGasLimit, null, dataCallAdmin); 
+    const proxyAdminAddress = proxyAdminContract.address;
+
+    const instanceSpawner = forkingManagerImplementationContract.address;
+
+    const forkableGlobalExitRoot = await commonDeployment.predictTransparentProxyAddress(instanceSpawner, forkableGlobalExitRootImplementationContract.address, proxyAdminAddress, deployer.address);
+    const forkableZkEVM = await commonDeployment.predictTransparentProxyAddress(instanceSpawner, forkableZkEVMImplmentationContract.address, proxyAdminAddress, deployer.address);
+    const forkingManager = await commonDeployment.predictTransparentProxyAddress(instanceSpawner, forkingManagerImplementationContract.address, proxyAdminAddress, deployer.address);
+    const forkonomicToken = await commonDeployment.predictTransparentProxyAddress(instanceSpawner, forkonomicTokenImplementationContract.address, proxyAdminAddress, deployer.address);
+    const forkableBridge = await commonDeployment.predictTransparentProxyAddress(instanceSpawner, forkableBridgeImplementationContract.address, proxyAdminAddress, deployer.address);
+
+    console.log('Contract deployments in step 3 will be as follows:');
+    console.log('forkableGlobalExitRoot', forkableGlobalExitRoot);
+    console.log('forkableZkEVM', forkableZkEVM);
+    console.log('forkingManager', forkingManager)
+    console.log('forkonomicToken', forkonomicToken);
+    console.log('forkableBridge', forkableBridge);
+
+    generated['forkableGlobalExitRootPredicted'] = forkableGlobalExitRoot;
+    generated['forkableZkEVMPredicted'] = forkableZkEVM;
+    generated['forkingManagerPredicted'] = forkingManager;
+    generated['forkonomicTokenPredicted'] = forkonomicToken;
+    generated['forkableBridgePredicted'] = forkableBridge;
+
+    fs.writeFileSync(generatedPath, JSON.stringify(generated, null, 1));
+    
+    return;
+
 }
 
 main().catch((e) => {

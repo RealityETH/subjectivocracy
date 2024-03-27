@@ -19,6 +19,9 @@ const { deployPolygonZkEVMDeployer, create2Deployment } = require('./helpers/dep
 const deployParametersPath = argv.input ? argv.input : './deploy_parameters.json';
 const deployParameters = require(deployParametersPath);
 
+const deployGeneratedPath = argv.input ? argv.input : './deploy_generated.json';
+const deployGenerated = require(deployGeneratedPath);
+
 const outPath = argv.out ? argv.out : './genesis.json';
 const pathOutputJson = path.join(__dirname, outPath);
 
@@ -38,11 +41,11 @@ async function main() {
 
     // deploy parameters
     const mandatoryDeploymentParameters = [
-        'timelockAddress',
-        'minDelayTimelock',
+        //'timelockAddress',
+        //'minDelayTimelock',
+        'admin',
         'salt',
         'initialZkEVMDeployerOwner',
-        'maticTokenAddress', // This will actually be the gas token address
     ];
 
     for (const parameterName of mandatoryDeploymentParameters) {
@@ -52,14 +55,14 @@ async function main() {
     }
 
     const {
-        timelockAddress,
-        minDelayTimelock,
+        //timelockAddress,
+        //minDelayTimelock,
+        admin,
         salt,
         initialZkEVMDeployerOwner,
-        maticTokenAddress,
     } = deployParameters;
 
-    const gasTokenAddress = maticTokenAddress;
+    const gasTokenAddress = deployGenerated['forkonomicTokenPredicted'];
 
     // Load deployer
     await ethers.provider.send('hardhat_impersonateAccount', [initialZkEVMDeployerOwner]);
@@ -180,6 +183,7 @@ async function main() {
     expect(await upgrades.erc1967.getAdminAddress(polygonZkEVMGlobalExitRootL2.address)).to.be.equal(proxyAdminAddress);
     expect(await upgrades.erc1967.getAdminAddress(proxyBridgeAddress)).to.be.equal(proxyAdminAddress);
 
+    /*
     const timelockContractFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/PolygonZkEVMTimelock.sol:PolygonZkEVMTimelock', deployer);
     const timelockContract = await timelockContractFactory.deploy(
         minDelayTimelock,
@@ -189,10 +193,11 @@ async function main() {
         zkevmAddressL2,
     );
     await timelockContract.deployed();
+    */
 
     // Transfer ownership of the proxyAdmin to timelock
     const proxyAdminInstance = proxyAdminFactory.attach(proxyAdminAddress);
-    await (await proxyAdminInstance.connect(deployer).transferOwnership(timelockContract.address)).wait();
+    await (await proxyAdminInstance.connect(deployer).transferOwnership(admin)).wait();
 
     // Recreate genesis with the current information:
     const genesis = [];
@@ -265,8 +270,10 @@ async function main() {
         storage: proxyGlobalExitRootL2Info.storage,
     });
 
+    /*
     // Timelock
     const timelockInfo = await getAddressInfo(timelockContract.address);
+    */
 
     /*
      * Since roles are used, most storage are writted in peusdoRandom storage slots
@@ -275,6 +282,7 @@ async function main() {
      * bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
      * bytes32 public constant CANCELLER_ROLE = keccak256("CANCELLER_ROLE");
      */
+    /*
     const timelockRolesHash = [
         ethers.utils.id('TIMELOCK_ADMIN_ROLE'),
         ethers.utils.id('PROPOSER_ROLE'),
@@ -310,6 +318,7 @@ async function main() {
         bytecode: timelockInfo.bytecode,
         storage: timelockInfo.storage,
     });
+    */
 
     // Put nonces on deployers
 
