@@ -79,36 +79,38 @@ contract ForkingManager is IForkingManager, ForkableStructure {
         IPolygonZkEVM.InitializePackedParameters
             memory _initializePackedParameters
     ) external returns (address) {
+        // Genesis deployment is salted by hash of sender
+        bytes32 salt = keccak256(abi.encodePacked(msg.sender));
         NewInstance memory instance = NewInstance(
             address(
-                new TransparentUpgradeableProxy(
+                new TransparentUpgradeableProxy{salt:salt}(
                     _zkEVMImplementation,
                     _admin,
                     ""
                 )
             ),
             address(
-                new TransparentUpgradeableProxy(
+                new TransparentUpgradeableProxy{salt:salt}(
                     _bridgeImplementation,
                     _admin,
                     ""
                 )
             ),
             address(
-                new TransparentUpgradeableProxy(
+                new TransparentUpgradeableProxy{salt:salt}(
                     _forkonomicTokenImplementation,
                     _admin,
                     ""
                 )
             ),
             address(
-                new TransparentUpgradeableProxy(
+                new TransparentUpgradeableProxy{salt:salt}(
                     _globalExitRootImplementation,
                     _admin,
                     ""
                 )
             ),
-            address(new TransparentUpgradeableProxy(address(this), _admin, ""))
+            address(new TransparentUpgradeableProxy{salt:salt}(address(this), _admin, ""))
         );
         _initializeStack(
             instance,
