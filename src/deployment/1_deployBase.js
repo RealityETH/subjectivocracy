@@ -19,17 +19,13 @@ const pathDeployParameters = path.join(__dirname, './deploy_parameters.json');
 const commonDeployment = require('./common');
 const common = require('../common/common');
 
-async function main() {
+async function doDeployBase() {
 
     // Hardhat needs a special gas override to avoid errors about the block gas limit.
     // Sepolia doesn't seem to care.
     const overrideGasLimit = (process.env.HARDHAT_NETWORK == 'hardhat') ? ethers.BigNumber.from(6500000) : null;
 
-    // Check if there's an ongoing deployment
     let generated = {};
-    if (fs.existsSync(generatedPath)) {
-        generated = require(generatedPath);
-    }
 
     const currentProvider = await common.loadProvider(deployParameters, process.env);
     const deployer = await common.loadDeployer(currentProvider, deployParameters);
@@ -57,38 +53,33 @@ async function main() {
     } else {
         console.log('PolygonZkEVMDeployer deployed on: ', zkEVMDeployerContract.address);
     }
+    generated['zkEVMDeployerAddress'] = zkEVMDeployerContract.address;
 
     expect(deployer.address).to.be.equal(await zkEVMDeployerContract.owner());
 
-    const createChildrenImplementationContract = await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, 'CreateChildren', 'createChildren', [], generated, generatedPath, overrideGasLimit, null, true); 
-
-    const bridgeAssetOperationImplementationContract =  await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, 'BridgeAssetOperations', 'bridgeAssetOperations', [], generated, generatedPath);
+    generated['createChildren'] = await commonDeployment.create2Deploy(zkEVMDeployerContract, salt, deployer, 'CreateChildren', [], overrideGasLimit, null, true); 
+    generated['bridgeAssetOperations'] = await commonDeployment.create2Deploy(zkEVMDeployerContract, salt, deployer, 'BridgeAssetOperations', []);
 
     const bridgeLibs = {
-        CreateChildren: createChildrenImplementationContract.address,
-        BridgeAssetOperations: bridgeAssetOperationImplementationContract.address
+        CreateChildren: generated['createChildren'],
+        BridgeAssetOperations: generated['bridgeAssetOperations']
     }
 
-    // TODO I wanted to use create2 for this but it runs into some block size limitation with hardhat
-    //const bridgeImplementationContract =  await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, 'ForkableBridge', 'forkableBridge', [], generated, generatedPath, null, bridgeLibs);
-    const forkableBridgeImplementationContract = await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, 'ForkableBridge', 'forkableBridge', [], generated, generatedPath, overrideGasLimit, bridgeLibs);
+    generated['forkableBridge'] = await commonDeployment.create2Deploy(zkEVMDeployerContract, salt, deployer, 'ForkableBridge', [], overrideGasLimit, bridgeLibs);
 
     const forkableLibs = {
-        CreateChildren: createChildrenImplementationContract.address
+        CreateChildren: generated['createChildren']
     }
 
-    const forkonomicTokenImplementationContract = await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, 'ForkonomicToken', 'forkonomicToken', [], generated, generatedPath, null, forkableLibs);
-
-    const chainIdManagerContract = await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, 'ChainIdManager', 'chainIdManager', [chainID], generated, generatedPath);
+    generated['forkonomicToken'] = await commonDeployment.create2Deploy(zkEVMDeployerContract, salt, deployer, 'ForkonomicToken', [], overrideGasLimit, forkableLibs);
+    generated['chainIdManager'] = await commonDeployment.create2Deploy(zkEVMDeployerContract, salt, deployer, 'ChainIdManager', [chainID]);
 
     const verifierPath = realVerifier ? '@RealityETH/zkevm-contracts/contracts/verifiers/FflonkVerifier.sol:FflonkVerifier' : '@RealityETH/zkevm-contracts/contracts/mocks/VerifierRollupHelperMock.sol:VerifierRollupHelperMock';
-    const verifierContract = await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, verifierPath, 'verifierContract', [], generated, generatedPath);
+    generated['verifierContract'] = await commonDeployment.create2Deploy(zkEVMDeployerContract, salt, deployer, verifierPath, []);
+    generated['forkableZkEVM'] = await commonDeployment.create2Deploy(zkEVMDeployerContract, salt, deployer, 'ForkableZkEVM', [], overrideGasLimit, forkableLibs);
+    generated['forkableGlobalExitRoot'] = await commonDeployment.create2Deploy(zkEVMDeployerContract, salt, deployer, 'ForkableGlobalExitRoot', [], overrideGasLimit, forkableLibs);
 
-    const forkableZkEVMImplmentationContract = await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, 'ForkableZkEVM', 'forkableZkEVM', [], generated, generatedPath, overrideGasLimit, forkableLibs);
-
-    const forkableGlobalExitRootImplementationContract = await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, 'ForkableGlobalExitRoot', 'forkableGlobalExitRoot', [], generated, generatedPath, null, forkableLibs);
-
-    const forkingManagerImplementationContract = await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, 'ForkingManager', 'forkingManager', [], generated, generatedPath, overrideGasLimit, forkableLibs); 
+    generated['forkingManager'] = await commonDeployment.create2Deploy(zkEVMDeployerContract, salt, deployer, 'ForkingManager', [], overrideGasLimit, forkableLibs); 
 
     /*
      * We use a Proxy Admin to control the contracts instead of an EOA as recommended here:
@@ -98,34 +89,26 @@ async function main() {
     const proxyAdminPath = "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol:ProxyAdmin";
     const proxyAdminFactory = await ethers.getContractFactory(proxyAdminPath, deployer);
     const dataCallAdmin = proxyAdminFactory.interface.encodeFunctionData("transferOwnership", [admin]);
-    const proxyAdminContract = await commonDeployment.loadOngoingOrDeployCreate2(zkEVMDeployerContract, salt, deployer, proxyAdminPath, 'proxyAdmin', [], generated, generatedPath, overrideGasLimit, null, dataCallAdmin); 
-    const proxyAdminAddress = proxyAdminContract.address;
+    generated['proxyAdmin'] = await commonDeployment.create2Deploy(zkEVMDeployerContract, salt, deployer, proxyAdminPath, [], overrideGasLimit, null, dataCallAdmin); 
 
-    const instanceSpawner = forkingManagerImplementationContract.address;
+    // We use the forking manager implementation to spawn the instances
+    // TODO: This might be better as a separate contract sharing relevant parts with ForkingManager
+//    const forkingManagerFactory = await ethers.getContractFactory('ForkingManager', {signer: deployer, libraries: forkableLibs, unsafeAllowLinkedLibraries: true});
+    const spawner = generated['forkingManager'];
 
-    const forkableGlobalExitRoot = await commonDeployment.predictTransparentProxyAddress(instanceSpawner, forkableGlobalExitRootImplementationContract.address, proxyAdminAddress, deployer.address);
-    const forkableZkEVM = await commonDeployment.predictTransparentProxyAddress(instanceSpawner, forkableZkEVMImplmentationContract.address, proxyAdminAddress, deployer.address);
-    const forkingManager = await commonDeployment.predictTransparentProxyAddress(instanceSpawner, forkingManagerImplementationContract.address, proxyAdminAddress, deployer.address);
-    const forkonomicToken = await commonDeployment.predictTransparentProxyAddress(instanceSpawner, forkonomicTokenImplementationContract.address, proxyAdminAddress, deployer.address);
-    const forkableBridge = await commonDeployment.predictTransparentProxyAddress(instanceSpawner, forkableBridgeImplementationContract.address, proxyAdminAddress, deployer.address);
+    generated['forkableGlobalExitRootPredicted'] = await commonDeployment.predictTransparentProxyAddress(spawner, generated['forkableGlobalExitRoot'], generated['proxyAdmin'], deployer.address);
+    generated['forkableZkEVMPredicted'] = await commonDeployment.predictTransparentProxyAddress(spawner, generated['forkableZkEVM'], generated['proxyAdmin'], deployer.address);
+    generated['forkingManagerPredicted'] = await commonDeployment.predictTransparentProxyAddress(spawner, generated['forkingManager'], generated['proxyAdmin'], deployer.address);
+    generated['forkonomicTokenPredicted'] = await commonDeployment.predictTransparentProxyAddress(spawner, generated['forkonomicToken'], generated['proxyAdmin'], deployer.address);
+    generated['forkableBridgePredicted'] = await commonDeployment.predictTransparentProxyAddress(spawner, generated['forkableBridge'], generated['proxyAdmin'], deployer.address);
 
-    console.log('Contract deployments in step 3 will be as follows:');
-    console.log('forkableGlobalExitRoot', forkableGlobalExitRoot);
-    console.log('forkableZkEVM', forkableZkEVM);
-    console.log('forkingManager', forkingManager)
-    console.log('forkonomicToken', forkonomicToken);
-    console.log('forkableBridge', forkableBridge);
+    return generated;
 
-    generated['forkableGlobalExitRootPredicted'] = forkableGlobalExitRoot;
-    generated['forkableZkEVMPredicted'] = forkableZkEVM;
-    generated['forkingManagerPredicted'] = forkingManager;
-    generated['forkonomicTokenPredicted'] = forkonomicToken;
-    generated['forkableBridgePredicted'] = forkableBridge;
+}
 
+async function main() {
+    const generated = await doDeployBase();
     fs.writeFileSync(generatedPath, JSON.stringify(generated, null, 1));
-    
-    return;
-
 }
 
 main().catch((e) => {

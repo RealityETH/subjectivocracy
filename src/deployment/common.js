@@ -40,8 +40,7 @@ async function loadOngoingOrDeploy(deployer, contractName, ongoingName, args, on
 }
 
 
-async function loadOngoingOrDeployCreate2(create2Deployer, salt, deployer, contractName, ongoingName, args, ongoing, pathOngoing, overrideGasLimit, libraries, unsafeAllowLinkedLibraries, dataCall) {
-
+async function create2Deploy(create2Deployer, salt, deployer, contractName, args, overrideGasLimit, libraries, unsafeAllowLinkedLibraries, dataCall) {
     const contractFactory = await ethers.getContractFactory(contractName, {
         signer: deployer,
         libraries: libraries,
@@ -49,29 +48,22 @@ async function loadOngoingOrDeployCreate2(create2Deployer, salt, deployer, contr
     });
 
     let addr;
-    if (ongoing[ongoingName]) {
-        addr = ongoing[ongoingName];
-    }
 
-    let contractInstance;
+    const displayName = contractName.replace(/^.*[\\\/]/, '');
+
     let isAlreadyCreated = false;
     if (addr) {
-        console.log(ongoingName, 'using existing from ongoing deployment', addr);
+        console.log(displayName, 'using existing from ongoing deployment', addr);
     } else {
         const deployTransaction = (contractFactory.getDeployTransaction(...args)).data;
         [addr, isNewlyCreated] = await create2Deployment(create2Deployer, salt, deployTransaction, dataCall, deployer, overrideGasLimit);
         if (isNewlyCreated) {
-            console.log(ongoingName, 'deployed with create2', addr);
+            console.log(displayName, 'deployed with create2', addr);
         } else {
-            console.log(ongoingName, 'detected existing create2 deployment, using that', addr);
+            console.log(displayName, 'detected existing create2 deployment, using that', addr);
         }
-        // save an ongoing deployment
-        ongoing[ongoingName] = addr;
-        fs.writeFileSync(pathOngoing, JSON.stringify(ongoing, null, 1));
     } 
-    contractInstance = contractFactory.attach(addr);
-
-    return contractInstance;
+    return addr;
 }
 
 function genesisAddressForContractName(contractName) {
@@ -99,5 +91,5 @@ async function predictTransparentProxyAddress(deployingForkingManagerImplementat
 }
 
 module.exports = {
-    loadOngoingOrDeploy, loadOngoingOrDeployCreate2, genesisAddressForContractName, predictTransparentProxyAddress
+    loadOngoingOrDeploy, create2Deploy, genesisAddressForContractName, predictTransparentProxyAddress
 };

@@ -30,7 +30,7 @@ const genesis = require('./genesis.json');
 const pathOZUpgradability = path.join(__dirname, `../.openzeppelin/${process.env.HARDHAT_NETWORK}.json`);
 const parentContract = ethers.constants.AddressZero;
 
-async function main() {
+async function doSpawnInstance() {
     // Check that there's no previous OZ deployment
     if (fs.existsSync(pathOZUpgradability)) {
         throw new Error(`There's upgradability information from previous deployments, it's mandatory to erase them before start a new one, path: ${pathOZUpgradability}`);
@@ -106,19 +106,6 @@ async function main() {
     const currentProvider = await common.loadProvider(deployParameters, process.env);
     const deployer = await common.loadDeployer(currentProvider, deployParameters);
 
-    // Load zkEVM deployer
-    const PolgonZKEVMDeployerFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/deployment/PolygonZkEVMDeployer.sol:PolygonZkEVMDeployer', deployer);
-    const zkEVMDeployerContract = PolgonZKEVMDeployerFactory.attach(zkEVMDeployerAddress);
-
-    // check deployer is the owner of the deployer
-    if (await deployer.provider.getCode(zkEVMDeployerContract.address) === '0x') {
-        throw new Error('zkEVM deployer contract is not deployed at {zkEVMDeployerContract.address}');
-    }
-    expect(deployer.address).to.be.equal(await zkEVMDeployerContract.owner());
-
-    // Import OZ manifest the deployed contracts, its enough to import just the proxy, the rest are imported automatically (admin/impl)
-    //await upgrades.forceImport(proxyBridgeAddress, polygonZkEVMBridgeFactory, 'transparent');
-
     // deploy PolygonZkEVMM
     const genesisRootHex = genesis.root;
 
@@ -159,12 +146,11 @@ async function main() {
     const forkingManagerFactory = await ethers.getContractFactory('ForkingManager', {'libraries': {'CreateChildren': generated['createChildren']}});
     const forkingManagerImplContract = forkingManagerFactory.attach(generated['forkingManager']);
     const signedForkingManagerImplContract = forkingManagerImplContract.connect(deployer);
-
     deploymentBlockNumber = -1;
     const deployedCode = await deployer.provider.getCode(generated['forkableZkEVMPredicted']);
     if (deployedCode === '0x') {
         const tx = await forkingManagerImplContract.spawnInstance(
-            generated['proxyAdminAddress'],
+            generated['proxyAdmin'],
             generated['forkableZkEVM'],
             generated['forkableBridge'],
             generated['forkonomicToken'],
@@ -173,11 +159,13 @@ async function main() {
             polygonZkEVMParams
         );
 
-        console.log('tx', tx);
-
+        // console.log('tx', tx);
         const receipt = await tx.wait();
         deploymentBlockNumber = receipt.blockNumber;
-        console.log(receipt.logs);
+
+        // Receipts should holdlog events from the proxy including our predicted addresses
+        // console.log(receipt.logs);
+
     } else {
         console.log('Already called spawnInstance with this salt. Change the salt and redeploy.');
         console.log('If you are sure the deployment is correct you can instead fill in block number manually.');
@@ -216,14 +204,20 @@ async function main() {
          networkName: networkName,
          admin: admin,
          trustedAggregator: trustedAggregator,
-         proxyAdminAddress: generated['proxyAdminAddress'],
+         proxyAdminAddress: generated['proxyAdmin'],
          forkID: forkID,
          salt: salt,
          version: version,
          minter: minter
     };
-    fs.writeFileSync(pathOutputJson, JSON.stringify(outputJson, null, 1));
 
+    return outputJson;
+
+}
+
+async function main() {
+    const output = await doSpawnInstance();
+    fs.writeFileSync(pathOutputJson, JSON.stringify(output, null, 1));
 }
 
 main().catch((e) => {
