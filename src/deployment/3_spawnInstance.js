@@ -16,8 +16,6 @@ const { expect } = require('chai');
 const { ethers, upgrades } = require('hardhat');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
-const { create2Deployment } = require('./helpers/deployment-helpers');
-const commonDeployment = require('./common');
 const common = require('../common/common');
 
 const pathOutputJson = path.join(__dirname, './deploy_output.json');
@@ -27,16 +25,12 @@ const deployParameters = require('./deploy_parameters.json');
 const genesis = require('./genesis.json');
 
 const pathOZUpgradability = path.join(__dirname, `../.openzeppelin/${process.env.HARDHAT_NETWORK}.json`);
-const parentContract = ethers.constants.AddressZero;
 
 async function doSpawnInstance() {
     // Check that there's no previous OZ deployment
     if (fs.existsSync(pathOZUpgradability)) {
         throw new Error(`There's upgradability information from previous deployments, it's mandatory to erase them before start a new one, path: ${pathOZUpgradability}`);
     }
-
-    // Constant variables
-    const networkIDMainnet = 0;
 
     /*
      * Check deploy parameters
@@ -59,7 +53,6 @@ async function doSpawnInstance() {
         // 'timelockAddress',
         'minDelayTimelock',
         'salt',
-        'zkEVMDeployerAddress',
         'hardAssetManagerAddress',
         'arbitrationFee',
     ];
@@ -78,7 +71,6 @@ async function doSpawnInstance() {
     common.verifyDeploymentParameters(mandatoryImplementationAddresses, generated);
 
     const {
-        realVerifier,
         trustedSequencerURL,
         networkName,
         version,
@@ -91,11 +83,7 @@ async function doSpawnInstance() {
         trustedAggregatorTimeout,
         pendingStateTimeout,
         forkID,
-        zkEVMOwner,
-        // timelockAddress,
-        minDelayTimelock,
         salt,
-        zkEVMDeployerAddress,
         hardAssetManagerAddress,
         arbitrationFee,
     } = deployParameters;
@@ -142,7 +130,6 @@ async function doSpawnInstance() {
     // We run spawnInstance against the implementation contract
     const forkingManagerFactory = await ethers.getContractFactory('ForkingManager', { libraries: { CreateChildren: generated.createChildren } });
     const forkingManagerImplContract = forkingManagerFactory.attach(generated.forkingManager);
-    const signedForkingManagerImplContract = forkingManagerImplContract.connect(deployer);
     deploymentBlockNumber = -1;
     const deployedCode = await deployer.provider.getCode(generated.forkableZkEVMPredicted);
     if (deployedCode === '0x') {

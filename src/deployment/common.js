@@ -39,7 +39,7 @@ async function loadOngoingOrDeploy(deployer, contractName, ongoingName, args, on
     return contractInstance;
 }
 
-async function create2Deploy(create2Deployer, salt, deployer, contractName, args, overrideGasLimit, libraries, unsafeAllowLinkedLibraries, dataCall) {
+async function create2Deploy(create2Deployer, salt, deployer, contractName, args, gasLimit, libraries, unsafeAllowLinkedLibraries, dataCall) {
     const contractFactory = await ethers.getContractFactory(contractName, {
         signer: deployer,
         libraries,
@@ -48,14 +48,13 @@ async function create2Deploy(create2Deployer, salt, deployer, contractName, args
 
     let addr;
 
-    const displayName = contractName.replace(/^.*[\\\/]/, '');
+    const displayName = contractName.replace(/^.*[\\/]/, '');
 
-    const isAlreadyCreated = false;
     if (addr) {
         console.log(displayName, 'using existing from ongoing deployment', addr);
     } else {
         const deployTransaction = (contractFactory.getDeployTransaction(...args)).data;
-        [addr, isNewlyCreated] = await create2Deployment(create2Deployer, salt, deployTransaction, dataCall, deployer, overrideGasLimit);
+        [addr, isNewlyCreated] = await create2Deployment(create2Deployer, salt, deployTransaction, dataCall, deployer, gasLimit);
         if (isNewlyCreated) {
             console.log(displayName, 'deployed with create2', addr);
         } else {

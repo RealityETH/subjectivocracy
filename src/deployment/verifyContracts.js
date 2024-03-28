@@ -5,9 +5,7 @@ const hre = require('hardhat');
 const { expect } = require('chai');
 
 const pathDeployOutputParameters = path.join(__dirname, './deploy_output.json');
-const pathDeployParameters = path.join(__dirname, './deploy_parameters.json');
 const deployOutputParameters = require(pathDeployOutputParameters);
-const deployParameters = require(pathDeployParameters);
 
 async function getImplementationAddress(proxyAddress) {
     // The specific storage slot for the implementation address as per EIP-1967
