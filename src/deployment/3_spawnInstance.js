@@ -1,13 +1,12 @@
 /*
-Deployment loosely based on the upstream 3_deployContracts.ts
-
-NB Upstream Polygon administers things with a ProxyAdmin controlled by a Timelock.
-For simplicity we remove the timelock and have the ProxyAdmin controlled purely by an EOA.
-Ultimately we will have our own custom system for controlling L1 upgrades.
-
-We also remove the deploy_ongoing stuff as the only deployment here is done by create2.
-*/
-
+ *Deployment loosely based on the upstream 3_deployContracts.ts
+ *
+ *NB Upstream Polygon administers things with a ProxyAdmin controlled by a Timelock.
+ *For simplicity we remove the timelock and have the ProxyAdmin controlled purely by an EOA.
+ *Ultimately we will have our own custom system for controlling L1 upgrades.
+ *
+ *We also remove the deploy_ongoing stuff as the only deployment here is done by create2.
+ */
 
 /* eslint-disable no-await-in-loop, no-use-before-define, no-lonely-if, import/no-dynamic-require, global-require */
 /* eslint-disable no-console, no-inner-declarations, no-undef, import/no-unresolved, no-restricted-syntax */
@@ -74,8 +73,8 @@ async function doSpawnInstance() {
         'chainIdManager',
         'forkableZkEVM',
         'forkableGlobalExitRoot',
-        'forkingManager'
-    ]
+        'forkingManager',
+    ];
     common.verifyDeploymentParameters(mandatoryImplementationAddresses, generated);
 
     const {
@@ -112,12 +111,12 @@ async function doSpawnInstance() {
         trustedSequencerURL,
         networkName,
         version,
-        generated['verifierContract'],
+        generated.verifierContract,
         minter,
         'Backstop0',
         'BOP0',
         arbitrationFee,
-        generated['chainIdManager'],
+        generated.chainIdManager,
         forkPreparationTime,
         hardAssetManagerAddress,
         0,
@@ -137,81 +136,81 @@ async function doSpawnInstance() {
         trustedAggregatorTimeout,
         chainID,
         forkID,
-        0
+        0,
     ];
 
     // We run spawnInstance against the implementation contract
-    const forkingManagerFactory = await ethers.getContractFactory('ForkingManager', {'libraries': {'CreateChildren': generated['createChildren']}});
-    const forkingManagerImplContract = forkingManagerFactory.attach(generated['forkingManager']);
+    const forkingManagerFactory = await ethers.getContractFactory('ForkingManager', { libraries: { CreateChildren: generated.createChildren } });
+    const forkingManagerImplContract = forkingManagerFactory.attach(generated.forkingManager);
     const signedForkingManagerImplContract = forkingManagerImplContract.connect(deployer);
     deploymentBlockNumber = -1;
-    const deployedCode = await deployer.provider.getCode(generated['forkableZkEVMPredicted']);
+    const deployedCode = await deployer.provider.getCode(generated.forkableZkEVMPredicted);
     if (deployedCode === '0x') {
         const tx = await forkingManagerImplContract.spawnInstance(
-            generated['proxyAdmin'],
-            generated['forkableZkEVM'],
-            generated['forkableBridge'],
-            generated['forkonomicToken'],
-            generated['forkableGlobalExitRoot'],
+            generated.proxyAdmin,
+            generated.forkableZkEVM,
+            generated.forkableBridge,
+            generated.forkonomicToken,
+            generated.forkableGlobalExitRoot,
             deploymentConfig,
-            polygonZkEVMParams
+            polygonZkEVMParams,
         );
 
         // console.log('tx', tx);
         const receipt = await tx.wait();
         deploymentBlockNumber = receipt.blockNumber;
 
-        // Receipts should holdlog events from the proxy including our predicted addresses
-        // console.log(receipt.logs);
-
+        /*
+         * Receipts should holdlog events from the proxy including our predicted addresses
+         * console.log(receipt.logs);
+         */
     } else {
         console.log('Already called spawnInstance with this salt. Change the salt and redeploy.');
         console.log('If you are sure the deployment is correct you can instead fill in block number manually.');
     }
 
     // Check deployment
-    expect('0x').not.to.be.equal(await deployer.provider.getCode(generated['forkableZkEVMPredicted']));
-    expect('0x').not.to.be.equal(await deployer.provider.getCode(generated['forkableBridgePredicted']));
-    expect('0x').not.to.be.equal(await deployer.provider.getCode(generated['forkableGlobalExitRootPredicted']));
-    expect('0x').not.to.be.equal(await deployer.provider.getCode(generated['forkingManagerPredicted']));
-    expect('0x').not.to.be.equal(await deployer.provider.getCode(generated['forkonomicTokenPredicted']));
+    expect('0x').not.to.be.equal(await deployer.provider.getCode(generated.forkableZkEVMPredicted));
+    expect('0x').not.to.be.equal(await deployer.provider.getCode(generated.forkableBridgePredicted));
+    expect('0x').not.to.be.equal(await deployer.provider.getCode(generated.forkableGlobalExitRootPredicted));
+    expect('0x').not.to.be.equal(await deployer.provider.getCode(generated.forkingManagerPredicted));
+    expect('0x').not.to.be.equal(await deployer.provider.getCode(generated.forkonomicTokenPredicted));
 
-    const forkingManagerDeployedContract = forkingManagerFactory.attach(generated['forkingManagerPredicted']);
-    expect(await forkingManagerDeployedContract.zkEVM()).to.be.equal(generated['forkableZkEVMPredicted']);
-    expect(await forkingManagerDeployedContract.bridge()).to.be.equal(generated['forkableBridgePredicted']);
-    expect(await forkingManagerDeployedContract.forkonomicToken()).to.be.equal(generated['forkonomicTokenPredicted']);
-    expect(await forkingManagerDeployedContract.globalExitRoot()).to.be.equal(generated['forkableGlobalExitRootPredicted']);
+    const forkingManagerDeployedContract = forkingManagerFactory.attach(generated.forkingManagerPredicted);
+    expect(await forkingManagerDeployedContract.zkEVM()).to.be.equal(generated.forkableZkEVMPredicted);
+    expect(await forkingManagerDeployedContract.bridge()).to.be.equal(generated.forkableBridgePredicted);
+    expect(await forkingManagerDeployedContract.forkonomicToken()).to.be.equal(generated.forkonomicTokenPredicted);
+    expect(await forkingManagerDeployedContract.globalExitRoot()).to.be.equal(generated.forkableGlobalExitRootPredicted);
 
     const outputJson = {
-         polygonZkEVMAddress: generated['forkableZkEVMPredicted'],
-         polygonZkEVMBridgeAddress: generated['forkableBridgePredicted'],
-         polygonZkEVMGlobalExitRootAddress: generated['forkableGlobalExitRootPredicted'],
-         forkingManager: generated['forkingManagerPredicted'],
-         maticTokenAddress: generated['forkonomicTokenPredicted'],
-         createChildrenImplementationAddress: generated['createChildren'],
-         bridgeOperationImplementationAddress: generated['bridgeAssetOperations'],
-         bridgeImplementationAddress: generated['forkableBridge'],
-         verifierAddress: generated['verifierContract'],
-         zkEVMDeployerContract: generated['zkEVMDeployerAddress'],
-         deployerAddress: deployer.address,
-         timelockContractAddress: null,
-         deploymentBlockNumber: deploymentBlockNumber,
-         genesisRoot: genesisRootHex,
-         trustedSequencer: trustedSequencer,
-         trustedSequencerURL: trustedSequencerURL,
-         chainID: chainID,
-         networkName: networkName,
-         admin: admin,
-         trustedAggregator: trustedAggregator,
-         proxyAdminAddress: generated['proxyAdmin'],
-         forkID: forkID,
-         salt: salt,
-         version: version,
-         minter: minter
+        polygonZkEVMAddress: generated.forkableZkEVMPredicted,
+        polygonZkEVMBridgeAddress: generated.forkableBridgePredicted,
+        polygonZkEVMGlobalExitRootAddress: generated.forkableGlobalExitRootPredicted,
+        forkingManager: generated.forkingManagerPredicted,
+        maticTokenAddress: generated.forkonomicTokenPredicted,
+        createChildrenImplementationAddress: generated.createChildren,
+        bridgeOperationImplementationAddress: generated.bridgeAssetOperations,
+        bridgeImplementationAddress: generated.forkableBridge,
+        verifierAddress: generated.verifierContract,
+        zkEVMDeployerContract: generated.zkEVMDeployerAddress,
+        deployerAddress: deployer.address,
+        timelockContractAddress: null,
+        deploymentBlockNumber,
+        genesisRoot: genesisRootHex,
+        trustedSequencer,
+        trustedSequencerURL,
+        chainID,
+        networkName,
+        admin,
+        trustedAggregator,
+        proxyAdminAddress: generated.proxyAdmin,
+        forkID,
+        salt,
+        version,
+        minter,
     };
 
     return outputJson;
-
 }
 
 async function main() {

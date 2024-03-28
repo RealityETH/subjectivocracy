@@ -41,8 +41,10 @@ async function main() {
 
     // deploy parameters
     const mandatoryDeploymentParameters = [
-        //'timelockAddress',
-        //'minDelayTimelock',
+        /*
+         * 'timelockAddress',
+         * 'minDelayTimelock',
+         */
         'admin',
         'salt',
         'initialZkEVMDeployerOwner',
@@ -55,14 +57,16 @@ async function main() {
     }
 
     const {
-        //timelockAddress,
-        //minDelayTimelock,
+        /*
+         * timelockAddress,
+         * minDelayTimelock,
+         */
         admin,
         salt,
         initialZkEVMDeployerOwner,
     } = deployParameters;
 
-    const gasTokenAddress = deployGenerated['forkonomicTokenPredicted'];
+    const gasTokenAddress = deployGenerated.forkonomicTokenPredicted;
 
     // Load deployer
     await ethers.provider.send('hardhat_impersonateAccount', [initialZkEVMDeployerOwner]);
@@ -184,16 +188,16 @@ async function main() {
     expect(await upgrades.erc1967.getAdminAddress(proxyBridgeAddress)).to.be.equal(proxyAdminAddress);
 
     /*
-    const timelockContractFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/PolygonZkEVMTimelock.sol:PolygonZkEVMTimelock', deployer);
-    const timelockContract = await timelockContractFactory.deploy(
-        minDelayTimelock,
-        [timelockAddress],
-        [timelockAddress],
-        timelockAddress,
-        zkevmAddressL2,
-    );
-    await timelockContract.deployed();
-    */
+     *const timelockContractFactory = await ethers.getContractFactory('@RealityETH/zkevm-contracts/contracts/PolygonZkEVMTimelock.sol:PolygonZkEVMTimelock', deployer);
+     *const timelockContract = await timelockContractFactory.deploy(
+     *    minDelayTimelock,
+     *    [timelockAddress],
+     *    [timelockAddress],
+     *    timelockAddress,
+     *    zkevmAddressL2,
+     *);
+     *await timelockContract.deployed();
+     */
 
     // Transfer ownership of the proxyAdmin to timelock
     const proxyAdminInstance = proxyAdminFactory.attach(proxyAdminAddress);
@@ -271,9 +275,9 @@ async function main() {
     });
 
     /*
-    // Timelock
-    const timelockInfo = await getAddressInfo(timelockContract.address);
-    */
+     * // Timelock
+     *const timelockInfo = await getAddressInfo(timelockContract.address);
+     */
 
     /*
      * Since roles are used, most storage are writted in peusdoRandom storage slots
@@ -283,42 +287,42 @@ async function main() {
      * bytes32 public constant CANCELLER_ROLE = keccak256("CANCELLER_ROLE");
      */
     /*
-    const timelockRolesHash = [
-        ethers.utils.id('TIMELOCK_ADMIN_ROLE'),
-        ethers.utils.id('PROPOSER_ROLE'),
-        ethers.utils.id('EXECUTOR_ROLE'),
-        ethers.utils.id('CANCELLER_ROLE'),
-    ];
-
-    for (let i = 0; i < timelockRolesHash.length; i++) {
-        const rolesMappingStoragePositionStruct = 0;
-        const storagePosition = ethers.utils.solidityKeccak256(['uint256', 'uint256'], [timelockRolesHash[i], rolesMappingStoragePositionStruct]);
-
-        // check timelock address manager, and timelock address itself
-        const addressArray = [timelockAddress, timelockContract.address];
-        for (let j = 0; j < addressArray.length; j++) {
-            const storagePositionRole = ethers.utils.solidityKeccak256(['uint256', 'uint256'], [addressArray[j], storagePosition]);
-            const valueRole = await ethers.provider.getStorageAt(timelockContract.address, storagePositionRole);
-            if (valueRole !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-                timelockInfo.storage[storagePositionRole] = valueRole;
-            }
-        }
-        const roleAdminSlot = ethers.utils.hexZeroPad((ethers.BigNumber.from(storagePosition).add(1)).toHexString(), 32);
-        const valueRoleAdminSlot = await ethers.provider.getStorageAt(timelockContract.address, roleAdminSlot);
-        if (valueRoleAdminSlot !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-            timelockInfo.storage[roleAdminSlot] = valueRoleAdminSlot;
-        }
-    }
-
-    genesis.push({
-        contractName: 'PolygonZkEVMTimelock',
-        balance: '0',
-        nonce: timelockInfo.nonce.toString(),
-        address: timelockContract.address,
-        bytecode: timelockInfo.bytecode,
-        storage: timelockInfo.storage,
-    });
-    */
+     *const timelockRolesHash = [
+     *    ethers.utils.id('TIMELOCK_ADMIN_ROLE'),
+     *    ethers.utils.id('PROPOSER_ROLE'),
+     *    ethers.utils.id('EXECUTOR_ROLE'),
+     *    ethers.utils.id('CANCELLER_ROLE'),
+     *];
+     *
+     *for (let i = 0; i < timelockRolesHash.length; i++) {
+     *    const rolesMappingStoragePositionStruct = 0;
+     *    const storagePosition = ethers.utils.solidityKeccak256(['uint256', 'uint256'], [timelockRolesHash[i], rolesMappingStoragePositionStruct]);
+     *
+     *    // check timelock address manager, and timelock address itself
+     *    const addressArray = [timelockAddress, timelockContract.address];
+     *    for (let j = 0; j < addressArray.length; j++) {
+     *        const storagePositionRole = ethers.utils.solidityKeccak256(['uint256', 'uint256'], [addressArray[j], storagePosition]);
+     *        const valueRole = await ethers.provider.getStorageAt(timelockContract.address, storagePositionRole);
+     *        if (valueRole !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+     *            timelockInfo.storage[storagePositionRole] = valueRole;
+     *        }
+     *    }
+     *    const roleAdminSlot = ethers.utils.hexZeroPad((ethers.BigNumber.from(storagePosition).add(1)).toHexString(), 32);
+     *    const valueRoleAdminSlot = await ethers.provider.getStorageAt(timelockContract.address, roleAdminSlot);
+     *    if (valueRoleAdminSlot !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+     *        timelockInfo.storage[roleAdminSlot] = valueRoleAdminSlot;
+     *    }
+     *}
+     *
+     *genesis.push({
+     *    contractName: 'PolygonZkEVMTimelock',
+     *    balance: '0',
+     *    nonce: timelockInfo.nonce.toString(),
+     *    address: timelockContract.address,
+     *    bytecode: timelockInfo.bytecode,
+     *    storage: timelockInfo.storage,
+     *});
+     */
 
     // Put nonces on deployers
 

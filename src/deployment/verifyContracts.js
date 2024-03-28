@@ -51,28 +51,28 @@ async function main() {
     }
 
     /*
-    // verify timelock
-    const { minDelayTimelock } = deployParameters;
-
-    const { timelockAddress } = deployParameters;
-    try {
-        await hre.run(
-            'verify:verify',
-            {
-                address: deployOutputParameters.timelockContractAddress,
-                constructorArguments: [
-                    minDelayTimelock,
-                    [timelockAddress],
-                    [timelockAddress],
-                    timelockAddress,
-                    deployOutputParameters.polygonZkEVMAddress,
-                ],
-            },
-        );
-    } catch (error) {
-        expect(error.message.toLowerCase().includes('already verified')).to.be.equal(true);
-    }
-    */
+     * // verify timelock
+     *const { minDelayTimelock } = deployParameters;
+     *
+     *const { timelockAddress } = deployParameters;
+     *try {
+     *    await hre.run(
+     *        'verify:verify',
+     *        {
+     *            address: deployOutputParameters.timelockContractAddress,
+     *            constructorArguments: [
+     *                minDelayTimelock,
+     *                [timelockAddress],
+     *                [timelockAddress],
+     *                timelockAddress,
+     *                deployOutputParameters.polygonZkEVMAddress,
+     *            ],
+     *        },
+     *    );
+     *} catch (error) {
+     *    expect(error.message.toLowerCase().includes('already verified')).to.be.equal(true);
+     *}
+     */
 
     // verify proxy admin
     try {

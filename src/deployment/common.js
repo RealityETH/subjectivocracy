@@ -11,8 +11,8 @@ const { create2Deployment } = require('./helpers/deployment-helpers');
 async function loadOngoingOrDeploy(deployer, contractName, ongoingName, args, ongoing, pathOngoing, externallyDeployedAddress, libraries, unsafeAllowLinkedLibraries) {
     const contractFactory = await ethers.getContractFactory(contractName, {
         signer: deployer,
-        libraries: libraries,
-        unsafeAllowLinkedLibraries: unsafeAllowLinkedLibraries
+        libraries,
+        unsafeAllowLinkedLibraries,
     });
 
     let existingAddress;
@@ -39,19 +39,18 @@ async function loadOngoingOrDeploy(deployer, contractName, ongoingName, args, on
     return contractInstance;
 }
 
-
 async function create2Deploy(create2Deployer, salt, deployer, contractName, args, overrideGasLimit, libraries, unsafeAllowLinkedLibraries, dataCall) {
     const contractFactory = await ethers.getContractFactory(contractName, {
         signer: deployer,
-        libraries: libraries,
-        unsafeAllowLinkedLibraries: unsafeAllowLinkedLibraries
+        libraries,
+        unsafeAllowLinkedLibraries,
     });
 
     let addr;
 
     const displayName = contractName.replace(/^.*[\\\/]/, '');
 
-    let isAlreadyCreated = false;
+    const isAlreadyCreated = false;
     if (addr) {
         console.log(displayName, 'using existing from ongoing deployment', addr);
     } else {
@@ -62,7 +61,7 @@ async function create2Deploy(create2Deployer, salt, deployer, contractName, args
         } else {
             console.log(displayName, 'detected existing create2 deployment, using that', addr);
         }
-    } 
+    }
     return addr;
 }
 
@@ -91,5 +90,5 @@ async function predictTransparentProxyAddress(deployingForkingManagerImplementat
 }
 
 module.exports = {
-    loadOngoingOrDeploy, create2Deploy, genesisAddressForContractName, predictTransparentProxyAddress
+    loadOngoingOrDeploy, create2Deploy, genesisAddressForContractName, predictTransparentProxyAddress,
 };
