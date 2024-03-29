@@ -1,0 +1,18 @@
+{
+ "zkEVMDeployerAddress": "0x4e78730851Ec0d97B3785A1811e02b7e941c2943",
+ "createChildren": "0x219714200c7f774B152F8Cbb2571E049D4A56430",
+ "bridgeAssetOperations": "0x23748193fE94B8fdDc06A3f261cB5DB2dB21Dfac",
+ "forkableBridge": "0x91d8785bBa30E09255eC906F2bDfDf5919109b4f",
+ "forkonomicToken": "0x584f5e3B1d6f9274b7eeB5512c58ad0525804Ad4",
+ "chainIdManager": "0x94eF4E5637A07131062E75c397b8083c968a8DFb",
+ "verifierContract": "0xC8C0ab7485BaaF91698FC7a431801068df43c6c3",
+ "forkableZkEVM": "0x68Bdff669946bC9b30f0Ceb11c7004a47E41A91D",
+ "forkableGlobalExitRoot": "0x449Cd8D72cF668fab82E7DB5D856Dca7a8F53a4D",
+ "forkingManager": "0xB8A6158CF55f02A228C2Ecd6Aec722699297f0a5",
+ "proxyAdmin": "0x9029C03d935AdC24b3164bD289d5EAC8209afcc0",
+ "forkableGlobalExitRootPredicted": "0xdB7E1c8396483cBfa3e7D2728CE0c88452A29111",
+ "forkableZkEVMPredicted": "0xA75F4289b4b78Fd09c6C02b99E94EbE3B307A472",
+ "forkingManagerPredicted": "0x51F236d3482b3a923ee565259841a54426C5c141",
+ "forkonomicTokenPredicted": "0xF782C0A4708E9c9Ed84C66f8c4011F137A5E30e5",
+ "forkableBridgePredicted": "0xEA7ba7a39763ae484F616a9FB7E45beFB48b5D09"
+}
