@@ -10,8 +10,7 @@ async function main() {
      * Check deploy parameters
      * Check that every necessary parameter is fullfilled
      */
-    const args = process.argv.slice(2);
-    const deploymentName = args[0];
+    const deploymentName = process.env.deployment
     const deployParameters = require(`../../deployments/${deploymentName}/deploy_parameters.json`);
     const deploymentOutput = require(`../../deployments/${deploymentName}/deploy_output.json`);
 
