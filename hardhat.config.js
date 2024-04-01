@@ -174,6 +174,16 @@ module.exports = {
                 count: 20,
             },
         },
+	backstopTestnet1: {
+		url: "http://localhost:8124",
+            accounts: {
+                mnemonic: process.env.MNEMONIC || DEFAULT_MNEMONIC,
+                path: "m/44'/60'/0'/0",
+                initialIndex: 0,
+                count: 20,
+            },
+        },
+
     },
     gasReporter: {
         enabled: !!process.env.REPORT_GAS,
@@ -183,7 +193,7 @@ module.exports = {
     zkEVMServices: {
         'backstopTestnet0': {
             bridgeAPIEndpoint: 'https://api.bridge.testnet.backstop.technology'
-        }
+        },
     },
     etherscan: {
         apiKey: {
