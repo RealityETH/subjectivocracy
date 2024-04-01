@@ -17,6 +17,7 @@ async function loadProvider(deployParameters, env) {
         deployParameters = {};
     }
     let currentProvider = ethers.provider;
+	/*
     if (deployParameters.multiplierGas || deployParameters.maxFeePerGas) {
         if (env.HARDHAT_NETWORK !== 'hardhat') {
             currentProvider = new ethers.providers.JsonRpcProvider(`https://${env.HARDHAT_NETWORK}.infura.io/v3/${env.INFURA_PROJECT_ID}`);
@@ -40,6 +41,7 @@ async function loadProvider(deployParameters, env) {
             }
         }
     }
+    */
     return currentProvider;
 }
 
