@@ -648,6 +648,9 @@ async function main() {
     const proxyAdminFactory = await ethers.getContractFactory('ProxyAdmin', deployer);
     const proxyAdminInstance = proxyAdminFactory.attach(proxyAdminAddress);
     const proxyAdminOwner = await proxyAdminInstance.owner();
+
+
+/*
     const timelockContractFactory = await ethers.getContractFactory('PolygonZkEVMTimelock', deployer);
 
     let timelockContract;
@@ -692,6 +695,7 @@ async function main() {
     console.log('#######################');
     console.log('minDelayTimelock:', await timelockContract.getMinDelay());
     console.log('polygonZkEVM:', await timelockContract.polygonZkEVM());
+*/
 
     const outputJson = {
         polygonZkEVMAddress: polygonZkEVMContract.address,
@@ -704,7 +708,7 @@ async function main() {
         verifierAddress: verifierContract.address,
         zkEVMDeployerContract: zkEVMDeployerContract.address,
         deployerAddress: deployer.address,
-        timelockContractAddress: timelockContract.address,
+        //timelockContractAddress: timelockContract.address,
         deploymentBlockNumber,
         genesisRoot: genesisRootHex,
         trustedSequencer,
