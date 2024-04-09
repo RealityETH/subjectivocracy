@@ -162,8 +162,7 @@ contract ForkingManagerTest is Test {
                     trustedAggregator: trustedAggregator,
                     trustedAggregatorTimeout: trustedAggregatorTimeout,
                     chainID: chainIdManager.getNextUsableChainId(),
-                    forkID: forkID,
-                    lastVerifiedBatch: 0
+                    forkID: forkID
                 });
         zkevm.initialize(
             address(forkmanager),

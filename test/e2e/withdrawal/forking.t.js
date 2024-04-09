@@ -219,7 +219,6 @@ describe('Simulating first proof after a fork', () => {
                 trustedAggregatorTimeout: trustedAggregatorTimeoutDefault,
                 chainID,
                 forkID,
-                lastVerifiedBatch: 0,
             },
             genesisRoot,
             urlSequencer,

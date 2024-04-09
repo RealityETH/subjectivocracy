@@ -155,8 +155,7 @@ contract ForkingManager is IForkingManager, ForkableStructure {
                     trustedAggregatorTimeout: IPolygonZkEVM(zkEVM)
                         .trustedAggregatorTimeout(),
                     chainID: reservedChainIdForFork1,
-                    forkID: IPolygonZkEVM(zkEVM).forkID(),
-                    lastVerifiedBatch: IPolygonZkEVM(zkEVM).lastVerifiedBatch()
+                    forkID: IPolygonZkEVM(zkEVM).forkID()
                 });
             IForkableZkEVM(newInstances.zkEVM.one).initialize(
                 newInstances.forkingManager.one,

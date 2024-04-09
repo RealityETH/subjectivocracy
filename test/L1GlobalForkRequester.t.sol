@@ -170,8 +170,7 @@ contract L1GlobalForkRequesterTest is Test {
                     trustedAggregator: trustedAggregator,
                     trustedAggregatorTimeout: trustedAggregatorTimeout,
                     chainID: chainID,
-                    forkID: forkID,
-                    lastVerifiedBatch: 0
+                    forkID: forkID
                 });
         zkevm.initialize(
             address(forkmanager),
