@@ -524,6 +524,7 @@ async function main() {
                     trustedAggregatorTimeout,
                     chainID,
                     forkID,
+                    0,
                 ],
                 genesisRootHex,
                 trustedSequencerURL,

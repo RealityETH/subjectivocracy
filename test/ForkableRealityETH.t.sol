@@ -97,7 +97,8 @@ contract ForkableRealityETHTest is Test {
                     trustedAggregator: trustedAggregator,
                     trustedAggregatorTimeout: trustedAggregatorTimeout,
                     chainID: _chainId,
-                    forkID: forkID
+                    forkID: forkID,
+                    lastVerifiedBatch: 0
                 });
         ForkableZkEVM(_zkevm).initialize(
             address(forkmanager),
