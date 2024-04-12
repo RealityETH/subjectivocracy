@@ -1,0 +1,9 @@
+{
+    "adjudicationFrameworkDisputeFee": 123,
+    "forkArbitratorDisputeFee": 200,
+    "arbitratorDisputeFee": 12,
+    "arbitratorOwner": null,
+    "realityETHAddress": null,
+    "initialArbitratorAddresses": [],
+    "l2ForkDelay": 60
+}
