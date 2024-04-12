@@ -4,5 +4,6 @@
     "arbitratorDisputeFee": 12,
     "arbitratorOwner": null,
     "realityETHAddress": null,
-    "initialArbitratorAddresses": []
+    "initialArbitratorAddresses": [],
+    "l2ForkDelay": 60
 }
