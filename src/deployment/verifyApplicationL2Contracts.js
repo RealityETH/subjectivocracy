@@ -75,7 +75,7 @@ async function main() {
                     deployL2OutputParameters.realityETH,
                     deployL2OutputParameters.l2ChainInfo,
                     deployL1OutputParameters.l1GlobalForkRequester,
-                    deployParameters.forkArbitratorDisputeFee,
+                    deployParameters.forkArbitratorDisputeFee
                 ],
             },
         );
@@ -94,6 +94,8 @@ async function main() {
                     deployParameters.adjudicationFrameworkDisputeFee,
                     deployL2OutputParameters.l2ForkArbitrator,
                     deployL2OutputParameters.arbitrators,
+                    false,
+                    deployParameters.l2ForkDelay,
                 ],
             },
         );
