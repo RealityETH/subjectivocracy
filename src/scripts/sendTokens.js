@@ -1,3 +1,5 @@
+// Script to send tokens on whichever chain is set as HARDHAT_NETWORK
+
 /* eslint-disable no-await-in-loop, no-use-before-define, no-lonely-if, import/no-dynamic-require, global-require */
 /* eslint-disable no-console, no-inner-declarations, no-undef, import/no-unresolved, no-restricted-syntax */
 const path = require('path');
