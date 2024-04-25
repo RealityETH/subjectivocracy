@@ -34,7 +34,7 @@ const output = require('./deploy_output.json');
 
 async function main() {
     const l2BridgeAddress = commonDeployment.genesisAddressForContractName('PolygonZkEVMBridge proxy');
-    const claimFor = deployParameters['trustedSequencer']
+    const claimFor = deployParameters.trustedSequencer;
 
     const currentProvider = await common.loadProvider(deployParameters, process.env);
     const deployer = await common.loadDeployer(currentProvider, deployParameters);
@@ -69,11 +69,11 @@ async function main() {
     console.log('Trying claim for contract', claimFor, 'against bridge', l2BridgeAddress, '...');
     while (!found) {
         const depositAxions = await axios.get(getClaimsFromAcc + claimFor, { params: { limit: 100, offset: 0 } });
-        //depositsArray = filterClaimable(depositAxions.data.deposits, true);
+        // depositsArray = filterClaimable(depositAxions.data.deposits, true);
         depositsArray = depositAxions.data.deposits;
 
         if (depositsArray.length === 0) {
-console.log(depositsArray);
+            console.log(depositsArray);
             const secs = 5;
             console.log(`No deposits ready to claim yet, retrying in ${secs} seconds...`);
             await sleep(secs * 1000);
@@ -101,6 +101,7 @@ console.log(depositsArray);
                 currentDeposit.dest_addr,
                 currentDeposit.amount,
                 currentDeposit.metadata,
+                { gasLimit: 100000 },
             );
             console.log('Claim message successfully sent: ', claimTx.hash);
             await claimTx.wait();
