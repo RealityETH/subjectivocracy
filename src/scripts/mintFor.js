@@ -28,8 +28,6 @@ async function main() {
     }
     const {
         maticTokenAddress,
-        trustedSequencer,
-        deployerAddress,
     } = deploymentOutput;
 
     const forkonomicTokenAddress = maticTokenAddress;

@@ -8,33 +8,31 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const common = require('../common/common');
 
 async function main() {
-
     const args = process.argv.slice(2);
     const deploymentName = args[0];
     const recipient = args[1];
     const amount = ethers.BigNumber.from(args[2]);
 
     const deployParameters = require(`../../deployments/${deploymentName}/deploy_parameters.json`);
-    const deploymentOutput = require(`../../deployments/${deploymentName}/deploy_output.json`);
 
     const currentProvider = await common.loadProvider(deployParameters, process.env);
     const deployer = await common.loadDeployer(currentProvider, deployParameters);
 
-    const bal = await currentProvider.getBalance(deployer.address)
-    const gas_price = await currentProvider.getGasPrice()
-    const nonce = await currentProvider.getTransactionCount(deployer.address, 'latest')
-    const gas_limit = 21000;
+    // const bal = await currentProvider.getBalance(deployer.address);
+    const gasPrice = await currentProvider.getGasPrice();
+    const nonce = await currentProvider.getTransactionCount(deployer.address, 'latest');
+    const gasLimit = 21000;
 
     const txdata = {
-      to: recipient,
-      value: amount,
-      nonce: nonce,
-      gasLimit: ethers.utils.hexlify(gas_limit), 
-      gasPrice: gas_price,
-    }
+        to: recipient,
+        value: amount,
+        nonce,
+        gasLimit: ethers.utils.hexlify(gasLimit),
+        gasPrice,
+    };
 
     const response = await deployer.sendTransaction(txdata);
-    console.log('sent tx', response.hash)
+    console.log('sent tx', response.hash);
 }
 
 main().catch((e) => {

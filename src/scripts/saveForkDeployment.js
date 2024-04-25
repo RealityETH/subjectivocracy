@@ -1,28 +1,30 @@
 /* eslint-disable import/no-dynamic-require, global-require */
-/* eslint-disable no-console, no-inner-declarations, no-undef, import/no-unresolved, no-restricted-syntax */
+/* eslint-disable no-await-in-loop, no-constant-condition, no-console, no-inner-declarations, no-undef, import/no-unresolved, no-restricted-syntax */
 const path = require('path');
 const fs = require('fs');
 const { ethers } = require('hardhat');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const common = require('../common/common');
+
 const FILTER_RANGE = 1000;
 
 async function main() {
-
     const args = process.argv.slice(2);
     const deploymentName = args[0];
-    const whichFork = parseInt(args[1]);
+    const whichFork = parseInt(args[1], 10);
 
     if (whichFork !== 1 && whichFork !== 2) {
-        throw new Error("Usage: node saveForkDeployment.js <old_deployment> <1_or_2> [<fork_block_number]> [<new_name>]");
+        throw new Error('Usage: node saveForkDeployment.js <old_deployment> <1_or_2> [<fork_block_number]> [<new_name>]');
     }
 
-    // Optionally we can specify the block number to avoid a slow log lookup
-    // If you pass nothing or "0" we will try to fetch it automatically
-    let forkBlockNumber = args.length >= 3 ? parseInt(args[2]) : 0;
+    /*
+     * Optionally we can specify the block number to avoid a slow log lookup
+     * If you pass nothing or "0" we will try to fetch it automatically
+     */
+    let forkBlockNumber = args.length >= 3 ? parseInt(args[2], 10) : 0;
 
     // Optionally you can pass in the name of the new chain, otherwise we'll add _1 or _2 to the old chain
-    const newDeploymentName = args.length >= 4 ? args[3] : deploymentName + "_" + whichFork;
+    const newDeploymentName = args.length >= 4 ? args[3] : `${deploymentName}_${whichFork}`;
 
     const deploymentOutput = require(`../../deployments/${deploymentName}/deploy_output.json`);
     const deployParameters = require(`../../deployments/${deploymentName}/deploy_parameters.json`);
@@ -31,13 +33,13 @@ async function main() {
     const newDeploymentPath = path.resolve(__dirname, `../../deployments/${newDeploymentName}`);
 
     if (fs.existsSync(newDeploymentPath)) {
-        throw new Error("New deployment directory already exists. Delete it to create it fresh. "+newDeploymentPath);
+        throw new Error(`New deployment directory already exists. Delete it to create it fresh. ${newDeploymentPath}`);
     }
 
     const currentProvider = await common.loadProvider(deployParameters, process.env);
     const deployer = await common.loadDeployer(currentProvider, deployParameters);
 
-    const parentForkingManagerAddress = deploymentOutput['forkingManager'];
+    const parentForkingManagerAddress = deploymentOutput.forkingManager;
     console.log('looking up children of', parentForkingManagerAddress);
 
     const parentForkingManager = (await ethers.getContractAt(
@@ -52,7 +54,7 @@ async function main() {
     )).connect(deployer);
 
     const children = await parentForkingManager.getChildren();
-    const forkingManagerAddress = children[whichFork-1];
+    const forkingManagerAddress = children[whichFork - 1];
 
     const forkingManager = (await ethers.getContractAt(
         'contracts/ForkingManager.sol:ForkingManager',
@@ -79,11 +81,11 @@ async function main() {
     const lastVerifiedBatch = parentZkEVM.lastVerifiedBatch();
     deploymentOutput.genesisRoot = parentZkEVM.batchNumToStateRoot(lastVerifiedBatch);
 
-    let endBlock = await ethers.provider.getBlockNumber()
+    let endBlock = await ethers.provider.getBlockNumber();
     const initializedFilter = forkingManager.filters.Initialized();
-    if (forkBlockNumber == 0) {
+    if (forkBlockNumber === 0) {
         console.log('Searching back through logs for the fork block number. If this takes too long you may prefer to pass it manually.');
-        while(true) {
+        while (true) {
             let startBlock = endBlock - FILTER_RANGE;
             if (startBlock < 0) {
                 startBlock = 0;
@@ -95,7 +97,7 @@ async function main() {
                 console.log('Found fork block number at', forkBlockNumber);
                 break;
             }
-            if (startBlock == 0) {
+            if (startBlock === 0) {
                 console.log('Fork block not found, you may be able to set it manually.');
                 break;
             }
@@ -106,11 +108,10 @@ async function main() {
     deploymentOutput.deploymentBlockNumber = forkBlockNumber;
 
     console.log('Saving new deployment at', newDeploymentPath);
-    fs.cpSync(oldDeploymentPath, newDeploymentPath, {recursive: true});
+    fs.cpSync(oldDeploymentPath, newDeploymentPath, { recursive: true });
 
-    fs.writeFileSync(newDeploymentPath+'/deploy_output.json', JSON.stringify(deploymentOutput, null, 1));
-    fs.writeFileSync(newDeploymentPath+'/deploy_parameters.json', JSON.stringify(deployParameters, null, 1));
-
+    fs.writeFileSync(`${newDeploymentPath}/deploy_output.json`, JSON.stringify(deploymentOutput, null, 1));
+    fs.writeFileSync(`${newDeploymentPath}/deploy_parameters.json`, JSON.stringify(deployParameters, null, 1));
 }
 
 main().catch((e) => {
