@@ -75,7 +75,7 @@ async function main() {
                     deployL2OutputParameters.realityETH,
                     deployL2OutputParameters.l2ChainInfo,
                     deployL1OutputParameters.l1GlobalForkRequester,
-                    deployParameters.forkArbitratorDisputeFee
+                    deployParameters.forkArbitratorDisputeFee,
                 ],
             },
         );
