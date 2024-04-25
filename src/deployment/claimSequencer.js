@@ -69,7 +69,7 @@ async function main() {
     while (!found) {
         const depositAxions = await axios.get(getClaimsFromAcc + claimFor, { params: { limit: 100, offset: 0 } });
         depositsArray = filterClaimable(depositAxions.data.deposits, true);
-        //depositsArray = depositAxions.data.deposits;
+        // depositsArray = depositAxions.data.deposits;
 
         if (depositsArray.length === 0) {
             console.log(depositsArray);
