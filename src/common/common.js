@@ -20,7 +20,7 @@ async function loadProvider(deployParameters, env) {
     if (deployParameters.multiplierGas || deployParameters.maxFeePerGas) {
         if (env.HARDHAT_NETWORK === 'sepolia') {
             currentProvider = new ethers.providers.JsonRpcProvider(`https://${env.HARDHAT_NETWORK}.infura.io/v3/${env.INFURA_PROJECT_ID}`);
-console.log(currentProvider);
+            // currentProvider = new ethers.providers.JsonRpcProvider('https://sepolia.backstop.technology');
             if (deployParameters.maxPriorityFeePerGas && deployParameters.maxFeePerGas) {
                 console.log(`Hardcoded gas used: MaxPriority${deployParameters.maxPriorityFeePerGas} gwei, MaxFee${deployParameters.maxFeePerGas} gwei`);
                 const FEE_DATA = {
