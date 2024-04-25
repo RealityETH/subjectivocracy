@@ -1,4 +1,5 @@
 /* eslint-disable no-await-in-loop, no-console, no-inner-declarations, no-undef, import/no-unresolved */
+/* eslint-disable global-require, import/no-dynamic-require */
 
 /*
  * Script to run claim for the chain info update
@@ -7,12 +8,10 @@
  */
 
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const { ethers } = require('hardhat');
-const hre = require('hardhat');
 
-const networkName = hre.network.name;
-const { bridgeAPIEndpoint } = hre.config.zkEVMServices[networkName];
+// const { bridgeAPIEndpoint } = hre.config.zkEVMServices[networkName];
+const bridgeAPIEndpoint = 'https://api.testnet.bridge.backstop.technology';
 
 const merkleProofString = '/merkle-proof';
 const getClaimsFromAcc = '/bridges/';
@@ -27,13 +26,28 @@ const axios = require('axios').create({
     baseURL,
 });
 
-const deployParameters = require('./deploy_parameters.json');
 const common = require('../common/common');
-const commonDeployment = require('./common');
+const commonDeployment = require('../deployment/common');
+
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 async function main() {
+    /*
+     * Check deploy parameters
+     * Check that every necessary parameter is fullfilled
+     */
+    const args = process.argv.slice(2);
+    const deploymentName = args[0];
+    const claimFor = args[1];
+
+    if (args.length !== 2) {
+        console.log('Usage: node src/scripts/bridgeTokensL1ToL2.js <sepolia_something> <recipient>');
+        return;
+    }
+
+    const deployParameters = require(`../../deployments/${deploymentName}/deploy_parameters.json`);
+
     const l2BridgeAddress = commonDeployment.genesisAddressForContractName('PolygonZkEVMBridge proxy');
-    const claimFor = deployParameters.trustedSequencer;
 
     const currentProvider = await common.loadProvider(deployParameters, process.env);
     const deployer = await common.loadDeployer(currentProvider, deployParameters);
@@ -69,7 +83,6 @@ async function main() {
     while (!found) {
         const depositAxions = await axios.get(getClaimsFromAcc + claimFor, { params: { limit: 100, offset: 0 } });
         depositsArray = filterClaimable(depositAxions.data.deposits, true);
-        //depositsArray = depositAxions.data.deposits;
 
         if (depositsArray.length === 0) {
             console.log(depositsArray);
