@@ -12,7 +12,7 @@ async function main() {
      */
     const args = process.argv.slice(2);
 
-    if (args.length != 2) {
+    if (args.length !== 2) {
         console.log('Usage: node src/scripts/bridgeTokensL1ToL2.js <sepolia_something> <num tokens>');
         return;
     }
@@ -75,7 +75,7 @@ async function main() {
         forkonomicTokenAddress,
         true,
         '0x',
-        { gasLimit: 5000000, gasPrice: gasPrice },
+        { gasLimit: 5000000, gasPrice },
     );
     console.log('Deposited forkonomic tokens into bridge');
     console.log('by the following tx: ', tx2.hash);
