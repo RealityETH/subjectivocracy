@@ -50,28 +50,28 @@ async function main() {
         expect(error.message.toLowerCase().includes('already verified')).to.be.equal(true);
     }
 
-/*
-    // verify timelock
-    const { minDelayTimelock } = deployParameters;
-    const { timelockAddress } = deployParameters;
-    try {
-        await hre.run(
-            'verify:verify',
-            {
-                address: deployOutputParameters.timelockContractAddress,
-                constructorArguments: [
-                    minDelayTimelock,
-                    [timelockAddress],
-                    [timelockAddress],
-                    timelockAddress,
-                    deployOutputParameters.polygonZkEVMAddress,
-                ],
-            },
-        );
-    } catch (error) {
-        expect(error.message.toLowerCase().includes('already verified')).to.be.equal(true);
-    }
-*/
+    /*
+     * // verify timelock
+     *const { minDelayTimelock } = deployParameters;
+     *const { timelockAddress } = deployParameters;
+     *try {
+     *    await hre.run(
+     *        'verify:verify',
+     *        {
+     *            address: deployOutputParameters.timelockContractAddress,
+     *            constructorArguments: [
+     *                minDelayTimelock,
+     *                [timelockAddress],
+     *                [timelockAddress],
+     *                timelockAddress,
+     *                deployOutputParameters.polygonZkEVMAddress,
+     *            ],
+     *        },
+     *    );
+     *} catch (error) {
+     *    expect(error.message.toLowerCase().includes('already verified')).to.be.equal(true);
+     *}
+     */
 
     // verify proxy admin
     try {
@@ -143,7 +143,7 @@ async function main() {
             },
         );
     } catch (error) {
-//        expect(error.message.toLowerCase().includes('proxyadmin')).to.be.equal(true);
+        //        expect(error.message.toLowerCase().includes('proxyadmin')).to.be.equal(true);
     }
 
     // verify global exit root address
@@ -155,7 +155,7 @@ async function main() {
             },
         );
     } catch (error) {
- //       expect(error.message.toLowerCase().includes('proxyadmin')).to.be.equal(true);
+        //       expect(error.message.toLowerCase().includes('proxyadmin')).to.be.equal(true);
     }
 
     // verify global exit implementation address
@@ -168,7 +168,7 @@ async function main() {
             },
         );
     } catch (error) {
-  //      expect(error.message.toLowerCase().includes('proxyadmin')).to.be.equal(true);
+        //      expect(error.message.toLowerCase().includes('proxyadmin')).to.be.equal(true);
     }
 
     // verify bridge
@@ -185,7 +185,7 @@ async function main() {
             },
         );
     } catch (error) {
-   //     expect(error.message.toLowerCase().includes('proxyadmin')).to.be.equal(true);
+        //     expect(error.message.toLowerCase().includes('proxyadmin')).to.be.equal(true);
     }
 
     // verify bridge implementation address
@@ -210,7 +210,7 @@ async function main() {
             },
         );
     } catch (error) {
-   //     expect(error.message.toLowerCase().includes('proxyadmin')).to.be.equal(true);
+        //     expect(error.message.toLowerCase().includes('proxyadmin')).to.be.equal(true);
     }
 
     // verify fork manager implementation address
