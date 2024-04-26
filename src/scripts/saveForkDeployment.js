@@ -78,8 +78,8 @@ async function main() {
     deploymentOutput.forkingManager = forkingManagerAddress;
     deploymentOutput.maticTokenAddress = forkingManager.forkonomicToken();
 
-    const lastVerifiedBatch = parentZkEVM.lastVerifiedBatch();
-    deploymentOutput.genesisRoot = parentZkEVM.batchNumToStateRoot(lastVerifiedBatch);
+    const lastVerifiedBatch = await parentZkEVM.lastVerifiedBatch();
+    deploymentOutput.genesisRoot = await parentZkEVM.batchNumToStateRoot(lastVerifiedBatch);
 
     let endBlock = await ethers.provider.getBlockNumber();
     const initializedFilter = forkingManager.filters.Initialized();
