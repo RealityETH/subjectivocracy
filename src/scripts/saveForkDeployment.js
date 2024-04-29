@@ -75,8 +75,8 @@ async function main() {
 
     deploymentOutput.polygonZkEVMBridgeAddress = await forkingManager.bridge();
     deploymentOutput.polygonZkEVMGlobalExitRootAddress = await forkingManager.globalExitRoot();
-    deploymentOutput.forkingManager = forkingManagerAddress;
-    deploymentOutput.maticTokenAddress = forkingManager.forkonomicToken();
+    deploymentOutput.forkingManager = await forkingManagerAddress;
+    deploymentOutput.maticTokenAddress = await forkingManager.forkonomicToken();
 
     const lastVerifiedBatch = await parentZkEVM.lastVerifiedBatch();
     deploymentOutput.genesisRoot = await parentZkEVM.batchNumToStateRoot(lastVerifiedBatch);
