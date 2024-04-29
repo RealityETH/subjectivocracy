@@ -19,7 +19,11 @@ async function main() {
     const deployer = await common.loadDeployer(currentProvider, deployParameters);
 
     // const bal = await currentProvider.getBalance(deployer.address);
-    const gasPrice = await currentProvider.getGasPrice();
+    let gasPrice = await currentProvider.getGasPrice();
+    if (gasPrice == 0) {
+        console.log('gas price returned zero, using hard-coded 2 gwei');
+        gasPrice = 2000000000;
+    }
     const nonce = await currentProvider.getTransactionCount(deployer.address, 'latest');
     const gasLimit = 21000;
 
