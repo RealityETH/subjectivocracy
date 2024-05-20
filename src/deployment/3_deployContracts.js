@@ -157,7 +157,7 @@ async function main() {
     });
 
     if (!ongoingDeployment.chainIdManager) {
-        chainIdManagerContract = await ChainIdManagerFactory.deploy(1500054);
+        chainIdManagerContract = await ChainIdManagerFactory.deploy(chainID);
         console.log('#######################\n');
         console.log('chainIdManager deployed to:', chainIdManagerContract.address);
 
@@ -421,7 +421,7 @@ async function main() {
                 proxyBridgeAddress,
                 ethers.constants.HashZero,
                 ethers.constants.HashZero,
-                { gasLimit: 5000000 }, // required as native gas limit estimation would return a too low result
+                { gasLimit: 300000}, // required as native gas limit estimation would return a too low result
             );
         } catch (error) {
             console.error('polygonZkEVMGlobalExitRoot initialization error', error.message);
@@ -537,7 +537,7 @@ async function main() {
                 gasTokenAddress,
                 verifierContract.address,
                 polygonZkEVMBridgeContract.address,
-                { gasLimit: 5000000 }, // required as native gas limit estimation would return a too low result
+                { gasLimit: 600000 }, // required as native gas limit estimation would return a too low result
             );
             console.log('initializeTx', initializeTx.hash);
         } catch (error) {
