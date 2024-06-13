@@ -40,10 +40,6 @@ async function main() {
     const currentProvider = await common.loadProvider(deployParameters, process.env);
     const deployer = await common.loadDeployer(currentProvider, deployParameters);
 
-    // const pendingTxCount = await currentProvider.getTransactionCount(deployer.address, 'pending');
-    // const txCount = await currentProvider.getTransactionCount(deployer.address);
-    // console.log('pending is ', pendingTxCount, 'txCount is ', txCount);
-
     if (trustedSequencer === undefined || trustedSequencer.toLowerCase() !== deployer.address.toLowerCase()) {
         throw new Error('Wrong deployer address');
     }
