@@ -20,7 +20,7 @@ async function main() {
 
     // const bal = await currentProvider.getBalance(deployer.address);
     let gasPrice = await currentProvider.getGasPrice();
-    if (gasPrice == 0) {
+    if (gasPrice === 0) {
         console.log('gas price returned zero, using hard-coded 2 gwei');
         gasPrice = 2000000000;
     }
