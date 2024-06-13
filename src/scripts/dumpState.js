@@ -38,6 +38,8 @@ async function main() {
     console.log('Global Exit Root', globalExitRootAddress);
     console.log('Owner', await zkevm.owner());
     console.log('Fork ID', (await zkevm.forkID()).toString());
+    console.log('Verifier', (await zkevm.rollupVerifier()).toString());
+    console.log('Aggregator', (await zkevm.trustedAggregator()).toString());
     console.log('Chain ID', (await zkevm.chainID()).toString());
     console.log('Fork Manager', forkingManagerAddress);
     console.log('Token', await forkingManager.forkonomicToken());
@@ -47,7 +49,9 @@ async function main() {
 
     const lastPendingState = await zkevm.lastPendingState();
     console.log('Last pending state', lastPendingState);
-    // console.log('Pending state transitions', await zkevm.pendingStateTransitions(lastPendingState));
+    console.log('Last batch sequenced', await zkevm.lastBatchSequenced());
+    console.log('Last batch verified', await zkevm.lastVerifiedBatch());
+    console.log('Pending state transitions', await zkevm.pendingStateTransitions(lastPendingState));
 
     console.log('Exit root Bridge', await globalExitRoot.bridgeAddress());
     console.log('Exit root rollup', await globalExitRoot.rollupAddress());
