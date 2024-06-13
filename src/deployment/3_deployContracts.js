@@ -421,7 +421,7 @@ async function main() {
                 proxyBridgeAddress,
                 ethers.constants.HashZero,
                 ethers.constants.HashZero,
-                { gasLimit: 300000}, // required as native gas limit estimation would return a too low result
+                { gasLimit: 300000 }, // required as native gas limit estimation would return a too low result
             );
         } catch (error) {
             console.error('polygonZkEVMGlobalExitRoot initialization error', error.message);

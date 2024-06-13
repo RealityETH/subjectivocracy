@@ -27,7 +27,7 @@ async function main() {
     }
     const {
         polygonZkEVMAddress,
-        polygonZkEVMBridgeAddress,
+        // polygonZkEVMBridgeAddress,
         maticTokenAddress,
         trustedSequencer,
     } = deploymentOutput;
@@ -51,10 +51,12 @@ async function main() {
     console.log('Approved zkevm by the sequencer to spend forkonomic tokens');
     console.log('by the following tx: ', tx1.hash);
 
-    // const tx2 = await forkonomicToken.approve(polygonZkEVMBridgeAddress, ethers.constants.MaxUint256, { gasLimit: 100000 });
-    // await tx2.wait();
-    // console.log('Bridge also approved zkevm by the sequencer to spend forkonomic tokens');
-    // console.log('by the following tx: ', tx2.hash);
+    /*
+     * const tx2 = await forkonomicToken.approve(polygonZkEVMBridgeAddress, ethers.constants.MaxUint256, { gasLimit: 100000 });
+     * await tx2.wait();
+     * console.log('Bridge also approved zkevm by the sequencer to spend forkonomic tokens');
+     * console.log('by the following tx: ', tx2.hash);
+     */
 }
 
 main().catch((e) => {

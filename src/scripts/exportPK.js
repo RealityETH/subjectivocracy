@@ -1,13 +1,16 @@
-var keythereum = require("keythereum");
+/* eslint-disable no-console */
 
-// Specify a data directory (optional; defaults to ~/.ethereum)
-var datadir = "/home/ubuntu/zkevm/zkevm-config";
-var file = datadir + "/" + "aggregator.keystore";
+const keythereum = require('keythereum');
 
-var addr = "0x5669c63e3b461cf50696ad0378fe2e66b982d4a7";
+/*
+ * Specify a data directory (optional; defaults to ~/.ethereum)
+ * const datadir = '/home/ubuntu/zkevm/zkevm-config';
+ * const file = datadir + '/' + 'aggregator.keystore';
+ */
+
+const addr = '0x5669c63e3b461cf50696ad0378fe2e66b982d4a7';
 // Synchronous
-var keyObject = keythereum.importFromFile(addr);
+const keyObject = keythereum.importFromFile(addr);
 
-var privateKey = keythereum.recover("password", keyObject);
+const privateKey = keythereum.recover('password', keyObject);
 console.log(privateKey.toString('hex'));
-
