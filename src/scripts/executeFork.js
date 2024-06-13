@@ -86,8 +86,8 @@ async function main() {
         await tx1.wait();
         console.log('Fork initiated');
         const sleepTime = await forkingManagerContract.forkPreparationTime();
-        console.log('Sleeping for ', sleepTime, 's before executing fork');
-        console.log('Alternatively, you can run this again later or call it manually on this contract: https://sepolia.etherscan.com/address/', forkingManager.address, '#writeContract');
+        console.log('Sleeping for ', sleepTime.toString(), 's before executing fork');
+        console.log('Alternatively, you can run this again later or call it manually on this contract: https://sepolia.etherscan.com/address/', forkingManagerContract.address, '#writeContract');
         await new Promise((r) => setTimeout(r, sleepTime * 1000));
     }
     const tx2 = await forkingManagerContract.connect(deployer).executeFork({ gasLimit: 12000000, gasPrice: myGasPrice });
