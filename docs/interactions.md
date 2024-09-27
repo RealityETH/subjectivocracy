@@ -207,6 +207,14 @@ NB An AdjudicationFrameworkFeed could do something different here.
                     L1.ForkableZkEVM.createChildren()
                     L1.ForkableGlobalExitRoot.createChildren()
                     L1.ForkonomicToken.createChildren()
+                    # creates own children
+
+    [any]   L1.ForkableBridge.sendForkonomicTokensToChild() # send your own tokens to the child
+                child1.mintForkableToken()
+                child2.mintForkableToken()
+
+    [hard asset manager]   L1.ForkableBridge.transferHardAssetsToChild()
+
 
 ```
 
